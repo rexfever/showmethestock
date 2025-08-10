@@ -170,24 +170,19 @@ class KiwoomAPI:
         api_id = config.kiwoom_tr_ohlcv_id
         path = config.kiwoom_tr_ohlcv_path
         # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
-        params = {
-            "stk_cd": code,
-            # 스펙상 YYYYMMDD 필수: 당일(또는 전영업일) 기준으로 요청
-            "base_dt": datetime.now().strftime("%Y%m%d"),
-            "upd_stkpc_tp": "1",
-        }
-        try:
-            data = self._post(api_id, path, params)
-        except Exception:
-            # 실패 시 폴백: 허용된 경우에만 모의 생성
-            return self._gen_mock_ohlcv(code, count) if config.use_mock_fallback else pd.DataFrame()
-        if data.get("rt_cd") != "0" and data.get("return_code") not in (0, "0"):
-            return self._gen_mock_ohlcv(code, count) if config.use_mock_fallback else pd.DataFrame()
-        rows = (
-            data.get("stk_dt_pole_chart_qry", [])
-            or data.get("output2", [])
-            or data.get("data", [])
-        )
+        # 1차: base_dt 미지정(서버 기본) → 2차: 직전 영업일 재시도
+        def _request(base_dt: str) -> list:
+            payload = {"stk_cd": code, "base_dt": base_dt, "upd_stkpc_tp": "1"}
+            d = self._post(api_id, path, payload)
+            if d.get("rt_cd") not in ("0", 0) and d.get("return_code") not in (0, "0"):
+                return []
+            return d.get("stk_dt_pole_chart_qry", []) or d.get("output2", []) or d.get("data", [])
+
+        rows = _request("")
+        if not rows:
+            # 전 영업일 기준으로 재시도
+            prev = pd.bdate_range(end=pd.Timestamp.today(), periods=2)[0]
+            rows = _request(prev.strftime("%Y%m%d"))
         df = pd.DataFrame(
             [
                 {
@@ -201,6 +196,10 @@ class KiwoomAPI:
                 for r in rows
             ]
         )
+        if df.empty:
+            return df
+        # 유효 데이터만 필터(종가/거래량 0 제거)
+        df = df[(df["close"] > 0) & (df["volume"] > 0)]
         if df.empty:
             return df
         # 날짜 오름차순 정렬 및 tail(count)
