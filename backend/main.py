@@ -1,16 +1,29 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from typing import List
 import pandas as pd
 
-from config import config
-from kiwoom_api import KiwoomAPI
-from scanner import compute_indicators, match_condition, strategy_text
-from models import ScanResponse, ScanItem, IndicatorPayload, AnalyzeResponse
-from utils import is_code
+from backend.config import config
+from backend.kiwoom_api import KiwoomAPI
+from backend.scanner import compute_indicators, match_condition, strategy_text
+from backend.models import ScanResponse, ScanItem, IndicatorPayload, AnalyzeResponse
+from backend.utils import is_code
 
 
 app = FastAPI(title='Stock Scanner API')
+
+# CORS 설정 (프론트 개발 서버 허용)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 api = KiwoomAPI()
 
 

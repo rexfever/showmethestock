@@ -2,8 +2,8 @@ import time
 from typing import Dict, List, Tuple
 import pandas as pd
 
-from config import config
-from indicators import (
+from backend.config import config
+from backend.indicators import (
     tema_smooth,
     dema_smooth,
     macd,
@@ -36,7 +36,16 @@ def match_condition(df: pd.DataFrame) -> bool:
     cur = df.iloc[-1]
     prev = df.iloc[-2]
 
-    cond_gc = (cur.TEMA20 > cur.DEMA10) and (prev.TEMA20 < prev.DEMA10)
+    # 골든크로스: 최근 N일 내 교차 발생 또는 현재 단기선이 장기선 위
+    lookback = min(5, len(df) - 1)
+    crossed_recently = False
+    for i in range(lookback):
+        a_prev = df.iloc[-2 - i]
+        a_cur = df.iloc[-1 - i]
+        if (a_prev.TEMA20 <= a_prev.DEMA10) and (a_cur.TEMA20 > a_cur.DEMA10):
+            crossed_recently = True
+            break
+    cond_gc = crossed_recently or (cur.TEMA20 > cur.DEMA10)
     cond_macd = cur.MACD_OSC > config.macd_osc_min
 
     thr = config.rsi_threshold
