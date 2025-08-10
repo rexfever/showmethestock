@@ -38,3 +38,13 @@ class AnalyzeResponse(BaseModel):
     error: Optional[str] = None
 
 
+class UniverseItem(BaseModel):
+    ticker: str
+    name: str
+
+
+class UniverseResponse(BaseModel):
+    as_of: str
+    items: List[UniverseItem]
+
+

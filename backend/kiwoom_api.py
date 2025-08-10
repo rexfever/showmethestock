@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import os
 from typing import List, Dict
 import requests
@@ -62,12 +63,12 @@ class KiwoomAPI:
                 self._code_to_name[code] = name
                 self._name_to_code[name.replace(" ", "")] = code
 
-    def _get(self, api_id: str, path: str, params: dict) -> dict:
-        if self.mock_mode:
+    def _post(self, api_id: str, path: str, payload: dict) -> dict:
+        if self.force_mock:
             raise RuntimeError("mock mode active")
         headers = self.auth.auth_headers(api_id)
         url = f"{config.api_base}{path}"
-        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        resp = requests.post(url, headers=headers, json=payload, timeout=10)
         # 레이트리밋 완충
         time.sleep(config.rate_limit_delay_ms / 1000.0)
         resp.raise_for_status()
@@ -84,36 +85,38 @@ class KiwoomAPI:
         if config.universe_codes:
             codes = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
             return codes[:limit]
-        # 실제 TR/파라미터 매핑 지점. 샘플 파라미터로 구성
-        api_id = "KA10032"
-        path = "/uapi/domestic-stock/v1/quotations/inquire-top-value"
+        # 거래대금 상위: ka10032 /api/dostk/krinfo
+        api_id = config.kiwoom_tr_topvalue_id
+        path = config.kiwoom_tr_topvalue_path
+        # ka10032: mrkt_tp(001:코스피, 101:코스닥), 관리종목 포함 여부, 거래소 구분
         params = {
-            "market": market,
-            "limit": limit,
+            "mrkt_tp": "001" if market.upper() == "KOSPI" else "101",
+            "mang_stk_incls": "0",
+            "stex_tp": "1",
         }
         try:
-            data = self._get(api_id, path, params)
+            data = self._post(api_id, path, params)
         except Exception:
-            # 실패 시: 고정 유니버스 또는 모의
+            # 실패 시: 고정 유니버스 또는 (허용 시) 모의
             if config.universe_codes:
                 codes = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
                 return codes[:limit]
-            base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
-            return base[: max(0, min(len(base), limit))]
-        if data.get("rt_cd") != "0" and data.get("return_code") not in (0, "0"):
+            if config.use_mock_fallback:
+                base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
+                return base[: max(0, min(len(base), limit))]
+            return []
+        if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
             if config.universe_codes:
                 codes = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
                 return codes[:limit]
-            base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
-            return base[: max(0, min(len(base), limit))]
-        output = data.get("output", []) or data.get("data", [])
+            if config.use_mock_fallback:
+                base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
+                return base[: max(0, min(len(base), limit))]
+            return []
+        output = data.get("trde_prica_upper", []) or data.get("output", []) or data.get("data", [])
         codes = []
         for item in output:
-            code = (
-                item.get("mksc_shrn_iscd")
-                or item.get("code")
-                or item.get("stck_shrn_iscd")
-            )
+            code = item.get("stk_cd") or item.get("mksc_shrn_iscd") or item.get("stck_shrn_iscd") or item.get("code")
             if code:
                 codes.append(code)
         return codes[:limit]
@@ -122,33 +125,36 @@ class KiwoomAPI:
         """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환"""
         if self.force_mock:
             return self._gen_mock_ohlcv(code, count)
-        api_id = "FHKST03010100"
-        path = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+        api_id = config.kiwoom_tr_ohlcv_id
+        path = config.kiwoom_tr_ohlcv_path
+        # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
         params = {
-            "fid_cond_mrkt_div_code": "J",
-            "fid_input_iscd": code,
-            "fid_input_date_1": "",
-            "fid_input_date_2": "",
-            "fid_period_div_code": "D",
-            "fid_org_adj_prc": "1",
+            "stk_cd": code,
+            # 스펙상 YYYYMMDD 필수: 당일(또는 전영업일) 기준으로 요청
+            "base_dt": datetime.now().strftime("%Y%m%d"),
+            "upd_stkpc_tp": "1",
         }
         try:
-            data = self._get(api_id, path, params)
+            data = self._post(api_id, path, params)
         except Exception:
-            # 실패 시 폴백: 고정 유니버스/모의
-            return self._gen_mock_ohlcv(code, count)
+            # 실패 시 폴백: 허용된 경우에만 모의 생성
+            return self._gen_mock_ohlcv(code, count) if config.use_mock_fallback else pd.DataFrame()
         if data.get("rt_cd") != "0" and data.get("return_code") not in (0, "0"):
-            return self._gen_mock_ohlcv(code, count)
-        rows = data.get("output2", []) or data.get("data", [])
+            return self._gen_mock_ohlcv(code, count) if config.use_mock_fallback else pd.DataFrame()
+        rows = (
+            data.get("stk_dt_pole_chart_qry", [])
+            or data.get("output2", [])
+            or data.get("data", [])
+        )
         df = pd.DataFrame(
             [
                 {
-                    "date": r.get("stck_bsop_date"),
-                    "open": float(r.get("stck_oprc", 0)),
-                    "high": float(r.get("stck_hgpr", 0)),
-                    "low": float(r.get("stck_lwpr", 0)),
-                    "close": float(r.get("stck_clpr", 0)),
-                    "volume": int(r.get("acml_vol", 0)),
+                    "date": r.get("dt") or r.get("date") or r.get("stck_bsop_date"),
+                    "open": float(r.get("opn_prc") or r.get("open") or r.get("stck_oprc") or 0),
+                    "high": float(r.get("hg_prc") or r.get("high") or r.get("stck_hgpr") or 0),
+                    "low": float(r.get("lw_prc") or r.get("low") or r.get("stck_lwpr") or 0),
+                    "close": float(r.get("cls_prc") or r.get("close") or r.get("stck_clpr") or 0),
+                    "volume": int(r.get("trd_qty") or r.get("volume") or r.get("acml_vol") or 0),
                 }
                 for r in rows
             ]
@@ -201,8 +207,8 @@ class KiwoomAPI:
             self._name_to_code[name.replace(" ", "")] = code
             return name
         # 추정 TR: 코드 정보 조회. 실패 시 기본값
-        api_id = "CTPF1002R"
-        path = "/uapi/domestic-stock/v1/quotations/search-stock-info"
+        api_id = config.kiwoom_tr_stockinfo_id
+        path = config.kiwoom_tr_stockinfo_path
         params = {
             "PRDT_TYPE_CD": "300",
             "MICR_DNVL_CNDC_1": code,
@@ -230,7 +236,7 @@ class KiwoomAPI:
         if key in self._name_to_code:
             return self._name_to_code[key]
 
-        if self.mock_mode:
+        if self.force_mock:
             # 부분 일치 허용
             for code, nm in self._mock_names.items():
                 if key in nm.replace(" ", ""):
@@ -240,8 +246,8 @@ class KiwoomAPI:
             return ""
 
         # 1) 검색 TR 시도 (키워드 기반)
-        api_id = "CTPF1002R"
-        path = "/uapi/domestic-stock/v1/quotations/search-stock-info"
+        api_id = config.kiwoom_tr_stockinfo_id
+        path = config.kiwoom_tr_stockinfo_path
         params = {
             "PRDT_TYPE_CD": "300",
             "PRDT_ABRV_NAME": name,  # 가설 파라미터명 (추후 실제값으로 교체)

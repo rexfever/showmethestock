@@ -7,7 +7,7 @@ import pandas as pd
 from backend.config import config
 from backend.kiwoom_api import KiwoomAPI
 from backend.scanner import compute_indicators, match_condition, strategy_text
-from backend.models import ScanResponse, ScanItem, IndicatorPayload, AnalyzeResponse
+from backend.models import ScanResponse, ScanItem, IndicatorPayload, AnalyzeResponse, UniverseResponse, UniverseItem
 from backend.utils import is_code
 
 
@@ -79,6 +79,24 @@ def scan():
         items=items,
     )
 
+
+@app.get('/universe', response_model=UniverseResponse)
+def universe():
+    kospi = api.get_top_codes('KOSPI', config.universe_kospi)
+    kosdaq = api.get_top_codes('KOSDAQ', config.universe_kosdaq)
+    universe: List[str] = [*kospi, *kosdaq]
+
+    items: List[UniverseItem] = []
+    for code in universe:
+        try:
+            items.append(UniverseItem(ticker=code, name=api.get_stock_name(code)))
+        except Exception:
+            items.append(UniverseItem(ticker=code, name=code))
+
+    return UniverseResponse(
+        as_of=datetime.now().strftime('%Y-%m-%d'),
+        items=items,
+    )
 
 @app.get('/analyze', response_model=AnalyzeResponse)
 def analyze(name_or_code: str):

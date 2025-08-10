@@ -61,7 +61,9 @@ def match_condition(df: pd.DataFrame) -> bool:
 
     cond_vol = cur.volume > (cur.VOL_MA5 * config.vol_ma5_mult if pd.notna(cur.VOL_MA5) else cur.volume)
 
-    return bool(cond_gc and cond_macd and cond_rsi and cond_vol)
+    # 최소 신호 개수(기본 2개 이상) 충족 시 매칭 인정
+    signals_true = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
+    return bool(signals_true >= max(1, config.min_signals))
 
 
 def strategy_text(df: pd.DataFrame) -> str:
