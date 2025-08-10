@@ -49,7 +49,7 @@ def scan():
             cur = df.iloc[-1]
             item = ScanItem(
                 ticker=code,
-                name=code,  # TODO: 이름 매핑 지점
+                name=api.get_stock_name(code),
                 match=bool(match),
                 indicators=IndicatorPayload(
                     TEMA=float(cur.TEMA20),

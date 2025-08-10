@@ -13,4 +13,11 @@ export async function fetchAnalyze(name_or_code) {
   return res.json();
 }
 
+export async function fetchUniverse() {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + '/universe');
+  if (!res.ok) throw new Error('universe failed');
+  return res.json();
+}
+
 

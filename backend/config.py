@@ -57,6 +57,11 @@ class Config:
         "/api/dostk/stkinfo",
     )
 
+    # 심볼 프리로드 설정
+    preload_symbols: bool = os.getenv("PRELOAD_SYMBOLS", "1").lower() in ("1", "true", "yes")
+    # 프리로드할 시장 코드(쉼표구분): 001=코스피, 101=코스닥 등 문서 기준
+    kiwoom_symbol_markets: str = os.getenv("KIWOOM_SYMBOL_MARKETS", "001,101")
+
 
 config = Config()
 

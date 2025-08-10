@@ -62,17 +62,31 @@ class KiwoomAPI:
             for code, name in self._mock_names.items():
                 self._code_to_name[code] = name
                 self._name_to_code[name.replace(" ", "")] = code
+        # 심볼 프리로드
+        if (not self.force_mock) and config.preload_symbols:
+            try:
+                self._preload_symbols()
+            except Exception:
+                pass
 
-    def _post(self, api_id: str, path: str, payload: dict) -> dict:
+    def _post(self, api_id: str, path: str, payload: dict, extra_headers: Dict[str, str] = None) -> dict:
         if self.force_mock:
             raise RuntimeError("mock mode active")
         headers = self.auth.auth_headers(api_id)
+        if extra_headers:
+            headers.update(extra_headers)
         url = f"{config.api_base}{path}"
         resp = requests.post(url, headers=headers, json=payload, timeout=10)
         # 레이트리밋 완충
         time.sleep(config.rate_limit_delay_ms / 1000.0)
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        # 응답 헤더를 함께 전달(페이지네이션 cont-yn/next-key)
+        try:
+            data["__headers__"] = {k.lower(): v for k, v in resp.headers.items()}
+        except Exception:
+            data["__headers__"] = {}
+        return data
 
     def get_top_codes(self, market: str, limit: int) -> List[str]:
         """거래대금 상위 (예: ka10032) 호출 후 코드 리스트 반환
@@ -89,37 +103,65 @@ class KiwoomAPI:
         api_id = config.kiwoom_tr_topvalue_id
         path = config.kiwoom_tr_topvalue_path
         # ka10032: mrkt_tp(001:코스피, 101:코스닥), 관리종목 포함 여부, 거래소 구분
-        params = {
+        base_payload = {
             "mrkt_tp": "001" if market.upper() == "KOSPI" else "101",
             "mang_stk_incls": "0",
             "stex_tp": "1",
         }
-        try:
-            data = self._post(api_id, path, params)
-        except Exception:
-            # 실패 시: 고정 유니버스 또는 (허용 시) 모의
-            if config.universe_codes:
-                codes = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
-                return codes[:limit]
-            if config.use_mock_fallback:
-                base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
-                return base[: max(0, min(len(base), limit))]
-            return []
-        if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
-            if config.universe_codes:
-                codes = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
-                return codes[:limit]
-            if config.use_mock_fallback:
-                base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
-                return base[: max(0, min(len(base), limit))]
-            return []
-        output = data.get("trde_prica_upper", []) or data.get("output", []) or data.get("data", [])
-        codes = []
-        for item in output:
-            code = item.get("stk_cd") or item.get("mksc_shrn_iscd") or item.get("stck_shrn_iscd") or item.get("code")
-            if code:
-                codes.append(code)
+        codes: List[str] = []
+        next_key = None
+        # 페이지네이션: cont-yn/next-key 헤더 사용
+        while len(codes) < limit:
+            headers = {"cont-yn": "Y", "next-key": next_key} if next_key else {"cont-yn": "N"}
+            try:
+                data = self._post(api_id, path, base_payload, extra_headers=headers)
+            except Exception:
+                break
+            if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
+                break
+            output = data.get("trde_prica_upper", []) or data.get("output", []) or data.get("data", [])
+            for item in output:
+                code = item.get("stk_cd") or item.get("mksc_shrn_iscd") or item.get("stck_shrn_iscd") or item.get("code")
+                if code:
+                    codes.append(code)
+                    if len(codes) >= limit:
+                        break
+            resp_headers = data.get("__headers__", {})
+            cont = resp_headers.get("cont-yn", "N")
+            next_key = resp_headers.get("next-key")
+            if cont != "Y" or not next_key:
+                break
+        if not codes and config.universe_codes:
+            tmp = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
+            return tmp[:limit]
+        if not codes and config.use_mock_fallback:
+            base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
+            return base[: max(0, min(len(base), limit))]
         return codes[:limit]
+
+    def _preload_symbols(self) -> None:
+        markets = [m.strip() for m in config.kiwoom_symbol_markets.split(',') if m.strip()]
+        for m in markets:
+            api_id = config.kiwoom_tr_stockinfo_id
+            path = config.kiwoom_tr_stockinfo_path
+            next_key = None
+            while True:
+                headers = {"cont-yn": "Y", "next-key": next_key} if next_key else {"cont-yn": "N"}
+                payload = {"mrkt_tp": m}
+                data = self._post(api_id, path, payload, extra_headers=headers)
+                if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
+                    break
+                lst = data.get("list", []) or data.get("output", []) or data.get("data", [])
+                for it in lst:
+                    cd = it.get("code") or it.get("mksc_shrn_iscd") or it.get("stck_shrn_iscd")
+                    nm = it.get("name") or it.get("prdt_abrv_name")
+                    if cd and nm:
+                        self._code_to_name[cd] = nm
+                        self._name_to_code[nm.replace(" ", "")] = cd
+                h = data.get("__headers__", {})
+                if h.get("cont-yn") != "Y" or not h.get("next-key"):
+                    break
+                next_key = h.get("next-key")
 
     def get_ohlcv(self, code: str, count: int = 220) -> pd.DataFrame:
         """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환"""
@@ -198,7 +240,7 @@ class KiwoomAPI:
         return df.reset_index(drop=True)
 
     def get_stock_name(self, code: str) -> str:
-        """코드→이름 매핑 (캐시 포함). 실패 시 코드 그대로 반환"""
+        """코드→이름 매핑 (캐시 우선). 실패 시 코드 그대로 반환"""
         if code in self._code_to_name:
             return self._code_to_name[code]
         if self.force_mock:
@@ -206,28 +248,14 @@ class KiwoomAPI:
             self._code_to_name[code] = name
             self._name_to_code[name.replace(" ", "")] = code
             return name
-        # 추정 TR: 코드 정보 조회. 실패 시 기본값
-        api_id = config.kiwoom_tr_stockinfo_id
-        path = config.kiwoom_tr_stockinfo_path
-        params = {
-            "PRDT_TYPE_CD": "300",
-            "MICR_DNVL_CNDC_1": code,
-        }
+        # 캐시 미스 시 심볼 프리로드 재시도
         try:
-            data = self._get(api_id, path, params)
+            self._preload_symbols()
         except Exception:
-            name = code
-        else:
-            name = code
-            output = data.get("output", []) or data.get("data", [])
-            if output:
-                cand = output[0]
-                name = cand.get("prdt_abrv_name") or cand.get("name") or code
-        self._code_to_name[code] = name
-        # 역방향 캐시 (느슨하게)
-        key = name.replace(" ", "")
-        if key not in self._name_to_code:
-            self._name_to_code[key] = code
+            pass
+        name = self._code_to_name.get(code, code)
+        if name != code:
+            self._name_to_code[name.replace(" ", "")] = code
         return name
 
     def get_code_by_name(self, name: str) -> str:
@@ -245,22 +273,17 @@ class KiwoomAPI:
                     return code
             return ""
 
-        # 1) 검색 TR 시도 (키워드 기반)
-        api_id = config.kiwoom_tr_stockinfo_id
-        path = config.kiwoom_tr_stockinfo_path
-        params = {
-            "PRDT_TYPE_CD": "300",
-            "PRDT_ABRV_NAME": name,  # 가설 파라미터명 (추후 실제값으로 교체)
-        }
+        # 1) 캐시 내 부분 일치 검색
+        for cd, nm in self._code_to_name.items():
+            if key in nm.replace(" ", ""):
+                self._name_to_code[key] = cd
+                return cd
+        # 2) 캐시가 비어 있을 수 있으니 프리로드 재시도 후 다시 검색
         try:
-            data = self._get(api_id, path, params)
-            output = data.get("output", []) or data.get("data", [])
-            for item in output:
-                nm = item.get("prdt_abrv_name") or item.get("name")
-                cd = item.get("mksc_shrn_iscd") or item.get("stck_shrn_iscd") or item.get("code")
-                if nm and cd and name.replace(" ", "") in nm.replace(" ", ""):
-                    self._name_to_code[name.replace(" ", "")] = cd
-                    self._code_to_name[cd] = nm
+            self._preload_symbols()
+            for cd, nm in self._code_to_name.items():
+                if key in nm.replace(" ", ""):
+                    self._name_to_code[key] = cd
                     return cd
         except Exception:
             pass

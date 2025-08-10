@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchScan, fetchAnalyze } from '../lib/api';
+import { fetchScan, fetchAnalyze, fetchUniverse } from '../lib/api';
 import ResultTable from '../components/ResultTable';
 
 export default function Page() {
@@ -36,10 +36,8 @@ export default function Page() {
   const loadUniverse = async () => {
     setLoading(true);
     try {
-      const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
-      const res = await fetch(base + '/universe');
-      const json = await res.json();
-      setUniverse(json);
+      const json = await fetchUniverse();
+      setUniverse(json || { items: [] });
     } catch (e) {
       setUniverse({ error: String(e) });
     } finally {
