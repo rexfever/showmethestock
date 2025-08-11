@@ -110,7 +110,24 @@ class KiwoomAPI:
         }
         codes: List[str] = []
         next_key = None
-        # 페이지네이션: cont-yn/next-key 헤더 사용
+
+        def _extract_codes(obj) -> List[str]:
+            found: List[str] = []
+            if isinstance(obj, dict):
+                # 코드 후보 키
+                for k in ("stk_cd", "mksc_shrn_iscd", "stck_shrn_iscd", "code"):
+                    v = obj.get(k)
+                    if isinstance(v, str) and len(v) == 6 and v.isdigit():
+                        found.append(v)
+                # 딕셔너리 내부 순회
+                for v in obj.values():
+                    found.extend(_extract_codes(v))
+            elif isinstance(obj, list):
+                for it in obj:
+                    found.extend(_extract_codes(it))
+            return found
+
+        # 페이지네이션: 헤더 우선, 바디의 cont_yn/next_key 보조
         while len(codes) < limit:
             headers = {"cont-yn": "Y", "next-key": next_key} if next_key else {"cont-yn": "N"}
             try:
@@ -119,25 +136,82 @@ class KiwoomAPI:
                 break
             if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
                 break
-            output = data.get("trde_prica_upper", []) or data.get("output", []) or data.get("data", [])
-            for item in output:
-                code = item.get("stk_cd") or item.get("mksc_shrn_iscd") or item.get("stck_shrn_iscd") or item.get("code")
-                if code:
-                    codes.append(code)
+            # 출력 후보 전방위 탐색
+            output_candidates = [
+                data.get("trde_prica_upper"),
+                data.get("output"),
+                data.get("data"),
+                data.get("list"),
+            ]
+            extracted: List[str] = []
+            for cand in output_candidates:
+                extracted.extend(_extract_codes(cand))
+            # 중복 제거 순서 유지
+            for cd in extracted:
+                if cd not in codes:
+                    codes.append(cd)
                     if len(codes) >= limit:
                         break
+
+            # 페이지네이션 키 탐색(헤더→바디)
             resp_headers = data.get("__headers__", {})
-            cont = resp_headers.get("cont-yn", "N")
-            next_key = resp_headers.get("next-key")
+            cont = resp_headers.get("cont-yn") or str(data.get("cont_yn") or data.get("cont-yn") or "N")
+            next_key = resp_headers.get("next-key") or data.get("next_key") or data.get("next-key")
             if cont != "Y" or not next_key:
                 break
+        # 보조 플랜 1: .env 고정 유니버스
         if not codes and config.universe_codes:
             tmp = [c.strip() for c in config.universe_codes.split(',') if c.strip()]
             return tmp[:limit]
+        # 보조 플랜 2: 종목정보(ka10099)로 시장별 전체 코드를 받아 상위 N개로 대체
+        if not codes:
+            try:
+                api_id2 = config.kiwoom_tr_stockinfo_id
+                path2 = config.kiwoom_tr_stockinfo_path
+                headers2 = {"cont-yn": "N"}
+                payload2 = {"mrkt_tp": "001" if market.upper() == "KOSPI" else "101"}
+                data2 = self._post(api_id2, path2, payload2, extra_headers=headers2)
+                lst = data2.get("list", []) or data2.get("output", []) or data2.get("data", [])
+                found = []
+                for it in lst:
+                    cd = it.get("code") or it.get("mksc_shrn_iscd") or it.get("stck_shrn_iscd") or it.get("stk_cd")
+                    if isinstance(cd, str) and len(cd) == 6 and cd.isdigit():
+                        found.append(cd)
+                if found:
+                    return found[:limit]
+            except Exception:
+                pass
         if not codes and config.use_mock_fallback:
             base = self._mock_kospi if market.upper() == "KOSPI" else self._mock_kosdaq
             return base[: max(0, min(len(base), limit))]
         return codes[:limit]
+
+    # 디버그용: 거래대금 상위 TR(ka10032) 1회 호출 원시 응답 반환
+    def debug_call_topvalue_once(self, market: str) -> dict:
+        if self.force_mock:
+            return {"mock": True, "codes": self._mock_kospi if market.upper()=="KOSPI" else self._mock_kosdaq}
+        api_id = config.kiwoom_tr_topvalue_id
+        path = config.kiwoom_tr_topvalue_path
+        payload = {
+            "mrkt_tp": "001" if market.upper()=="KOSPI" else "101",
+            "mang_stk_incls": "0",
+            "stex_tp": "1",
+        }
+        try:
+            return self._post(api_id, path, payload, extra_headers={"cont-yn": "N"})
+        except Exception as e:
+            return {"error": str(e)}
+
+    # 디버그용: 종목정보 TR(ka10099) 1회 호출 원시 응답 반환
+    def debug_call_stockinfo_once(self, market_tp: str = '001') -> dict:
+        if self.force_mock:
+            return {"mock": True, "market_tp": market_tp}
+        api_id = config.kiwoom_tr_stockinfo_id
+        path = config.kiwoom_tr_stockinfo_path
+        try:
+            return self._post(api_id, path, {"mrkt_tp": market_tp}, extra_headers={"cont-yn": "Y"})
+        except Exception as e:
+            return {"error": str(e)}
 
     def _preload_symbols(self) -> None:
         markets = [m.strip() for m in config.kiwoom_symbol_markets.split(',') if m.strip()]
@@ -170,6 +244,7 @@ class KiwoomAPI:
         api_id = config.kiwoom_tr_ohlcv_id
         path = config.kiwoom_tr_ohlcv_path
         # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
+        # 샘플 스펙에 따라 접두사 없이 6자리 코드를 기본 사용.
         # 1차: base_dt 미지정(서버 기본) → 2차: 직전 영업일 재시도
         def _request(base_dt: str) -> list:
             payload = {"stk_cd": code, "base_dt": base_dt, "upd_stkpc_tp": "1"}
@@ -187,11 +262,11 @@ class KiwoomAPI:
             [
                 {
                     "date": r.get("dt") or r.get("date") or r.get("stck_bsop_date"),
-                    "open": float(r.get("opn_prc") or r.get("open") or r.get("stck_oprc") or 0),
-                    "high": float(r.get("hg_prc") or r.get("high") or r.get("stck_hgpr") or 0),
-                    "low": float(r.get("lw_prc") or r.get("low") or r.get("stck_lwpr") or 0),
-                    "close": float(r.get("cls_prc") or r.get("close") or r.get("stck_clpr") or 0),
-                    "volume": int(r.get("trd_qty") or r.get("volume") or r.get("acml_vol") or 0),
+                    "open": float(r.get("opn_prc") or r.get("open_prc") or r.get("open") or r.get("stck_oprc") or 0),
+                    "high": float(r.get("high_prc") or r.get("hg_prc") or r.get("high") or r.get("stck_hgpr") or 0),
+                    "low": float(r.get("low_prc") or r.get("lw_prc") or r.get("low") or r.get("stck_lwpr") or 0),
+                    "close": float(r.get("cur_prc") or r.get("cls_prc") or r.get("close") or r.get("stck_clpr") or 0),
+                    "volume": int(r.get("trde_qty") or r.get("trd_qty") or r.get("volume") or r.get("acml_vol") or 0),
                 }
                 for r in rows
             ]

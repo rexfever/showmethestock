@@ -8,7 +8,7 @@ from backend.config import config
 from backend.kiwoom_api import KiwoomAPI
 from backend.scanner import compute_indicators, match_condition, strategy_text
 from backend.models import ScanResponse, ScanItem, IndicatorPayload, AnalyzeResponse, UniverseResponse, UniverseItem
-from backend.utils import is_code
+from backend.utils import is_code, normalize_code_or_name
 
 
 app = FastAPI(title='Stock Scanner API')
@@ -81,7 +81,7 @@ def scan():
 
 
 @app.get('/universe', response_model=UniverseResponse)
-def universe():
+def universe(apply_scan: bool = False):
     kospi = api.get_top_codes('KOSPI', config.universe_kospi)
     kosdaq = api.get_top_codes('KOSDAQ', config.universe_kosdaq)
     universe: List[str] = [*kospi, *kosdaq]
@@ -89,20 +89,38 @@ def universe():
     items: List[UniverseItem] = []
     for code in universe:
         try:
+            if apply_scan:
+                df = api.get_ohlcv(code, config.ohlcv_count)
+                if df.empty or len(df) < 21 or df[["open","high","low","close","volume"]].isna().any().any():
+                    continue
+                df = compute_indicators(df)
+                if not match_condition(df):
+                    continue
             items.append(UniverseItem(ticker=code, name=api.get_stock_name(code)))
         except Exception:
-            items.append(UniverseItem(ticker=code, name=code))
+            if not apply_scan:
+                items.append(UniverseItem(ticker=code, name=code))
 
     return UniverseResponse(
         as_of=datetime.now().strftime('%Y-%m-%d'),
         items=items,
     )
 
+
+@app.get('/_debug/topvalue')
+def _debug_topvalue(market: str = 'KOSPI'):
+    return api.debug_call_topvalue_once(market)
+
+
+@app.get('/_debug/stockinfo')
+def _debug_stockinfo(market_tp: str = '001'):
+    return api.debug_call_stockinfo_once(market_tp)
+
 @app.get('/analyze', response_model=AnalyzeResponse)
 def analyze(name_or_code: str):
-    code = name_or_code
+    code = normalize_code_or_name(name_or_code)
     if not is_code(code):
-        code = api.get_code_by_name(name_or_code)
+        code = api.get_code_by_name(code)
         if not code:
             return AnalyzeResponse(ok=False, item=None, error='이름→코드 매핑 실패')
 

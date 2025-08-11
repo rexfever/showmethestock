@@ -55,6 +55,18 @@ export default function Page() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-semibold">국내주식 조건 스캐너</h1>
 
+      {/* 전략 설명 */}
+      <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm leading-6">
+        <div className="font-semibold mb-1">전략 요약</div>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>골든크로스/모멘텀/RSI/거래량 4가지 신호 중 최소 N개 충족 시 매칭됩니다(N은 MIN_SIGNALS, 기본 2).</li>
+          <li>TEMA20 vs DEMA10 교차 및 현재 위치로 골든크로스를 평가합니다.</li>
+          <li>MACD_OSC가 임계치(MACD_OSC_MIN) 이상이면 모멘텀 양(+)으로 간주합니다.</li>
+          <li>RSI 모드(standard/tema/dema/hybrid)와 임계치(RSI_THRESHOLD)로 과매수·과매도 구간을 판별합니다.</li>
+          <li>거래량이 5일 이동평균 대비 배수(VOL_MA5_MULT) 이상이면 거래확대로 판단합니다.</li>
+        </ul>
+      </div>
+
       <div className="flex items-center gap-3">
         <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={runScan} disabled={loading}>
           {loading ? '실행중...' : '조건검색 실행 (/scan)'}
