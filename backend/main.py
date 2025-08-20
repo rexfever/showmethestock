@@ -235,6 +235,22 @@ def list_snapshots():
                 })
             except Exception:
                 continue
+        # SQLite 합치기
+        try:
+            conn = sqlite3.connect(_db_path())
+            cur = conn.cursor()
+            cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+            for row in cur.execute("SELECT date, COUNT(1) FROM scan_rank GROUP BY date"):
+                date, cnt = row
+                # 이미 파일 항목이 있으면 rank_count만 업데이트
+                hit = next((x for x in files if x.get('as_of') == date), None)
+                if hit:
+                    hit['rank_count'] = max(hit.get('rank_count') or 0, int(cnt))
+                else:
+                    files.append({'file': f"db:{date}", 'as_of': date, 'created_at': '', 'matched_count': None, 'rank_count': int(cnt)})
+            conn.close()
+        except Exception:
+            pass
         files.sort(key=lambda x: x.get('as_of') or '', reverse=True)
     except Exception:
         files = []
@@ -244,17 +260,29 @@ def list_snapshots():
 @app.get('/validate_from_snapshot')
 def validate_from_snapshot(as_of: str, top_k: int = 20):
     """스냅샷(as_of=YYYY-MM-DD) 상위 목록 기준으로 현재 수익률 검증"""
-    fname = f"scan-{as_of.replace('-', '')}.json"
-    path = os.path.join(SNAPSHOT_DIR, fname)
-    if not os.path.exists(path):
-        return {'error': 'snapshot not found', 'as_of': as_of, 'items': []}
+    # 1) DB 우선
+    rank = []
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            snap = json.load(f)
-    except Exception as e:
-        return {'error': str(e), 'as_of': as_of, 'items': []}
-    rank = snap.get('rank', [])
-    rank.sort(key=lambda x: x.get('score', 0), reverse=True)
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (as_of, int(top_k))):
+            rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
+        conn.close()
+    except Exception:
+        rank = []
+    # 2) JSON 스냅샷 보조
+    if not rank:
+        fname = f"scan-{as_of.replace('-', '')}.json"
+        path = os.path.join(SNAPSHOT_DIR, fname)
+        if not os.path.exists(path):
+            return {'error': 'snapshot not found', 'as_of': as_of, 'items': []}
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                snap = json.load(f)
+            rank = snap.get('rank', [])
+            rank.sort(key=lambda x: x.get('score', 0), reverse=True)
+        except Exception as e:
+            return {'error': str(e), 'as_of': as_of, 'items': []}
     base_dt = as_of.replace('-', '')
     results = []
     rets = []

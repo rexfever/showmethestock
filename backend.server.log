@@ -15,3 +15,11 @@ INFO:     Finished server process [90925]
 INFO:     Started server process [91936]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [91936]
+INFO:     Started server process [92567]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
