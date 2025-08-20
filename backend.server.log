@@ -1,8 +1,11 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [20486] using WatchFiles
-INFO:     Started server process [20564]
+INFO:     Started reloader process [83004] using WatchFiles
+INFO:     Started server process [83097]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:60645 - "GET /universe HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60663 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56988 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57167 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57188 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57187 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57187 - "GET /scan HTTP/1.1" 200 OK

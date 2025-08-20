@@ -106,7 +106,8 @@ class KiwoomAPI:
         base_payload = {
             "mrkt_tp": "001" if market.upper() == "KOSPI" else "101",
             "mang_stk_incls": "0",
-            "stex_tp": "1",
+            # 1: KRX(코스피), 2: NXT(코스닥), 3: 통합
+            "stex_tp": "1" if market.upper() == "KOSPI" else "2",
         }
         codes: List[str] = []
         next_key = None
@@ -134,7 +135,10 @@ class KiwoomAPI:
                 data = self._post(api_id, path, base_payload, extra_headers=headers)
             except Exception:
                 break
-            if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
+            # 상태코드가 명시된 경우에만 에러로 간주. 키가 없으면 통과
+            rt_cd = data.get("rt_cd")
+            return_code = data.get("return_code")
+            if (rt_cd is not None and rt_cd not in ("0", 0)) or (return_code is not None and return_code not in (0, "0")):
                 break
             # 출력 후보 전방위 탐색
             output_candidates = [
@@ -223,7 +227,8 @@ class KiwoomAPI:
                 headers = {"cont-yn": "Y", "next-key": next_key} if next_key else {"cont-yn": "N"}
                 payload = {"mrkt_tp": m}
                 data = self._post(api_id, path, payload, extra_headers=headers)
-                if data.get("rt_cd") not in ("0", 0) and data.get("return_code") not in (0, "0"):
+                rt = data.get("rt_cd"); rc = data.get("return_code")
+                if (rt is not None and rt not in ("0", 0)) or (rc is not None and rc not in (0, "0")):
                     break
                 lst = data.get("list", []) or data.get("output", []) or data.get("data", [])
                 for it in lst:
@@ -237,8 +242,10 @@ class KiwoomAPI:
                     break
                 next_key = h.get("next-key")
 
-    def get_ohlcv(self, code: str, count: int = 220) -> pd.DataFrame:
-        """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환"""
+    def get_ohlcv(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
+        """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환
+        base_dt가 지정되면 해당 기준일을 마지막 행으로 하는 시계열을 우선 시도한다(YYYYMMDD).
+        """
         if self.force_mock:
             return self._gen_mock_ohlcv(code, count)
         api_id = config.kiwoom_tr_ohlcv_id
@@ -246,16 +253,37 @@ class KiwoomAPI:
         # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
         # 샘플 스펙에 따라 접두사 없이 6자리 코드를 기본 사용.
         # 1차: base_dt 미지정(서버 기본) → 2차: 직전 영업일 재시도
-        def _request(base_dt: str) -> list:
-            payload = {"stk_cd": code, "base_dt": base_dt, "upd_stkpc_tp": "1"}
+        def _request(bdt: str) -> list:
+            payload = {"stk_cd": code, "base_dt": bdt or "", "upd_stkpc_tp": "1"}
             d = self._post(api_id, path, payload)
             if d.get("rt_cd") not in ("0", 0) and d.get("return_code") not in (0, "0"):
                 return []
             return d.get("stk_dt_pole_chart_qry", []) or d.get("output2", []) or d.get("data", [])
 
-        rows = _request("")
+        # 우선순위: 명시 base_dt → (기준일-1B) → (기준일-2B) ... → 오늘/전영업일
+        tried = False
+        rows = []
+        if base_dt:
+            try:
+                rows = _request(base_dt)
+                tried = True
+            except Exception:
+                rows = []
+            # 기준일로부터 이전 영업일 다중 재시도(최대 4)
+            if not rows:
+                try:
+                    base_ts = pd.to_datetime(base_dt)
+                    for i in range(1, 5):
+                        prev = (base_ts - pd.tseries.offsets.BDay(i)).strftime("%Y%m%d")
+                        rows = _request(prev)
+                        if rows:
+                            break
+                except Exception:
+                    rows = []
+        # 기준일 루트에서도 실패하면 오늘/전영업일로 보조 시도
         if not rows:
-            # 전 영업일 기준으로 재시도
+            rows = _request("")
+        if not rows:
             prev = pd.bdate_range(end=pd.Timestamp.today(), periods=2)[0]
             rows = _request(prev.strftime("%Y%m%d"))
         df = pd.DataFrame(

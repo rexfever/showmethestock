@@ -19,8 +19,8 @@ class Config:
     # 키움 REST 토큰 경로
     token_path: str = os.getenv("TOKEN_PATH", "/oauth2/token")
 
-    universe_kospi: int = int(os.getenv("UNIVERSE_KOSPI", "100"))
-    universe_kosdaq: int = int(os.getenv("UNIVERSE_KOSDAQ", "100"))
+    universe_kospi: int = int(os.getenv("UNIVERSE_KOSPI", "25"))
+    universe_kosdaq: int = int(os.getenv("UNIVERSE_KOSDAQ", "25"))
     ohlcv_count: int = int(os.getenv("OHLCV_COUNT", "220"))
 
     macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "-10"))
@@ -61,6 +61,23 @@ class Config:
     preload_symbols: bool = os.getenv("PRELOAD_SYMBOLS", "1").lower() in ("1", "true", "yes")
     # 프리로드할 시장 코드(쉼표구분): 001=코스피, 101=코스닥 등 문서 기준
     kiwoom_symbol_markets: str = os.getenv("KIWOOM_SYMBOL_MARKETS", "0,10")
+
+    # 추세 파라미터
+    trend_above_lookback: int = int(os.getenv("TREND_ABOVE_LOOKBACK", "5"))
+    trend_slope_lookback: int = int(os.getenv("TREND_SLOPE_LOOKBACK", "20"))
+    require_dema_slope: bool = os.getenv("REQUIRE_DEMA_SLOPE", "true").lower() in ("1","true","yes")
+
+    # 점수 가중치
+    score_w_cross: int = int(os.getenv("SCORE_W_CROSS", "3"))
+    score_w_vol: int = int(os.getenv("SCORE_W_VOL", "2"))
+    score_w_macd: int = int(os.getenv("SCORE_W_MACD", "1"))
+    score_w_rsi: int = int(os.getenv("SCORE_W_RSI", "1"))
+    score_w_tema_slope: int = int(os.getenv("SCORE_W_TEMA_SLOPE", "2"))
+    score_w_dema_slope: int = int(os.getenv("SCORE_W_DEMA_SLOPE", "2"))
+    score_w_obv_slope: int = int(os.getenv("SCORE_W_OBV_SLOPE", "2"))
+    score_w_above_cnt: int = int(os.getenv("SCORE_W_ABOVE_CNT", "2"))
+    score_level_strong: int = int(os.getenv("SCORE_LEVEL_STRONG", "8"))
+    score_level_watch: int = int(os.getenv("SCORE_LEVEL_WATCH", "5"))
 
 
 config = Config()

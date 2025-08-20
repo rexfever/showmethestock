@@ -20,4 +20,19 @@ export async function fetchUniverse() {
   return res.json();
 }
 
+export async function fetchSnapshots() {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + '/snapshots');
+  if (!res.ok) throw new Error('snapshots failed');
+  return res.json();
+}
+
+export async function fetchValidateFromSnapshot(asOf, topK) {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const url = base + `/validate_from_snapshot?as_of=${encodeURIComponent(asOf)}&top_k=${encodeURIComponent(topK)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('validate_from_snapshot failed');
+  return res.json();
+}
+
 

@@ -66,3 +66,22 @@ def rsi_dema(series: pd.Series, period: int) -> pd.Series:
     return rsi.fillna(50)
 
 
+def linreg_slope(series: pd.Series, lookback: int) -> pd.Series:
+    """선형회귀 기울기(단위: 값/일). 최근 lookback 창을 굴리며 slope 반환.
+    시작 구간은 NaN 처리.
+    """
+    values = series.astype(float).to_numpy()
+    n = len(values)
+    out = np.full(n, np.nan)
+    x = np.arange(lookback)
+    for i in range(lookback - 1, n):
+        y = values[i - lookback + 1 : i + 1]
+        # polyfit 1차: slope
+        try:
+            slope = np.polyfit(x, y, 1)[0]
+        except Exception:
+            slope = np.nan
+        out[i] = slope
+    return pd.Series(out, index=series.index)
+
+

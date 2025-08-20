@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { fetchScan, fetchAnalyze, fetchUniverse } from '../lib/api';
+import { fetchScan, fetchAnalyze, fetchUniverse, fetchSnapshots, fetchValidateFromSnapshot } from '../lib/api';
 import ResultTable from '../components/ResultTable';
+import ValidateTable from '../components/ValidateTable';
 
 export default function Page() {
   const [data, setData] = useState(null);
@@ -8,12 +9,18 @@ export default function Page() {
   const [q, setQ] = useState('005930');
   const [analyze, setAnalyze] = useState(null);
   const [universe, setUniverse] = useState(null);
+  const [validate, setValidate] = useState(null);
+  const [topK, setTopK] = useState(20);
+  const [last, setLast] = useState({ type: null, data: null });
+  const [snapshots, setSnapshots] = useState([]);
+  const [snapAsOf, setSnapAsOf] = useState('');
 
   const runScan = async () => {
     setLoading(true);
     try {
       const json = await fetchScan();
       setData(json);
+      setLast({ type: 'scan', data: json });
     } catch (e) {
       setData({ error: String(e) });
     } finally {
@@ -26,6 +33,7 @@ export default function Page() {
     try {
       const json = await fetchAnalyze(q);
       setAnalyze(json);
+      setLast({ type: 'analyze', data: json });
     } catch (e) {
       setAnalyze({ error: String(e) });
     } finally {
@@ -38,6 +46,7 @@ export default function Page() {
     try {
       const json = await fetchUniverse();
       setUniverse(json || { items: [] });
+      setLast({ type: 'universe', data: json });
     } catch (e) {
       setUniverse({ error: String(e) });
     } finally {
@@ -45,9 +54,13 @@ export default function Page() {
     }
   };
 
+  // 기존 /validate 제거 → 스냅샷 기반 검증만 사용
+
   useEffect(() => {
     // 페이지 진입 시 자동으로 유니버스를 로드해 화면에 표시
     loadUniverse();
+    // 스냅샷 목록 로드
+    fetchSnapshots().then(r=>setSnapshots(r.items||[])).catch(()=>{});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -55,15 +68,16 @@ export default function Page() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-semibold">국내주식 조건 스캐너</h1>
 
-      {/* 전략 설명 */}
+      
+
+      {/* 전략 라벨 설명 */}
       <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm leading-6">
-        <div className="font-semibold mb-1">전략 요약</div>
+        <div className="font-semibold mb-1">전략 라벨 설명</div>
         <ul className="list-disc pl-5 space-y-1">
-          <li>골든크로스/모멘텀/RSI/거래량 4가지 신호 중 최소 N개 충족 시 매칭됩니다(N은 MIN_SIGNALS, 기본 2).</li>
-          <li>TEMA20 vs DEMA10 교차 및 현재 위치로 골든크로스를 평가합니다.</li>
-          <li>MACD_OSC가 임계치(MACD_OSC_MIN) 이상이면 모멘텀 양(+)으로 간주합니다.</li>
-          <li>RSI 모드(standard/tema/dema/hybrid)와 임계치(RSI_THRESHOLD)로 과매수·과매도 구간을 판별합니다.</li>
-          <li>거래량이 5일 이동평균 대비 배수(VOL_MA5_MULT) 이상이면 거래확대로 판단합니다.</li>
+          <li><span className="font-medium">골든크로스 형성</span>: 최근 구간에서 <code>TEMA20</code>이 <code>DEMA10</code>을 상향 돌파했거나 현재 <code>TEMA20</code>이 위에 위치</li>
+          <li><span className="font-medium">모멘텀 양전환</span>: <code>MACD_OSC</code>가 0보다 큼(양의 모멘텀)</li>
+          <li><span className="font-medium">거래확대</span>: 현재 <code>VOL</code>이 <code>VOL_MA5 × VOL_MA5_MULT</code> 이상</li>
+          <li><span className="font-medium">관망</span>: 위 조건이 충족되지 않아 대기 권고</li>
         </ul>
       </div>
 
@@ -80,30 +94,60 @@ export default function Page() {
         <button className="px-4 py-2 bg-gray-700 text-white rounded" onClick={runAnalyze} disabled={loading}>
           단일 분석 (/analyze)
         </button>
+        <div className="flex items-center gap-2 ml-4">
+          <input className="border rounded px-2 py-1 w-20" type="number" min={1} value={topK} onChange={(e)=>setTopK(parseInt(e.target.value||'1',10))} title="top K" />
+          <select className="border rounded px-2 py-1" value={snapAsOf} onChange={(e)=>setSnapAsOf(e.target.value)}>
+            <option value="">스냅샷 선택</option>
+            {snapshots.map(s=> (
+              <option key={s.file} value={s.as_of}>{s.as_of} (matched {s.matched_count})</option>
+            ))}
+          </select>
+          <button className="px-3 py-2 bg-indigo-600 text-white rounded" onClick={async()=>{
+            if(!snapAsOf) return;
+            setLoading(true);
+            try{
+              const r = await fetchValidateFromSnapshot(snapAsOf, topK);
+              setValidate(r);
+              setLast({ type: 'validate', data: r });
+            }catch(e){ setValidate({error:String(e)}); }
+            finally{ setLoading(false); }
+          }} disabled={loading || !snapAsOf}>
+            {loading ? '검증중...' : '스냅샷 검증'}
+          </button>
+        </div>
       </div>
 
-      {data && (
-        <div className="space-y-2">
-          <div className="text-sm text-gray-600">as_of: {data.as_of}, universe: {data.universe_count}, matched: {data.matched_count}</div>
-          <div className="text-sm text-gray-600">RSI mode: {data.rsi_mode} (period {data.rsi_period}, thr {data.rsi_threshold})</div>
-          <ResultTable items={data.items || []} />
+      {/* 최근 실행 결과 - 버튼 아래에만 표시 */}
+      {last && last.type && (
+        <div className="border rounded p-4 bg-white shadow-sm space-y-2">
+          <div className="text-sm text-gray-700">최근 실행: <span className="font-medium">{last.type}</span></div>
+          {last.type === 'scan' && last.data && (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">as_of: {last.data.as_of}, universe: {last.data.universe_count}, matched: {last.data.matched_count}</div>
+              <div className="text-sm text-gray-600">RSI mode: {last.data.rsi_mode} (period {last.data.rsi_period}, thr {last.data.rsi_threshold})</div>
+              <ResultTable items={last.data.items || []} />
+            </div>
+          )}
+          {last.type === 'universe' && last.data && (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">as_of: {last.data.as_of}, count: {(last.data.items||[]).length}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
+                {(last.data.items||[]).map((u) => (
+                  <div key={u.ticker} className="border rounded px-2 py-1 flex justify-between"><span className="font-mono">{u.ticker}</span><span>{u.name}</span></div>
+                ))}
+              </div>
+            </div>
+          )}
+          {last.type === 'analyze' && last.data && (
+            <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">{JSON.stringify(last.data, null, 2)}</pre>
+          )}
+          {last.type === 'validate' && last.data && (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">base_dt: {last.data.base_dt}, n: {last.data.n_days_ago}, top_k: {last.data.top_k}, count: {last.data.count}</div>
+              <ValidateTable items={last.data.items || []} />
+            </div>
+          )}
         </div>
-      )}
-
-      {universe && universe.items && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium">거래대금 상위 유니버스</h2>
-          <div className="text-sm text-gray-600">as_of: {universe.as_of}, count: {universe.items.length}</div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
-            {universe.items.map((u) => (
-              <div key={u.ticker} className="border rounded px-2 py-1 flex justify-between"><span className="font-mono">{u.ticker}</span><span>{u.name}</span></div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {analyze && (
-        <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">{JSON.stringify(analyze, null, 2)}</pre>
       )}
     </div>
   );

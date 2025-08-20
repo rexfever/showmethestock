@@ -66,3 +66,45 @@
 - `/scan` 결과에 조건별 실패 요인(신호 플래그) 반환하여 디버깅/튜닝 지원.
 - 심볼 캐시 스냅샷(JSON) 저장/로드 도입(재시작 속도 향상), TTL 기반 리프레시.
 - 프론트: 매칭 필터/정렬, 단일분석 차트 시각화(추세선/거래량) 추가.
+
+---
+
+## 2025-08-20
+
+### Backend
+- 점수화 로직 도입 (`backend/scanner.py`)
+  - `score_conditions(df)` 구현: 교차(+3), 거래량 확장(+2), MACD(+1), RSI(+1), TEMA20 기울기(+2), OBV 기울기(+2), 최근 5봉 상회≥3(+2)
+  - 점수 근거 `flags`(cross, vol_expand, macd_ok, rsi_ok, tema_slope_ok, obv_slope_ok, above_cnt5_ok)와 `score_label`(강한 매수/관심/제외) 반환
+  - 가중치/컷라인 ENV 지원: `SCORE_W_*`, `SCORE_LEVEL_STRONG`, `SCORE_LEVEL_WATCH`
+- 추세 기능 강화
+  - `linreg_slope(series, lookback)` 추가(`backend/indicators.py`)
+  - `TEMA20_SLOPE20`, `OBV_SLOPE20`, `DEMA10_SLOPE20`, `ABOVE_CNT5` 계산 및 필터/문구 반영
+  - `REQUIRE_DEMA_SLOPE=true` 기본값으로 변경(필수 필터화, 점수도 +2)
+- 응답 스키마 확장(`backend/models.py`)
+  - `ScanItem.score`, `ScanItem.flags`, `ScanItem.score_label`, `trend`(TEMA20_SLOPE20/OBV_SLOPE20/ABOVE_CNT5) 추가
+- 엔드포인트/기능
+  - `/scan` 결과에 점수/근거/추세 포함, 적합도 정렬→점수 정렬로 통일
+  - 검색식 스냅샷 저장: `backend/snapshots/scan-YYYYMMDD.json` 자동 생성
+  - 스냅샷 목록 조회: `GET /snapshots`
+  - 스냅샷 기반 검증: `GET /validate_from_snapshot?as_of=YYYY-MM-DD&top_k=K`
+  - 기존 `/validate`(과거 유니버스 기반) 제거 → 스냅샷 검증만 유지
+  - `get_ohlcv(code, count, base_dt)` 추가 및 기준일 실패 시 이전 영업일 다중 재시도
+- 기타
+  - KOSPI/KOSDAQ 분리 조회(`stex_tp` 1/2)로 유니버스 합산. 기본 각 25로 설정(ENV로 조정).
+
+### Frontend
+- 결과 테이블 개편(`frontend/components/ResultTable.jsx`)
+  - 점수/평가(레이블) 컬럼 추가, 추세 지표 3컬럼(TEMA20_slope20/OBV_slope20/AboveCnt5) 표시
+  - 전략 라벨별 액션 문구(간결화)와 라벨 표준화 처리
+- 검증 UI 리팩토링
+  - 스냅샷 드롭다운 + “스냅샷 검증” 버튼으로 전환(`/validate_from_snapshot` 사용)
+  - 표(`ValidateTable.jsx`)로 종목/수익률만 깔끔히 표시
+  - 구 검증(/validate) UX 제거
+- 레이아웃/UX
+  - “최근 실행 결과”를 버튼 섹션 아래 단일 카드로 고정(중복 표시 제거)
+
+### Ops
+- 서버 스크립트 정리: 백엔드 8010/프론트 3000. 서버 중단/재기동 작업 정리.
+
+### Known
+- `ka10032`는 과거 유니버스를 제공하지 않음 → 검색식 스냅샷 기반 검증으로 일관성 확보.
