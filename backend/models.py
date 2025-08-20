@@ -28,6 +28,7 @@ class ScoreFlags(BaseModel):
     tema_slope_ok: bool
     obv_slope_ok: bool
     above_cnt5_ok: bool
+    dema_slope_ok: bool = False
 
 
 class ScanItem(BaseModel):
@@ -40,6 +41,7 @@ class ScanItem(BaseModel):
     strategy: str
     flags: Optional[ScoreFlags] = None
     score_label: Optional[str] = None
+    details: Optional[dict] = None
 
 
 class ScanResponse(BaseModel):
@@ -50,6 +52,11 @@ class ScanResponse(BaseModel):
     rsi_period: int
     rsi_threshold: float
     items: List[ScanItem]
+    # meta
+    score_weights: Optional[dict] = None
+    score_level_strong: Optional[int] = None
+    score_level_watch: Optional[int] = None
+    require_dema_slope: Optional[str] = None
 
 
 class AnalyzeResponse(BaseModel):

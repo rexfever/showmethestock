@@ -70,7 +70,7 @@ export default function Page() {
 
       
 
-      {/* 전략 라벨 설명 */}
+      {/* 전략 라벨 설명 + 현재 가중치 */}
       <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm leading-6">
         <div className="font-semibold mb-1">전략 라벨 설명</div>
         <ul className="list-disc pl-5 space-y-1">
@@ -79,6 +79,9 @@ export default function Page() {
           <li><span className="font-medium">거래확대</span>: 현재 <code>VOL</code>이 <code>VOL_MA5 × VOL_MA5_MULT</code> 이상</li>
           <li><span className="font-medium">관망</span>: 위 조건이 충족되지 않아 대기 권고</li>
         </ul>
+        <div className="text-xs text-gray-700 mt-2">
+          현재 가중치/컷라인은 백엔드 `/ _reload_config`로 갱신 후 `/scan` 응답 메타 참조 필요(차후 표기 연동 예정).
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -124,7 +127,7 @@ export default function Page() {
           {last.type === 'scan' && last.data && (
             <div className="space-y-2">
               <div className="text-sm text-gray-600">as_of: {last.data.as_of}, universe: {last.data.universe_count}, matched: {last.data.matched_count}</div>
-              <div className="text-sm text-gray-600">RSI mode: {last.data.rsi_mode} (period {last.data.rsi_period}, thr {last.data.rsi_threshold})</div>
+              <div className="text-xs text-gray-600">weights: {last.data.score_weights ? JSON.stringify(last.data.score_weights) : '-'}, levels: S {last.data.score_level_strong} / W {last.data.score_level_watch}, dema_mode: {last.data.require_dema_slope}</div>
               <ResultTable items={last.data.items || []} />
             </div>
           )}
@@ -143,7 +146,7 @@ export default function Page() {
           )}
           {last.type === 'validate' && last.data && (
             <div className="space-y-2">
-              <div className="text-sm text-gray-600">base_dt: {last.data.base_dt}, n: {last.data.n_days_ago}, top_k: {last.data.top_k}, count: {last.data.count}</div>
+              <div className="text-sm text-gray-600">snapshot: {last.data.snapshot_as_of}, top_k: {last.data.top_k}, count: {last.data.count}, win: {last.data.win_rate_pct}% avg: {last.data.avg_return_pct}% mdd: {last.data.mdd_pct}%</div>
               <ValidateTable items={last.data.items || []} />
             </div>
           )}

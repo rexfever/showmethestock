@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+import json
 from dotenv import load_dotenv
 
 
@@ -65,7 +66,8 @@ class Config:
     # 추세 파라미터
     trend_above_lookback: int = int(os.getenv("TREND_ABOVE_LOOKBACK", "5"))
     trend_slope_lookback: int = int(os.getenv("TREND_SLOPE_LOOKBACK", "20"))
-    require_dema_slope: bool = os.getenv("REQUIRE_DEMA_SLOPE", "true").lower() in ("1","true","yes")
+    # dema 기울기 모드: required|optional|off
+    require_dema_slope: str = os.getenv("REQUIRE_DEMA_SLOPE", "required").lower()
 
     # 점수 가중치
     score_w_cross: int = int(os.getenv("SCORE_W_CROSS", "3"))
@@ -79,7 +81,85 @@ class Config:
     score_level_strong: int = int(os.getenv("SCORE_LEVEL_STRONG", "8"))
     score_level_watch: int = int(os.getenv("SCORE_LEVEL_WATCH", "5"))
 
+    def dynamic_score_weights(self) -> dict:
+        raw = os.getenv("SCORE_WEIGHTS", "")
+        if not raw:
+            return {
+                "cross": self.score_w_cross,
+                "volume": self.score_w_vol,
+                "macd": self.score_w_macd,
+                "rsi": self.score_w_rsi,
+                "tema_slope": self.score_w_tema_slope,
+                "dema_slope": self.score_w_dema_slope,
+                "obv_slope": self.score_w_obv_slope,
+                "above_cnt5": self.score_w_above_cnt,
+            }
+        try:
+            data = json.loads(raw)
+            # 기본값과 병합
+            base = {
+                "cross": self.score_w_cross,
+                "volume": self.score_w_vol,
+                "macd": self.score_w_macd,
+                "rsi": self.score_w_rsi,
+                "tema_slope": self.score_w_tema_slope,
+                "dema_slope": self.score_w_dema_slope,
+                "obv_slope": self.score_w_obv_slope,
+                "above_cnt5": self.score_w_above_cnt,
+            }
+            base.update({k:int(v) for k,v in data.items() if isinstance(v,(int,float))})
+            return base
+        except Exception:
+            return {
+                "cross": self.score_w_cross,
+                "volume": self.score_w_vol,
+                "macd": self.score_w_macd,
+                "rsi": self.score_w_rsi,
+                "tema_slope": self.score_w_tema_slope,
+                "dema_slope": self.score_w_dema_slope,
+                "obv_slope": self.score_w_obv_slope,
+                "above_cnt5": self.score_w_above_cnt,
+            }
+
 
 config = Config()
+
+
+def reload_from_env() -> None:
+    """.env를 다시 로드하고 config 인스턴스 값을 갱신한다 (서버 재시작 없이 적용)."""
+    # 루트와 backend/.env 재적용
+    load_dotenv()
+    backend_env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(backend_env_path):
+        load_dotenv(dotenv_path=backend_env_path, override=True)
+
+    # 필드 업데이트
+    for field in [
+        'app_key','app_secret','api_base','token_path',
+        'universe_kospi','universe_kosdaq','ohlcv_count',
+        'macd_osc_min','rsi_mode','rsi_period','rsi_threshold','vol_ma5_mult',
+        'rate_limit_delay_ms','universe_codes','use_mock_fallback','min_signals',
+        'kiwoom_tr_topvalue_id','kiwoom_tr_topvalue_path','kiwoom_tr_ohlcv_id','kiwoom_tr_ohlcv_path',
+        'kiwoom_tr_stockinfo_id','kiwoom_tr_stockinfo_path','preload_symbols','kiwoom_symbol_markets',
+        'trend_above_lookback','trend_slope_lookback','require_dema_slope',
+        'score_w_cross','score_w_vol','score_w_macd','score_w_rsi','score_w_tema_slope','score_w_dema_slope','score_w_obv_slope','score_w_above_cnt',
+        'score_level_strong','score_level_watch',
+    ]:
+        # 각 필드 타입에 맞춰 변환
+        val = os.getenv(field.upper())
+        if val is None:
+            continue
+        try:
+            cur = getattr(config, field)
+            if isinstance(cur, bool):
+                setattr(config, field, val.lower() in ("1","true","yes"))
+            elif isinstance(cur, int):
+                setattr(config, field, int(val))
+            elif isinstance(cur, float):
+                setattr(config, field, float(val))
+            else:
+                setattr(config, field, val)
+        except Exception:
+            setattr(config, field, val)
 
 

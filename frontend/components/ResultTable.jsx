@@ -32,6 +32,13 @@ export default function ResultTable({ items }) {
             <th className="p-2 text-left">match</th>
             <th className="p-2 text-left">점수</th>
             <th className="p-2 text-left">평가</th>
+            <th className="p-2 text-left">cross</th>
+            <th className="p-2 text-left">volume</th>
+            <th className="p-2 text-left">macd</th>
+            <th className="p-2 text-left">rsi</th>
+            <th className="p-2 text-left">tema_slope</th>
+            <th className="p-2 text-left">obv_slope</th>
+            <th className="p-2 text-left">above_cnt5</th>
             <th className="p-2 text-left">TEMA-DEMA</th>
             <th className="p-2 text-left">MACD_OSC</th>
             <th className="p-2 text-left">RSI</th>
@@ -54,6 +61,13 @@ export default function ResultTable({ items }) {
               <td className="p-2">{it.match ? '✅' : '—'}</td>
               <td className="p-2">{(it.score ?? 0).toFixed(0)}</td>
               <td className="p-2">{it.score_label || '-'}</td>
+              <td className="p-2">{it.flags?.details?.cross?.ok ? '✅' : '❌'}</td>
+              <td className="p-2">{it.flags?.details?.volume?.ok ? '✅' : '❌'}</td>
+              <td className="p-2">{it.flags?.details?.macd?.ok ? '✅' : '❌'}</td>
+              <td className="p-2">{it.flags?.details?.rsi?.ok ? '✅' : '❌'}</td>
+              <td className="p-2">{it.flags?.details?.tema_slope?.ok ? '✅' : '❌'}</td>
+              <td className="p-2">{it.flags?.details?.obv_slope?.ok ? '✅' : '❌'}</td>
+              <td className="p-2">{it.flags?.details?.above_cnt5?.ok ? '✅' : '❌'}</td>
               <td className="p-2">{(it.indicators.TEMA - it.indicators.DEMA).toFixed(2)}</td>
               <td className="p-2">{it.indicators.MACD_OSC.toFixed(2)}</td>
               <td className="p-2">{it.indicators.RSI.toFixed(1)}</td>

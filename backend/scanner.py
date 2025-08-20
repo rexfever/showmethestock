@@ -123,24 +123,38 @@ def score_conditions(df: pd.DataFrame) -> tuple:
 
     flags = {}
     score = 0
+    details = {}
+    W = config.dynamic_score_weights() if hasattr(config, 'dynamic_score_weights') else {
+        'cross': config.score_w_cross,
+        'volume': config.score_w_vol,
+        'macd': config.score_w_macd,
+        'rsi': config.score_w_rsi,
+        'tema_slope': config.score_w_tema_slope,
+        'dema_slope': config.score_w_dema_slope,
+        'obv_slope': config.score_w_obv_slope,
+        'above_cnt5': config.score_w_above_cnt,
+    }
 
     # 1) 골든크로스 교차(+3)
     cross = (cur.TEMA20 > cur.DEMA10) and (prev.TEMA20 <= prev.DEMA10)
     flags["cross"] = bool(cross)
     if cross:
-        score += config.score_w_cross
+        score += W['cross']
+    details['cross'] = {'ok': bool(cross), 'w': W['cross'], 'gain': W['cross'] if cross else 0}
 
     # 2) 거래량 확장(+2)
     volx = cur.volume > (cur.VOL_MA5 * config.vol_ma5_mult if pd.notna(cur.VOL_MA5) else cur.volume)
     flags["vol_expand"] = bool(volx)
     if volx:
-        score += config.score_w_vol
+        score += W['volume']
+    details['volume'] = {'ok': bool(volx), 'w': W['volume'], 'gain': W['volume'] if volx else 0}
 
     # 3) MACD_OSC > -50 (+1)
     macd_ok = cur.MACD_OSC > config.macd_osc_min
     flags["macd_ok"] = bool(macd_ok)
     if macd_ok:
-        score += config.score_w_macd
+        score += W['macd']
+    details['macd'] = {'ok': bool(macd_ok), 'w': W['macd'], 'gain': W['macd'] if macd_ok else 0}
 
     # 4) RSI 조건(+1)
     thr = config.rsi_threshold
@@ -155,37 +169,42 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         rsi_ok = (cur.RSI > thr) and (cur.RSI_TEMA > thr)
     flags["rsi_ok"] = bool(rsi_ok)
     if rsi_ok:
-        score += config.score_w_rsi
+        score += W['rsi']
+    details['rsi'] = {'ok': bool(rsi_ok), 'w': W['rsi'], 'gain': W['rsi'] if rsi_ok else 0}
 
     # 5) TEMA20 SLOPE > 0 (+2)
     tema_slope_ok = float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0
     flags["tema_slope_ok"] = bool(tema_slope_ok)
     if tema_slope_ok:
-        score += config.score_w_tema_slope
+        score += W['tema_slope']
+    details['tema_slope'] = {'ok': bool(tema_slope_ok), 'w': W['tema_slope'], 'gain': W['tema_slope'] if tema_slope_ok else 0}
 
     # 6) OBV SLOPE > 0 (+2)
     obv_slope_ok = float(df.iloc[-1]["OBV_SLOPE20"]) > 0
     flags["obv_slope_ok"] = bool(obv_slope_ok)
     if obv_slope_ok:
-        score += config.score_w_obv_slope
+        score += W['obv_slope']
+    details['obv_slope'] = {'ok': bool(obv_slope_ok), 'w': W['obv_slope'], 'gain': W['obv_slope'] if obv_slope_ok else 0}
 
     # 7) 최근 5봉 TEMA20>DEMA10 횟수 ≥ 3 (+2)
     above_ok = above_cnt >= 3
     flags["above_cnt5_ok"] = bool(above_ok)
     if above_ok:
-        score += config.score_w_above_cnt
+        score += W['above_cnt5']
+    details['above_cnt5'] = {'ok': bool(above_ok), 'w': W['above_cnt5'], 'gain': W['above_cnt5'] if above_ok else 0}
 
     # (선택) DEMA10 SLOPE > 0 점수/필수 여부
     dema_slope_ok = float(df.iloc[-1]["DEMA10_SLOPE20"]) > 0
     flags["dema_slope_ok"] = bool(dema_slope_ok)
-    # 점수 부여(기본 2)
-    if dema_slope_ok:
-        score += config.score_w_dema_slope
-    # 필수 조건으로 강제하려면 require_dema_slope=true
-    if getattr(config, 'require_dema_slope', False) and not dema_slope_ok:
-        score = 0  # 강제 실패 시 제외로 처리
+    details['dema_slope'] = {'ok': bool(dema_slope_ok), 'w': W['dema_slope'], 'gain': W['dema_slope'] if dema_slope_ok else 0}
+    mode = str(getattr(config, 'require_dema_slope', 'required')).lower()
+    if mode == 'required' and not dema_slope_ok:
         flags["label"] = "제외"
-        return int(score), flags
+        return 0, details
+    elif mode == 'optional':
+        if dema_slope_ok:
+            score += W['dema_slope']
+    # off: 무시
 
     # 레이블링
     if score >= config.score_level_strong:
@@ -194,7 +213,8 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         flags["label"] = "관심"
     else:
         flags["label"] = "제외"
-    return int(score), flags
+    details['total'] = int(score)
+    return int(score), {**flags, 'details': details}
 
 
 def match_condition(df: pd.DataFrame) -> bool:
