@@ -35,4 +35,11 @@ export async function fetchValidateFromSnapshot(asOf, topK) {
   return res.json();
 }
 
+export async function reloadConfig() {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + '/_reload_config', { method: 'POST' });
+  if (!res.ok) throw new Error('reload_config failed');
+  return res.json();
+}
+
 

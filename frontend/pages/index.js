@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchScan, fetchAnalyze, fetchUniverse, fetchSnapshots, fetchValidateFromSnapshot } from '../lib/api';
+import { fetchScan, fetchAnalyze, fetchUniverse, fetchSnapshots, fetchValidateFromSnapshot, reloadConfig } from '../lib/api';
 import ResultTable from '../components/ResultTable';
 import ValidateTable from '../components/ValidateTable';
 
@@ -105,6 +105,10 @@ export default function Page() {
               <option key={s.file} value={s.as_of}>{s.as_of} (matched {s.matched_count})</option>
             ))}
           </select>
+          <button className="px-3 py-2 bg-slate-600 text-white rounded" onClick={async()=>{
+            setLoading(true);
+            try{ await reloadConfig(); } finally { setLoading(false); }
+          }} disabled={loading}>리로드 설정</button>
           <button className="px-3 py-2 bg-indigo-600 text-white rounded" onClick={async()=>{
             if(!snapAsOf) return;
             setLoading(true);
