@@ -293,7 +293,8 @@ class KiwoomAPI:
                     "open": float(r.get("opn_prc") or r.get("open_prc") or r.get("open") or r.get("stck_oprc") or 0),
                     "high": float(r.get("high_prc") or r.get("hg_prc") or r.get("high") or r.get("stck_hgpr") or 0),
                     "low": float(r.get("low_prc") or r.get("lw_prc") or r.get("low") or r.get("stck_lwpr") or 0),
-                    "close": float(r.get("cur_prc") or r.get("cls_prc") or r.get("close") or r.get("stck_clpr") or 0),
+                    # 종가 우선. 장중에는 cls_prc가 비거나 0일 수 있어 cur_prc를 보조로 사용
+                    "close": float(r.get("cls_prc") or r.get("cur_prc") or r.get("close") or r.get("stck_clpr") or 0),
                     "volume": int(r.get("trde_qty") or r.get("trd_qty") or r.get("volume") or r.get("acml_vol") or 0),
                 }
                 for r in rows
@@ -363,6 +364,26 @@ class KiwoomAPI:
     def get_code_by_name(self, name: str) -> str:
         """이름→코드 매핑. 1) 캐시 2) (모의/실제) 조회 3) 유니버스 후 역매핑"""
         key = name.replace(" ", "")
+        # 브랜드 약어/발음 표준화
+        norm_map = {
+            "sk": "에스케이",
+            "lg": "엘지",
+            "kt": "케이티",
+            "cj": "씨제이",
+            "posco": "포스코",
+        }
+        low = key.lower()
+        for abbr, full in norm_map.items():
+            if low.startswith(abbr):
+                key = key.replace(key[:len(abbr)], full)
+                break
+        # 자주 쓰는 별칭
+        alias = {
+            "sk이노베이션": "096770",
+            "에스케이이노베이션": "096770",
+        }
+        if key in alias:
+            return alias[key]
         if key in self._name_to_code:
             return self._name_to_code[key]
 

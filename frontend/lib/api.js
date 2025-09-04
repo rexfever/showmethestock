@@ -42,4 +42,12 @@ export async function reloadConfig() {
   return res.json();
 }
 
+export async function sendScanResult(to, topN=5){
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const url = base + '/send_scan_result?to=' + encodeURIComponent(to) + '&top_n=' + encodeURIComponent(topN);
+  const res = await fetch(url, { method: 'POST' });
+  if (!res.ok) throw new Error('send_scan_result failed');
+  return res.json();
+}
+
 

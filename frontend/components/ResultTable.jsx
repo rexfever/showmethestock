@@ -1,3 +1,4 @@
+import { useState } from 'react';
 function strategyActions(strategy) {
   if (!strategy) return '';
   const labels = String(strategy)
@@ -20,66 +21,145 @@ function strategyActions(strategy) {
   return actions.join(' · ');
 }
 
-export default function ResultTable({ items }) {
+function labelMeta(label) {
+  const v = String(label || '').trim();
+  if (v === '강한 매수') {
+    return {
+      text: '매수 후보(강)',
+      hint: '신호 충족도 높음. 전일 고가 돌파 시 분할 진입 고려, DEMA10 하회 시 정리.',
+      cls: 'bg-emerald-100 text-emerald-800',
+    };
+  }
+  if (v === '관심') {
+    return {
+      text: '관망/관찰',
+      hint: '신호 일부 충족. 거래확대·모멘텀 확인 후 진입 판단.',
+      cls: 'bg-amber-100 text-amber-800',
+    };
+  }
+  return {
+    text: '제외',
+    hint: '조건 미충족. 대기.',
+    cls: 'bg-slate-100 text-slate-700',
+  };
+}
+
+export default function ResultTable({ items, showDetails=false }) {
+  const [openDetail, setOpenDetail] = useState(null);
+  const [openLabel, setOpenLabel] = useState(null);
   if (!items || !items.length) return <div className="text-sm text-gray-500">결과 없음</div>;
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white shadow rounded">
         <thead className="bg-gray-100 text-sm">
           <tr>
-            <th className="p-2 text-left">코드</th>
-            <th className="p-2 text-left">이름</th>
-            <th className="p-2 text-left">match</th>
+            <th className="p-2 text-left">이름(코드)</th>
             <th className="p-2 text-left">점수</th>
             <th className="p-2 text-left">평가</th>
-            <th className="p-2 text-left">cross</th>
-            <th className="p-2 text-left">volume</th>
-            <th className="p-2 text-left">macd</th>
-            <th className="p-2 text-left">rsi</th>
-            <th className="p-2 text-left">tema_slope</th>
-            <th className="p-2 text-left">obv_slope</th>
-            <th className="p-2 text-left">above_cnt5</th>
-            <th className="p-2 text-left">TEMA-DEMA</th>
-            <th className="p-2 text-left">MACD_OSC</th>
-            <th className="p-2 text-left">RSI</th>
-            <th className="p-2 text-left">RSI_TEMA</th>
-            <th className="p-2 text-left">RSI_DEMA</th>
-            <th className="p-2 text-left">VOL</th>
-            <th className="p-2 text-left">VOL_MA5</th>
+            <th className="p-2 text-left">종가</th>
             <th className="p-2 text-left">전략</th>
-            <th className="p-2 text-left">TEMA20_slope20</th>
-            <th className="p-2 text-left">OBV_slope20</th>
-            <th className="p-2 text-left">AboveCnt5</th>
             <th className="p-2 text-left">액션</th>
+            <th className="p-2 text-left">상세</th>
           </tr>
         </thead>
         <tbody className="text-sm">
           {items.map((it) => (
             <tr key={it.ticker} className="border-t">
-              <td className="p-2 font-mono">{it.ticker}</td>
-              <td className="p-2">{it.name}</td>
-              <td className="p-2">{it.match ? '✅' : '—'}</td>
+              <td className="p-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span>{it.name}</span>
+                  <span className="font-mono text-xs text-gray-500">({it.ticker})</span>
+                  {it.details?.recurrence?.appeared_before ? (
+                    <span className="text-xs px-2 py-0.5 rounded bg-violet-100 text-violet-800">
+                      재등장 ×{it.details.recurrence.appear_count}
+                    </span>
+                  ) : (
+                    it.details?.recurrence ? (
+                      <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        신규
+                      </span>
+                    ) : null
+                  )}
+                  {it.details?.recurrence?.first_as_of ? (
+                    <span className="text-xs px-2 py-0.5 rounded bg-sky-100 text-sky-800">
+                      첫등장 {it.details.recurrence.first_as_of}
+                    </span>
+                  ) : null}
+                </div>
+              </td>
               <td className="p-2">{(it.score ?? 0).toFixed(0)}</td>
-              <td className="p-2">{it.score_label || '-'}</td>
-              <td className="p-2">{it.flags?.details?.cross?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{it.flags?.details?.volume?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{it.flags?.details?.macd?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{it.flags?.details?.rsi?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{it.flags?.details?.tema_slope?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{it.flags?.details?.obv_slope?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{it.flags?.details?.above_cnt5?.ok ? '✅' : '❌'}</td>
-              <td className="p-2">{(it.indicators.TEMA - it.indicators.DEMA).toFixed(2)}</td>
-              <td className="p-2">{it.indicators.MACD_OSC.toFixed(2)}</td>
-              <td className="p-2">{it.indicators.RSI.toFixed(1)}</td>
-              <td className="p-2">{it.indicators.RSI_TEMA.toFixed(1)}</td>
-              <td className="p-2">{it.indicators.RSI_DEMA.toFixed(1)}</td>
-              <td className="p-2">{it.indicators.VOL.toLocaleString()}</td>
-              <td className="p-2">{it.indicators.VOL_MA5.toLocaleString()}</td>
+              <td className="p-2 relative">
+                {(() => {
+                  const meta = labelMeta(it.score_label);
+                  return (
+                    <div className="inline-flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded ${meta.cls}`}>{meta.text}</span>
+                      <button
+                        className="text-[10px] w-4 h-4 rounded-full border text-slate-600 hover:bg-slate-100"
+                        title="설명"
+                        onClick={() => setOpenLabel(openLabel === it.ticker ? null : it.ticker)}
+                      >i</button>
+                      {openLabel === it.ticker && (
+                        <div className="absolute z-10 mt-2 left-0 w-[280px] bg-white border rounded shadow p-2 text-xs">
+                          {meta.hint}
+                          <div className="text-right mt-2">
+                            <button className="px-2 py-1 border rounded" onClick={() => setOpenLabel(null)}>닫기</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </td>
+              <td className="p-2">{it.details?.close ? Number(it.details.close).toLocaleString() : '-'}</td>
               <td className="p-2">{it.strategy}</td>
-              <td className="p-2">{it.trend ? it.trend.TEMA20_SLOPE20.toFixed(2) : '-'}</td>
-              <td className="p-2">{it.trend ? it.trend.OBV_SLOPE20.toFixed(2) : '-'}</td>
-              <td className="p-2">{it.trend ? it.trend.ABOVE_CNT5 : '-'}</td>
               <td className="p-2 text-gray-700">{strategyActions(it.strategy)}</td>
+              <td className="p-2 relative">
+                {showDetails && (
+                  <>
+                    <button
+                      className="px-2 py-1 text-xs rounded bg-slate-100 hover:bg-slate-200 border"
+                      onClick={() => setOpenDetail(openDetail === it.ticker ? null : it.ticker)}
+                    >
+                      상세
+                    </button>
+                    {openDetail === it.ticker && (
+                      <div className="absolute z-20 mt-2 right-0 w-[640px] max-w-[95vw] max-h-[70vh] overflow-y-auto bg-white border rounded shadow-xl p-3 text-xs">
+                        <div className="font-semibold mb-1">상세 지표/조건</div>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                          <div>match</div><div>{it.match ? '✅' : '—'}</div>
+                          <div>cross</div><div>{it.flags?.details?.cross?.ok ? '✅' : '❌'}</div>
+                          <div>volume</div><div>{it.flags?.details?.volume?.ok ? '✅' : '❌'}</div>
+                          <div>macd</div><div>{it.flags?.details?.macd?.ok ? '✅' : '❌'}</div>
+                          <div>rsi</div><div>{it.flags?.details?.rsi?.ok ? '✅' : '❌'}</div>
+                          <div>tema_slope</div><div>{it.flags?.details?.tema_slope?.ok ? '✅' : '❌'}</div>
+                          <div>obv_slope</div><div>{it.flags?.details?.obv_slope?.ok ? '✅' : '❌'}</div>
+                          <div>above_cnt5</div><div>{it.flags?.details?.above_cnt5?.ok ? '✅' : '❌'}</div>
+                        </div>
+                        <div className="border-t my-2" />
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                          <div>TEMA-DEMA</div><div>{(it.indicators.TEMA - it.indicators.DEMA).toFixed(2)}</div>
+                          <div>MACD_OSC</div><div>{it.indicators.MACD_OSC.toFixed(2)}</div>
+                          <div>RSI</div><div>{it.indicators.RSI.toFixed(1)}</div>
+                          <div>RSI_TEMA</div><div>{it.indicators.RSI_TEMA.toFixed(1)}</div>
+                          <div>RSI_DEMA</div><div>{it.indicators.RSI_DEMA.toFixed(1)}</div>
+                          <div>VOL</div><div>{it.indicators.VOL.toLocaleString()}</div>
+                          <div>VOL_MA5</div><div>{it.indicators.VOL_MA5.toLocaleString()}</div>
+                        </div>
+                        <div className="border-t my-2" />
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                          <div>TEMA20_slope20</div><div>{it.trend ? it.trend.TEMA20_SLOPE20.toFixed(2) : '-'}</div>
+                          <div>OBV_slope20</div><div>{it.trend ? it.trend.OBV_SLOPE20.toFixed(2) : '-'}</div>
+                          <div>AboveCnt5</div><div>{it.trend ? it.trend.ABOVE_CNT5 : '-'}</div>
+                        </div>
+                        <div className="text-right mt-2">
+                          <button className="px-2 py-1 border rounded" onClick={() => setOpenDetail(null)}>닫기</button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

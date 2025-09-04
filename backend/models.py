@@ -29,6 +29,7 @@ class ScoreFlags(BaseModel):
     obv_slope_ok: bool
     above_cnt5_ok: bool
     dema_slope_ok: bool = False
+    details: Optional[dict] = None
 
 
 class ScanItem(BaseModel):

@@ -9,9 +9,10 @@ import pandas as pd
 from backend.config import config, reload_from_env
 from backend.kiwoom_api import KiwoomAPI
 from backend.scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
-from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem
+from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags
 from backend.utils import is_code, normalize_code_or_name
 import sqlite3
+from backend.kakao import send_alert, format_scan_message
 
 
 app = FastAPI(title='Stock Scanner API')
@@ -62,6 +63,24 @@ def _save_scan_snapshot(payload: dict) -> str:
     except Exception:
         return ''
 
+def _as_score_flags(f: dict):
+    if not isinstance(f, dict):
+        return None
+    try:
+        return ScoreFlags(
+            cross=bool(f.get('cross')),
+            vol_expand=bool(f.get('vol_expand')),
+            macd_ok=bool(f.get('macd_ok')),
+            rsi_ok=bool(f.get('rsi_ok')),
+            tema_slope_ok=bool(f.get('tema_slope_ok')),
+            obv_slope_ok=bool(f.get('obv_slope_ok')),
+            above_cnt5_ok=bool(f.get('above_cnt5_ok')),
+            dema_slope_ok=bool(f.get('dema_slope_ok')),
+            details=f.get('details') if isinstance(f.get('details'), dict) else None,
+        )
+    except Exception:
+        return None
+
 def _db_path() -> str:
     return os.path.join(os.path.dirname(__file__), 'snapshots.db')
 
@@ -79,6 +98,16 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
     except Exception:
         pass
 
+def _log_send(to: str, matched_count: int):
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS send_logs(ts TEXT, to_no TEXT, matched_count INTEGER)")
+        cur.execute("INSERT INTO send_logs(ts,to_no,matched_count) VALUES (?,?,?)", (datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), to, int(matched_count)))
+        conn.commit(); conn.close()
+    except Exception:
+        pass
+
 
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score'):
@@ -89,6 +118,17 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     universe: List[str] = [*kospi, *kosdaq]
 
     items: List[ScanItem] = []
+    today_as_of = datetime.now().strftime('%Y-%m-%d')
+    # 과거 재등장 이력 조회를 위한 DB 연결(가능하면 재사용)
+    conn_hist = None
+    cur_hist = None
+    try:
+        conn_hist = sqlite3.connect(_db_path())
+        cur_hist = conn_hist.cursor()
+        cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+    except Exception:
+        conn_hist = None
+        cur_hist = None
     for code in universe:
         try:
             df = api.get_ohlcv(code, config.ohlcv_count)
@@ -98,6 +138,39 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             matched, sig_true, sig_total = match_stats(df)
             score, flags = score_conditions(df)
             cur = df.iloc[-1]
+            # 재등장 메타 계산
+            recurrence = None
+            if cur_hist is not None:
+                try:
+                    prev_dates = []
+                    for row in cur_hist.execute("SELECT date FROM scan_rank WHERE code=? ORDER BY date DESC", (code,)):
+                        d = str(row[0])
+                        if d and d < today_as_of:
+                            prev_dates.append(d)
+                    if prev_dates:
+                        last_as_of = prev_dates[0]
+                        first_as_of = prev_dates[-1]
+                        try:
+                            days_since_last = int((pd.to_datetime(today_as_of) - pd.to_datetime(last_as_of)).days)
+                        except Exception:
+                            days_since_last = None
+                        recurrence = {
+                            'appeared_before': True,
+                            'appear_count': len(prev_dates),
+                            'last_as_of': last_as_of,
+                            'first_as_of': first_as_of,
+                            'days_since_last': days_since_last,
+                        }
+                    else:
+                        recurrence = {
+                            'appeared_before': False,
+                            'appear_count': 0,
+                            'last_as_of': None,
+                            'first_as_of': today_as_of,
+                            'days_since_last': None,
+                        }
+                except Exception:
+                    recurrence = None
             item = ScanItem(
                 ticker=code,
                 name=api.get_stock_name(code),
@@ -119,15 +192,20 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     OBV_SLOPE20=float(df.iloc[-1].get("OBV_SLOPE20", 0.0)) if "OBV_SLOPE20" in df.columns else 0.0,
                     ABOVE_CNT5=int(((df["TEMA20"] > df["DEMA10"]).tail(5).sum()) if ("TEMA20" in df.columns and "DEMA10" in df.columns) else 0),
                 ),
-                flags=flags,
+                flags=_as_score_flags(flags),
                 score_label=str(flags.get("label")) if isinstance(flags, dict) else None,
-                details={**(flags.get("details", {}) if isinstance(flags, dict) else {}), "close": float(cur.close)},
+                details={**(flags.get("details", {}) if isinstance(flags, dict) else {}), "close": float(cur.close), "recurrence": recurrence},
                 strategy=strategy_text(df),
             )
             if item.match:
                 items.append(item)
         except Exception:
             continue
+    try:
+        if conn_hist is not None:
+            conn_hist.close()
+    except Exception:
+        pass
 
     # 정렬: score | volume (VOL) | change_rate(추후)
     if sort_by == 'volume':
@@ -257,8 +335,62 @@ def list_snapshots():
     return {'count': len(files), 'items': files}
 
 
+@app.post('/_backfill_snapshots')
+def backfill_snapshots():
+    """기존 JSON 스냅샷 파일을 SQLite scan_rank 테이블로 백필한다."""
+    inserted = 0
+    updated = 0
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+        for fn in os.listdir(SNAPSHOT_DIR):
+            if not fn.startswith('scan-') or not fn.endswith('.json'):
+                continue
+            path = os.path.join(SNAPSHOT_DIR, fn)
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    snap = json.load(f)
+                as_of = snap.get('as_of')
+                rank = snap.get('rank', [])
+                if not as_of or not isinstance(rank, list):
+                    continue
+                for it in rank:
+                    code = it.get('ticker') or it.get('code')
+                    if not code:
+                        continue
+                    score = float(it.get('score') or 0.0)
+                    label = it.get('score_label') or ''
+                    try:
+                        cur.execute("INSERT OR IGNORE INTO scan_rank(date, code, score, flags, score_label, close_price) VALUES (?,?,?,?,?,?)",
+                                    (as_of, code, score, json.dumps({}, ensure_ascii=False), label, 0.0))
+                        if cur.rowcount == 1:
+                            inserted += 1
+                        else:
+                            cur.execute("UPDATE scan_rank SET score=?, score_label=? WHERE date=? AND code=?",
+                                        (score, label, as_of, code))
+                            if cur.rowcount == 1:
+                                updated += 1
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+        conn.commit(); conn.close()
+    except Exception as e:
+        return {'ok': False, 'error': str(e), 'inserted': inserted, 'updated': updated}
+    return {'ok': True, 'inserted': inserted, 'updated': updated}
+
 @app.get('/validate_from_snapshot')
 def validate_from_snapshot(as_of: str, top_k: int = 20):
+    # 당일 스냅샷은 검증 불가(장중 변동/오류 방지)
+    today = datetime.now().strftime('%Y-%m-%d')
+    if as_of == today:
+        return {
+            'error': 'today snapshot not allowed',
+            'as_of': today,
+            'items': [],
+            'count': 0,
+        }
     """스냅샷(as_of=YYYY-MM-DD) 상위 목록 기준으로 현재 수익률 검증"""
     # 1) DB 우선
     rank = []
@@ -286,26 +418,50 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     base_dt = as_of.replace('-', '')
     results = []
     rets = []
+    max_rets = []
     for it in rank[:max(0, top_k)]:
         code = it.get('ticker')
         try:
             df_then = api.get_ohlcv(code, config.ohlcv_count, base_dt=base_dt)
             if df_then.empty:
                 continue
+            # 스캔 당시 전략 산출(당일 종가 기준 인디케이터 계산 후 전략 텍스트 생성)
+            try:
+                df_then_ci = compute_indicators(df_then)
+                strategy_then = strategy_text(df_then_ci)
+            except Exception:
+                strategy_then = '-'
+            # 기준일 종가 사용(장중가격(cur_prc) 배제)
             price_then = float(df_then.iloc[-1].close)
+            # 현재가(종가 기준) 및 이후 최대 수익률 계산
             df_now = api.get_ohlcv(code, 5)
             if df_now.empty:
                 continue
             price_now = float(df_now.iloc[-1].close)
             ret = (price_now / price_then - 1.0) * 100.0
             rets.append(ret)
+            # 이후 구간 최대 종가 기준 최대 수익률
+            df_since = api.get_ohlcv(code, config.ohlcv_count)
+            max_ret_pct = 0.0
+            try:
+                if not df_since.empty:
+                    sub = df_since[df_since['date'] >= base_dt]
+                    if not sub.empty:
+                        peak = float(sub['close'].max())
+                        max_ret_pct = round((peak / price_then - 1.0) * 100.0, 2)
+            except Exception:
+                max_ret_pct = 0.0
+            max_rets.append(max_ret_pct)
             results.append({
                 'ticker': code,
                 'name': api.get_stock_name(code),
                 'score_then': it.get('score'),
+                'score_label_then': it.get('score_label'),
+                'strategy_then': strategy_then,
                 'price_then': price_then,
                 'price_now': price_now,
                 'return_pct': round(ret, 2),
+                'max_return_pct': max_ret_pct,
             })
         except Exception:
             continue
@@ -323,7 +479,45 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
         'win_rate_pct': win_rate,
         'avg_return_pct': avg_ret,
         'mdd_pct': mdd,
+        'avg_max_return_pct': round(sum(max_rets)/len(max_rets), 2) if max_rets else 0.0,
+        'max_max_return_pct': round(max(max_rets), 2) if max_rets else 0.0,
         'items': results,
+    }
+
+
+@app.post('/send_scan_result')
+def send_scan_result(to: str, top_n: int = 5):
+    """현재 /scan 결과 요약을 카카오 알림톡으로 발송하고 로그에 남긴다"""
+    # 최신 스캔 실행
+    resp = scan(save_snapshot=True)
+    msg = format_scan_message(resp.items, resp.matched_count, top_n=top_n)
+    result = send_alert(to, msg)
+    _log_send(to, resp.matched_count)
+    return {"status": "ok" if result.get('ok') else "fail", "matched_count": resp.matched_count, "sent_to": to, "provider": result}
+
+
+@app.post('/kakao_webhook')
+def kakao_webhook(body: dict):
+    """카카오 오픈빌더 Webhook: 사용자가 종목명/코드를 말하면 분석 요약을 반환"""
+    utterance = (body.get('utterance') or body.get('userRequest', {}).get('utterance') or '').strip()
+    if not utterance:
+        text = "분석할 종목명을 입력해 주세요. 예) 삼성전자"
+    else:
+        # analyze 호출
+        res = analyze(utterance)
+        if not res.ok:
+            text = f"분석 실패: {res.error}"
+        else:
+            it = res.item
+            text = f"{it.name}({it.ticker}) 분석: 점수 {int(it.score)} ({it.score_label or '-'})\n전략: {it.strategy}"
+    # 카카오 응답 포맷(간단 텍스트)
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {"simpleText": {"text": text}}
+            ]
+        }
     }
 
 @app.get('/analyze', response_model=AnalyzeResponse)
@@ -362,7 +556,7 @@ def analyze(name_or_code: str):
             OBV_SLOPE20=float(df.iloc[-1].get("OBV_SLOPE20", 0.0)) if "OBV_SLOPE20" in df.columns else 0.0,
             ABOVE_CNT5=int(((df["TEMA20"] > df["DEMA10"]).tail(5).sum()) if ("TEMA20" in df.columns and "DEMA10" in df.columns) else 0),
         ),
-        flags=flags,
+        flags=_as_score_flags(flags),
         score_label=str(flags.get("label")) if isinstance(flags, dict) else None,
         strategy=strategy_text(df),
     )

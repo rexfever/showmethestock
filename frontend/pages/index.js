@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchScan, fetchAnalyze, fetchUniverse, fetchSnapshots, fetchValidateFromSnapshot, reloadConfig } from '../lib/api';
+import { sendScanResult } from '../lib/api';
 import ResultTable from '../components/ResultTable';
 import ValidateTable from '../components/ValidateTable';
 
@@ -14,6 +15,9 @@ export default function Page() {
   const [last, setLast] = useState({ type: null, data: null });
   const [snapshots, setSnapshots] = useState([]);
   const [snapAsOf, setSnapAsOf] = useState('');
+  const [showDetails, setShowDetails] = useState((process.env.NEXT_PUBLIC_SHOW_DETAILS || '').toLowerCase() === 'true');
+  const [kakaoTo, setKakaoTo] = useState('010');
+  const [kakaoTopN, setKakaoTopN] = useState(5);
 
   const runScan = async () => {
     setLoading(true);
@@ -122,6 +126,22 @@ export default function Page() {
             {loading ? '검증중...' : '스냅샷 검증'}
           </button>
         </div>
+        <label className="ml-auto flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={showDetails} onChange={(e)=>setShowDetails(e.target.checked)} />
+          고급 지표 보기
+        </label>
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <input className="border rounded px-2 py-1 w-40" placeholder="수신번호(숫자)" value={kakaoTo} onChange={e=>setKakaoTo(e.target.value)} />
+        <input className="border rounded px-2 py-1 w-20" type="number" min={1} max={20} value={kakaoTopN} onChange={e=>setKakaoTopN(parseInt(e.target.value||'5',10))} />
+        <button className="px-3 py-2 bg-pink-600 text-white rounded" onClick={async()=>{
+          setLoading(true);
+          try{
+            const r = await sendScanResult(kakaoTo, kakaoTopN);
+            alert(r.status === 'ok' ? '발송 성공' : '발송 실패: ' + JSON.stringify(r.provider||r));
+          }catch(e){ alert('발송 오류: ' + String(e)); }
+          finally{ setLoading(false); }
+        }} disabled={loading}>카카오 발송</button>
       </div>
 
       {/* 최근 실행 결과 - 버튼 아래에만 표시 */}
@@ -132,7 +152,7 @@ export default function Page() {
             <div className="space-y-2">
               <div className="text-sm text-gray-600">as_of: {last.data.as_of}, universe: {last.data.universe_count}, matched: {last.data.matched_count}</div>
               <div className="text-xs text-gray-600">weights: {last.data.score_weights ? JSON.stringify(last.data.score_weights) : '-'}, levels: S {last.data.score_level_strong} / W {last.data.score_level_watch}, dema_mode: {last.data.require_dema_slope}</div>
-              <ResultTable items={last.data.items || []} />
+              <ResultTable items={last.data.items || []} showDetails={showDetails} />
             </div>
           )}
           {last.type === 'universe' && last.data && (
@@ -150,7 +170,7 @@ export default function Page() {
           )}
           {last.type === 'validate' && last.data && (
             <div className="space-y-2">
-              <div className="text-sm text-gray-600">snapshot: {last.data.snapshot_as_of}, top_k: {last.data.top_k}, count: {last.data.count}, win: {last.data.win_rate_pct}% avg: {last.data.avg_return_pct}% mdd: {last.data.mdd_pct}%</div>
+              <div className="text-sm text-gray-600">snapshot: {last.data.snapshot_as_of}, top_k: {last.data.top_k}, count: {last.data.count}, win: {last.data.win_rate_pct}% avg: {last.data.avg_return_pct}% mdd: {last.data.mdd_pct}% | 최대수익률 평균: {last.data.avg_max_return_pct}% 최대: {last.data.max_max_return_pct}%</div>
               <ValidateTable items={last.data.items || []} />
             </div>
           )}
