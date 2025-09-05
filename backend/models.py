@@ -76,3 +76,61 @@ class UniverseResponse(BaseModel):
     items: List[UniverseItem]
 
 
+class ValidateItem(BaseModel):
+    ticker: str
+    name: str
+    score_then: float
+    price_then: float
+    price_now: float
+    return_pct: float
+    max_return_pct: float
+    score_label_then: Optional[str] = None
+    strategy_then: Optional[str] = None
+
+
+class ValidateResponse(BaseModel):
+    as_of: str
+    snapshot_as_of: str
+    top_k: int
+    count: int
+    win_rate_pct: float
+    avg_return_pct: float
+    mdd_pct: float
+    avg_max_return_pct: float
+    max_max_return_pct: float
+    items: List[ValidateItem]
+
+
+class PositionItem(BaseModel):
+    id: Optional[int] = None
+    ticker: str
+    name: str
+    entry_date: str
+    entry_price: float
+    quantity: int
+    exit_date: Optional[str] = None
+    exit_price: Optional[float] = None
+    current_price: Optional[float] = None
+    return_pct: Optional[float] = None
+    return_amount: Optional[float] = None
+    status: str  # 'open' | 'closed'
+
+
+class PositionResponse(BaseModel):
+    items: List[PositionItem]
+    total_return_pct: Optional[float] = None
+    total_return_amount: Optional[float] = None
+
+
+class AddPositionRequest(BaseModel):
+    ticker: str
+    entry_date: str
+    entry_price: float
+    quantity: int
+
+
+class UpdatePositionRequest(BaseModel):
+    exit_date: Optional[str] = None
+    exit_price: Optional[float] = None
+
+

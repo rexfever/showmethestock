@@ -50,4 +50,64 @@ export async function sendScanResult(to, topN=5){
   return res.json();
 }
 
+export async function fetchPositions() {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + '/positions');
+  if (!res.ok) throw new Error('positions failed');
+  return res.json();
+}
+
+export async function addPosition(position) {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + '/positions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(position)
+  });
+  if (!res.ok) throw new Error('add_position failed');
+  return res.json();
+}
+
+export async function updatePosition(positionId, updateData) {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + `/positions/${positionId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updateData)
+  });
+  if (!res.ok) throw new Error('update_position failed');
+  return res.json();
+}
+
+export async function deletePosition(positionId) {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + `/positions/${positionId}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error('delete_position failed');
+  return res.json();
+}
+
+export async function fetchScanPositions() {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const res = await fetch(base + '/scan_positions');
+  if (!res.ok) throw new Error('scan_positions failed');
+  return res.json();
+}
+
+export async function autoAddPositions(scoreThreshold = 8, defaultQuantity = 10, entryDate = null) {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
+  const params = new URLSearchParams({
+    score_threshold: scoreThreshold.toString(),
+    default_quantity: defaultQuantity.toString()
+  });
+  if (entryDate) params.append('entry_date', entryDate);
+  
+  const res = await fetch(base + '/auto_add_positions?' + params, {
+    method: 'POST'
+  });
+  if (!res.ok) throw new Error('auto_add_positions failed');
+  return res.json();
+}
+
 

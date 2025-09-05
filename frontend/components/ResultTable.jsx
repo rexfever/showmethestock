@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { addPosition } from '../lib/api';
 function strategyActions(strategy) {
   if (!strategy) return '';
   const labels = String(strategy)
@@ -47,6 +48,43 @@ function labelMeta(label) {
 export default function ResultTable({ items, showDetails=false }) {
   const [openDetail, setOpenDetail] = useState(null);
   const [openLabel, setOpenLabel] = useState(null);
+  const [addingPosition, setAddingPosition] = useState(null);
+  const [positionForm, setPositionForm] = useState({
+    entry_date: new Date().toISOString().split('T')[0],
+    entry_price: '',
+    quantity: '10'
+  });
+
+  const handleAddPosition = async (ticker, name, currentPrice) => {
+    if (!positionForm.entry_price || !positionForm.quantity) {
+      alert('진입가와 수량을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const result = await addPosition({
+        ticker,
+        entry_date: positionForm.entry_date,
+        entry_price: parseFloat(positionForm.entry_price),
+        quantity: parseInt(positionForm.quantity)
+      });
+      
+      if (result.ok) {
+        alert(`${name} 포지션이 추가되었습니다.`);
+        setAddingPosition(null);
+        setPositionForm({
+          entry_date: new Date().toISOString().split('T')[0],
+          entry_price: '',
+          quantity: '10'
+        });
+      } else {
+        alert('포지션 추가 실패: ' + result.error);
+      }
+    } catch (e) {
+      alert('포지션 추가 오류: ' + String(e));
+    }
+  };
+
   if (!items || !items.length) return <div className="text-sm text-gray-500">결과 없음</div>;
   return (
     <div className="overflow-x-auto">
@@ -59,6 +97,7 @@ export default function ResultTable({ items, showDetails=false }) {
             <th className="p-2 text-left">종가</th>
             <th className="p-2 text-left">전략</th>
             <th className="p-2 text-left">액션</th>
+            <th className="p-2 text-left">포지션</th>
             <th className="p-2 text-left">상세</th>
           </tr>
         </thead>
@@ -114,6 +153,21 @@ export default function ResultTable({ items, showDetails=false }) {
               <td className="p-2">{it.details?.close ? Number(it.details.close).toLocaleString() : '-'}</td>
               <td className="p-2">{it.strategy}</td>
               <td className="p-2 text-gray-700">{strategyActions(it.strategy)}</td>
+              <td className="p-2">
+                <button
+                  className="px-2 py-1 text-xs rounded bg-green-100 text-green-800 hover:bg-green-200 border"
+                  onClick={() => {
+                    setAddingPosition(it.ticker);
+                    setPositionForm({
+                      entry_date: new Date().toISOString().split('T')[0],
+                      entry_price: it.details?.close?.toString() || '',
+                      quantity: '10'
+                    });
+                  }}
+                >
+                  포지션 추가
+                </button>
+              </td>
               <td className="p-2 relative">
                 {showDetails && (
                   <>
@@ -164,6 +218,76 @@ export default function ResultTable({ items, showDetails=false }) {
           ))}
         </tbody>
       </table>
+      
+      {/* 포지션 추가 모달 */}
+      {addingPosition && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-96">
+            <h3 className="text-lg font-semibold mb-4">포지션 추가</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">종목</label>
+                <div className="text-sm text-gray-600">
+                  {items.find(it => it.ticker === addingPosition)?.name} ({addingPosition})
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">진입일</label>
+                <input
+                  type="date"
+                  className="w-full border rounded px-3 py-2"
+                  value={positionForm.entry_date}
+                  onChange={(e) => setPositionForm({...positionForm, entry_date: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">진입가</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="진입가"
+                  value={positionForm.entry_price}
+                  onChange={(e) => setPositionForm({...positionForm, entry_price: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">수량</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="수량"
+                  value={positionForm.quantity}
+                  onChange={(e) => setPositionForm({...positionForm, quantity: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex gap-2">
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                onClick={() => {
+                  const item = items.find(it => it.ticker === addingPosition);
+                  handleAddPosition(addingPosition, item?.name, item?.details?.close);
+                }}
+              >
+                추가
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                onClick={() => {
+                  setAddingPosition(null);
+                  setPositionForm({
+                    entry_date: new Date().toISOString().split('T')[0],
+                    entry_price: '',
+                    quantity: '10'
+                  });
+                }}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

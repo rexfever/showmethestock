@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchScan, fetchAnalyze, fetchUniverse, fetchSnapshots, fetchValidateFromSnapshot, reloadConfig } from '../lib/api';
-import { sendScanResult } from '../lib/api';
+import { sendScanResult, fetchScanPositions, autoAddPositions } from '../lib/api';
 import ResultTable from '../components/ResultTable';
 import ValidateTable from '../components/ValidateTable';
+import Link from 'next/link';
 
 export default function Page() {
   const [data, setData] = useState(null);
@@ -18,6 +19,13 @@ export default function Page() {
   const [showDetails, setShowDetails] = useState((process.env.NEXT_PUBLIC_SHOW_DETAILS || '').toLowerCase() === 'true');
   const [kakaoTo, setKakaoTo] = useState('010');
   const [kakaoTopN, setKakaoTopN] = useState(5);
+  const [scanPositions, setScanPositions] = useState([]);
+  const [autoPositionSettings, setAutoPositionSettings] = useState({
+    scoreThreshold: 8,
+    defaultQuantity: 10,
+    entryDate: new Date().toISOString().split('T')[0],
+    autoAddOnScan: false
+  });
 
   const runScan = async () => {
     setLoading(true);
@@ -25,6 +33,23 @@ export default function Page() {
       const json = await fetchScan();
       setData(json);
       setLast({ type: 'scan', data: json });
+      
+      // 자동 포지션 추가 옵션이 켜져 있으면 실행
+      if (autoPositionSettings.autoAddOnScan) {
+        try {
+          const result = await autoAddPositions(
+            autoPositionSettings.scoreThreshold,
+            autoPositionSettings.defaultQuantity,
+            autoPositionSettings.entryDate
+          );
+          if (result.ok && result.added_count > 0) {
+            alert(`스캔 완료 후 ${result.added_count}개 종목이 자동으로 포지션에 추가되었습니다.`);
+            loadScanPositions(); // 포지션 목록 새로고침
+          }
+        } catch (e) {
+          console.error('Auto position add failed:', e);
+        }
+      }
     } catch (e) {
       setData({ error: String(e) });
     } finally {
@@ -60,17 +85,61 @@ export default function Page() {
 
   // 기존 /validate 제거 → 스냅샷 기반 검증만 사용
 
+  const loadScanPositions = async () => {
+    try {
+      const data = await fetchScanPositions();
+      setScanPositions(data.items || []);
+    } catch (e) {
+      console.error('Failed to load scan positions:', e);
+    }
+  };
+
+  const handleAutoAddPositions = async () => {
+    if (!confirm(`점수 ${autoPositionSettings.scoreThreshold} 이상인 종목들을 자동으로 포지션에 추가하시겠습니까?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await autoAddPositions(
+        autoPositionSettings.scoreThreshold,
+        autoPositionSettings.defaultQuantity,
+        autoPositionSettings.entryDate
+      );
+      
+      if (result.ok) {
+        alert(`${result.added_count}개 종목이 포지션에 추가되었습니다.`);
+        loadScanPositions(); // 포지션 목록 새로고침
+      } else {
+        alert('자동 포지션 추가 실패: ' + result.error);
+      }
+    } catch (e) {
+      alert('자동 포지션 추가 오류: ' + String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // 페이지 진입 시 자동으로 유니버스를 로드해 화면에 표시
     loadUniverse();
     // 스냅샷 목록 로드
     fetchSnapshots().then(r=>setSnapshots(r.items||[])).catch(()=>{});
+    // 스캔 포지션 로드
+    loadScanPositions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">국내주식 조건 스캐너</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">국내주식 조건 스캐너</h1>
+        <Link href="/positions">
+          <a className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+            포지션 관리
+          </a>
+        </Link>
+      </div>
 
       
 
@@ -92,6 +161,42 @@ export default function Page() {
         <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={runScan} disabled={loading}>
           {loading ? '실행중...' : '조건검색 실행 (/scan)'}
         </button>
+        
+        <div className="flex items-center gap-2 text-sm">
+          <span>자동포지션:</span>
+          <input 
+            className="border rounded px-2 py-1 w-16" 
+            type="number" 
+            min="1" 
+            max="20" 
+            value={autoPositionSettings.scoreThreshold} 
+            onChange={(e) => setAutoPositionSettings({...autoPositionSettings, scoreThreshold: parseInt(e.target.value)})}
+            title="점수 임계값"
+          />
+          <input 
+            className="border rounded px-2 py-1 w-16" 
+            type="number" 
+            min="1" 
+            value={autoPositionSettings.defaultQuantity} 
+            onChange={(e) => setAutoPositionSettings({...autoPositionSettings, defaultQuantity: parseInt(e.target.value)})}
+            title="기본 수량"
+          />
+          <button 
+            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700" 
+            onClick={handleAutoAddPositions} 
+            disabled={loading}
+          >
+            자동 추가
+          </button>
+          <label className="flex items-center gap-1 text-xs">
+            <input 
+              type="checkbox" 
+              checked={autoPositionSettings.autoAddOnScan}
+              onChange={(e) => setAutoPositionSettings({...autoPositionSettings, autoAddOnScan: e.target.checked})}
+            />
+            스캔시 자동추가
+          </label>
+        </div>
 
         <button className="px-4 py-2 bg-emerald-600 text-white rounded" onClick={loadUniverse} disabled={loading}>
           {loading ? '로딩...' : '유니버스 보기 (/universe)'}
@@ -143,6 +248,66 @@ export default function Page() {
           finally{ setLoading(false); }
         }} disabled={loading}>카카오 발송</button>
       </div>
+
+      {/* 스캔 포지션 현황 */}
+      {scanPositions.length > 0 && (
+        <div className="bg-white border rounded p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">스캔 포지션 현황</h3>
+            <button
+              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+              onClick={loadScanPositions}
+            >
+              새로고침
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-100 text-sm">
+                <tr>
+                  <th className="p-2 text-left">종목</th>
+                  <th className="p-2 text-left">진입일</th>
+                  <th className="p-2 text-left">진입가</th>
+                  <th className="p-2 text-left">현재가</th>
+                  <th className="p-2 text-left">수익률</th>
+                  <th className="p-2 text-left">수익금</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                {scanPositions.map((pos) => (
+                  <tr key={pos.position_id} className="border-t">
+                    <td className="p-2">
+                      <div>
+                        <div className="font-medium">{pos.name}</div>
+                        <div className="text-xs text-gray-500">({pos.ticker})</div>
+                      </div>
+                    </td>
+                    <td className="p-2">{pos.entry_date}</td>
+                    <td className="p-2">{pos.entry_price.toLocaleString()}원</td>
+                    <td className="p-2">
+                      {pos.current_price ? pos.current_price.toLocaleString() + '원' : '-'}
+                    </td>
+                    <td className="p-2">
+                      {pos.return_pct !== null ? (
+                        <span className={pos.return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {pos.return_pct.toFixed(2)}%
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="p-2">
+                      {pos.return_amount !== null ? (
+                        <span className={pos.return_amount >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {pos.return_amount.toLocaleString()}원
+                        </span>
+                      ) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* 최근 실행 결과 - 버튼 아래에만 표시 */}
       {last && last.type && (

@@ -1253,3 +1253,158 @@ INFO:     127.0.0.1:58297 - "GET /scan HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58645 - "GET /snapshots HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58644 - "GET /universe HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58682 - "GET /scan HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/models.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69755]
+INFO:     Started server process [96705]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [96705]
+INFO:     Started server process [96738]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [96738]
+INFO:     Started server process [96775]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [96775]
+INFO:     Started server process [96832]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'backend/models.py', 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [96832]
+INFO:     Started server process [97143]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59100 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59099 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59115 - "GET /positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59122 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59121 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59121 - "GET /positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59145 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59144 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59158 - "GET /analyze?name_or_code=%EC%97%90%EC%8A%A4%EC%BC%80%EC%9D%B4%EC%9D%B4%EB%85%B8%EB%B2%A0%EC%9D%B4%EC%85%98 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59226 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59357 - "GET /positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59486 - "GET /positions HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [97143]
+INFO:     Started server process [99735]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59521 - "GET /positions HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99735]
+INFO:     Started server process [212]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59588 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59587 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59586 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59586 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59708 - "GET /validate_from_snapshot?as_of=2025-08-19&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59801 - "GET /validate_from_snapshot?as_of=2025-08-20&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59852 - "GET /validate_from_snapshot?as_of=2025-08-21&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59898 - "GET /validate_from_snapshot?as_of=2025-08-22&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59948 - "GET /validate_from_snapshot?as_of=2025-08-25&top_k=20 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [212]
+INFO:     Started server process [3652]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:60140 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60139 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60138 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60140 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60139 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60138 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60168 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60167 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60138 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60185 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60184 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60183 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60203 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60202 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60201 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60220 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60219 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60201 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60237 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60236 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60235 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60254 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60253 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60235 - "GET /universe HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'backend/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3652]
+INFO:     Started server process [3876]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:60296 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60295 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60294 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60294 - "GET /positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60304 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60303 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60294 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60314 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60314 - "POST /auto_add_positions?score_threshold=8&default_quantity=10&entry_date=2025-09-04 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60314 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60551 - "GET /validate_from_snapshot?as_of=2025-09-02&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60594 - "GET /validate_from_snapshot?as_of=2025-09-01&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60643 - "GET /validate_from_snapshot?as_of=2025-08-30&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60728 - "GET /validate_from_snapshot?as_of=2025-08-19&top_k=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61419 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61418 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61420 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61447 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61446 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61448 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61448 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61473 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61491 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61490 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61492 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61492 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61671 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61692 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61709 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61719 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61726 - "GET /analyze?name_or_code=005930 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3876]
+INFO:     Stopping reloader process [90844]

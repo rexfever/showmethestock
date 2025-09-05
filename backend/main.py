@@ -9,7 +9,7 @@ import pandas as pd
 from backend.config import config, reload_from_env
 from backend.kiwoom_api import KiwoomAPI
 from backend.scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
-from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags
+from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest
 from backend.utils import is_code, normalize_code_or_name
 import sqlite3
 from backend.kakao import send_alert, format_scan_message
@@ -105,6 +105,33 @@ def _log_send(to: str, matched_count: int):
         cur.execute("CREATE TABLE IF NOT EXISTS send_logs(ts TEXT, to_no TEXT, matched_count INTEGER)")
         cur.execute("INSERT INTO send_logs(ts,to_no,matched_count) VALUES (?,?,?)", (datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), to, int(matched_count)))
         conn.commit(); conn.close()
+    except Exception:
+        pass
+
+def _init_positions_table():
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS positions(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                name TEXT NOT NULL,
+                entry_date TEXT NOT NULL,
+                entry_price REAL NOT NULL,
+                quantity INTEGER NOT NULL,
+                exit_date TEXT,
+                exit_price REAL,
+                current_price REAL,
+                return_pct REAL,
+                return_amount REAL,
+                status TEXT DEFAULT 'open',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        conn.close()
     except Exception:
         pass
 
@@ -561,4 +588,507 @@ def analyze(name_or_code: str):
         strategy=strategy_text(df),
     )
     return AnalyzeResponse(ok=True, item=item)
+
+
+@app.get('/positions', response_model=PositionResponse)
+def get_positions():
+    """포지션 목록 조회 (현재가 및 수익률 계산 포함)"""
+    _init_positions_table()
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        rows = cur.execute("SELECT * FROM positions ORDER BY created_at DESC").fetchall()
+        conn.close()
+        
+        items = []
+        total_return_amount = 0.0
+        total_investment = 0.0
+        
+        for row in rows:
+            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            
+            # 현재가 조회 (오픈 포지션만)
+            if status == 'open':
+                try:
+                    df = api.get_ohlcv(ticker, 5)
+                    if not df.empty:
+                        current_price = float(df.iloc[-1].close)
+                        return_pct = (current_price / entry_price - 1.0) * 100.0
+                        return_amount = (current_price - entry_price) * quantity
+                    else:
+                        current_price = None
+                        return_pct = None
+                        return_amount = None
+                except Exception:
+                    current_price = None
+                    return_pct = None
+                    return_amount = None
+            else:
+                # 종료된 포지션
+                if exit_price:
+                    return_pct = (exit_price / entry_price - 1.0) * 100.0
+                    return_amount = (exit_price - entry_price) * quantity
+                else:
+                    return_pct = None
+                    return_amount = None
+            
+            # 총 수익률 계산용
+            if return_amount is not None:
+                total_return_amount += return_amount
+            total_investment += entry_price * quantity
+            
+            items.append(PositionItem(
+                id=id_,
+                ticker=ticker,
+                name=name,
+                entry_date=entry_date,
+                entry_price=entry_price,
+                quantity=quantity,
+                exit_date=exit_date,
+                exit_price=exit_price,
+                current_price=current_price,
+                return_pct=return_pct,
+                return_amount=return_amount,
+                status=status
+            ))
+        
+        total_return_pct = (total_return_amount / total_investment * 100.0) if total_investment > 0 else 0.0
+        
+        return PositionResponse(
+            items=items,
+            total_return_pct=round(total_return_pct, 2),
+            total_return_amount=round(total_return_amount, 2)
+        )
+    except Exception as e:
+        return PositionResponse(items=[], total_return_pct=0.0, total_return_amount=0.0)
+
+
+@app.post('/positions', response_model=dict)
+def add_position(request: AddPositionRequest):
+    """새 포지션 추가"""
+    _init_positions_table()
+    try:
+        # 종목명 조회
+        name = api.get_stock_name(request.ticker)
+        if not name or name == request.ticker:
+            return {"ok": False, "error": "종목명 조회 실패"}
+        
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
+            VALUES (?, ?, ?, ?, ?, 'open')
+        """, (request.ticker, name, request.entry_date, request.entry_price, request.quantity))
+        conn.commit()
+        conn.close()
+        
+        return {"ok": True, "id": cur.lastrowid}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get('/scan_positions')
+def get_scan_positions():
+    """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
+    _init_positions_table()
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        
+        # 오픈 포지션만 조회
+        rows = cur.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY created_at DESC").fetchall()
+        conn.close()
+        
+        items = []
+        for row in rows:
+            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            
+            # 현재가 조회
+            try:
+                df = api.get_ohlcv(ticker, 5)
+                if not df.empty:
+                    current_price = float(df.iloc[-1].close)
+                    return_pct = (current_price / entry_price - 1.0) * 100.0
+                    return_amount = (current_price - entry_price) * quantity
+                else:
+                    current_price = None
+                    return_pct = None
+                    return_amount = None
+            except Exception:
+                current_price = None
+                return_pct = None
+                return_amount = None
+            
+            items.append({
+                'ticker': ticker,
+                'name': name,
+                'entry_date': entry_date,
+                'entry_price': entry_price,
+                'quantity': quantity,
+                'current_price': current_price,
+                'return_pct': return_pct,
+                'return_amount': return_amount,
+                'position_id': id_
+            })
+        
+        return {'items': items, 'count': len(items)}
+    except Exception as e:
+        return {'items': [], 'count': 0, 'error': str(e)}
+
+
+@app.post('/auto_add_positions')
+def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, entry_date: str = None):
+    """스캔 결과에서 조건을 만족하는 종목들을 자동으로 포지션에 추가"""
+    _init_positions_table()
+    try:
+        # 최신 스캔 결과 조회
+        kp = config.universe_kospi
+        kd = config.universe_kosdaq
+        kospi = api.get_top_codes('KOSPI', kp)
+        kosdaq = api.get_top_codes('KOSDAQ', kd)
+        universe = [*kospi, *kosdaq]
+
+        added_positions = []
+        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+
+        for code in universe:
+            try:
+                df = api.get_ohlcv(code, config.ohlcv_count)
+                if df.empty or len(df) < 21:
+                    continue
+                df = compute_indicators(df)
+                matched, sig_true, sig_total = match_stats(df)
+                score, flags = score_conditions(df)
+                
+                # 조건 확인: 점수가 임계값 이상이고 매치된 경우
+                if matched and score >= score_threshold:
+                    # 이미 포지션이 있는지 확인
+                    conn = sqlite3.connect(_db_path())
+                    cur = conn.cursor()
+                    existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
+                    
+                    if not existing:  # 기존 포지션이 없으면 추가
+                        name = api.get_stock_name(code)
+                        current_price = float(df.iloc[-1].close)
+                        
+                        cur.execute("""
+                            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
+                            VALUES (?, ?, ?, ?, ?, 'open')
+                        """, (code, name, entry_dt, current_price, default_quantity))
+                        conn.commit()
+                        
+                        added_positions.append({
+                            'ticker': code,
+                            'name': name,
+                            'entry_price': current_price,
+                            'quantity': default_quantity,
+                            'score': score
+                        })
+                    
+                    conn.close()
+            except Exception:
+                continue
+
+        return {
+            'ok': True,
+            'added_count': len(added_positions),
+            'positions': added_positions,
+            'criteria': {
+                'score_threshold': score_threshold,
+                'default_quantity': default_quantity,
+                'entry_date': entry_dt
+            }
+        }
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@app.put('/positions/{position_id}', response_model=dict)
+def update_position(position_id: int, request: UpdatePositionRequest):
+    """포지션 업데이트 (청산 처리)"""
+    _init_positions_table()
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        
+        # 기존 포지션 조회
+        row = cur.execute("SELECT * FROM positions WHERE id = ?", (position_id,)).fetchone()
+        if not row:
+            conn.close()
+            return {"ok": False, "error": "포지션을 찾을 수 없습니다"}
+        
+        id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+        
+        # 청산 처리
+        if request.exit_date and request.exit_price:
+            return_pct = (request.exit_price / entry_price - 1.0) * 100.0
+            return_amount = (request.exit_price - entry_price) * quantity
+            
+            cur.execute("""
+                UPDATE positions 
+                SET exit_date = ?, exit_price = ?, return_pct = ?, return_amount = ?, status = 'closed', updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (request.exit_date, request.exit_price, return_pct, return_amount, position_id))
+        else:
+            # 현재가만 업데이트
+            cur.execute("""
+                UPDATE positions 
+                SET current_price = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (request.exit_price, position_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get('/scan_positions')
+def get_scan_positions():
+    """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
+    _init_positions_table()
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        
+        # 오픈 포지션만 조회
+        rows = cur.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY created_at DESC").fetchall()
+        conn.close()
+        
+        items = []
+        for row in rows:
+            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            
+            # 현재가 조회
+            try:
+                df = api.get_ohlcv(ticker, 5)
+                if not df.empty:
+                    current_price = float(df.iloc[-1].close)
+                    return_pct = (current_price / entry_price - 1.0) * 100.0
+                    return_amount = (current_price - entry_price) * quantity
+                else:
+                    current_price = None
+                    return_pct = None
+                    return_amount = None
+            except Exception:
+                current_price = None
+                return_pct = None
+                return_amount = None
+            
+            items.append({
+                'ticker': ticker,
+                'name': name,
+                'entry_date': entry_date,
+                'entry_price': entry_price,
+                'quantity': quantity,
+                'current_price': current_price,
+                'return_pct': return_pct,
+                'return_amount': return_amount,
+                'position_id': id_
+            })
+        
+        return {'items': items, 'count': len(items)}
+    except Exception as e:
+        return {'items': [], 'count': 0, 'error': str(e)}
+
+
+@app.post('/auto_add_positions')
+def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, entry_date: str = None):
+    """스캔 결과에서 조건을 만족하는 종목들을 자동으로 포지션에 추가"""
+    _init_positions_table()
+    try:
+        # 최신 스캔 결과 조회
+        kp = config.universe_kospi
+        kd = config.universe_kosdaq
+        kospi = api.get_top_codes('KOSPI', kp)
+        kosdaq = api.get_top_codes('KOSDAQ', kd)
+        universe = [*kospi, *kosdaq]
+
+        added_positions = []
+        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+
+        for code in universe:
+            try:
+                df = api.get_ohlcv(code, config.ohlcv_count)
+                if df.empty or len(df) < 21:
+                    continue
+                df = compute_indicators(df)
+                matched, sig_true, sig_total = match_stats(df)
+                score, flags = score_conditions(df)
+                
+                # 조건 확인: 점수가 임계값 이상이고 매치된 경우
+                if matched and score >= score_threshold:
+                    # 이미 포지션이 있는지 확인
+                    conn = sqlite3.connect(_db_path())
+                    cur = conn.cursor()
+                    existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
+                    
+                    if not existing:  # 기존 포지션이 없으면 추가
+                        name = api.get_stock_name(code)
+                        current_price = float(df.iloc[-1].close)
+                        
+                        cur.execute("""
+                            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
+                            VALUES (?, ?, ?, ?, ?, 'open')
+                        """, (code, name, entry_dt, current_price, default_quantity))
+                        conn.commit()
+                        
+                        added_positions.append({
+                            'ticker': code,
+                            'name': name,
+                            'entry_price': current_price,
+                            'quantity': default_quantity,
+                            'score': score
+                        })
+                    
+                    conn.close()
+            except Exception:
+                continue
+
+        return {
+            'ok': True,
+            'added_count': len(added_positions),
+            'positions': added_positions,
+            'criteria': {
+                'score_threshold': score_threshold,
+                'default_quantity': default_quantity,
+                'entry_date': entry_dt
+            }
+        }
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+
+@app.delete('/positions/{position_id}', response_model=dict)
+def delete_position(position_id: int):
+    """포지션 삭제"""
+    _init_positions_table()
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        cur.execute("DELETE FROM positions WHERE id = ?", (position_id,))
+        conn.commit()
+        conn.close()
+        
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get('/scan_positions')
+def get_scan_positions():
+    """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
+    _init_positions_table()
+    try:
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        
+        # 오픈 포지션만 조회
+        rows = cur.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY created_at DESC").fetchall()
+        conn.close()
+        
+        items = []
+        for row in rows:
+            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            
+            # 현재가 조회
+            try:
+                df = api.get_ohlcv(ticker, 5)
+                if not df.empty:
+                    current_price = float(df.iloc[-1].close)
+                    return_pct = (current_price / entry_price - 1.0) * 100.0
+                    return_amount = (current_price - entry_price) * quantity
+                else:
+                    current_price = None
+                    return_pct = None
+                    return_amount = None
+            except Exception:
+                current_price = None
+                return_pct = None
+                return_amount = None
+            
+            items.append({
+                'ticker': ticker,
+                'name': name,
+                'entry_date': entry_date,
+                'entry_price': entry_price,
+                'quantity': quantity,
+                'current_price': current_price,
+                'return_pct': return_pct,
+                'return_amount': return_amount,
+                'position_id': id_
+            })
+        
+        return {'items': items, 'count': len(items)}
+    except Exception as e:
+        return {'items': [], 'count': 0, 'error': str(e)}
+
+
+@app.post('/auto_add_positions')
+def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, entry_date: str = None):
+    """스캔 결과에서 조건을 만족하는 종목들을 자동으로 포지션에 추가"""
+    _init_positions_table()
+    try:
+        # 최신 스캔 결과 조회
+        kp = config.universe_kospi
+        kd = config.universe_kosdaq
+        kospi = api.get_top_codes('KOSPI', kp)
+        kosdaq = api.get_top_codes('KOSDAQ', kd)
+        universe = [*kospi, *kosdaq]
+
+        added_positions = []
+        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+
+        for code in universe:
+            try:
+                df = api.get_ohlcv(code, config.ohlcv_count)
+                if df.empty or len(df) < 21:
+                    continue
+                df = compute_indicators(df)
+                matched, sig_true, sig_total = match_stats(df)
+                score, flags = score_conditions(df)
+                
+                # 조건 확인: 점수가 임계값 이상이고 매치된 경우
+                if matched and score >= score_threshold:
+                    # 이미 포지션이 있는지 확인
+                    conn = sqlite3.connect(_db_path())
+                    cur = conn.cursor()
+                    existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
+                    
+                    if not existing:  # 기존 포지션이 없으면 추가
+                        name = api.get_stock_name(code)
+                        current_price = float(df.iloc[-1].close)
+                        
+                        cur.execute("""
+                            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
+                            VALUES (?, ?, ?, ?, ?, 'open')
+                        """, (code, name, entry_dt, current_price, default_quantity))
+                        conn.commit()
+                        
+                        added_positions.append({
+                            'ticker': code,
+                            'name': name,
+                            'entry_price': current_price,
+                            'quantity': default_quantity,
+                            'score': score
+                        })
+                    
+                    conn.close()
+            except Exception:
+                continue
+
+        return {
+            'ok': True,
+            'added_count': len(added_positions),
+            'positions': added_positions,
+            'criteria': {
+                'score_threshold': score_threshold,
+                'default_quantity': default_quantity,
+                'entry_date': entry_dt
+            }
+        }
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
 
