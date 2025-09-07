@@ -1,0 +1,64 @@
+server {
+    listen 80;
+    server_name sohntech.ai.kr www.sohntech.ai.kr 52.79.61.207;
+    
+    # 모바일 페이지
+    location = /mobile {
+        alias /home/ubuntu/showmethestock/landing/mobile.html;
+    }
+    
+    # PC 페이지
+    location = /desktop {
+        alias /home/ubuntu/showmethestock/landing/desktop.html;
+    }
+    
+    # User-Agent 기반 라우팅
+    location / {
+        # 모바일 User-Agent 감지
+        if ($http_user_agent ~* "(Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone)") {
+            return 301 /mobile;
+        }
+        
+        # PC User-Agent (기본값)
+        return 301 /desktop;
+    }
+    
+    # 스캐너 (프론트엔드 Next.js)
+    location /scanner/ {
+        proxy_pass http://localhost:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # 랜딩 페이지 직접 접근
+    location /landing/ {
+        alias /home/ubuntu/showmethestock/landing/;
+        index index.html;
+        try_files $uri $uri/ /landing/index.html;
+    }
+    
+    # 랜딩 페이지 직접 접근
+    location = /landing {
+        return 301 /landing/;
+    }
+    
+    # 백엔드 API 프록시
+    location /api/ {
+        proxy_pass http://localhost:8010/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # 백엔드 API 직접 접근 (개발용)
+    location /backend/ {
+        proxy_pass http://localhost:8010/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
