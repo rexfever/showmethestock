@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>스톡인사이트 - 손테크</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            padding: 0 20px;
+        }
+
+        /* 모바일 헤더 */
+        .mobile-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 80%;
+            height: 100vh;
+            background: white;
+            transition: right 0.3s ease;
+            z-index: 1001;
+            padding: 20px;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .menu-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .mobile-menu ul {
+            list-style: none;
+        }
+
+        .mobile-menu li {
+            margin: 20px 0;
+        }
+
+        .mobile-menu a {
+            text-decoration: none;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        /* 모바일 히어로 섹션 */
+        .mobile-hero {
+            text-align: center;
+            padding: 100px 0 60px;
+            color: white;
+        }
+
+        .mobile-hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-hero .subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .mobile-hero .company {
+            font-size: 1rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .mobile-cta {
+            display: block;
+            background: #ff6b6b;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 20px auto;
+            width: fit-content;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            transition: transform 0.2s ease;
+        }
+
+        .mobile-cta:active {
+            transform: scale(0.95);
+        }
+
+        /* 모바일 기능 섹션 */
+        .mobile-features {
+            background: white;
+            padding: 40px 0;
+        }
+
+        .mobile-features h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .mobile-feature-card {
+            background: #f8f9fa;
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .mobile-feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .mobile-feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .mobile-feature-card p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* 모바일 회사소개 */
+        .mobile-about {
+            background: #f8f9fa;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .mobile-about h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .mobile-about p {
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        /* 모바일 연락처 */
+        .mobile-contact {
+            background: #333;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .mobile-contact h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        .mobile-contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            font-size: 0.95rem;
+        }
+
+        .mobile-contact-item span:first-child {
+            font-size: 1.2rem;
+        }
+
+        /* 모바일 푸터 */
+        .mobile-footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 30px 0;
+            font-size: 0.9rem;
+        }
+
+        /* 스캐너 접근 버튼 */
+        .scanner-access {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 999;
+        }
+
+        .scanner-access:hover {
+            transform: scale(1.1);
+        }
+
+        /* 오버레이 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 모바일 헤더 -->
+    <header class="mobile-header">
+        <nav class="mobile-nav container">
+            <div class="logo">스톡인사이트</div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        </nav>
+    </header>
+
+    <!-- 모바일 메뉴 -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="menu-close" onclick="toggleMenu()">✕</button>
+        <ul>
+            <li><a href="#home" onclick="toggleMenu()">홈</a></li>
+            <li><a href="#features" onclick="toggleMenu()">서비스</a></li>
+            <li><a href="#about" onclick="toggleMenu()">회사소개</a></li>
+            <li><a href="#contact" onclick="toggleMenu()">연락처</a></li>
+            <li><a href="/scanner/" onclick="toggleMenu()">스캐너</a></li>
+        </ul>
+    </div>
+
+    <!-- 오버레이 -->
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <main>
+        <!-- 모바일 히어로 섹션 -->
+        <section id="home" class="mobile-hero">
+            <div class="container">
+                <h1>스톡인사이트</h1>
+                <p class="subtitle">AI 기반 주식 분석<br>투자 인사이트 서비스</p>
+                <p class="company">손테크 (Sontech)</p>
+                <a href="#features" class="mobile-cta">서비스 알아보기</a>
+            </div>
+        </section>
+
+        <!-- 모바일 기능 섹션 -->
+        <section id="features" class="mobile-features">
+            <div class="container">
+                <h2>주요 서비스</h2>
+                
+                <div class="mobile-feature-card">
+                    <div class="mobile-feature-icon">📊</div>
+                    <h3>실시간 주식 분석</h3>
+                    <p>AI 알고리즘을 활용한 실시간 주식 데이터 분석</p>
+                </div>
+
+                <div class="mobile-feature-card">
+                    <div class="mobile-feature-icon">🔔</div>
+                    <h3>스마트 알림</h3>
+                    <p>카카오톡을 통한 투자 기회 알림</p>
+                </div>
+
+                <div class="mobile-feature-card">
+                    <div class="mobile-feature-icon">📈</div>
+                    <h3>투자 인사이트</h3>
+                    <p>데이터 기반 투자 추천 및 가이드</p>
+                </div>
+
+                <div class="mobile-feature-card">
+                    <div class="mobile-feature-icon">🛡️</div>
+                    <h3>리스크 관리</h3>
+                    <p>투자 리스크 분석 및 손실 최소화</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 모바일 회사소개 -->
+        <section id="about" class="mobile-about">
+            <div class="container">
+                <h2>손테크 소개</h2>
+                <p>
+                    손테크(Sontech)는 금융 기술(FinTech) 분야의 혁신을 선도하는 기업입니다.
+                </p>
+                <p>
+                    스톡인사이트는 AI와 빅데이터 분석을 활용하여 정확하고 신뢰할 수 있는 투자 정보를 제공합니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- 모바일 연락처 -->
+        <section id="contact" class="mobile-contact">
+            <div class="container">
+                <h2>연락처</h2>
+                <p>문의사항이 있으시면 언제든 연락주세요.</p>
+                
+                <div class="mobile-contact-item">
+                    <span>📧</span>
+                    <span>chicnova@gmail.com</span>
+                </div>
+                <div class="mobile-contact-item">
+                    <span>📞</span>
+                    <span>010-4220-0956</span>
+                </div>
+                <div class="mobile-contact-item">
+                    <span>🏢</span>
+                    <span>서울시 송파구 올림픽로 435<br>115동 1804호(신천동, 파크리오)</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 모바일 푸터 -->
+    <footer class="mobile-footer">
+        <div class="container">
+            <p>&copy; 2025 손테크(Sontech). All rights reserved.</p>
+            <p>스톡인사이트 서비스</p>
+        </div>
+    </footer>
+
+    <!-- 스캐너 접근 버튼 -->
+    <a href="/scanner/" class="scanner-access" title="스캐너 접근">📱</a>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('overlay');
+            
+            menu.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // 부드러운 스크롤 효과
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 터치 이벤트 최적화
+        document.addEventListener('touchstart', function() {}, {passive: true});
+        document.addEventListener('touchmove', function() {}, {passive: true});
+    </script>
+</body>
+</html>
+
