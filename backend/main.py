@@ -7,6 +7,7 @@ from typing import List
 import pandas as pd
 
 from backend.config import config, reload_from_env
+from backend.environment import get_environment_info
 from backend.kiwoom_api import KiwoomAPI
 from backend.scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
 from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest
@@ -34,6 +35,28 @@ api = KiwoomAPI()
 @app.get('/')
 def root():
     return {'status': 'running'}
+
+
+@app.get('/environment')
+def get_environment():
+    """현재 실행 환경 정보 반환"""
+    env_info = get_environment_info()
+    return {
+        'environment': env_info['environment'],
+        'is_local': env_info['is_local'],
+        'is_server': env_info['is_server'],
+        'hostname': env_info['hostname'],
+        'local_ip': env_info['local_ip'],
+        'working_directory': env_info['working_directory'],
+        'user': env_info['user'],
+        'config': {
+            'environment': config.environment,
+            'is_local': config.is_local,
+            'is_server': config.is_server,
+            'universe_kospi': config.universe_kospi,
+            'universe_kosdaq': config.universe_kosdaq,
+        }
+    }
 
 
 @app.post('/_reload_config')

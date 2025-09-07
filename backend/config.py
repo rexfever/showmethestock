@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 import json
 from dotenv import load_dotenv
+from .environment import env_detector, get_config_overrides
 
 
 # 1) 루트 .env 로드
@@ -14,14 +15,21 @@ if os.path.exists(backend_env_path):
 
 @dataclass
 class Config:
+    # 환경 정보
+    environment: str = env_detector.environment
+    is_local: bool = env_detector.is_local
+    is_server: bool = env_detector.is_server
+    
     app_key: str = os.getenv("APP_KEY", "")
     app_secret: str = os.getenv("APP_SECRET", "")
     api_base: str = os.getenv("API_BASE", "https://api.kiwoom.com")
     # 키움 REST 토큰 경로
     token_path: str = os.getenv("TOKEN_PATH", "/oauth2/token")
 
-    universe_kospi: int = int(os.getenv("UNIVERSE_KOSPI", "25"))
-    universe_kosdaq: int = int(os.getenv("UNIVERSE_KOSDAQ", "25"))
+    # 환경별 기본값 적용
+    _env_overrides = get_config_overrides()
+    universe_kospi: int = int(os.getenv("UNIVERSE_KOSPI", str(_env_overrides.get("universe_kospi", 25))))
+    universe_kosdaq: int = int(os.getenv("UNIVERSE_KOSDAQ", str(_env_overrides.get("universe_kosdaq", 25))))
     ohlcv_count: int = int(os.getenv("OHLCV_COUNT", "220"))
 
     macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "-10"))
