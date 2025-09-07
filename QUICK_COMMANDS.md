@@ -2,6 +2,15 @@
 
 ## 🔧 자주 사용하는 명령어
 
+### 로컬 PC 구동
+```bash
+# 백엔드 실행
+cd /Users/rexsmac/workspace/stock-finder/backend && source venv/bin/activate && PYTHONPATH=/Users/rexsmac/workspace/stock-finder nohup uvicorn main:app --host 127.0.0.1 --port 8010 > backend.log 2>&1 &
+
+# 프론트엔드 실행
+cd /Users/rexsmac/workspace/stock-finder/frontend && npm run dev
+```
+
 ### 서버 접속 및 상태 확인
 ```bash
 # 서버 상태 확인
@@ -49,7 +58,12 @@ ssh -o StrictHostKeyChecking=no ubuntu@52.79.61.207 "cd /home/ubuntu/showmethest
 
 ### 웹사이트 테스트
 ```bash
-# HTTP 상태 확인
+# 로컬 테스트
+curl -s http://127.0.0.1:8010/  # 백엔드
+curl -s http://127.0.0.1:3000/  # 프론트엔드
+curl -s http://127.0.0.1:8010/environment  # 환경 정보
+
+# 서버 테스트
 curl -s -o /dev/null -w "%{http_code}" https://sohntech.ai.kr/
 curl -s -o /dev/null -w "%{http_code}" https://sohntech.ai.kr/scanner
 curl -s -o /dev/null -w "%{http_code}" https://sohntech.ai.kr/api/universe

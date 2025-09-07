@@ -17,19 +17,28 @@
 ## 🔧 개발 작업 워크플로우
 
 ### 로컬 개발
-1. **코드 수정**
+1. **로컬 서비스 시작**
+   ```bash
+   # 백엔드 실행
+   cd /Users/rexsmac/workspace/stock-finder/backend && source venv/bin/activate && PYTHONPATH=/Users/rexsmac/workspace/stock-finder nohup uvicorn main:app --host 127.0.0.1 --port 8010 > backend.log 2>&1 &
+   
+   # 프론트엔드 실행
+   cd /Users/rexsmac/workspace/stock-finder/frontend && npm run dev
+   ```
+
+2. **코드 수정**
    - 파일 읽기 → 수정 → 검증
    - 린트 오류 확인 및 수정
-   - 로컬 테스트
+   - 로컬 테스트 (`http://127.0.0.1:8010/`, `http://127.0.0.1:3000/`)
 
-2. **Git 관리**
+3. **Git 관리**
    ```bash
    git add .
    git commit -m "명확한 커밋 메시지"
    git push origin main
    ```
 
-3. **서버 배포**
+4. **서버 배포**
    ```bash
    # GitHub을 통한 배포 (권장)
    ssh -o StrictHostKeyChecking=no ubuntu@[IP] "cd /home/ubuntu/showmethestock && git pull origin main"
