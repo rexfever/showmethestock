@@ -10,3 +10,17 @@ INFO:     127.0.0.1:59058 - "GET /universe HTTP/1.1" 200 OK
 INFO:     127.0.0.1:59339 - "GET /snapshots HTTP/1.1" 200 OK
 INFO:     127.0.0.1:59338 - "GET /universe HTTP/1.1" 200 OK
 INFO:     127.0.0.1:59340 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60213 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60212 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60214 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60212 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60247 - "GET /scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60265 - "GET /snapshots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60264 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60266 - "GET /scan_positions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60299 - "GET /universe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60307 - "GET /environment HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [94191]
