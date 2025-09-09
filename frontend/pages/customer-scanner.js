@@ -12,7 +12,8 @@ export default function CustomerScanner({ initialData }) {
   const fetchScanResults = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/backend/latest-scan');
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8010';
+      const response = await fetch(`${base}/latest-scan`);
       const data = await response.json();
       console.log('최신 스캔 결과:', data);
       
@@ -297,7 +298,8 @@ export default function CustomerScanner({ initialData }) {
 export async function getServerSideProps() {
   try {
     // 서버에서 백엔드 API 호출
-    const response = await fetch('http://localhost:8010/latest-scan');
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8010';
+    const response = await fetch(`${base}/latest-scan`);
     const data = await response.json();
     
     if (data.ok && data.data) {

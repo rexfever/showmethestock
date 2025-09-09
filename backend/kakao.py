@@ -20,6 +20,27 @@ def format_scan_message(items, matched_count, top_n=5):
     return "\n".join(lines)
 
 
+def format_scan_alert_message(matched_count: int, scan_date: str = None, user_name: str = None) -> str:
+    """스캔 결과 알림톡 메시지 포맷팅 (고객용 스캔 화면 링크 포함)"""
+    if scan_date is None:
+        scan_date = datetime.now().strftime("%Y년 %m월 %d일")
+    
+    # 기본 템플릿 사용
+    message = f"""📊 스톡인사이트 일일 스캔 결과
+
+안녕하세요! 오늘의 주식 스캔 결과를 알려드립니다.
+
+🎯 매칭 종목: {matched_count}개
+📈 강한 매수 신호 종목들이 발견되었습니다!
+
+상세 정보는 아래 링크에서 확인하세요:
+🔗 https://sohntech.ai.kr/customer-scanner
+
+스톡인사이트"""
+    
+    return message
+
+
 def send_alert(to: str, message: str) -> dict:
     if not SOLAPI_API_KEY:
         # 임시: 콘솔 출력으로 테스트

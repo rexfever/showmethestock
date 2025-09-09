@@ -13,7 +13,7 @@ from backend.scanner import compute_indicators, match_condition, match_stats, st
 from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest
 from backend.utils import is_code, normalize_code_or_name
 import sqlite3
-from backend.kakao import send_alert, format_scan_message
+from backend.kakao import send_alert, format_scan_message, format_scan_alert_message
 import glob
 
 
@@ -540,10 +540,20 @@ def send_scan_result(to: str, top_n: int = 5):
     """현재 /scan 결과 요약을 카카오 알림톡으로 발송하고 로그에 남긴다"""
     # 최신 스캔 실행
     resp = scan(save_snapshot=True)
-    msg = format_scan_message(resp.items, resp.matched_count, top_n=top_n)
+    
+    # 새로운 알림톡 템플릿 사용 (고객용 스캔 화면 링크 포함)
+    msg = format_scan_alert_message(resp.matched_count)
+    
     result = send_alert(to, msg)
     _log_send(to, resp.matched_count)
-    return {"status": "ok" if result.get('ok') else "fail", "matched_count": resp.matched_count, "sent_to": to, "provider": result}
+    
+    return {
+        "status": "ok" if result.get('ok') else "fail", 
+        "matched_count": resp.matched_count, 
+        "sent_to": to, 
+        "message_preview": msg[:100] + "...",
+        "provider": result
+    }
 
 
 @app.post('/kakao_webhook')
