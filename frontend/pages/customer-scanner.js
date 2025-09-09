@@ -12,11 +12,14 @@ export default function CustomerScanner() {
   const fetchScanResults = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/backend/scan');
+      const response = await fetch('http://localhost:8010/scan');
       const data = await response.json();
+      console.log('스캔 결과:', data);
       setScanResults(data.items || []);
     } catch (error) {
       console.error('스캔 결과 조회 실패:', error);
+      // 오류 시 빈 배열로 설정
+      setScanResults([]);
     } finally {
       setLoading(false);
     }
@@ -37,8 +40,8 @@ export default function CustomerScanner() {
   // 정렬
   const sortedResults = [...filteredResults].sort((a, b) => {
     if (sortBy === 'score') return (b.score || 0) - (a.score || 0);
-    if (sortBy === 'price') return (b.currentPrice || 0) - (a.currentPrice || 0);
-    if (sortBy === 'change') return (b.changeRate || 0) - (a.changeRate || 0);
+    if (sortBy === 'price') return (b.details?.close || 0) - (a.details?.close || 0);
+    if (sortBy === 'change') return (b.score || 0) - (a.score || 0); // 점수로 정렬
     return 0;
   });
 
@@ -189,35 +192,31 @@ export default function CustomerScanner() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-gray-800">
-                      {item.currentPrice?.toLocaleString() || '-'}
+                      {item.details?.close?.toLocaleString() || '-'}
                     </div>
-                    <div className={`text-sm ${getReturnColor(item.changeRate)}`}>
-                      {item.changeRate ? `${item.changeRate > 0 ? '+' : ''}${item.changeRate.toFixed(2)}%` : '0.00%'}
+                    <div className="text-sm text-gray-500">
+                      {item.score_label || '-'}
                     </div>
                   </div>
                 </div>
 
-                {/* 포지션 정보 */}
+                {/* 스캔 정보 */}
                 <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                   <div>
-                    <span className="text-gray-500">진입일:</span>
-                    <span className="ml-2 text-gray-800">
-                      {item.entryDate ? new Date(item.entryDate).toLocaleDateString('ko-KR') : '-'}
-                    </span>
+                    <span className="text-gray-500">전략:</span>
+                    <span className="ml-2 text-gray-800">{item.strategy || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">진입후수익률:</span>
-                    <span className={`ml-2 font-medium ${getReturnColor(item.currentReturnPct)}`}>
-                      {item.currentReturnPct ? `${item.currentReturnPct > 0 ? '+' : ''}${item.currentReturnPct.toFixed(2)}%` : '-'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">보유주수:</span>
-                    <span className="ml-2 text-gray-800">{item.quantity || 0}주</span>
+                    <span className="text-gray-500">액션:</span>
+                    <span className="ml-2 text-gray-800">{item.action || '-'}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">점수:</span>
                     <span className="ml-2 text-gray-800">{item.score || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">시장:</span>
+                    <span className="ml-2 text-gray-800">{item.market || '-'}</span>
                   </div>
                 </div>
 
