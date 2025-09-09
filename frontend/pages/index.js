@@ -141,13 +141,12 @@ export default function Page() {
             </button>
           </Link>
           <Link href="/positions">
-          <a className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
-            포지션 관리
-          </a>
-        </Link>
+            <a className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+              포지션 관리
+            </a>
+          </Link>
+        </div>
       </div>
-
-      
 
       {/* 전략 라벨 설명 + 현재 가중치 */}
       <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm leading-6">
