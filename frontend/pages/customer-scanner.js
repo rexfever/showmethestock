@@ -17,7 +17,7 @@ export default function CustomerScanner() {
       console.log('최신 스캔 결과:', data);
       
       if (data.ok && data.data) {
-        setScanResults(data.data.items || []);
+        setScanResults(data.data.rank || []);
       } else {
         console.error('스캔 결과 조회 실패:', data.error);
         setScanResults([]);
