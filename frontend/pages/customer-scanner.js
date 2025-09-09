@@ -8,17 +8,22 @@ export default function CustomerScanner() {
   const [sortBy, setSortBy] = useState('score');
   const [filterBy, setFilterBy] = useState('전체종목');
 
-  // 스캔 결과 가져오기
+  // 최신 스캔 결과 가져오기
   const fetchScanResults = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8010/scan');
+      const response = await fetch('http://localhost:8010/latest-scan');
       const data = await response.json();
-      console.log('스캔 결과:', data);
-      setScanResults(data.items || []);
+      console.log('최신 스캔 결과:', data);
+      
+      if (data.ok && data.data) {
+        setScanResults(data.data.items || []);
+      } else {
+        console.error('스캔 결과 조회 실패:', data.error);
+        setScanResults([]);
+      }
     } catch (error) {
       console.error('스캔 결과 조회 실패:', error);
-      // 오류 시 빈 배열로 설정
       setScanResults([]);
     } finally {
       setLoading(false);
@@ -27,6 +32,11 @@ export default function CustomerScanner() {
 
   useEffect(() => {
     fetchScanResults();
+    
+    // 5분마다 자동 새로고침
+    const interval = setInterval(fetchScanResults, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // 시장별 필터링
@@ -169,12 +179,7 @@ export default function CustomerScanner() {
           ) : sortedResults.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">스캔 결과가 없습니다.</p>
-              <button
-                onClick={fetchScanResults}
-                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
-              >
-                다시 스캔
-              </button>
+              <p className="text-sm text-gray-400 mt-2">자동 스캔 결과를 기다리는 중...</p>
             </div>
           ) : (
             sortedResults.map((item) => (

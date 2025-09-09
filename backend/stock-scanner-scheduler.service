@@ -1,0 +1,15 @@
+[Unit]
+Description=Stock Scanner Auto Scheduler
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/showmethestock
+Environment=PATH=/home/ubuntu/showmethestock/backend/venv/bin
+ExecStart=/home/ubuntu/showmethestock/backend/venv/bin/python /home/ubuntu/showmethestock/backend/scheduler.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

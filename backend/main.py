@@ -14,6 +14,7 @@ from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayloa
 from backend.utils import is_code, normalize_code_or_name
 import sqlite3
 from backend.kakao import send_alert, format_scan_message
+import glob
 
 
 app = FastAPI(title='Stock Scanner API')
@@ -1172,3 +1173,27 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
     except Exception as e:
         return {'ok': False, 'error': str(e)}
 
+
+@app.get("/latest-scan")
+async def get_latest_scan():
+    """최신 스캔 결과를 가져옵니다."""
+    try:
+        # 스냅샷 파일들 중에서 가장 최신 파일 찾기
+        snapshot_files = glob.glob("backend/snapshots/scan-*.json")
+        auto_scan_files = glob.glob("backend/snapshots/auto-scan-*.json")
+        
+        all_files = snapshot_files + auto_scan_files
+        
+        if not all_files:
+            return {"ok": False, "error": "스캔 결과가 없습니다."}
+        
+        # 파일명에서 날짜 추출하여 정렬
+        latest_file = max(all_files, key=lambda x: x.split("-")[-1].replace(".json", ""))
+        
+        with open(latest_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        return {"ok": True, "data": data, "file": latest_file}
+        
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
