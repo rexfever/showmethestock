@@ -3,10 +3,9 @@ import json
 import requests
 from datetime import datetime
 
-KAKAO_API_BASE = os.getenv('KAKAO_API_BASE', 'https://api.solapi.com')
-KAKAO_API_KEY = os.getenv('KAKAO_API_KEY', '')
-KAKAO_SENDER_KEY = os.getenv('KAKAO_SENDER_KEY', '')
-KAKAO_TEMPLATE_ID = os.getenv('KAKAO_TEMPLATE_ID', '')
+SOLAPI_API_BASE = os.getenv('SOLAPI_API_BASE', 'https://api.solapi.com')
+SOLAPI_API_KEY = os.getenv('SOLAPI_API_KEY', '')
+SOLAPI_API_SECRET = os.getenv('SOLAPI_API_SECRET', '')
 
 
 def format_scan_message(items, matched_count, top_n=5):
@@ -22,25 +21,25 @@ def format_scan_message(items, matched_count, top_n=5):
 
 
 def send_alert(to: str, message: str) -> dict:
-    if not (KAKAO_API_KEY and KAKAO_SENDER_KEY and KAKAO_TEMPLATE_ID):
-        return {"ok": False, "error": "kakao env not set"}
-    url = f"{KAKAO_API_BASE}/messages/v4/send"
+    if not SOLAPI_API_KEY:
+        # 임시: 콘솔 출력으로 테스트
+        print(f"카카오 알림톡 발송 테스트:")
+        print(f"수신자: {to}")
+        print(f"메시지: {message}")
+        return {"ok": True, "response": {"test": True, "message": "콘솔 출력으로 테스트 완료"}}
+    
+    url = f"{SOLAPI_API_BASE}/messages/v4/send"
     headers = {
         "Content-Type": "application/json; charset=utf-8",
-        "Authorization": f"HMAC-SHA256 {KAKAO_API_KEY}",
+        "Authorization": f"HMAC-SHA256 {SOLAPI_API_KEY}",
     }
     payload = {
-        "messageType": "ATA",
-        "senderKey": KAKAO_SENDER_KEY,
-        "templateId": KAKAO_TEMPLATE_ID,
-        "recipientList": [
-            {
-                "recipientNo": to,
-                "templateParameter": {
-                    "content": message,
-                },
-            }
-        ],
+        "message": {
+            "to": to,
+            "from": "010-4220-0956",  # 발신번호
+            "text": message,
+            "type": "ATA",  # 알림톡
+        }
     }
     try:
         resp = requests.post(url, json=payload, headers=headers, timeout=10)

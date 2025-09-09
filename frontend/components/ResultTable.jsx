@@ -51,13 +51,12 @@ export default function ResultTable({ items, showDetails=false }) {
   const [addingPosition, setAddingPosition] = useState(null);
   const [positionForm, setPositionForm] = useState({
     entry_date: new Date().toISOString().split('T')[0],
-    entry_price: '',
     quantity: '10'
   });
 
-  const handleAddPosition = async (ticker, name, currentPrice) => {
-    if (!positionForm.entry_price || !positionForm.quantity) {
-      alert('진입가와 수량을 입력해주세요.');
+  const handleAddPosition = async (ticker, name, score, strategy) => {
+    if (!positionForm.quantity) {
+      alert('수량을 입력해주세요.');
       return;
     }
 
@@ -65,8 +64,9 @@ export default function ResultTable({ items, showDetails=false }) {
       const result = await addPosition({
         ticker,
         entry_date: positionForm.entry_date,
-        entry_price: parseFloat(positionForm.entry_price),
-        quantity: parseInt(positionForm.quantity)
+        quantity: parseInt(positionForm.quantity),
+        score: score,
+        strategy: strategy
       });
       
       if (result.ok) {
@@ -74,7 +74,6 @@ export default function ResultTable({ items, showDetails=false }) {
         setAddingPosition(null);
         setPositionForm({
           entry_date: new Date().toISOString().split('T')[0],
-          entry_price: '',
           quantity: '10'
         });
       } else {
@@ -160,7 +159,6 @@ export default function ResultTable({ items, showDetails=false }) {
                     setAddingPosition(it.ticker);
                     setPositionForm({
                       entry_date: new Date().toISOString().split('T')[0],
-                      entry_price: it.details?.close?.toString() || '',
                       quantity: '10'
                     });
                   }}
@@ -241,16 +239,6 @@ export default function ResultTable({ items, showDetails=false }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">진입가</label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="진입가"
-                  value={positionForm.entry_price}
-                  onChange={(e) => setPositionForm({...positionForm, entry_price: e.target.value})}
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-1">수량</label>
                 <input
                   type="number"
@@ -266,7 +254,7 @@ export default function ResultTable({ items, showDetails=false }) {
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 onClick={() => {
                   const item = items.find(it => it.ticker === addingPosition);
-                  handleAddPosition(addingPosition, item?.name, item?.details?.close);
+                  handleAddPosition(addingPosition, item?.name, item?.score, item?.strategy);
                 }}
               >
                 추가
@@ -277,7 +265,6 @@ export default function ResultTable({ items, showDetails=false }) {
                   setAddingPosition(null);
                   setPositionForm({
                     entry_date: new Date().toISOString().split('T')[0],
-                    entry_price: '',
                     quantity: '10'
                   });
                 }}

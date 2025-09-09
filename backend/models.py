@@ -106,31 +106,29 @@ class PositionItem(BaseModel):
     ticker: str
     name: str
     entry_date: str
-    entry_price: float
     quantity: int
+    score: Optional[int] = None
+    strategy: Optional[str] = None
+    current_return_pct: Optional[float] = None
+    max_return_pct: Optional[float] = None
     exit_date: Optional[str] = None
-    exit_price: Optional[float] = None
-    current_price: Optional[float] = None
-    return_pct: Optional[float] = None
-    return_amount: Optional[float] = None
     status: str  # 'open' | 'closed'
 
 
 class PositionResponse(BaseModel):
     items: List[PositionItem]
     total_return_pct: Optional[float] = None
-    total_return_amount: Optional[float] = None
 
 
 class AddPositionRequest(BaseModel):
     ticker: str
     entry_date: str
-    entry_price: float
     quantity: int
+    score: Optional[int] = None
+    strategy: Optional[str] = None
 
 
 class UpdatePositionRequest(BaseModel):
     exit_date: Optional[str] = None
-    exit_price: Optional[float] = None
 
 

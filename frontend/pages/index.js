@@ -134,7 +134,13 @@ export default function Page() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">국내주식 조건 스캐너</h1>
-        <Link href="/positions">
+        <div className="flex items-center gap-3">
+          <Link href="/customer-scanner">
+            <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+              고객용 스캐너
+            </button>
+          </Link>
+          <Link href="/positions">
           <a className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
             포지션 관리
           </a>
@@ -267,10 +273,10 @@ export default function Page() {
                 <tr>
                   <th className="p-2 text-left">종목</th>
                   <th className="p-2 text-left">진입일</th>
-                  <th className="p-2 text-left">진입가</th>
-                  <th className="p-2 text-left">현재가</th>
-                  <th className="p-2 text-left">수익률</th>
-                  <th className="p-2 text-left">수익금</th>
+                  <th className="p-2 text-left">점수(당시)</th>
+                  <th className="p-2 text-left">전략(당시)</th>
+                  <th className="p-2 text-left">현재 수익률(%)</th>
+                  <th className="p-2 text-left">기간내 최대 수익률(%)</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -283,21 +289,23 @@ export default function Page() {
                       </div>
                     </td>
                     <td className="p-2">{pos.entry_date}</td>
-                    <td className="p-2">{pos.entry_price.toLocaleString()}원</td>
                     <td className="p-2">
-                      {pos.current_price ? pos.current_price.toLocaleString() + '원' : '-'}
+                      {pos.score !== null ? pos.score : '-'}
                     </td>
                     <td className="p-2">
-                      {pos.return_pct !== null ? (
-                        <span className={pos.return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {pos.return_pct.toFixed(2)}%
+                      {pos.strategy || '-'}
+                    </td>
+                    <td className="p-2">
+                      {pos.current_return_pct !== null ? (
+                        <span className={pos.current_return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {pos.current_return_pct.toFixed(2)}%
                         </span>
                       ) : '-'}
                     </td>
                     <td className="p-2">
-                      {pos.return_amount !== null ? (
-                        <span className={pos.return_amount >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {pos.return_amount.toLocaleString()}원
+                      {pos.max_return_pct !== null ? (
+                        <span className={pos.max_return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {pos.max_return_pct.toFixed(2)}%
                         </span>
                       ) : '-'}
                     </td>

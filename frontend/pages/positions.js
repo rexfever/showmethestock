@@ -191,11 +191,11 @@ export default function PositionsPage() {
               <tr>
                 <th className="p-3 text-left">종목</th>
                 <th className="p-3 text-left">진입일</th>
-                <th className="p-3 text-left">진입가</th>
                 <th className="p-3 text-left">수량</th>
-                <th className="p-3 text-left">현재가</th>
-                <th className="p-3 text-left">수익률</th>
-                <th className="p-3 text-left">수익금</th>
+                <th className="p-3 text-left">점수(당시)</th>
+                <th className="p-3 text-left">전략(당시)</th>
+                <th className="p-3 text-left">현재 수익률(%)</th>
+                <th className="p-3 text-left">기간내 최대 수익률(%)</th>
                 <th className="p-3 text-left">상태</th>
                 <th className="p-3 text-left">액션</th>
               </tr>
@@ -210,22 +210,24 @@ export default function PositionsPage() {
                     </div>
                   </td>
                   <td className="p-3">{position.entry_date}</td>
-                  <td className="p-3">{position.entry_price.toLocaleString()}원</td>
                   <td className="p-3">{position.quantity}주</td>
                   <td className="p-3">
-                    {position.current_price ? position.current_price.toLocaleString() + '원' : '-'}
+                    {position.score !== null ? position.score : '-'}
                   </td>
                   <td className="p-3">
-                    {position.return_pct !== null ? (
-                      <span className={position.return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {position.return_pct.toFixed(2)}%
+                    {position.strategy || '-'}
+                  </td>
+                  <td className="p-3">
+                    {position.current_return_pct !== null ? (
+                      <span className={position.current_return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        {position.current_return_pct.toFixed(2)}%
                       </span>
                     ) : '-'}
                   </td>
                   <td className="p-3">
-                    {position.return_amount !== null ? (
-                      <span className={position.return_amount >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {position.return_amount.toLocaleString()}원
+                    {position.max_return_pct !== null ? (
+                      <span className={position.max_return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        {position.max_return_pct.toFixed(2)}%
                       </span>
                     ) : '-'}
                   </td>

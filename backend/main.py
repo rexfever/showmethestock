@@ -141,13 +141,12 @@ def _init_positions_table():
                 ticker TEXT NOT NULL,
                 name TEXT NOT NULL,
                 entry_date TEXT NOT NULL,
-                entry_price REAL NOT NULL,
                 quantity INTEGER NOT NULL,
+                score INTEGER,
+                strategy TEXT,
+                current_return_pct REAL,
+                max_return_pct REAL,
                 exit_date TEXT,
-                exit_price REAL,
-                current_price REAL,
-                return_pct REAL,
-                return_amount REAL,
                 status TEXT DEFAULT 'open',
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -628,62 +627,73 @@ def get_positions():
         total_investment = 0.0
         
         for row in rows:
-            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
             
-            # 현재가 조회 (오픈 포지션만)
+            # 현재 수익률과 최대 수익률 계산 (오픈 포지션만)
             if status == 'open':
                 try:
-                    df = api.get_ohlcv(ticker, 5)
-                    if not df.empty:
-                        current_price = float(df.iloc[-1].close)
-                        return_pct = (current_price / entry_price - 1.0) * 100.0
-                        return_amount = (current_price - entry_price) * quantity
+                    # 진입일부터 현재까지의 데이터 조회
+                    from datetime import datetime, timedelta
+                    entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                    days_diff = (datetime.now() - entry_dt).days
+                    lookback_days = min(days_diff + 10, 100)  # 여유분 포함
+                    
+                    df = api.get_ohlcv(ticker, lookback_days)
+                    if not df.empty and len(df) > 1:
+                        # 진입일 이후 데이터만 필터링
+                        df['date'] = pd.to_datetime(df.index)
+                        entry_date_dt = pd.to_datetime(entry_date)
+                        df = df[df['date'] >= entry_date_dt]
+                        
+                        if len(df) > 0:
+                            # 진입가 (첫 번째 종가)
+                            entry_price = float(df.iloc[0].close)
+                            # 현재가 (마지막 종가)
+                            current_price = float(df.iloc[-1].close)
+                            # 현재 수익률
+                            current_return_pct = (current_price / entry_price - 1.0) * 100.0
+                            # 기간내 최대 수익률
+                            max_price = float(df['close'].max())
+                            max_return_pct = (max_price / entry_price - 1.0) * 100.0
+                        else:
+                            current_return_pct = None
+                            max_return_pct = None
                     else:
-                        current_price = None
-                        return_pct = None
-                        return_amount = None
+                        current_return_pct = None
+                        max_return_pct = None
                 except Exception:
-                    current_price = None
-                    return_pct = None
-                    return_amount = None
+                    current_return_pct = None
+                    max_return_pct = None
             else:
-                # 종료된 포지션
-                if exit_price:
-                    return_pct = (exit_price / entry_price - 1.0) * 100.0
-                    return_amount = (exit_price - entry_price) * quantity
-                else:
-                    return_pct = None
-                    return_amount = None
-            
-            # 총 수익률 계산용
-            if return_amount is not None:
-                total_return_amount += return_amount
-            total_investment += entry_price * quantity
+                # 종료된 포지션은 기존 값 유지
+                pass
             
             items.append(PositionItem(
                 id=id_,
                 ticker=ticker,
                 name=name,
                 entry_date=entry_date,
-                entry_price=entry_price,
                 quantity=quantity,
+                score=score,
+                strategy=strategy,
+                current_return_pct=current_return_pct,
+                max_return_pct=max_return_pct,
                 exit_date=exit_date,
-                exit_price=exit_price,
-                current_price=current_price,
-                return_pct=return_pct,
-                return_amount=return_amount,
                 status=status
             ))
         
-        total_return_pct = (total_return_amount / total_investment * 100.0) if total_investment > 0 else 0.0
+        # 전체 수익률 계산 (현재 수익률 기준)
+        total_return_pct = 0.0
+        valid_positions = [item for item in items if item.current_return_pct is not None]
+        if valid_positions:
+            total_return_pct = sum(item.current_return_pct for item in valid_positions) / len(valid_positions)
         
         return PositionResponse(
             items=items,
-            total_return_pct=round(total_return_pct, 2),
-            total_return_amount=round(total_return_amount, 2)
+            total_return_pct=round(total_return_pct, 2)
         )
     except Exception as e:
-        return PositionResponse(items=[], total_return_pct=0.0, total_return_amount=0.0)
+        return PositionResponse(items=[], total_return_pct=0.0)
 
 
 @app.post('/positions', response_model=dict)
@@ -699,9 +709,9 @@ def add_position(request: AddPositionRequest):
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
-            VALUES (?, ?, ?, ?, ?, 'open')
-        """, (request.ticker, name, request.entry_date, request.entry_price, request.quantity))
+            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'open')
+        """, (request.ticker, name, request.entry_date, request.quantity, request.score, request.strategy))
         conn.commit()
         conn.close()
         
@@ -724,33 +734,52 @@ def get_scan_positions():
         
         items = []
         for row in rows:
-            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
             
-            # 현재가 조회
+            # 현재 수익률과 최대 수익률 계산
             try:
-                df = api.get_ohlcv(ticker, 5)
-                if not df.empty:
-                    current_price = float(df.iloc[-1].close)
-                    return_pct = (current_price / entry_price - 1.0) * 100.0
-                    return_amount = (current_price - entry_price) * quantity
+                # 진입일부터 현재까지의 데이터 조회
+                from datetime import datetime, timedelta
+                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                days_diff = (datetime.now() - entry_dt).days
+                lookback_days = min(days_diff + 10, 100)  # 여유분 포함
+                
+                df = api.get_ohlcv(ticker, lookback_days)
+                if not df.empty and len(df) > 1:
+                    # 진입일 이후 데이터만 필터링
+                    df['date'] = pd.to_datetime(df.index)
+                    entry_date_dt = pd.to_datetime(entry_date)
+                    df = df[df['date'] >= entry_date_dt]
+                    
+                    if len(df) > 0:
+                        # 진입가 (첫 번째 종가)
+                        entry_price = float(df.iloc[0].close)
+                        # 현재가 (마지막 종가)
+                        current_price = float(df.iloc[-1].close)
+                        # 현재 수익률
+                        current_return_pct = (current_price / entry_price - 1.0) * 100.0
+                        # 기간내 최대 수익률
+                        max_price = float(df['close'].max())
+                        max_return_pct = (max_price / entry_price - 1.0) * 100.0
+                    else:
+                        current_return_pct = None
+                        max_return_pct = None
                 else:
-                    current_price = None
-                    return_pct = None
-                    return_amount = None
+                    current_return_pct = None
+                    max_return_pct = None
             except Exception:
-                current_price = None
-                return_pct = None
-                return_amount = None
+                current_return_pct = None
+                max_return_pct = None
             
             items.append({
                 'ticker': ticker,
                 'name': name,
                 'entry_date': entry_date,
-                'entry_price': entry_price,
                 'quantity': quantity,
-                'current_price': current_price,
-                'return_pct': return_pct,
-                'return_amount': return_amount,
+                'score': score,
+                'strategy': strategy,
+                'current_return_pct': current_return_pct,
+                'max_return_pct': max_return_pct,
                 'position_id': id_
             })
         
@@ -795,9 +824,9 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
                         current_price = float(df.iloc[-1].close)
                         
                         cur.execute("""
-                            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
-                            VALUES (?, ?, ?, ?, ?, 'open')
-                        """, (code, name, entry_dt, current_price, default_quantity))
+                            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
+                            VALUES (?, ?, ?, ?, ?, ?, 'open')
+                        """, (code, name, entry_dt, default_quantity, score, flags.get('label', '')))
                         conn.commit()
                         
                         added_positions.append({
@@ -840,25 +869,15 @@ def update_position(position_id: int, request: UpdatePositionRequest):
             conn.close()
             return {"ok": False, "error": "포지션을 찾을 수 없습니다"}
         
-        id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+        id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
         
         # 청산 처리
-        if request.exit_date and request.exit_price:
-            return_pct = (request.exit_price / entry_price - 1.0) * 100.0
-            return_amount = (request.exit_price - entry_price) * quantity
-            
+        if request.exit_date:
             cur.execute("""
                 UPDATE positions 
-                SET exit_date = ?, exit_price = ?, return_pct = ?, return_amount = ?, status = 'closed', updated_at = CURRENT_TIMESTAMP
+                SET exit_date = ?, status = 'closed', updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (request.exit_date, request.exit_price, return_pct, return_amount, position_id))
-        else:
-            # 현재가만 업데이트
-            cur.execute("""
-                UPDATE positions 
-                SET current_price = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            """, (request.exit_price, position_id))
+            """, (request.exit_date, position_id))
         
         conn.commit()
         conn.close()
@@ -882,33 +901,52 @@ def get_scan_positions():
         
         items = []
         for row in rows:
-            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
             
-            # 현재가 조회
+            # 현재 수익률과 최대 수익률 계산
             try:
-                df = api.get_ohlcv(ticker, 5)
-                if not df.empty:
-                    current_price = float(df.iloc[-1].close)
-                    return_pct = (current_price / entry_price - 1.0) * 100.0
-                    return_amount = (current_price - entry_price) * quantity
+                # 진입일부터 현재까지의 데이터 조회
+                from datetime import datetime, timedelta
+                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                days_diff = (datetime.now() - entry_dt).days
+                lookback_days = min(days_diff + 10, 100)  # 여유분 포함
+                
+                df = api.get_ohlcv(ticker, lookback_days)
+                if not df.empty and len(df) > 1:
+                    # 진입일 이후 데이터만 필터링
+                    df['date'] = pd.to_datetime(df.index)
+                    entry_date_dt = pd.to_datetime(entry_date)
+                    df = df[df['date'] >= entry_date_dt]
+                    
+                    if len(df) > 0:
+                        # 진입가 (첫 번째 종가)
+                        entry_price = float(df.iloc[0].close)
+                        # 현재가 (마지막 종가)
+                        current_price = float(df.iloc[-1].close)
+                        # 현재 수익률
+                        current_return_pct = (current_price / entry_price - 1.0) * 100.0
+                        # 기간내 최대 수익률
+                        max_price = float(df['close'].max())
+                        max_return_pct = (max_price / entry_price - 1.0) * 100.0
+                    else:
+                        current_return_pct = None
+                        max_return_pct = None
                 else:
-                    current_price = None
-                    return_pct = None
-                    return_amount = None
+                    current_return_pct = None
+                    max_return_pct = None
             except Exception:
-                current_price = None
-                return_pct = None
-                return_amount = None
+                current_return_pct = None
+                max_return_pct = None
             
             items.append({
                 'ticker': ticker,
                 'name': name,
                 'entry_date': entry_date,
-                'entry_price': entry_price,
                 'quantity': quantity,
-                'current_price': current_price,
-                'return_pct': return_pct,
-                'return_amount': return_amount,
+                'score': score,
+                'strategy': strategy,
+                'current_return_pct': current_return_pct,
+                'max_return_pct': max_return_pct,
                 'position_id': id_
             })
         
@@ -953,9 +991,9 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
                         current_price = float(df.iloc[-1].close)
                         
                         cur.execute("""
-                            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
-                            VALUES (?, ?, ?, ?, ?, 'open')
-                        """, (code, name, entry_dt, current_price, default_quantity))
+                            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
+                            VALUES (?, ?, ?, ?, ?, ?, 'open')
+                        """, (code, name, entry_dt, default_quantity, score, flags.get('label', '')))
                         conn.commit()
                         
                         added_positions.append({
@@ -1014,33 +1052,52 @@ def get_scan_positions():
         
         items = []
         for row in rows:
-            id_, ticker, name, entry_date, entry_price, quantity, exit_date, exit_price, current_price, return_pct, return_amount, status, created_at, updated_at = row
+            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
             
-            # 현재가 조회
+            # 현재 수익률과 최대 수익률 계산
             try:
-                df = api.get_ohlcv(ticker, 5)
-                if not df.empty:
-                    current_price = float(df.iloc[-1].close)
-                    return_pct = (current_price / entry_price - 1.0) * 100.0
-                    return_amount = (current_price - entry_price) * quantity
+                # 진입일부터 현재까지의 데이터 조회
+                from datetime import datetime, timedelta
+                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                days_diff = (datetime.now() - entry_dt).days
+                lookback_days = min(days_diff + 10, 100)  # 여유분 포함
+                
+                df = api.get_ohlcv(ticker, lookback_days)
+                if not df.empty and len(df) > 1:
+                    # 진입일 이후 데이터만 필터링
+                    df['date'] = pd.to_datetime(df.index)
+                    entry_date_dt = pd.to_datetime(entry_date)
+                    df = df[df['date'] >= entry_date_dt]
+                    
+                    if len(df) > 0:
+                        # 진입가 (첫 번째 종가)
+                        entry_price = float(df.iloc[0].close)
+                        # 현재가 (마지막 종가)
+                        current_price = float(df.iloc[-1].close)
+                        # 현재 수익률
+                        current_return_pct = (current_price / entry_price - 1.0) * 100.0
+                        # 기간내 최대 수익률
+                        max_price = float(df['close'].max())
+                        max_return_pct = (max_price / entry_price - 1.0) * 100.0
+                    else:
+                        current_return_pct = None
+                        max_return_pct = None
                 else:
-                    current_price = None
-                    return_pct = None
-                    return_amount = None
+                    current_return_pct = None
+                    max_return_pct = None
             except Exception:
-                current_price = None
-                return_pct = None
-                return_amount = None
+                current_return_pct = None
+                max_return_pct = None
             
             items.append({
                 'ticker': ticker,
                 'name': name,
                 'entry_date': entry_date,
-                'entry_price': entry_price,
                 'quantity': quantity,
-                'current_price': current_price,
-                'return_pct': return_pct,
-                'return_amount': return_amount,
+                'score': score,
+                'strategy': strategy,
+                'current_return_pct': current_return_pct,
+                'max_return_pct': max_return_pct,
                 'position_id': id_
             })
         
@@ -1085,9 +1142,9 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
                         current_price = float(df.iloc[-1].close)
                         
                         cur.execute("""
-                            INSERT INTO positions (ticker, name, entry_date, entry_price, quantity, status)
-                            VALUES (?, ?, ?, ?, ?, 'open')
-                        """, (code, name, entry_dt, current_price, default_quantity))
+                            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
+                            VALUES (?, ?, ?, ?, ?, ?, 'open')
+                        """, (code, name, entry_dt, default_quantity, score, flags.get('label', '')))
                         conn.commit()
                         
                         added_positions.append({
