@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
-export default function CustomerScanner() {
-  const [scanResults, setScanResults] = useState([]);
+export default function CustomerScanner({ initialData }) {
+  const [scanResults, setScanResults] = useState(initialData || []);
   const [loading, setLoading] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState('전체');
   const [sortBy, setSortBy] = useState('score');
@@ -31,13 +31,16 @@ export default function CustomerScanner() {
   };
 
   useEffect(() => {
-    fetchScanResults();
+    // 초기 데이터가 없으면 API 호출
+    if (!initialData || initialData.length === 0) {
+      fetchScanResults();
+    }
     
     // 5분마다 자동 새로고침
     const interval = setInterval(fetchScanResults, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [initialData]);
 
   // 시장별 필터링
   const filteredResults = scanResults.filter(item => {
@@ -289,4 +292,28 @@ export default function CustomerScanner() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps() {
+  try {
+    // 서버에서 백엔드 API 호출
+    const response = await fetch('http://localhost:8010/latest-scan');
+    const data = await response.json();
+    
+    if (data.ok && data.data) {
+      return {
+        props: {
+          initialData: data.data.rank || []
+        }
+      };
+    }
+  } catch (error) {
+    console.error('서버에서 스캔 결과 조회 실패:', error);
+  }
+  
+  return {
+    props: {
+      initialData: []
+    }
+  };
 }
