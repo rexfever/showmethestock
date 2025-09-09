@@ -12,7 +12,7 @@ export default function CustomerScanner() {
   const fetchScanResults = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8010/latest-scan');
+      const response = await fetch('/backend/latest-scan');
       const data = await response.json();
       console.log('최신 스캔 결과:', data);
       
