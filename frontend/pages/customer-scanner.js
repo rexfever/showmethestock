@@ -200,7 +200,7 @@ export default function CustomerScanner({ initialData }) {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-gray-800">
-                      {item.details?.close?.toLocaleString() || '-'}
+                      {item.score || '-'}
                     </div>
                     <div className="text-sm text-gray-500">
                       {item.score_label || '-'}
@@ -211,20 +211,20 @@ export default function CustomerScanner({ initialData }) {
                 {/* 스캔 정보 */}
                 <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                   <div>
-                    <span className="text-gray-500">전략:</span>
-                    <span className="ml-2 text-gray-800">{item.strategy || '-'}</span>
+                    <span className="text-gray-500">종목코드:</span>
+                    <span className="ml-2 text-gray-800">{item.ticker || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">액션:</span>
-                    <span className="ml-2 text-gray-800">{item.action || '-'}</span>
+                    <span className="text-gray-500">평가:</span>
+                    <span className="ml-2 text-gray-800">{item.score_label || '-'}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">점수:</span>
                     <span className="ml-2 text-gray-800">{item.score || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">시장:</span>
-                    <span className="ml-2 text-gray-800">{item.market || '-'}</span>
+                    <span className="text-gray-500">상태:</span>
+                    <span className="ml-2 text-gray-800">스캔완료</span>
                   </div>
                 </div>
 
