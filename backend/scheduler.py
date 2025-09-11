@@ -4,6 +4,7 @@ import requests
 import logging
 from datetime import datetime, timedelta
 import holidays
+import os
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -33,8 +34,8 @@ def run_scan():
     try:
         logger.info("자동 스캔을 시작합니다...")
         
-        # 백엔드 API 호출
-        response = requests.post("http://localhost:8010/scan", timeout=300)
+        # 백엔드 API 호출 (GET 요청으로 수정)
+        response = requests.get("http://localhost:8010/scan", timeout=300)
         
         if response.status_code == 200:
             data = response.json()
@@ -51,11 +52,52 @@ def run_scan():
             
             logger.info(f"스캔 결과가 {filename}에 저장되었습니다.")
             
+            # 자동 알림 발송
+            send_auto_notification(matched_count)
+            
         else:
             logger.error(f"스캔 실패: HTTP {response.status_code}")
             
     except Exception as e:
         logger.error(f"자동 스캔 중 오류 발생: {str(e)}")
+
+def send_auto_notification(matched_count):
+    """자동 알림 발송 (솔라피 알림톡)"""
+    try:
+        # 알림 수신자 목록 (환경변수에서 가져오기)
+        notification_recipients = os.getenv('NOTIFICATION_RECIPIENTS', '').split(',')
+        notification_recipients = [r.strip() for r in notification_recipients if r.strip()]
+        
+        if not notification_recipients:
+            logger.info("알림 수신자가 설정되지 않았습니다.")
+            return
+        
+        # 솔라피 알림톡 템플릿 변수 생성
+        from backend.kakao import format_scan_alert_message, send_alert
+        
+        scan_date = datetime.now().strftime("%Y년 %m월 %d일")
+        template_data = format_scan_alert_message(
+            matched_count=matched_count,
+            scan_date=scan_date,
+            user_name="고객님"
+        )
+        
+        # 각 수신자에게 알림 발송
+        for recipient in notification_recipients:
+            try:
+                # 솔라피 알림톡 발송
+                result = send_alert(to=recipient, template_data=template_data)
+                
+                if result.get('ok'):
+                    logger.info(f"솔라피 알림톡 발송 성공: {recipient}")
+                else:
+                    logger.error(f"솔라피 알림톡 발송 실패: {recipient}, {result.get('error', 'Unknown error')}")
+                    
+            except Exception as e:
+                logger.error(f"알림 발송 중 오류 ({recipient}): {str(e)}")
+                
+    except Exception as e:
+        logger.error(f"자동 알림 발송 중 오류 발생: {str(e)}")
 
 def setup_scheduler():
     """스케줄러 설정"""

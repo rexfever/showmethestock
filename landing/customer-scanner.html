@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <title>스톡인사이트 - 주식 스캐너</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f9fafb;
+            min-height: 100vh;
+        }
+        
+        .container {
+            min-height: 100vh;
+            background-color: #f9fafb;
+        }
+        
+        .header {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 16px;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .premier-link {
+            padding: 6px 12px;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1f2937;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .premier-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .refresh-btn {
+            padding: 8px;
+            color: #6b7280;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .banner {
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 16px;
+        }
+        
+        .banner-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .banner-text h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+        
+        .banner-text p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .banner-icon {
+            width: 64px;
+            height: 64px;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .banner-icon-inner {
+            width: 48px;
+            height: 48px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .finance-icon {
+            font-size: 32px;
+            display: block;
+        }
+        
+        .tabs {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            text-align: center;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .tab.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .tab:not(.active) {
+            background-color: white;
+            color: #6b7280;
+        }
+        
+        .content {
+            padding: 16px;
+        }
+        
+        .stock-item {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .stock-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .stock-info {
+            flex: 1;
+        }
+        
+        .stock-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .stock-name h3 {
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .stock-ticker {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .stars {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .star {
+            font-size: 16px;
+        }
+        
+        .star.active {
+            color: #fbbf24;
+        }
+        
+        .star.inactive {
+            color: #d1d5db;
+        }
+        
+        .stock-score {
+            text-align: right;
+        }
+        
+        .score-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .score-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .stock-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .detail-item {
+            display: flex;
+        }
+        
+        .detail-label {
+            color: #6b7280;
+        }
+        
+        .detail-value {
+            margin-left: 8px;
+            color: #1f2937;
+        }
+        
+        .stock-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .action-links {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+        }
+        
+        .action-link {
+            color: #3b82f6;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .buy-btn {
+            padding: 8px 16px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 32px 0;
+        }
+        
+        .empty-text {
+            color: #6b7280;
+            margin: 0 0 16px 0;
+        }
+        
+        .reload-btn {
+            padding: 8px 16px;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 32px 0;
+        }
+        
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #6b7280;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: black;
+            color: white;
+        }
+        
+        .bottom-nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 8px 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .nav-text {
+            font-size: 12px;
+        }
+        
+        .bottom-spacer {
+            height: 80px;
+        }
+        
+        .error-message {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px;
+            text-align: center;
+        }
+        
+        .retry-btn {
+            margin-top: 8px;
+            padding: 8px 16px;
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 상단 바 -->
+        <div class="header">
+            <div class="header-content">
+                <span class="title">스톡인사이트</span>
+                <div class="header-actions">
+                    <a href="/premier-scanner" class="premier-link">👑 프리미어</a>
+                    <button class="refresh-btn" onclick="loadData()">🔄</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 정보 배너 -->
+        <div class="banner">
+            <div class="banner-content">
+                <div class="banner-text">
+                    <h2>시장의 주도주 정보</h2>
+                    <p>프리미어 클럽에서 확인!</p>
+                </div>
+                <div class="banner-icon">
+                    <div class="banner-icon-inner">
+                        <span class="finance-icon">💰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시장 선택 탭 -->
+        <div class="tabs">
+            <button class="tab active" onclick="selectMarket('전체')">전체</button>
+            <button class="tab" onclick="selectMarket('코스피')">코스피</button>
+            <button class="tab" onclick="selectMarket('코스닥')">코스닥</button>
+        </div>
+
+        <!-- 스캔 결과 목록 -->
+        <div class="content" id="content">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">스캔 결과를 불러오는 중...</p>
+            </div>
+        </div>
+
+        <!-- 하단 네비게이션 -->
+        <div class="bottom-nav">
+            <div class="bottom-nav-content">
+                <button class="nav-item">
+                    <span class="nav-text">메뉴</span>
+                </button>
+                <button class="nav-item">
+                    <span class="nav-text">홈</span>
+                </button>
+                <button class="nav-item">
+                    <span class="nav-text">통합검색</span>
+                </button>
+                <button class="nav-item">
+                    <span class="nav-text">관심종목</span>
+                </button>
+                <button class="nav-item">
+                    <span class="nav-text">주식현재가</span>
+                </button>
+                <button class="nav-item">
+                    <span class="nav-text">주식주문</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 하단 네비게이션 공간 확보 -->
+        <div class="bottom-spacer"></div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let currentMarket = '전체';
+
+        // 데이터 로드
+        async function loadData() {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">스캔 결과를 불러오는 중...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('https://sohntech.ai.kr/backend/latest-scan');
+                const data = await response.json();
+                
+                if (data && data.ok && data.data && data.data.items) {
+                    currentData = data.data.items;
+                    renderData();
+                } else {
+                    throw new Error('데이터 형식이 올바르지 않습니다.');
+                }
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+                content.innerHTML = `
+                    <div class="error-message">
+                        <p>데이터를 불러오는 중 오류가 발생했습니다.</p>
+                        <button class="retry-btn" onclick="loadData()">다시 시도</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 데이터 렌더링
+        function renderData() {
+            const content = document.getElementById('content');
+            
+            if (!currentData || currentData.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <p class="empty-text">스캔 결과가 없습니다.</p>
+                        <button class="reload-btn" onclick="loadData()">새로고침</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // 시장별 필터링
+            let filteredData = currentData;
+            if (currentMarket === '코스피') {
+                filteredData = currentData.filter(item => item.market === 'KOSPI');
+            } else if (currentMarket === '코스닥') {
+                filteredData = currentData.filter(item => item.market === 'KOSDAQ');
+            }
+
+            // 상위 10개만 표시
+            const displayData = filteredData.slice(0, 10);
+
+            let html = '';
+            displayData.forEach((item, index) => {
+                const starCount = Math.min(5, Math.max(1, Math.floor((item.score || 0) / 2)));
+                let stars = '';
+                for (let i = 0; i < 5; i++) {
+                    stars += `<span class="star ${i < starCount ? 'active' : 'inactive'}">★</span>`;
+                }
+
+                html += `
+                    <div class="stock-item">
+                        <div class="stock-header">
+                            <div class="stock-info">
+                                <div class="stock-name">
+                                    <h3>${item.name || 'N/A'}</h3>
+                                    <span class="stock-ticker">(${item.ticker || 'N/A'})</span>
+                                </div>
+                                <div class="stars">
+                                    ${stars}
+                                </div>
+                            </div>
+                            <div class="stock-score">
+                                <div class="score-value">${item.score || '-'}</div>
+                                <div class="score-label">${item.score_label || '-'}</div>
+                            </div>
+                        </div>
+                        <div class="stock-details">
+                            <div class="detail-item">
+                                <span class="detail-label">종목코드:</span>
+                                <span class="detail-value">${item.ticker || '-'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">평가:</span>
+                                <span class="detail-value">${item.score_label || '-'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">점수:</span>
+                                <span class="detail-value">${item.score || '-'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">시장:</span>
+                                <span class="detail-value">${item.ticker && item.ticker.length === 6 ? (item.ticker.startsWith('0') ? '코스닥' : '코스피') : '-'}</span>
+                            </div>
+                        </div>
+                        <div class="stock-actions">
+                            <div class="action-links">
+                                <button class="action-link">관심등록</button>
+                                <button class="action-link">차트</button>
+                                <button class="action-link">기업정보</button>
+                            </div>
+                            <button class="buy-btn">매수</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+        }
+
+        // 시장 선택
+        function selectMarket(market) {
+            currentMarket = market;
+            
+            // 탭 활성화 상태 변경
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderData();
+        }
+
+        // 페이지 로드 시 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+    </script>
+</body>
+</html>

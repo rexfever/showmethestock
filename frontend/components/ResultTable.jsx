@@ -7,6 +7,25 @@ function strategyActions(strategy) {
     .map(s => s.trim())
     .map(s => s.replace(/\s+/g, '')); // 공백 제거해 라벨 표준화
   const actions = [];
+  
+  // 백엔드의 새로운 사용자 친화적 전략 용어와 매칭
+  if (labels.includes('상승신호')) {
+    actions.push('돌파하면 매수, DEMA10 아래로 마감하면 정리');
+  }
+  if (labels.includes('상승시작')) {
+    actions.push('전일 고가 돌파 시 진입, MACD가 0선 아래면 비중 줄이기');
+  }
+  if (labels.includes('관심증가')) {
+    actions.push('거래가 5일평균↑이면 비중 늘리기, 다음 날 거래 줄면 일부 청산');
+  }
+  if (labels.includes('상승추세정착')) {
+    actions.push('추세 지속 시 비중 유지, 추세 전환 시 정리');
+  }
+  if (labels.includes('관심') || actions.length === 0) {
+    actions.push('아직 기다리기 (신호 2개 이상 뜨면 진입)');
+  }
+  
+  // 기존 용어도 호환성을 위해 유지
   if (labels.includes('골든크로스형성')) {
     actions.push('돌파하면 매수, DEMA10 아래로 마감하면 정리');
   }
@@ -16,9 +35,10 @@ function strategyActions(strategy) {
   if (labels.includes('거래확대')) {
     actions.push('거래가 5일평균↑이면 비중 늘리기, 다음 날 거래 줄면 일부 청산');
   }
-  if (labels.includes('관망') || actions.length === 0) {
+  if (labels.includes('관망')) {
     actions.push('아직 기다리기 (신호 2개 이상 뜨면 진입)');
   }
+  
   return actions.join(' · ');
 }
 

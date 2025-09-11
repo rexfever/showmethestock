@@ -25,6 +25,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://sohntech.ai.kr",
+        "https://www.sohntech.ai.kr",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -278,6 +280,55 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     )
     if save_snapshot:
         # 스냅샷에는 핵심 메타/랭킹만 저장(용량 절약)
+        # 스냅샷에 종가, 거래량, 변동률 추가
+        enhanced_rank = []
+        for it in items:
+            try:
+                # 최신 OHLCV 데이터 가져오기 (스냅샷 생성 시점)
+                df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터 (전일 대비 변동률 계산용)
+                if not df.empty:
+                    latest = df.iloc[-1]
+                    prev_close = df.iloc[-2]["close"] if len(df) > 1 else latest["open"]
+                    
+                    # 변동률 계산 (전일 종가 대비)
+                    if prev_close != 0:
+                        change_rate = round(((latest["close"] - prev_close) / prev_close) * 100, 2)
+                    else:
+                        change_rate = 0
+                    
+                    enhanced_item = {
+                        'ticker': it.ticker,
+                        'name': it.name,
+                        'score': it.score,
+                        'score_label': it.score_label,
+                        'close_price': int(latest["close"]),  # 종가
+                        'volume': int(latest["volume"]),      # 거래량
+                        'change_rate': change_rate,           # 변동률
+                    }
+                else:
+                    # 데이터 없을 때 기본값
+                    enhanced_item = {
+                        'ticker': it.ticker,
+                        'name': it.name,
+                        'score': it.score,
+                        'score_label': it.score_label,
+                        'close_price': 0,
+                        'volume': 0,
+                        'change_rate': 0,
+                    }
+            except Exception as e:
+                # API 호출 실패시 기본값
+                enhanced_item = {
+                    'ticker': it.ticker,
+                    'name': it.name,
+                    'score': it.score,
+                    'score_label': it.score_label,
+                    'close_price': 0,
+                    'volume': 0,
+                    'change_rate': 0,
+                }
+            enhanced_rank.append(enhanced_item)
+        
         snapshot = {
             'as_of': resp.as_of,
             'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
@@ -286,15 +337,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             'rsi_mode': resp.rsi_mode,
             'rsi_period': resp.rsi_period,
             'rsi_threshold': resp.rsi_threshold,
-            'rank': [
-                {
-                    'ticker': it.ticker,
-                    'name': it.name,
-                    'score': it.score,
-                    'score_label': it.score_label,
-                }
-                for it in items
-            ],
+            'rank': enhanced_rank,
         }
         _save_scan_snapshot(snapshot)
         _save_snapshot_db(resp.as_of, items)
@@ -537,21 +580,27 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
 
 @app.post('/send_scan_result')
 def send_scan_result(to: str, top_n: int = 5):
-    """현재 /scan 결과 요약을 카카오 알림톡으로 발송하고 로그에 남긴다"""
+    """현재 /scan 결과 요약을 솔라피 알림톡으로 발송하고 로그에 남긴다"""
     # 최신 스캔 실행
     resp = scan(save_snapshot=True)
     
-    # 새로운 알림톡 템플릿 사용 (고객용 스캔 화면 링크 포함)
-    msg = format_scan_alert_message(resp.matched_count)
+    # 솔라피 알림톡 템플릿 변수 생성
+    from datetime import datetime
+    scan_date = datetime.now().strftime("%Y년 %m월 %d일")
+    template_data = format_scan_alert_message(
+        matched_count=resp.matched_count,
+        scan_date=scan_date,
+        user_name="고객님"
+    )
     
-    result = send_alert(to, msg)
+    result = send_alert(to, template_data)
     _log_send(to, resp.matched_count)
     
     return {
         "status": "ok" if result.get('ok') else "fail", 
         "matched_count": resp.matched_count, 
         "sent_to": to, 
-        "message_preview": msg[:100] + "...",
+        "template_data": template_data,
         "provider": result
     }
 
@@ -1202,6 +1251,65 @@ async def get_latest_scan():
         
         with open(latest_file, "r", encoding="utf-8") as f:
             data = json.load(f)
+        
+        # 사용자 화면에 필요한 정보 추가
+        if data.get("rank"):
+            enhanced_items = []
+            for item in data["rank"]:
+                ticker = item.get("ticker")
+                if ticker:
+                    # 기본 정보
+                    enhanced_item = {
+                        "ticker": ticker,
+                        "name": item.get("name", ""),
+                        "score": item.get("score", 0),
+                        "score_label": item.get("score_label", ""),
+                        "match": True,  # rank에 있는 것은 모두 매칭된 것
+                    }
+                    
+                    # 사용자 화면에 필요한 추가 정보 생성
+                    # 시장 구분
+                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
+                    enhanced_item["market"] = market
+                    
+                    # 매매전략과 평가 항목 (스냅샷 데이터 기반, 성능 최적화)
+                    score = item.get("score", 0)
+                    score_label = item.get("score_label", "관심")
+                    
+                    # 점수 기반으로 전략 설정 (API 호출 없음)
+                    if score >= 10:
+                        enhanced_item["strategy"] = "상승추세정착"
+                    elif score >= 8:
+                        enhanced_item["strategy"] = "상승시작"
+                    elif score >= 6:
+                        enhanced_item["strategy"] = "관심증가"
+                    else:
+                        enhanced_item["strategy"] = "관심"
+                    
+                    # 스냅샷 데이터 활용
+                    enhanced_item["score_label"] = score_label
+                    enhanced_item["evaluation"] = {
+                        "total_score": score
+                    }
+                    
+                    # 스냅샷에서 종가, 거래량, 변동률 가져오기
+                    enhanced_item["current_price"] = item.get("close_price", 0)  # 스냅샷의 종가
+                    enhanced_item["change_rate"] = item.get("change_rate", 0)    # 스냅샷의 변동률
+                    enhanced_item["volume"] = item.get("volume", 0)             # 스냅샷의 거래량
+                    
+                    # 거래량 기반 시장 관심도 설정
+                    volume = enhanced_item["volume"]
+                    if volume > 1000000:  # 100만주 이상
+                        enhanced_item["market_interest"] = "높음"
+                    elif volume > 500000:  # 50만주 이상
+                        enhanced_item["market_interest"] = "보통"
+                    else:
+                        enhanced_item["market_interest"] = "낮음"
+                    
+                    enhanced_items.append(enhanced_item)
+            
+            # items 필드에 향상된 데이터 추가
+            data["items"] = enhanced_items
         
         return {"ok": True, "data": data, "file": latest_file}
         

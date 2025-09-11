@@ -206,11 +206,15 @@ def score_conditions(df: pd.DataFrame) -> tuple:
             score += W['dema_slope']
     # off: 무시
 
-    # 레이블링
-    if score >= config.score_level_strong:
+    # 레이블링 (더 세분화된 평가)
+    if score >= 10:
         flags["label"] = "강한 매수"
-    elif score >= config.score_level_watch:
+    elif score >= 9:
+        flags["label"] = "매수 후보"
+    elif score >= 8:
         flags["label"] = "관심"
+    elif score >= 6:
+        flags["label"] = "관망"
     else:
         flags["label"] = "제외"
     details['total'] = int(score)
@@ -223,24 +227,33 @@ def match_condition(df: pd.DataFrame) -> bool:
 
 
 def strategy_text(df: pd.DataFrame) -> str:
+    """주식 상태를 사용자 친화적인 용어로 반환"""
     cur = df.iloc[-1]
     prev = df.iloc[-2] if len(df) >= 2 else cur
     msgs: List[str] = []
+    
+    # 골든크로스: 상승신호
     if (cur.TEMA20 > cur.DEMA10) and (prev.TEMA20 <= prev.DEMA10):
-        msgs.append("골든크로스 형성")
+        msgs.append("상승신호")
+    
+    # 모멘텀 양전환: 상승시작
     if cur.MACD_OSC > 0:
-        msgs.append("모멘텀 양전환")
+        msgs.append("상승시작")
+    
+    # 거래확대: 관심증가
     if cur.volume > (cur.VOL_MA5 * config.vol_ma5_mult if pd.notna(cur.VOL_MA5) else 0):
-        msgs.append("거래확대")
-    # 추세 보조 문구
+        msgs.append("관심증가")
+    
+    # 추세 보조 문구: 상승추세정착
     slope_lb = int(getattr(config, 'trend_slope_lookback', 20))
     above_lb = int(getattr(config, 'trend_above_lookback', 5))
     above_cnt = int((df["TEMA20"] > df["DEMA10"]).tail(above_lb).sum()) if len(df) >= above_lb else 0
     if "TEMA20_SLOPE20" in df.columns and "OBV_SLOPE20" in df.columns:
         if df.iloc[-1]["TEMA20_SLOPE20"] > 0 and df.iloc[-1]["OBV_SLOPE20"] > 0:
-            msgs.append(f"상승 추세 정착({above_cnt}/{above_lb})")
+            msgs.append("상승추세정착")
+    
     if not msgs:
-        return "관망"
+        return "관심"
     return " / ".join(msgs)
 
 

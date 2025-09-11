@@ -247,6 +247,139 @@ ssh -o StrictHostKeyChecking=no ubuntu@52.79.61.207 "sudo systemctl reload nginx
 
 ---
 
+### 7. 프론트엔드 데이터 로딩 오류 (2025-09-10)
+
+**증상**:
+- "데이터 불러오는 중 오류가 발생했습니다" 메시지 표시
+- PC에서는 정상 작동하지만 모바일에서 오류 발생
+- 콘솔에 "Failed to fetch" 오류
+- 프리미어 화면에서 데이터가 표시되지 않음
+
+**원인**:
+- API 응답 구조 변경: `data.data.rank` → `data.data.items`
+- SSR과 클라이언트 API 호출 중복 실행
+- useEffect 의존성 배열에 함수 포함으로 인한 무한 루프
+- 정적 HTML 파일의 JavaScript 오류
+
+**해결책**:
+1. **API 응답 구조 통일**
+   ```javascript
+   // 잘못된 코드
+   setScanResults(data.data.rank || []);
+   
+   // 올바른 코드
+   setScanResults(data.data.items || []);
+   ```
+
+2. **SSR 데이터 우선 사용**
+   ```javascript
+   useEffect(() => {
+     // SSR 데이터가 있으면 클라이언트 API 호출 생략
+     if (initialData && initialData.length > 0) {
+       setScanResults(initialData);
+       setError(null);
+       return;
+     }
+     
+     // 초기 데이터가 없으면 API 호출
+     if (!initialData || initialData.length === 0) {
+       fetchScanResults();
+     }
+   }, [initialData]); // fetchScanResults 제거
+   ```
+
+3. **무한 루프 방지**
+   ```javascript
+   // 잘못된 코드
+   useEffect(() => {
+     fetchScanResults();
+   }, [fetchScanResults]); // 함수 의존성으로 인한 무한 루프
+   
+   // 올바른 코드
+   useEffect(() => {
+     fetchScanResults();
+   }, []); // 빈 의존성 배열
+   ```
+
+4. **정적 HTML 파일 수정**
+   ```javascript
+   // customer-scanner.html에서
+   if (data && data.ok && data.data && data.data.items) {
+       currentData = data.data.items; // rank → items로 변경
+   }
+   ```
+
+### 8. 솔라피 알림톡 템플릿 변수 오류
+
+**증상**:
+- 알림톡 발송 실패
+- 템플릿 변수가 치환되지 않음
+- "데이터 형식이 올바르지 않습니다" 오류
+
+**원인**:
+- 솔라피 템플릿 변수명 불일치
+- PF ID, 템플릿 ID 미설정
+- 발신번호 미등록
+
+**해결책**:
+1. **솔라피 템플릿 변수 확인**
+   ```python
+   template_data = {
+       "s_date": scan_date,      # 스캔일시
+       "s_num": str(matched_count),  # 스캔된 종목 수
+       "c_name": user_name       # 고객명
+   }
+   ```
+
+2. **솔라피 설정 정보 업데이트**
+   ```python
+   payload = {
+       "message": {
+           "to": to,
+           "from": "010-4220-0956",  # 솔라피에 등록된 발신번호
+           "type": "ATA",
+           "kakaoOptions": {
+               "pfId": "실제_PF_ID",  # 솔라피에서 확인
+               "templateId": "실제_템플릿_ID",  # 승인된 템플릿 ID
+               "variables": template_data
+           }
+       }
+   }
+   ```
+
+## 📋 2025-09-10 작업 완료 내역
+
+### ✅ 완료된 작업:
+1. **모바일 데이터 로딩 오류 해결**
+   - SSR 데이터 우선 사용 로직 구현
+   - useEffect 무한 루프 방지
+   - 네트워크 상태 확인 및 타임아웃 설정
+
+2. **프리미어 화면 데이터 표시 문제 해결**
+   - API 응답 구조 수정 (`rank` → `items`)
+   - SSR 기능 추가
+   - 클라이언트 API 호출 최적화
+
+3. **정적 HTML 파일 오류 수정**
+   - `customer-scanner.html` API 응답 구조 수정
+   - 서버 배포 및 Nginx 설정 재로드
+
+4. **솔라피 알림톡 시스템 구현**
+   - 템플릿 변수 시스템 구축 (`s_date`, `s_num`, `c_name`)
+   - 스케줄러 자동 발송 기능
+   - API 엔드포인트 수정
+
+5. **문서 업데이트**
+   - `KAKAO_ALIMTALK_TEMPLATE.md`에 로드맵 추가
+   - 향후 개선 계획 문서화
+
+### 🔄 진행 중인 작업:
+- 솔라피 템플릿 등록 및 설정 정보 업데이트
+
+### 📝 향후 계획:
+1. **2단계**: 고객 등록 시스템 구축
+2. **3단계**: 카카오톡 로그인 연동
+
 ## 💡 문제 해결 원칙
 
 1. **로그 우선**: 항상 로그부터 확인
@@ -254,3 +387,6 @@ ssh -o StrictHostKeyChecking=no ubuntu@52.79.61.207 "sudo systemctl reload nginx
 3. **백업 필수**: 변경 전 현재 상태 보존
 4. **검증 완료**: 수정 후 반드시 테스트
 5. **문서화**: 문제와 해결책 기록
+6. **API 응답 구조 통일**: 모든 파일에서 동일한 구조 사용
+7. **SSR 우선**: 서버 사이드 렌더링 데이터를 우선 사용
+8. **의존성 배열 주의**: useEffect에서 함수 의존성 피하기
