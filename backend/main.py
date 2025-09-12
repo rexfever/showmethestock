@@ -1297,11 +1297,14 @@ async def get_latest_scan():
                     enhanced_item["change_rate"] = item.get("change_rate", 0)    # 스냅샷의 변동률
                     enhanced_item["volume"] = item.get("volume", 0)             # 스냅샷의 거래량
                     
-                    # 거래량 기반 시장 관심도 설정
+                    # 거래금액 기반 시장 관심도 설정
                     volume = enhanced_item["volume"]
-                    if volume > 1000000:  # 100만주 이상
+                    current_price = enhanced_item["current_price"]
+                    trade_amount = volume * current_price  # 거래금액 (원)
+                    
+                    if trade_amount > 100000000000:  # 1,000억원 이상
                         enhanced_item["market_interest"] = "높음"
-                    elif volume > 500000:  # 50만주 이상
+                    elif trade_amount > 50000000000:  # 500억원 이상
                         enhanced_item["market_interest"] = "보통"
                     else:
                         enhanced_item["market_interest"] = "낮음"
