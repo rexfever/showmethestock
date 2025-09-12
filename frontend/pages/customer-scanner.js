@@ -290,6 +290,12 @@ export default function CustomerScanner({ initialData }) {
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">
               <span className="text-lg font-semibold text-gray-800">스톡인사이트</span>
+              {scanResults.length > 0 && (
+                <div className="ml-4 text-xs text-gray-500">
+                  <div>스캔일시: {scanResults[0]?.as_of || '데이터 없음'}</div>
+                  <div>매칭종목: {scanResults.length}개</div>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-3">
               <a 
