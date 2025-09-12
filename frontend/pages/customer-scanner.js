@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 
-export default function CustomerScanner({ initialData }) {
+export default function CustomerScanner({ initialData, initialScanFile }) {
   const [scanResults, setScanResults] = useState(initialData || []);
-  const [scanFile, setScanFile] = useState('');
+  const [scanFile, setScanFile] = useState(initialScanFile || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('score');
@@ -98,7 +98,9 @@ export default function CustomerScanner({ initialData }) {
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasSSRData) {
       console.log('SSR 데이터 사용, 클라이언트 API 호출 생략');
+      console.log('SSR scanFile:', initialScanFile);
       setScanResults(initialData);
+      setScanFile(initialScanFile || '');
       setError(null);
       setLoading(false);
       return;
@@ -595,7 +597,8 @@ export async function getServerSideProps() {
       const items = data.data.items || data.data.rank || [];
       return {
         props: {
-          initialData: items
+          initialData: items,
+          initialScanFile: data.file || ''
         }
       };
     }
