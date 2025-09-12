@@ -75,7 +75,7 @@ class Config:
     trend_above_lookback: int = int(os.getenv("TREND_ABOVE_LOOKBACK", "5"))
     trend_slope_lookback: int = int(os.getenv("TREND_SLOPE_LOOKBACK", "20"))
     # dema 기울기 모드: required|optional|off
-    require_dema_slope: str = os.getenv("REQUIRE_DEMA_SLOPE", "required").lower()
+    require_dema_slope: str = os.getenv("REQUIRE_DEMA_SLOPE", "optional").lower()
 
     # 점수 가중치
     score_w_cross: int = int(os.getenv("SCORE_W_CROSS", "3"))
