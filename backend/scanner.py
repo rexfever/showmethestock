@@ -200,6 +200,7 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     mode = str(getattr(config, 'require_dema_slope', 'required')).lower()
     if mode == 'required' and not dema_slope_ok:
         flags["label"] = "제외"
+        flags["match"] = False  # 제외 종목은 매칭되지 않음
         return 0, details
     elif mode == 'optional':
         if dema_slope_ok:
@@ -217,6 +218,7 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         flags["label"] = "관망"
     else:
         flags["label"] = "제외"
+        flags["match"] = False  # 제외 종목은 매칭되지 않음
     details['total'] = int(score)
     return int(score), {**flags, 'details': details}
 

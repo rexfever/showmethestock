@@ -226,7 +226,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             item = ScanItem(
                 ticker=code,
                 name=api.get_stock_name(code),
-                match=bool(matched),
+                match=bool(matched) and flags.get("match", True),
                 score=float(score),
                 indicators=IndicatorPayload(
                     TEMA=float(cur.TEMA20),
@@ -1257,7 +1257,8 @@ async def get_latest_scan():
             enhanced_items = []
             for item in data["rank"]:
                 ticker = item.get("ticker")
-                if ticker:
+                score_label = item.get("score_label", "")
+                if ticker and score_label != "제외":
                     # 기본 정보
                     enhanced_item = {
                         "ticker": ticker,
