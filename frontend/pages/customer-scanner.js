@@ -53,10 +53,14 @@ export default function CustomerScanner({ initialData }) {
       
       const data = await response.json();
       console.log('최신 스캔 결과:', data);
+      console.log('data.file 값:', data.file);
+      console.log('data.ok 값:', data.ok);
+      console.log('data.data 값:', data.data);
       
       if (data.ok && data.data) {
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
+        console.log('설정할 scanFile 값:', data.file);
         setScanResults(items);
         setScanFile(data.file || '');
         setError(null);
