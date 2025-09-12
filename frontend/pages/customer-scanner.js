@@ -290,12 +290,6 @@ export default function CustomerScanner({ initialData }) {
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">
               <span className="text-lg font-semibold text-gray-800">스톡인사이트</span>
-              {scanResults.length > 0 && (
-                <div className="ml-4 text-xs text-gray-500">
-                  <div>스캔일시: {scanResults[0]?.as_of || '데이터 없음'}</div>
-                  <div>매칭종목: {scanResults.length}개</div>
-                </div>
-              )}
             </div>
             <div className="flex items-center space-x-3">
               <a 
@@ -362,6 +356,20 @@ export default function CustomerScanner({ initialData }) {
             </select>
           </div>
         </div>
+
+        {/* 스캔 정보 */}
+        {scanResults.length > 0 && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mx-4 mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <div className="text-blue-800">
+                <span className="font-medium">스캔일시:</span> {scanResults[0]?.as_of || '데이터 없음'}
+              </div>
+              <div className="text-blue-600">
+                <span className="font-medium">매칭종목:</span> {scanResults.length}개
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">
