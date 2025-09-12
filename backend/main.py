@@ -249,7 +249,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 details={**(flags.get("details", {}) if isinstance(flags, dict) else {}), "close": float(cur.close), "recurrence": recurrence},
                 strategy=strategy_text(df),
             )
-            if item.match:
+            if item.match and item.score_label != "제외":
                 items.append(item)
         except Exception:
             continue
