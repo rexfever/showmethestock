@@ -365,6 +365,7 @@ export default function CustomerScanner({ initialData }) {
             <div className="flex items-center justify-between text-sm">
               <div className="text-blue-800">
                 <span className="font-medium">스캔일시:</span> {(() => {
+                  console.log('scanFile:', scanFile);
                   const match = scanFile.match(/scan-(\d{8})\.json/);
                   if (match) {
                     const dateStr = match[1];
