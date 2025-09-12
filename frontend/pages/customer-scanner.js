@@ -3,6 +3,7 @@ import Head from 'next/head';
 
 export default function CustomerScanner({ initialData }) {
   const [scanResults, setScanResults] = useState(initialData || []);
+  const [scanFile, setScanFile] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('score');
@@ -57,6 +58,7 @@ export default function CustomerScanner({ initialData }) {
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
         setScanResults(items);
+        setScanFile(data.file || '');
         setError(null);
       } else {
         const errorMsg = data.error || '스캔 결과 조회 실패';
@@ -363,8 +365,7 @@ export default function CustomerScanner({ initialData }) {
             <div className="flex items-center justify-between text-sm">
               <div className="text-blue-800">
                 <span className="font-medium">스캔일시:</span> {(() => {
-                  const file = scanResults[0]?.file || '';
-                  const match = file.match(/scan-(\d{8})\.json/);
+                  const match = scanFile.match(/scan-(\d{8})\.json/);
                   if (match) {
                     const dateStr = match[1];
                     return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
