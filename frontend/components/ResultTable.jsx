@@ -51,6 +51,13 @@ function labelMeta(label) {
       cls: 'bg-emerald-100 text-emerald-800',
     };
   }
+  if (v === '매수 후보') {
+    return {
+      text: '매수 후보',
+      hint: '신호 충족도 양호. 전일 고가 돌파 시 진입 고려, 추세 전환 시 정리.',
+      cls: 'bg-blue-100 text-blue-800',
+    };
+  }
   if (v === '관심') {
     return {
       text: '관망/관찰',
