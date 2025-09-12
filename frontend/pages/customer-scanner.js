@@ -362,7 +362,15 @@ export default function CustomerScanner({ initialData }) {
           <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mx-4 mb-4">
             <div className="flex items-center justify-between text-sm">
               <div className="text-blue-800">
-                <span className="font-medium">스캔일시:</span> {scanResults[0]?.as_of || '데이터 없음'}
+                <span className="font-medium">스캔일시:</span> {(() => {
+                  const file = scanResults[0]?.file || '';
+                  const match = file.match(/scan-(\d{8})\.json/);
+                  if (match) {
+                    const dateStr = match[1];
+                    return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+                  }
+                  return scanResults[0]?.as_of || '데이터 없음';
+                })()}
               </div>
               <div className="text-blue-600">
                 <span className="font-medium">매칭종목:</span> {scanResults.length}개
