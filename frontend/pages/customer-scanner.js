@@ -416,6 +416,11 @@ export default function CustomerScanner({ initialData }) {
                     <span className="ml-2 text-gray-800">
                       {item.volume > 0 ? `${(item.volume / 1000).toFixed(0)}K` : '데이터 없음'}
                     </span>
+                    {item.volume > 0 && item.current_price > 0 && (
+                      <span className="ml-1 text-xs text-gray-500">
+                        ({(item.volume * item.current_price / 100000000).toFixed(0)}억원)
+                      </span>
+                    )}
                   </div>
                   <div>
                     <span className="text-gray-500">시장관심도:</span>
