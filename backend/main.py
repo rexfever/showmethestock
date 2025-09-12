@@ -249,7 +249,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 details={**(flags.get("details", {}) if isinstance(flags, dict) else {}), "close": float(cur.close), "recurrence": recurrence},
                 strategy=strategy_text(df),
             )
-            if item.match and item.score_label != "제외":
+            if item.match:
                 items.append(item)
         except Exception:
             continue
@@ -1238,8 +1238,8 @@ async def get_latest_scan():
     """최신 스캔 결과를 가져옵니다."""
     try:
         # 스냅샷 파일들 중에서 가장 최신 파일 찾기
-        snapshot_files = glob.glob("backend/snapshots/scan-*.json")
-        auto_scan_files = glob.glob("backend/snapshots/auto-scan-*.json")
+        snapshot_files = glob.glob("snapshots/scan-*.json")
+        auto_scan_files = glob.glob("snapshots/auto-scan-*.json")
         
         all_files = snapshot_files + auto_scan_files
         
