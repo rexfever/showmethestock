@@ -4,6 +4,7 @@ import Head from 'next/head';
 export default function CustomerScanner({ initialData, initialScanFile }) {
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('score');
@@ -306,19 +307,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               >
                 👑 프리미어
               </a>
-              <button className="p-2 text-gray-600">
+              <button 
+                className="p-2 text-gray-600 hover:text-gray-800"
+                onClick={() => alert('준비중입니다.')}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 1 0-15 0v5h5l-5 5-5-5h5v-5a7.5 7.5 0 1 1 15 0v5z" />
-                </svg>
-              </button>
-              <button className="p-2 text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-              </button>
-              <button className="p-2 text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
@@ -517,11 +511,29 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 {/* 액션 버튼 */}
                 <div className="flex items-center justify-between pt-3 border-t">
                   <div className="flex space-x-4 text-sm">
-                    <button className="text-blue-500 hover:text-blue-700">관심등록</button>
-                    <button className="text-blue-500 hover:text-blue-700">차트</button>
-                    <button className="text-blue-500 hover:text-blue-700">기업정보</button>
+                    <button 
+                      className="text-blue-500 hover:text-blue-700"
+                      onClick={() => alert('준비중입니다.')}
+                    >
+                      관심등록
+                    </button>
+                    <button 
+                      className="text-blue-500 hover:text-blue-700"
+                      onClick={() => alert('준비중입니다.')}
+                    >
+                      차트
+                    </button>
+                    <button 
+                      className="text-blue-500 hover:text-blue-700"
+                      onClick={() => alert('준비중입니다.')}
+                    >
+                      기업정보
+                    </button>
                   </div>
-                  <button className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">
+                  <button 
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
+                    onClick={() => alert('준비중입니다.')}
+                  >
                     매수
                   </button>
                 </div>
@@ -533,42 +545,41 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         {/* 하단 네비게이션 */}
         <div className="fixed bottom-0 left-0 right-0 bg-black text-white">
           <div className="flex items-center justify-around py-2">
-            <button className="flex flex-col items-center py-2">
+            <button 
+              className="flex flex-col items-center py-2 hover:bg-gray-800"
+              onClick={() => alert('준비중입니다.')}
+            >
               <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 12h2l3-9 3 9h2l-3 9-3-9z"/>
               </svg>
               <span className="text-xs">메뉴</span>
             </button>
-            <button className="flex flex-col items-center py-2">
+            <button 
+              className="flex flex-col items-center py-2 hover:bg-gray-800"
+              onClick={() => alert('준비중입니다.')}
+            >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
               <span className="text-xs">홈</span>
             </button>
-            <button className="flex flex-col items-center py-2">
+            <button 
+              className="flex flex-col items-center py-2 hover:bg-gray-800"
+              onClick={() => alert('준비중입니다.')}
+            >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <span className="text-xs">통합검색</span>
             </button>
-            <button className="flex flex-col items-center py-2">
+            <button 
+              className="flex flex-col items-center py-2 hover:bg-gray-800"
+              onClick={() => alert('준비중입니다.')}
+            >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
               <span className="text-xs">관심종목</span>
-            </button>
-            <button className="flex flex-col items-center py-2">
-              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="text-xs">주식현재가</span>
-            </button>
-            <button className="flex flex-col items-center py-2">
-              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="text-xs">주식주문</span>
             </button>
           </div>
         </div>
