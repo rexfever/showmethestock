@@ -301,12 +301,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               <span className="text-lg font-semibold text-gray-800">스톡인사이트</span>
             </div>
             <div className="flex items-center space-x-3">
-              <a 
-                href="/premier-scanner"
+              <button 
+                onClick={() => alert('준비중입니다.')}
                 className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 text-xs font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200"
               >
                 👑 프리미어
-              </a>
+              </button>
               <button 
                 className="p-2 text-gray-600 hover:text-gray-800"
                 onClick={() => alert('준비중입니다.')}
