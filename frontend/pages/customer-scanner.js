@@ -12,6 +12,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
 
   // 최신 스캔 결과 가져오기
   const fetchScanResults = useCallback(async () => {
@@ -294,6 +296,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
       </Head>
 
       <div className="min-h-screen bg-gray-50">
+
         {/* 상단 바 */}
         <div className="bg-white shadow-sm">
           <div className="flex items-center justify-between p-4">
@@ -324,7 +327,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">시장의 주도주 정보</h2>
-              <p className="text-sm opacity-90">프리미어 클럽에서 확인!</p>
+              <p className="text-sm opacity-90">AI가 찾아낸 주도주를 지금 확인하세요!</p>
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
@@ -334,6 +337,168 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
           </div>
         </div>
 
+
+        {/* 투자 활용법 가이드 */}
+        <div className="bg-white border-b">
+          <button
+            onClick={() => setShowGuide(!showGuide)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">📊</span>
+              <span className="font-medium text-gray-800">투자 활용법</span>
+            </div>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform ${showGuide ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {showGuide && (
+            <div className="px-4 pb-4 border-t bg-gray-50">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-xl">🔍</span>
+                    <h3 className="font-semibold text-gray-800">선별 기준</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">상승 신호, 과매도 탈출, 거래량 급증 등</p>
+                  <p className="text-xs text-gray-500 mt-1">AI가 여러 조건을 종합해서 선별</p>
+                  <p className="text-xs text-blue-600 mt-1 font-medium">※ 여러 조건 만족 = 강력한 신호 (우선 검토)</p>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-xl">⚡</span>
+                    <h3 className="font-semibold text-gray-800">투자 방법</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">3-10일 정도 보유하는 단기 투자</p>
+                  <p className="text-xs text-gray-500 mt-1">참고 수익률: 3-5% (개인 판단 필요)</p>
+                  <p className="text-xs text-red-500 mt-1 font-medium">※ 실제 매매는 증권사에서 진행하세요</p>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-xl">📈</span>
+                    <h3 className="font-semibold text-gray-800">투자 주의사항</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">차트 분석 기반, 손실 시 빠른 매도</p>
+                  <p className="text-xs text-gray-500 mt-1">투자 결정은 신중히 하시기 바랍니다.</p>
+                </div>
+              </div>
+              
+              {/* 상세 매매 전략 설명 */}
+              <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-800 mb-3">📋 상세 매매 전략</h4>
+                <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                  <p className="text-sm text-yellow-800">
+                    <strong>💡 점수 시스템 해석:</strong> 8개 조건을 종합해서 점수를 부여합니다. (만점 15점)
+                    <br/>• <strong>10점 이상</strong>: 강한 매수 (우선 검토)
+                    <br/>• <strong>8-9점</strong>: 매수 후보/관심 (신중한 검토)
+                    <br/>• <strong>6-7점</strong>: 관망 (추가 분석 필요)
+                    <br/>• <strong>6점 미만</strong>: 제외 (투자 부적합)
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h5 className="font-medium text-blue-700 mb-2">🎯 매매 방식</h5>
+                    <ul className="space-y-1 text-blue-600">
+                      <li>• <strong>단기 투자</strong>: 3-10일 보유 (추천)</li>
+                      <li>• <strong>단타 매매</strong>: 개인 판단 (고위험)</li>
+                      <li>• <strong>장기 투자</strong>: 개인 판단 (별도 분석 필요)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-blue-700 mb-2">💰 수익률 목표</h5>
+                    <ul className="space-y-1 text-blue-600">
+                      <li>• <strong>단기</strong>: 3-5% (추천 수익률)</li>
+                      <li>• <strong>단타</strong>: 개인 판단 (고위험)</li>
+                      <li>• <strong>장기</strong>: 개인 판단 (별도 분석 필요)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-blue-700 mb-2">🛡️ 리스크 관리</h5>
+                    <ul className="space-y-1 text-blue-600">
+                      <li>• <strong>손절매</strong>: -3~5% 도달 시</li>
+                      <li>• <strong>분할 매수</strong>: 2-3회에 나누어</li>
+                      <li>• <strong>포지션 크기</strong>: 자금의 10-20%</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-blue-700 mb-2">📊 진입/청산 기준</h5>
+                    <ul className="space-y-1 text-blue-600">
+                      <li>• <strong>진입</strong>: 스캔 결과 + 추가 분석</li>
+                      <li>• <strong>청산</strong>: 목표가 도달 또는 손절</li>
+                      <li>• <strong>관리</strong>: 일일 모니터링 필수</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 준비중인 기능 안내 */}
+        <div className="bg-white border-b">
+          <button
+            onClick={() => setShowUpcomingFeatures(!showUpcomingFeatures)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">🚧</span>
+              <span className="font-medium text-gray-800">준비중인 기능</span>
+            </div>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform ${showUpcomingFeatures ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {showUpcomingFeatures && (
+            <div className="px-4 pb-4 border-t bg-gray-50">
+              <div className="bg-orange-50 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <h5 className="font-medium text-orange-700 mb-2">📱 알림 서비스</h5>
+                    <ul className="space-y-1 text-orange-600">
+                      <li>• <strong>카카오톡 알림톡</strong>: 스캔 결과 자동 알림</li>
+                      <li>• <strong>푸시 알림</strong>: 모바일 앱 알림</li>
+                      <li>• <strong>이메일 알림</strong>: 상세 분석 리포트</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-orange-700 mb-2">💼 관심종목 관리</h5>
+                    <ul className="space-y-1 text-orange-600">
+                      <li>• <strong>관심종목 등록</strong>: 스캔 결과에서 바로 등록</li>
+                      <li>• <strong>관심종목 목록</strong>: 등록한 종목 관리</li>
+                      <li>• <strong>알림 설정</strong>: 관심종목 변동 알림</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-orange-700 mb-2">📊 고급 분석</h5>
+                    <ul className="space-y-1 text-orange-600">
+                      <li>• <strong>상세 차트</strong>: 기술적 분석 도구</li>
+                      <li>• <strong>기업정보</strong>: 재무제표 및 뉴스</li>
+                      <li>• <strong>통합검색</strong>: 종목 검색 기능</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-orange-100 rounded-lg">
+                  <p className="text-sm text-orange-700">
+                    <strong>💡 안내:</strong> 모든 기능은 순차적으로 출시될 예정입니다. 
+                    먼저 기본 스캔 서비스를 이용해보시고, 추가 기능 출시 소식을 기다려주세요!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 필터 및 정렬 */}
         <div className="bg-white p-4 border-b">
@@ -461,7 +626,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                   <div>
                     <span className="text-gray-500">점수:</span>
                     <span className="ml-2 text-gray-800">
-                      {item.score ? `${item.score}/5` : '-'}
+                      {item.score ? `${item.score}/15` : '-'}
                     </span>
                   </div>
                 </div>
@@ -531,10 +696,10 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                     </button>
                   </div>
                   <button 
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600"
                     onClick={() => alert('준비중입니다.')}
                   >
-                    매수
+                    관심등록
                   </button>
                 </div>
               </div>
