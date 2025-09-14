@@ -4,6 +4,9 @@ import Head from 'next/head';
 export default function CustomerScanner({ initialData, initialScanFile }) {
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
+  const [scanDate, setScanDate] = useState('');
+  const [availableDates, setAvailableDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,6 +17,62 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
   const [showGuide, setShowGuide] = useState(false);
   const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
+
+  // 사용 가능한 스캔 날짜 목록 가져오기
+  const fetchAvailableDates = useCallback(async () => {
+    try {
+      const base = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:8010' 
+        : 'https://sohntech.ai.kr/backend';
+      
+      const response = await fetch(`${base}/available-scan-dates`);
+      const data = await response.json();
+      
+      if (data.ok && data.dates) {
+        setAvailableDates(data.dates);
+        // 기본값을 최신 날짜로 설정
+        if (data.dates.length > 0 && !selectedDate) {
+          setSelectedDate(data.dates[0]);
+        }
+      }
+    } catch (error) {
+      console.error('사용 가능한 날짜 조회 실패:', error);
+    }
+  }, [selectedDate]);
+
+  // 특정 날짜의 스캔 결과 가져오기
+  const fetchScanByDate = useCallback(async (date) => {
+    if (!date) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const base = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:8010' 
+        : 'https://sohntech.ai.kr/backend';
+      
+      const response = await fetch(`${base}/scan-by-date/${date}`);
+      const data = await response.json();
+      
+      if (data.ok && data.data) {
+        const items = data.data.items || data.data.rank || [];
+        setScanResults(items);
+        setScanFile(data.file || '');
+        setScanDate(data.data.scan_date || '');
+        setError(null);
+      } else {
+        const errorMsg = data.error || '스캔 결과 조회 실패';
+        setError(errorMsg);
+        setScanResults([]);
+      }
+    } catch (error) {
+      console.error('스캔 결과 조회 실패:', error);
+      setError('스캔 결과 조회 중 오류가 발생했습니다.');
+      setScanResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // 최신 스캔 결과 가져오기
   const fetchScanResults = useCallback(async () => {
@@ -66,6 +125,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         console.log('설정할 scanFile 값:', data.file);
         setScanResults(items);
         setScanFile(data.file || '');
+        setScanDate(data.data.scan_date || '');
         setError(null);
       } else {
         const errorMsg = data.error || '스캔 결과 조회 실패';
@@ -97,6 +157,9 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       setIsMobile(isMobileDevice);
     }
+    
+    // 사용 가능한 날짜 목록 가져오기
+    fetchAvailableDates();
     
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasSSRData) {
@@ -182,15 +245,16 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     return strategy.split(' / ')[0] || strategy;
   };
 
-  // 거래량 기반 시장관심도 표시
+  // 거래대금 기반 시장관심도 표시
   const getSimpleStrategy = (item) => {
-    const volume = item.indicators?.VOL;
-    if (!volume) return '-';
+    if (!item.volume || !item.current_price) return '-';
     
-    if (volume > 1000000) return '매우높음';
-    else if (volume > 500000) return '높음';
-    else if (volume > 100000) return '보통';
-    else return '낮음';
+    const tradingAmount = item.volume * item.current_price / 100000000; // 억원 단위
+    
+    if (tradingAmount > 1000) return '매우높음';      // 1,000억원 이상
+    else if (tradingAmount > 500) return '높음';      // 500억원 이상
+    else if (tradingAmount > 100) return '보통';      // 100억원 이상
+    else return '낮음';                               // 100억원 미만
   };
 
   // 매매전략 정보 표시 (백엔드에서 이미 사용자 친화적으로 변환됨)
@@ -524,27 +588,33 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
           </div>
         </div>
 
-        {/* 스캔 정보 */}
-        {scanResults.length > 0 && (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mx-4 mb-4">
-            <div className="flex items-center justify-between text-sm">
+        {/* 통합된 스캔 정보 */}
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mx-4 mb-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-3">
               <div className="text-blue-800">
-                <span className="font-medium">스캔일시:</span> {(() => {
-                  console.log('scanFile:', scanFile);
-                  const match = scanFile.match(/scan-(\d{8})\.json/);
-                  if (match) {
-                    const dateStr = match[1];
-                    return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
-                  }
-                  return scanResults[0]?.as_of || '데이터 없음';
-                })()}
+                <span className="font-medium">📅 스캔 날짜:</span>
               </div>
-              <div className="text-blue-600">
-                <span className="font-medium">매칭종목:</span> {scanResults.length}개
-              </div>
+              <select 
+                value={selectedDate} 
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  fetchScanByDate(e.target.value);
+                }}
+                className="px-2 py-1 border border-blue-300 rounded text-sm bg-white"
+              >
+                {availableDates.map(date => (
+                  <option key={date} value={date}>
+                    {date.slice(0,4)}-{date.slice(4,6)}-{date.slice(6,8)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="text-blue-600">
+              <span className="font-medium">매칭종목:</span> {scanResults.length}개
             </div>
           </div>
-        )}
+        </div>
 
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">
@@ -567,13 +637,18 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 다시 시도
               </button>
             </div>
-          ) : sortedResults.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">스캔 결과가 없습니다.</p>
-              <p className="text-sm text-gray-400 mt-2">자동 스캔 결과를 기다리는 중...</p>
-            </div>
           ) : (
-            sortedResults.map((item) => (
+            <div>
+              {/* 스캔 결과가 없을 때 메시지 */}
+              {sortedResults.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">선택한 날짜에 스캔 결과가 없습니다.</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    다른 날짜를 선택하거나 최신 스캔을 확인해보세요.
+                  </p>
+                </div>
+              ) : (
+                sortedResults.map((item) => (
               <div key={item.ticker} className="bg-white rounded-lg shadow-sm border p-4">
               {/* 상단: 종목명 + 종목코드 + 시장 + 현재가 + 변동률 */}
               <div className="flex items-center justify-between mb-3">
@@ -607,7 +682,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                     </span>
                     {item.volume > 0 && item.current_price > 0 && (
                       <span className="ml-1 text-xs text-gray-500">
-                        ({(item.volume * item.current_price / 100000000).toFixed(0)}억원)
+                        ({Math.round(item.volume * item.current_price / 100000000).toLocaleString()}억원)
                       </span>
                     )}
                   </div>
@@ -704,6 +779,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 </div>
               </div>
             ))
+              )}
+            </div>
           )}
         </div>
 

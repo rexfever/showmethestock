@@ -1233,6 +1233,110 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         return {'ok': False, 'error': str(e)}
 
 
+@app.get("/available-scan-dates")
+async def get_available_scan_dates():
+    """사용 가능한 스캔 날짜 목록을 가져옵니다."""
+    try:
+        # 스냅샷 파일들에서 날짜 추출
+        snapshot_files = glob.glob("snapshots/scan-*.json")
+        auto_scan_files = glob.glob("snapshots/auto-scan-*.json")
+        
+        all_files = snapshot_files + auto_scan_files
+        
+        if not all_files:
+            return {"ok": False, "error": "스캔 결과가 없습니다."}
+        
+        # 날짜 추출 및 중복 제거
+        import re
+        dates = set()
+        for file in all_files:
+            date_match = re.search(r'(\d{8})', file)
+            if date_match:
+                dates.add(date_match.group(1))
+        
+        # 날짜 정렬 (최신순)
+        sorted_dates = sorted(list(dates), reverse=True)
+        
+        return {"ok": True, "dates": sorted_dates}
+        
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get("/scan-by-date/{date}")
+async def get_scan_by_date(date: str):
+    """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)"""
+    try:
+        # 날짜 형식 검증
+        if len(date) != 8 or not date.isdigit():
+            return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."}
+        
+        # 해당 날짜의 스캔 파일 찾기
+        snapshot_files = glob.glob(f"snapshots/scan-{date}.json")
+        auto_scan_files = glob.glob(f"snapshots/auto-scan-{date}_*.json")
+        
+        all_files = snapshot_files + auto_scan_files
+        
+        if not all_files:
+            return {"ok": False, "error": f"{date} 날짜의 스캔 결과가 없습니다."}
+        
+        # 가장 최신 파일 선택 (auto-scan이 있으면 우선)
+        target_file = max(all_files, key=lambda x: x.split("-")[-1].replace(".json", ""))
+        
+        with open(target_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        # 스캔 날짜 정보 추가
+        data["scan_date"] = date
+        data["is_latest"] = False
+        
+        # 사용자 화면에 필요한 정보 추가 (latest-scan과 동일한 로직)
+        if data.get("rank"):
+            enhanced_items = []
+            for item in data["rank"]:
+                ticker = item.get("ticker")
+                score_label = item.get("score_label", "")
+                if ticker and score_label != "제외":
+                    # 기본 정보
+                    enhanced_item = {
+                        "ticker": ticker,
+                        "name": item.get("name", ""),
+                        "score": item.get("score", 0),
+                        "score_label": item.get("score_label", ""),
+                        "match": True,
+                    }
+                    
+                    # 시장 구분
+                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
+                    enhanced_item["market"] = market
+                    
+                    # 매매전략과 평가 항목
+                    enhanced_item["strategy"] = "상승추세정착" if item.get("score", 0) >= 10 else "상승시작"
+                    enhanced_item["evaluation"] = {"total_score": item.get("score", 0)}
+                    
+                    # 현재가, 변동률, 거래량 (스냅샷 데이터에서)
+                    enhanced_item["current_price"] = item.get("close_price", 0)
+                    enhanced_item["change_rate"] = item.get("change_rate", 0)
+                    enhanced_item["volume"] = item.get("volume", 0)
+                    
+                    # 시장 관심도 (거래량 기반)
+                    if item.get("volume", 0) > 1000000:
+                        enhanced_item["market_interest"] = "높음"
+                    elif item.get("volume", 0) > 500000:
+                        enhanced_item["market_interest"] = "보통"
+                    else:
+                        enhanced_item["market_interest"] = "낮음"
+                    
+                    enhanced_items.append(enhanced_item)
+            
+            data["items"] = enhanced_items
+        
+        return {"ok": True, "data": data, "file": target_file}
+        
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 @app.get("/latest-scan")
 async def get_latest_scan():
     """최신 스캔 결과를 가져옵니다."""
@@ -1249,8 +1353,17 @@ async def get_latest_scan():
         # 파일명에서 날짜 추출하여 정렬
         latest_file = max(all_files, key=lambda x: x.split("-")[-1].replace(".json", ""))
         
+        # 파일명에서 날짜 추출
+        import re
+        date_match = re.search(r'(\d{8})', latest_file)
+        scan_date = date_match.group(1) if date_match else "알 수 없음"
+        
         with open(latest_file, "r", encoding="utf-8") as f:
             data = json.load(f)
+        
+        # 스캔 날짜 정보 추가
+        data["scan_date"] = scan_date
+        data["is_latest"] = True
         
         # 사용자 화면에 필요한 정보 추가
         if data.get("rank"):
