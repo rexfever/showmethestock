@@ -6,8 +6,8 @@ import requests
 import pandas as pd
 import numpy as np
 
-from backend.auth import KiwoomAuth
-from backend.config import config
+from auth import KiwoomAuth
+from config import config
 
 
 class KiwoomAPI:

@@ -140,7 +140,10 @@ export default function CustomerScannerMobile({ initialData }) {
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                <span className="text-3xl">💰</span>
+                <div className="relative flex items-center justify-center">
+                  <span className="text-3xl">🔮</span>
+                  <span className="absolute text-lg top-0 left-2 text-green-500">📈</span>
+                </div>
               </div>
             </div>
           </div>

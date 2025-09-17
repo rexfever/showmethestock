@@ -58,7 +58,22 @@ export default function CustomerScannerSimple({ initialData }) {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <span style={{ fontSize: '32px' }}>💰</span>
+                <div style={{ 
+                  fontSize: '24px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  position: 'relative'
+                }}>
+                  <span style={{ fontSize: '28px' }}>🔮</span>
+                  <span style={{ 
+                    fontSize: '16px', 
+                    position: 'absolute', 
+                    top: '2px', 
+                    left: '8px',
+                    color: '#10b981'
+                  }}>📈</span>
+                </div>
               </div>
             </div>
           </div>

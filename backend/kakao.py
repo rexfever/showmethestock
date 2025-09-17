@@ -4,8 +4,10 @@ import requests
 from datetime import datetime
 
 SOLAPI_API_BASE = os.getenv('SOLAPI_API_BASE', 'https://api.solapi.com')
-SOLAPI_API_KEY = os.getenv('SOLAPI_API_KEY', '')
+SOLAPI_API_KEY = os.getenv('SOLAPI_API_KEY', '섭')
 SOLAPI_API_SECRET = os.getenv('SOLAPI_API_SECRET', '')
+SOLAPI_PF_ID = os.getenv('SOLAPI_PF_ID', '')
+SOLAPI_TEMPLATE_ID = os.getenv('SOLAPI_TEMPLATE_ID', '')
 
 
 def format_scan_message(items, matched_count, top_n=5):
@@ -28,11 +30,11 @@ def format_scan_alert_message(matched_count: int, scan_date: str = None, user_na
     if user_name is None:
         user_name = "고객님"
     
-    # 솔라피 알림톡 템플릿 변수 사용
+    # 솔라피 알림톡 템플릿 변수 사용 (#{변수명} 형식)
     template_data = {
-        "s_date": scan_date,
-        "s_num": str(matched_count),
-        "c_name": user_name
+        "#{s_date}": scan_date,
+        "#{s_num}": str(matched_count),
+        "#{c_name}": user_name
     }
     
     return template_data
@@ -47,9 +49,9 @@ def send_alert(to: str, template_data: dict, template_id: str = None) -> dict:
         print(f"템플릿 변수: {template_data}")
         return {"ok": True, "response": {"test": True, "message": "콘솔 출력으로 테스트 완료"}}
     
-    # 기본 템플릿 ID (실제 템플릿 ID로 변경 필요)
+    # 기본 템플릿 ID
     if template_id is None:
-        template_id = "YOUR_TEMPLATE_ID"  # 실제 솔라피 템플릿 ID로 변경
+        template_id = SOLAPI_TEMPLATE_ID
     
     url = f"{SOLAPI_API_BASE}/messages/v4/send"
     headers = {
@@ -64,8 +66,8 @@ def send_alert(to: str, template_data: dict, template_id: str = None) -> dict:
             "from": "010-4220-0956",  # 발신번호
             "type": "ATA",  # 알림톡
             "kakaoOptions": {
-                "pfId": "YOUR_PF_ID",  # 실제 솔라피 PF ID로 변경
-                "templateId": template_id,
+                "pfId": SOLAPI_PF_ID,  # 환경변수에서 채널 ID
+                "templateId": template_id,  # 환경변수에서 템플릿 ID
                 "variables": template_data
             }
         }

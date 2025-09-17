@@ -2,8 +2,8 @@ import time
 from typing import Dict, List, Tuple
 import pandas as pd
 
-from backend.config import config
-from backend.indicators import (
+from config import config
+from indicators import (
     tema_smooth,
     dema_smooth,
     macd,

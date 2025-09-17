@@ -1,20 +1,26 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from datetime import datetime, timedelta
 import os
 import json
-from typing import List
+from typing import List, Optional
 import pandas as pd
 
-from backend.config import config, reload_from_env
-from backend.environment import get_environment_info
-from backend.kiwoom_api import KiwoomAPI
-from backend.scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
-from backend.models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest
-from backend.utils import is_code, normalize_code_or_name
+from config import config, reload_from_env
+from environment import get_environment_info
+from kiwoom_api import KiwoomAPI
+from scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
+from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest
+from utils import is_code, normalize_code_or_name
 import sqlite3
-from backend.kakao import send_alert, format_scan_message, format_scan_alert_message
+from kakao import send_alert, format_scan_message, format_scan_alert_message
 import glob
+
+# 인증 관련 import
+from auth_models import User, Token, SocialLoginRequest
+from auth_service import auth_service
+from social_auth import social_auth_service
 
 
 app = FastAPI(title='Stock Scanner API')
@@ -1366,8 +1372,10 @@ async def get_latest_scan():
         data["is_latest"] = True
         
         # 사용자 화면에 필요한 정보 추가
+        enhanced_items = []
+        
+        # rank 배열이 있는 경우 (일반 스캔 파일)
         if data.get("rank"):
-            enhanced_items = []
             for item in data["rank"]:
                 ticker = item.get("ticker")
                 score_label = item.get("score_label", "")
@@ -1424,11 +1432,158 @@ async def get_latest_scan():
                         enhanced_item["market_interest"] = "낮음"
                     
                     enhanced_items.append(enhanced_item)
-            
-            # items 필드에 향상된 데이터 추가
-            data["items"] = enhanced_items
+        
+        # items 배열이 있는 경우 (auto-scan 파일)
+        elif data.get("items"):
+            for item in data["items"]:
+                ticker = item.get("ticker")
+                if ticker:
+                    # 기본 정보
+                    enhanced_item = {
+                        "ticker": ticker,
+                        "name": item.get("name", ""),
+                        "score": item.get("score", 0),
+                        "score_label": item.get("score_label", ""),
+                        "match": item.get("match", True),
+                    }
+                    
+                    # 사용자 화면에 필요한 추가 정보 생성
+                    # 시장 구분
+                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
+                    enhanced_item["market"] = market
+                    
+                    # 매매전략과 평가 항목
+                    score = item.get("score", 0)
+                    score_label = item.get("score_label", "관심")
+                    
+                    # 점수 기반으로 전략 설정
+                    if score >= 10:
+                        enhanced_item["strategy"] = "상승추세정착"
+                    elif score >= 8:
+                        enhanced_item["strategy"] = "상승시작"
+                    elif score >= 6:
+                        enhanced_item["strategy"] = "관심증가"
+                    else:
+                        enhanced_item["strategy"] = "관심"
+                    
+                    # 스냅샷 데이터 활용
+                    enhanced_item["score_label"] = score_label
+                    enhanced_item["evaluation"] = {
+                        "total_score": score
+                    }
+                    
+                    # auto-scan 파일에서 종가, 거래량, 변동률 가져오기
+                    indicators = item.get("indicators", {})
+                    details = item.get("details", {})
+                    
+                    enhanced_item["current_price"] = details.get("close", 0)  # details.close
+                    enhanced_item["volume"] = indicators.get("VOL", 0)        # indicators.VOL
+                    enhanced_item["change_rate"] = 0  # auto-scan에는 변동률이 없음
+                    
+                    # 거래금액 기반 시장 관심도 설정
+                    volume = enhanced_item["volume"]
+                    current_price = enhanced_item["current_price"]
+                    trade_amount = volume * current_price  # 거래금액 (원)
+                    
+                    if trade_amount > 100000000000:  # 1,000억원 이상
+                        enhanced_item["market_interest"] = "높음"
+                    elif trade_amount > 50000000000:  # 500억원 이상
+                        enhanced_item["market_interest"] = "보통"
+                    else:
+                        enhanced_item["market_interest"] = "낮음"
+                    
+                    enhanced_items.append(enhanced_item)
+        
+        # items 필드에 향상된 데이터 추가
+        data["items"] = enhanced_items
         
         return {"ok": True, "data": data, "file": latest_file}
         
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+# ==================== 인증 관련 엔드포인트 ====================
+
+# JWT 토큰 검증을 위한 의존성
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+    """현재 로그인한 사용자 정보 가져오기"""
+    token = credentials.credentials
+    token_data = auth_service.verify_token(token)
+    
+    if token_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="토큰이 유효하지 않습니다",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = auth_service.get_user_by_email(token_data.email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="사용자를 찾을 수 없습니다",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return user
+
+@app.post("/auth/social-login", response_model=Token)
+async def social_login(request: SocialLoginRequest):
+    """소셜 로그인 (카카오, 네이버, 토스)"""
+    try:
+        # 소셜 로그인 토큰 검증
+        social_user_info = await social_auth_service.verify_social_token(
+            request.provider, request.access_token
+        )
+        
+        if not social_user_info:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="소셜 로그인 토큰이 유효하지 않습니다"
+            )
+        
+        # 사용자 생성 또는 조회
+        user_create = social_auth_service.create_user_from_social(social_user_info)
+        user = auth_service.create_user(user_create)
+        
+        # 마지막 로그인 시간 업데이트
+        auth_service.update_last_login(user.id)
+        
+        # JWT 토큰 생성
+        access_token_expires = timedelta(minutes=30)
+        access_token = auth_service.create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"로그인 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/auth/me", response_model=User)
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """현재 로그인한 사용자 정보 조회"""
+    return current_user
+
+@app.post("/auth/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    """로그아웃 (클라이언트에서 토큰 삭제)"""
+    return {"message": "로그아웃되었습니다"}
+
+@app.get("/auth/check")
+async def check_auth(current_user: User = Depends(get_current_user)):
+    """인증 상태 확인"""
+    return {
+        "authenticated": True,
+        "user": current_user
+    }

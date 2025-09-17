@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 
 class IndicatorPayload(BaseModel):
@@ -18,6 +19,16 @@ class TrendPayload(BaseModel):
     TEMA20_SLOPE20: float
     OBV_SLOPE20: float
     ABOVE_CNT5: int
+
+
+class User(BaseModel):
+    """사용자 모델"""
+    id: Optional[int] = None
+    email: str
+    phone: Optional[str] = None
+    notification_enabled: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class ScoreFlags(BaseModel):

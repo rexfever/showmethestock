@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 import json
 from dotenv import load_dotenv
-from .environment import env_detector, get_config_overrides
+from environment import env_detector, get_config_overrides
 
 
 # 1) 루트 .env 로드

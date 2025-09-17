@@ -289,7 +289,22 @@ export default function CustomerScannerStatic({ initialData }) {
               </div>
               <div className="banner-icon">
                 <div className="banner-icon-inner">
-                  <span className="finance-icon">💰</span>
+                  <div style={{ 
+                    fontSize: '24px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}>
+                    <span style={{ fontSize: '28px' }}>🔮</span>
+                    <span style={{ 
+                      fontSize: '16px', 
+                      position: 'absolute', 
+                      top: '2px', 
+                      left: '8px',
+                      color: '#10b981'
+                    }}>📈</span>
+                  </div>
                 </div>
               </div>
             </div>

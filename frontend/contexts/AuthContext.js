@@ -1,0 +1,118 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
+
+  // 토큰을 쿠키에서 가져오기
+  useEffect(() => {
+    const savedToken = Cookies.get('auth_token');
+    if (savedToken) {
+      setToken(savedToken);
+      // 토큰이 있으면 사용자 정보 가져오기
+      fetchUserInfo(savedToken);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchUserInfo = async (authToken) => {
+    try {
+      const response = await fetch('http://localhost:8010/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        // 토큰이 유효하지 않으면 쿠키에서 제거
+        Cookies.remove('auth_token');
+        setToken(null);
+      }
+    } catch (error) {
+      console.error('사용자 정보 가져오기 실패:', error);
+      Cookies.remove('auth_token');
+      setToken(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (provider, accessToken) => {
+    try {
+      const response = await fetch('http://localhost:8010/auth/social-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider,
+          access_token: accessToken,
+          user_info: {} // 소셜 로그인에서는 서버에서 사용자 정보를 가져옴
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const { access_token, user: userData } = data;
+        
+        // 토큰을 쿠키에 저장 (7일간 유효)
+        Cookies.set('auth_token', access_token, { expires: 7 });
+        
+        setToken(access_token);
+        setUser(userData);
+        
+        return { success: true, user: userData };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail };
+      }
+    } catch (error) {
+      console.error('로그인 실패:', error);
+      return { success: false, error: '로그인 중 오류가 발생했습니다.' };
+    }
+  };
+
+  const logout = () => {
+    Cookies.remove('auth_token');
+    setToken(null);
+    setUser(null);
+  };
+
+  const isAuthenticated = () => {
+    // 임시로 항상 false 반환 (인증 구현 전까지)
+    return false;
+    // return !!token && !!user;
+  };
+
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    isAuthenticated,
+    fetchUserInfo
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

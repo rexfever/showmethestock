@@ -1,0 +1,8 @@
+
+> stock-finder-frontend@ dev /Users/rexsmac/workspace/stock-finder/frontend
+> next dev
+
+ready - started server on 0.0.0.0:3000, url: http://localhost:3000
+info  - Loaded env from /Users/rexsmac/workspace/stock-finder/frontend/.env.local
+info  - Using webpack 5. Reason: no custom webpack configuration in next.config.js https://nextjs.org/docs/messages/webpack5
+event - compiled successfully

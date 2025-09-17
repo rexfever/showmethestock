@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CustomerScanner({ initialData, initialScanFile }) {
+  const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
+  
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
   const [scanDate, setScanDate] = useState('');
@@ -17,6 +22,13 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
   const [showGuide, setShowGuide] = useState(false);
   const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
+
+  // 인증 체크 (임시 비활성화 - 인증 구현 전까지)
+  // useEffect(() => {
+  //   if (!authLoading && !isAuthenticated()) {
+  //     router.push('/login');
+  //   }
+  // }, [authLoading, isAuthenticated, router]);
 
   // 사용 가능한 스캔 날짜 목록 가져오기
   const fetchAvailableDates = useCallback(async () => {
@@ -368,6 +380,32 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               <span className="text-lg font-semibold text-gray-800">스톡인사이트</span>
             </div>
             <div className="flex items-center space-x-3">
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">
+                    {user.name}님 ({user.provider})
+                  </span>
+                  <button 
+                    onClick={() => {
+                      logout();
+                      router.push('/login');
+                    }}
+                    className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-500">게스트 사용자</span>
+                  <button 
+                    onClick={() => router.push('/login')}
+                    className="px-2 py-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-300 rounded"
+                  >
+                    로그인
+                  </button>
+                </div>
+              )}
               <button 
                 onClick={() => alert('준비중입니다.')}
                 className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 text-xs font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200"
