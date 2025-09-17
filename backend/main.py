@@ -1297,8 +1297,10 @@ async def get_scan_by_date(date: str):
         data["is_latest"] = False
         
         # 사용자 화면에 필요한 정보 추가 (latest-scan과 동일한 로직)
+        enhanced_items = []
+        
+        # rank 배열이 있는 경우 (일반 스캔 파일)
         if data.get("rank"):
-            enhanced_items = []
             for item in data["rank"]:
                 ticker = item.get("ticker")
                 score_label = item.get("score_label", "")
@@ -1334,8 +1336,70 @@ async def get_scan_by_date(date: str):
                         enhanced_item["market_interest"] = "낮음"
                     
                     enhanced_items.append(enhanced_item)
-            
-            data["items"] = enhanced_items
+        
+        # items 배열이 있는 경우 (auto-scan 파일)
+        elif data.get("items"):
+            for item in data["items"]:
+                ticker = item.get("ticker")
+                if ticker:
+                    # 기본 정보
+                    enhanced_item = {
+                        "ticker": ticker,
+                        "name": item.get("name", ""),
+                        "score": item.get("score", 0),
+                        "score_label": item.get("score_label", ""),
+                        "match": item.get("match", True),
+                    }
+                    
+                    # 사용자 화면에 필요한 추가 정보 생성
+                    # 시장 구분
+                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
+                    enhanced_item["market"] = market
+                    
+                    # 매매전략과 평가 항목
+                    score = item.get("score", 0)
+                    score_label = item.get("score_label", "관심")
+                    
+                    # 점수 기반으로 전략 설정
+                    if score >= 10:
+                        enhanced_item["strategy"] = "상승추세정착"
+                    elif score >= 8:
+                        enhanced_item["strategy"] = "상승시작"
+                    elif score >= 6:
+                        enhanced_item["strategy"] = "관심증가"
+                    else:
+                        enhanced_item["strategy"] = "관심"
+                    
+                    # 스냅샷 데이터 활용
+                    enhanced_item["score_label"] = score_label
+                    enhanced_item["evaluation"] = {
+                        "total_score": score
+                    }
+                    
+                    # auto-scan 파일에서 종가, 거래량, 변동률 가져오기
+                    indicators = item.get("indicators", {})
+                    details = item.get("details", {})
+                    
+                    enhanced_item["current_price"] = details.get("close", 0)  # details.close
+                    enhanced_item["volume"] = indicators.get("VOL", 0)        # indicators.VOL
+                    enhanced_item["change_rate"] = 0  # auto-scan에는 변동률이 없음
+                    
+                    # 거래금액 기반 시장 관심도 설정
+                    volume = enhanced_item["volume"]
+                    current_price = enhanced_item["current_price"]
+                    trade_amount = volume * current_price  # 거래금액 (원)
+                    
+                    if trade_amount > 100000000000:  # 1,000억원 이상
+                        enhanced_item["market_interest"] = "높음"
+                    elif trade_amount > 50000000000:  # 500억원 이상
+                        enhanced_item["market_interest"] = "보통"
+                    else:
+                        enhanced_item["market_interest"] = "낮음"
+                    
+                    enhanced_items.append(enhanced_item)
+        
+        # items 필드에 향상된 데이터 추가
+        data["items"] = enhanced_items
         
         return {"ok": True, "data": data, "file": target_file}
         
