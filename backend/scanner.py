@@ -103,6 +103,56 @@ def match_stats(df: pd.DataFrame) -> tuple:
     return matched, int(signals_true), int(total)
 
 
+def calculate_risk_score(df: pd.DataFrame) -> tuple:
+    """위험도 점수 계산 (높을수록 위험)
+    Returns: (risk_score: int, risk_flags: Dict[str, bool])
+    """
+    if len(df) < 21:
+        return 0, {}
+    
+    cur = df.iloc[-1]
+    risk_score = 0
+    risk_flags = {}
+    
+    # 1. 과매수 구간 위험 (RSI > 80)
+    rsi_overbought = cur.RSI > config.rsi_overbought_threshold
+    risk_flags["rsi_overbought"] = rsi_overbought
+    if rsi_overbought:
+        risk_score += 2
+    
+    # 2. 거래량 급증 위험 (평균 대비 3배 이상)
+    vol_spike = cur.volume > (cur.VOL_MA5 * config.vol_spike_threshold if pd.notna(cur.VOL_MA5) else cur.volume)
+    risk_flags["vol_spike"] = vol_spike
+    if vol_spike:
+        risk_score += 2
+    
+    # 3. 모멘텀 지속성 부족 위험 (MACD 상승 기간이 짧음)
+    macd_trend_duration = 0
+    for i in range(min(10, len(df) - 1)):
+        if df.iloc[-(i+1)]["MACD_OSC"] > df.iloc[-(i+2)]["MACD_OSC"]:
+            macd_trend_duration += 1
+        else:
+            break
+    
+    momentum_weak = macd_trend_duration < config.momentum_duration_min
+    risk_flags["momentum_weak"] = momentum_weak
+    if momentum_weak:
+        risk_score += 1
+    
+    # 4. 가격 급등 후 조정 위험 (최근 5일 중 4일 이상 상승)
+    recent_up_days = 0
+    for i in range(min(5, len(df) - 1)):
+        if df.iloc[-(i+1)]["close"] > df.iloc[-(i+2)]["close"]:
+            recent_up_days += 1
+    
+    price_exhaustion = recent_up_days >= 4
+    risk_flags["price_exhaustion"] = price_exhaustion
+    if price_exhaustion:
+        risk_score += 1
+    
+    return risk_score, risk_flags
+
+
 def score_conditions(df: pd.DataFrame) -> tuple:
     """조건별 점수 계산 및 근거 플래그 반환.
     Returns: (score:int, flags:Dict[str,bool])
@@ -111,6 +161,19 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         return 0, {}
     cur = df.iloc[-1]
     prev = df.iloc[-2]
+
+    # 위험도 점수 계산
+    risk_score, risk_flags = calculate_risk_score(df)
+    
+    # 위험도가 임계값을 초과하면 제외
+    if risk_score >= config.risk_score_threshold:
+        return 0, {
+            "match": False,
+            "label": "위험종목",
+            "risk_score": risk_score,
+            "risk_flags": risk_flags,
+            "details": {"risk_excluded": True, "risk_score": risk_score}
+        }
 
     # 추세 피처가 없다면 보강
     slope_lb = int(getattr(config, 'trend_slope_lookback', 20))
@@ -207,6 +270,10 @@ def score_conditions(df: pd.DataFrame) -> tuple:
             score += W['dema_slope']
     # off: 무시
 
+    # 위험도 정보 추가
+    flags["risk_score"] = risk_score
+    flags["risk_flags"] = risk_flags
+    
     # 레이블링 (더 세분화된 평가)
     if score >= 10:
         flags["label"] = "강한 매수"
@@ -219,7 +286,17 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     else:
         flags["label"] = "제외"
         flags["match"] = False  # 제외 종목은 매칭되지 않음
-    details['total'] = int(score)
+    
+    # 위험도에 따른 점수 조정
+    if risk_score > 0:
+        adjusted_score = max(0, score - risk_score)
+        flags["adjusted_score"] = adjusted_score
+        details['total'] = int(adjusted_score)
+        details['original_score'] = int(score)
+        details['risk_penalty'] = risk_score
+    else:
+        details['total'] = int(score)
+    
     return int(score), {**flags, 'details': details}
 
 

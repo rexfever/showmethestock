@@ -88,6 +88,12 @@ class Config:
     score_w_above_cnt: int = int(os.getenv("SCORE_W_ABOVE_CNT", "2"))
     score_level_strong: int = int(os.getenv("SCORE_LEVEL_STRONG", "8"))
     score_level_watch: int = int(os.getenv("SCORE_LEVEL_WATCH", "5"))
+    
+    # 위험도 필터링 설정
+    rsi_overbought_threshold: float = float(os.getenv("RSI_OVERBOUGHT_THRESHOLD", "80"))
+    vol_spike_threshold: float = float(os.getenv("VOL_SPIKE_THRESHOLD", "3.0"))
+    momentum_duration_min: int = int(os.getenv("MOMENTUM_DURATION_MIN", "3"))
+    risk_score_threshold: int = int(os.getenv("RISK_SCORE_THRESHOLD", "3"))
 
     def dynamic_score_weights(self) -> dict:
         raw = os.getenv("SCORE_WEIGHTS", "")
