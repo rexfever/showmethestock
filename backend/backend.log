@@ -1,47 +1,216 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [35659] using WatchFiles
-INFO:     Started server process [35769]
+INFO:     Started reloader process [63386] using WatchFiles
+INFO:     Started server process [63400]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:51037 - "GET /health HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:51174 - "GET / HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'models.py'. Reloading...
+카카오 콜백 요청: {'code': 'Ln-fpHpi3JM7OcvbKU_fWDj58HWgEvLQ95mw603r-nNaTJX-RI9CxAAAAAQKDRXYAAABmWe0lDFONYg--5I0Sw', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"o_SqMgC08l4r8b0_nAopBuHiMQY1w-KGAAAAAQoNDV8AAAGZZ7ScF7G7d-HwzTGR","token_type":"bearer","refresh_token":"p8mTgP6q9TggTm10vpjzl_F1T5DXIgFsAAAAAgoNDV8AAAGZZ7ScEbG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NTgzODE1MTMsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NTgzODg3MTMsImlhdCI6MTc1ODM4MTUxMywicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.SQ5Y5VuJQoeJa7e8IGMNN4vKVQEYOLklPk0m_kCK84UX1iQ9EsR7qfC24xNmNF_znUFkBjK842-qZD757GrEuTthpvbl511tFEHTxhxqVC5YearEK2LRRikdDZkbrerisHt6dXzWa53wz3riQFV9uo_DFRuFMDod5UkTW6SR4N5elwtnY3Im0i7EEC77wpv9cQMh3m1L3bSUrlSqLMkk0c-XxHjbfr4Namb6Yl2hb0_-qeLuWrwJ0lpXXwFQCZw99euaPGGBlmesDQFffPKg7BBGGUg4f3bHiPuox1h-tp8qC2Y5w3gT4p_Qk6b4Rb34m0RG34kAjw3-TGKTURDHPQ","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+사용자 생성 완료: None
+사용자 생성 오류: 'NoneType' object has no attribute 'id'
+INFO:     127.0.0.1:62746 - "POST /auth/kakao/callback HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'auth_service.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [35769]
-INFO:     Started server process [57162]
+INFO:     Finished server process [63400]
+INFO:     Started server process [65146]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'portfolio_service.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'auth_service.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [57162]
-WARNING:  WatchFiles detected changes in 'portfolio_service.py'. Reloading...
-INFO:     Started server process [61195]
+INFO:     Finished server process [65146]
+INFO:     Started server process [65213]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [61195]
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Started server process [61835]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [61835]
-INFO:     Started server process [62493]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [62493]
-INFO:     Stopping reloader process [35659]
+카카오 콜백 요청: {'code': 'sj7T57yywQGaC3dclZS354phpWmBmCXZjWC_IHycq5l5IjgYmzzh4gAAAAQKDRXYAAABmWe3hp3C3p98Pd5TpQ', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"oTOm_u-516KNKxL_goGNFWMY-dGwIeG6AAAAAQoNDSEAAAGZZ7eQYbG7d-HwzTGR","token_type":"bearer","refresh_token":"EiRcV-qEp2g-To-fxPhIWH8SSL5iGJffAAAAAgoNDSEAAAGZZ7eQXrG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NTgzODE3MDcsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NTgzODg5MDcsImlhdCI6MTc1ODM4MTcwNywicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.RePGwa5f8uZbY09C2GS0h_igFUp4zwoJ0ntgWu9xUdViPJLaHgJEdxeVsCxovxuwW4tttUCEw0V4TRn8oEC9h8cALniVhyupXPhF4kmGZfGmFeOt87mTTTtapcGhAFUO1Fa73XZx47spvfQSHLA_wmdBPzEoJWZlaADDfKsgeBpHUsyh9Py0IRgdvm9PBv9PdBA3VOYWq_9vD6w_DsLza8jS7uji3X7P_9fLykf5UUs-fKE_yZ9IzPT6znN3RTTbsMcW_gMwgWWW_HReaAdppdukqAHqdFXiWl9GIIJuMqjaCSBBRx1WLbGsPoKi67KQ0VK5M_mHRgLpA2RL7SCmYA","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+INSERT 시도: email=emozero@naver.com, name=손진형, provider=kakao, provider_id=4456585023
+INSERT 성공: user_id=7
+get_user_by_id 결과: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=None
+사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=None
+마지막 로그인 시간 업데이트 완료
+INFO:     127.0.0.1:63629 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63644 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63629 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63647 - "OPTIONS /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63629 - "GET /portfolio HTTP/1.1" 200 OK
+카카오 콜백 요청: {'code': 'xLe3IAGk6nMOlp8Sv5Xe6OveTCLPFcXU8hWjQdB4_KNAgsacpEzU7gAAAAQKDRXYAAABmWe3ruLRDLJpR7eCqA', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"ZjnarabpFTvasIQTTEUOBRDDkj4cd2F4AAAAAQoNCB4AAAGZZ7e2P7G7d-HwzTGR","token_type":"bearer","refresh_token":"NeoQseM9l6eqzumRPYgYYPo3x_1ueP3fAAAAAgoNCB4AAAGZZ7e2ObG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NTgzODE3MTcsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NTgzODg5MTcsImlhdCI6MTc1ODM4MTcxNywicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.aRpbLg5Du04Y32s7GieXUDl7o0JFUOfcRB6AvgJjg1l_i9hCQydnqSYHTmpo2IA_oEh-4lTmMiJjPDKOSgda06BKJl4Qe8D_FMYmCjkB00kMkTE7LoAgBDKXS0-iOx6ft0co_g-xCXMddtMgS7rUFQVGRZFNrPnlANaUEClFkNxob3s5MKGHD1TGZIGinUYMXsZOwS2XX4IxW24Mk3p0F89xUZxrufdVkWG5yLf-ie6GKJFwaKl_zqSN0rvJDsFGCgfTeIDqKar6OP0fGpwJfTFAh6-1PysA61Pz2a7qujypFlb8U6J42pWgseYM4RFBFywoHUc6wNAE3cuyOxyekQ","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+INSERT 시도: email=emozero@naver.com, name=손진형, provider=kakao, provider_id=4456585023
+IntegrityError 발생: UNIQUE constraint failed: users.email
+get_user_by_provider 결과: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 9, 20, 15, 21, 47)
+사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 9, 20, 15, 21, 47)
+마지막 로그인 시간 업데이트 완료
+INFO:     127.0.0.1:63689 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63700 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63689 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63706 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51510 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51531 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51533 - "OPTIONS /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51531 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51574 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
+카카오 콜백 요청: {'code': 'p0ZAMDfBk_hDJht3TbVhn5isJmq1_rd4d-KS2mhv5pokgtDtHL9WxAAAAAQKFyEtAAABmWfRxnIp9hBbJybEWQ', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"Ab4Z-zXiQ1BXh_uO3i4GxkyOnr3OyR9gAAAAAQoNCB4AAAGZZ9HOILG7d-HwzTGR","token_type":"bearer","refresh_token":"2_d9Shn4xAE8Rk0Bu9lFhIg9U22-iq5mAAAAAgoNCB4AAAGZZ9HOHrG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NTgzODM0MjcsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NTgzOTA2MjcsImlhdCI6MTc1ODM4MzQyNywicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.ZkFLLFCUvDytlbwXw-T43an5f0F3RFDCOwbIfJJTc0SUtRqdeOgKeSvMstBs3q0VbLitWlKwQHzDb9qaFwQKhHf9RuDuE1fEpbIuEqyHwbDdN7QbStS9YH49LmUDvl_y39cOdg5N5aCPFKd5TWwPqfrGVUhU5Oga6pJFxsO62FY8x-yUaFyuHFBBTGk43obmjveujUe0pbMGIF9RA1XV1_EKrEE_l9Xp2jRUlmXHmkwVogh5YZn2hDCKBXsI3rdnMYTycwhzYmSsBWcEMcERelr01xkLj_e-1hOtOcnZ_E8c6zqPaK9JPyJFHz8DV7SFmfad89mm4ArC-MSHWW2K0Q","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+INSERT 시도: email=emozero@naver.com, name=손진형, provider=kakao, provider_id=4456585023
+IntegrityError 발생: UNIQUE constraint failed: users.email
+get_user_by_provider 결과: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 9, 20, 15, 21, 57)
+사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 9, 20, 15, 21, 57)
+마지막 로그인 시간 업데이트 완료
+INFO:     127.0.0.1:51574 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51591 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51574 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51576 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52006 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52007 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52079 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52080 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52182 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52202 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52204 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52286 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52293 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52294 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52439 - "GET /subscription/plans HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52441 - "OPTIONS /subscription/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52439 - "GET /subscription/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52459 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52439 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52441 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52699 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52700 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52825 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52826 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53027 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53046 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53047 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56697 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56699 - "OPTIONS /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56697 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56841 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56843 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56918 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56919 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56976 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57002 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57003 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57414 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57415 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57531 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57533 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57655 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57656 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57740 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57764 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57766 - "GET /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57824 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57825 - "OPTIONS /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57824 - "GET /admin/users HTTP/1.1" 200 OK
+관리자 통계 조회 오류: 8 validation errors for AdminStatsResponse
+recent_users.0.provider_id
+  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.1.provider_id
+  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.2.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.2.provider_id
+  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.3.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.3.provider_id
+  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.4.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.4.provider_id
+  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+INFO:     127.0.0.1:57827 - "GET /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57844 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57827 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57824 - "GET /portfolio HTTP/1.1" 200 OK
+관리자 통계 조회 오류: 8 validation errors for AdminStatsResponse
+recent_users.0.provider_id
+  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.1.provider_id
+  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.2.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.2.provider_id
+  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.3.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.3.provider_id
+  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.4.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.4.provider_id
+  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+INFO:     127.0.0.1:57883 - "GET /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57886 - "GET /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58009 - "OPTIONS /admin/users/7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58009 - "PUT /admin/users/7 HTTP/1.1" 200 OK
+관리자 통계 조회 오류: 8 validation errors for AdminStatsResponse
+recent_users.0.provider_id
+  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.1.provider_id
+  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.2.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.2.provider_id
+  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.3.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.3.provider_id
+  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+recent_users.4.name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+recent_users.4.provider_id
+  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.5/v/missing
+INFO:     127.0.0.1:58009 - "GET /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58011 - "GET /admin/users HTTP/1.1" 200 OK

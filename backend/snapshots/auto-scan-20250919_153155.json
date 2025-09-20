@@ -1,0 +1,1047 @@
+{
+  "as_of": "2025-09-19",
+  "universe_count": 100,
+  "matched_count": 8,
+  "rsi_mode": "standard",
+  "rsi_period": 14,
+  "rsi_threshold": 43.0,
+  "items": [
+    {
+      "ticker": "128940",
+      "name": "한미약품",
+      "match": true,
+      "score": 12.0,
+      "indicators": {
+        "TEMA": 315127.5271418785,
+        "DEMA": 316502.0839494291,
+        "MACD_OSC": 2324.8485687317125,
+        "RSI": 76.96326196536968,
+        "RSI_TEMA": 84.50220463963306,
+        "RSI_DEMA": 81.73256109205778,
+        "OBV": 91971.0,
+        "VOL": 189108,
+        "VOL_MA5": 119777.0
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 1160.8210954737413,
+        "OBV_SLOPE20": 29059.000000000025,
+        "ABOVE_CNT5": 4
+      },
+      "strategy": "상승시작 / 관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": true,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 12
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 12,
+        "close": 332500.0,
+        "recurrence": {
+          "appeared_before": false,
+          "appear_count": 0,
+          "last_as_of": null,
+          "first_as_of": "2025-09-19",
+          "days_since_last": null
+        }
+      }
+    },
+    {
+      "ticker": "012510",
+      "name": "더존비즈온",
+      "match": true,
+      "score": 12.0,
+      "indicators": {
+        "TEMA": 86713.52108195864,
+        "DEMA": 86181.57822543463,
+        "MACD_OSC": 526.4754620537569,
+        "RSI": 68.08999772763212,
+        "RSI_TEMA": 68.05132283577194,
+        "RSI_DEMA": 69.19807272696676,
+        "OBV": 6011689.0,
+        "VOL": 242075,
+        "VOL_MA5": 258735.2
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 1216.9506173796556,
+        "OBV_SLOPE20": 105973.6338345864,
+        "ABOVE_CNT5": 5
+      },
+      "strategy": "상승시작 / 관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": true,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 12
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 12,
+        "close": 86400.0,
+        "recurrence": {
+          "appeared_before": false,
+          "appear_count": 0,
+          "last_as_of": null,
+          "first_as_of": "2025-09-19",
+          "days_since_last": null
+        }
+      }
+    },
+    {
+      "ticker": "411060",
+      "name": "ACE KRX금현물",
+      "match": true,
+      "score": 12.0,
+      "indicators": {
+        "TEMA": 24003.574292578778,
+        "DEMA": 23957.71319752438,
+        "MACD_OSC": 125.17121763440844,
+        "RSI": 72.98435467527159,
+        "RSI_TEMA": 57.44215187730431,
+        "RSI_DEMA": 66.39181826934288,
+        "OBV": 26580236.0,
+        "VOL": 2928477,
+        "VOL_MA5": 2571001.8
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 169.22188674092905,
+        "OBV_SLOPE20": 847826.79924812,
+        "ABOVE_CNT5": 3
+      },
+      "strategy": "상승시작 / 관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": true,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 12
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 12,
+        "close": 23760.0,
+        "recurrence": {
+          "appeared_before": false,
+          "appear_count": 0,
+          "last_as_of": null,
+          "first_as_of": "2025-09-19",
+          "days_since_last": null
+        }
+      }
+    },
+    {
+      "ticker": "012330",
+      "name": "현대모비스",
+      "match": true,
+      "score": 11.0,
+      "indicators": {
+        "TEMA": 316440.6316567018,
+        "DEMA": 314438.7473973187,
+        "MACD_OSC": -1179.5621697560127,
+        "RSI": 58.09857170928909,
+        "RSI_TEMA": 66.46967610027724,
+        "RSI_DEMA": 60.41277629437885,
+        "OBV": 2578848.0,
+        "VOL": 167612,
+        "VOL_MA5": 152983.4
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 1341.4882527830864,
+        "OBV_SLOPE20": 38465.808270676665,
+        "ABOVE_CNT5": 5
+      },
+      "strategy": "관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": false,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": false,
+            "w": 1,
+            "gain": 0
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 11
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": false,
+          "w": 1,
+          "gain": 0
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 11,
+        "close": 317000.0,
+        "recurrence": {
+          "appeared_before": false,
+          "appear_count": 0,
+          "last_as_of": null,
+          "first_as_of": "2025-09-19",
+          "days_since_last": null
+        }
+      }
+    },
+    {
+      "ticker": "003230",
+      "name": "삼양식품",
+      "match": true,
+      "score": 11.0,
+      "indicators": {
+        "TEMA": 1606336.719796227,
+        "DEMA": 1597929.6127268604,
+        "MACD_OSC": -2352.188390598836,
+        "RSI": 58.61325578404344,
+        "RSI_TEMA": 43.276066724404444,
+        "RSI_DEMA": 51.59041937257684,
+        "OBV": 2217760.0,
+        "VOL": 28303,
+        "VOL_MA5": 30416.8
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 11079.487561486034,
+        "OBV_SLOPE20": 9240.655639097717,
+        "ABOVE_CNT5": 5
+      },
+      "strategy": "관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": false,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": false,
+            "w": 1,
+            "gain": 0
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 11
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": false,
+          "w": 1,
+          "gain": 0
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 11,
+        "close": 1585000.0,
+        "recurrence": {
+          "appeared_before": true,
+          "appear_count": 1,
+          "last_as_of": "2025-08-22",
+          "first_as_of": "2025-08-22",
+          "days_since_last": 28
+        }
+      }
+    },
+    {
+      "ticker": "329180",
+      "name": "HD현대중공업",
+      "match": true,
+      "score": 11.0,
+      "indicators": {
+        "TEMA": 509229.7421967776,
+        "DEMA": 505754.71556536504,
+        "MACD_OSC": -3156.8594402712242,
+        "RSI": 46.60745660297408,
+        "RSI_TEMA": 20.127332032524393,
+        "RSI_DEMA": 31.09731535345084,
+        "OBV": 8332445.0,
+        "VOL": 236988,
+        "VOL_MA5": 176281.2
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 1860.6636593076232,
+        "OBV_SLOPE20": 950.7451127818949,
+        "ABOVE_CNT5": 5
+      },
+      "strategy": "관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": false,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": false,
+            "w": 1,
+            "gain": 0
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 11
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": false,
+          "w": 1,
+          "gain": 0
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 11,
+        "close": 499500.0,
+        "recurrence": {
+          "appeared_before": true,
+          "appear_count": 9,
+          "last_as_of": "2025-08-30",
+          "first_as_of": "2025-08-19",
+          "days_since_last": 20
+        }
+      }
+    },
+    {
+      "ticker": "466920",
+      "name": "SOL 조선TOP3플러스",
+      "match": true,
+      "score": 11.0,
+      "indicators": {
+        "TEMA": 33137.10787014536,
+        "DEMA": 32905.625265505194,
+        "MACD_OSC": -207.61053606672715,
+        "RSI": 46.914250524149914,
+        "RSI_TEMA": 15.194436793776248,
+        "RSI_DEMA": 28.0256332424391,
+        "OBV": 113645996.0,
+        "VOL": 2838190,
+        "VOL_MA5": 2782685.2
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 160.42777658253218,
+        "OBV_SLOPE20": 22431.521804508324,
+        "ABOVE_CNT5": 5
+      },
+      "strategy": "관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": false,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": false,
+            "w": 1,
+            "gain": 0
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 11
+        }
+      },
+      "score_label": "강한 매수",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "macd": {
+          "ok": false,
+          "w": 1,
+          "gain": 0
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 11,
+        "close": 32410.0,
+        "recurrence": {
+          "appeared_before": true,
+          "appear_count": 10,
+          "last_as_of": "2025-08-30",
+          "first_as_of": "2025-08-19",
+          "days_since_last": 20
+        }
+      }
+    },
+    {
+      "ticker": "086280",
+      "name": "현대글로비스",
+      "match": true,
+      "score": 9.0,
+      "indicators": {
+        "TEMA": 188485.2154263098,
+        "DEMA": 187355.15134481445,
+        "MACD_OSC": -1123.586310304585,
+        "RSI": 62.486341325183105,
+        "RSI_TEMA": 65.49617948987148,
+        "RSI_DEMA": 60.937888762386045,
+        "OBV": 4601225.0,
+        "VOL": 206572,
+        "VOL_MA5": 233737.4
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 881.7144172125061,
+        "OBV_SLOPE20": 31118.034586466063,
+        "ABOVE_CNT5": 5
+      },
+      "strategy": "상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": false,
+        "macd_ok": false,
+        "rsi_ok": true,
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": false,
+            "w": 2,
+            "gain": 0
+          },
+          "macd": {
+            "ok": false,
+            "w": 1,
+            "gain": 0
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 9
+        }
+      },
+      "score_label": "매수 후보",
+      "details": {
+        "cross": {
+          "ok": false,
+          "w": 3,
+          "gain": 0
+        },
+        "volume": {
+          "ok": false,
+          "w": 2,
+          "gain": 0
+        },
+        "macd": {
+          "ok": false,
+          "w": 1,
+          "gain": 0
+        },
+        "rsi": {
+          "ok": true,
+          "w": 1,
+          "gain": 1
+        },
+        "tema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "obv_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "above_cnt5": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "dema_slope": {
+          "ok": true,
+          "w": 2,
+          "gain": 2
+        },
+        "total": 9,
+        "close": 187600.0,
+        "recurrence": {
+          "appeared_before": true,
+          "appear_count": 2,
+          "last_as_of": "2025-08-30",
+          "first_as_of": "2025-08-29",
+          "days_since_last": 20
+        }
+      }
+    }
+  ],
+  "score_weights": {
+    "cross": 3,
+    "volume": 2,
+    "macd": 1,
+    "rsi": 1,
+    "tema_slope": 2,
+    "dema_slope": 2,
+    "obv_slope": 2,
+    "above_cnt5": 2
+  },
+  "score_level_strong": 8,
+  "score_level_watch": 5,
+  "require_dema_slope": "optional"
+}

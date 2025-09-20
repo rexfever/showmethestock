@@ -18,9 +18,14 @@ from kakao import send_alert, format_scan_message, format_scan_alert_message
 import glob
 
 # 인증 관련 import
-from auth_models import User, Token, SocialLoginRequest
+from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, EmailLoginRequest, EmailVerificationRequest, PasswordResetRequest, PasswordResetConfirmRequest, PaymentRequest, PaymentResponse, AdminUserUpdateRequest, AdminUserDeleteRequest, AdminStatsResponse
 from auth_service import auth_service
 from social_auth import social_auth_service
+from subscription_service import subscription_service
+from payment_service import kakao_pay_service
+from subscription_plans import get_all_plans, get_plan
+from admin_service import admin_service
+import httpx
 
 # 포트폴리오 관련 import
 from portfolio_service import portfolio_service
@@ -1655,6 +1660,271 @@ async def check_auth(current_user: User = Depends(get_current_user)):
         "user": current_user
     }
 
+# ===== 이메일 가입/로그인 API =====
+
+@app.post("/auth/email/signup")
+async def email_signup(request: EmailSignupRequest):
+    """이메일 회원가입"""
+    try:
+        # 사용자 생성
+        success = auth_service.create_email_user(request)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이미 존재하는 이메일입니다"
+            )
+        
+        # 인증 이메일 발송
+        email_sent = auth_service.send_verification_email(request.email)
+        if not email_sent:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="인증 이메일 발송에 실패했습니다"
+            )
+        
+        return {"message": "회원가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"회원가입 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/auth/email/verify")
+async def verify_email(request: EmailVerificationRequest):
+    """이메일 인증"""
+    try:
+        success = auth_service.verify_email_code(request.email, request.verification_code)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="인증 코드가 올바르지 않거나 만료되었습니다"
+            )
+        
+        return {"message": "이메일 인증이 완료되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"이메일 인증 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/auth/email/login", response_model=Token)
+async def email_login(request: EmailLoginRequest):
+    """이메일 로그인"""
+    try:
+        user = auth_service.verify_email_user(request.email, request.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="이메일 또는 비밀번호가 올바르지 않습니다"
+            )
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="비활성화된 계정입니다"
+            )
+        
+        # JWT 토큰 생성
+        access_token_expires = timedelta(minutes=30)
+        access_token = auth_service.create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        
+        # 마지막 로그인 시간 업데이트
+        auth_service.update_last_login(user.id)
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"로그인 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/auth/email/resend-verification")
+async def resend_verification_email(request: PasswordResetRequest):
+    """인증 이메일 재발송"""
+    try:
+        success = auth_service.send_verification_email(request.email)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="인증 이메일 발송에 실패했습니다"
+            )
+        
+        return {"message": "인증 이메일이 재발송되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"이메일 재발송 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/auth/email/password-reset")
+async def request_password_reset(request: PasswordResetRequest):
+    """비밀번호 재설정 요청"""
+    try:
+        success = auth_service.send_password_reset_email(request.email)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="등록되지 않은 이메일이거나 이메일 발송에 실패했습니다"
+            )
+        
+        return {"message": "비밀번호 재설정 이메일이 발송되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"비밀번호 재설정 요청 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/auth/email/password-reset/confirm")
+async def confirm_password_reset(request: PasswordResetConfirmRequest):
+    """비밀번호 재설정 확인"""
+    try:
+        success = auth_service.reset_password(request.email, request.verification_code, request.new_password)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="인증 코드가 올바르지 않거나 만료되었습니다"
+            )
+        
+        return {"message": "비밀번호가 성공적으로 재설정되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"비밀번호 재설정 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.post("/auth/kakao/callback", response_model=Token)
+async def kakao_callback(request: dict):
+    """카카오 OAuth 콜백 처리"""
+    try:
+        print(f"카카오 콜백 요청: {request}")
+        code = request.get("code")
+        redirect_uri = request.get("redirect_uri")
+        
+        if not code:
+            print("인증 코드가 없습니다")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="인증 코드가 없습니다"
+            )
+        
+        # 카카오에서 액세스 토큰 요청
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://kauth.kakao.com/oauth/token",
+                data={
+                    "grant_type": "authorization_code",
+                    "client_id": "4eb579e52709ea64e8b941b9c95d20da",
+                    "redirect_uri": redirect_uri,
+                    "code": code
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            
+            print(f"카카오 토큰 응답 상태: {token_response.status_code}")
+            print(f"카카오 토큰 응답 내용: {token_response.text}")
+            
+            if token_response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="카카오 토큰 요청에 실패했습니다"
+                )
+            
+            token_data = token_response.json()
+            access_token = token_data.get("access_token")
+            
+            if not access_token:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="카카오 액세스 토큰을 받지 못했습니다"
+                )
+            
+            # 카카오에서 사용자 정보 요청
+            user_response = await client.get(
+                "https://kapi.kakao.com/v2/user/me",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            
+            print(f"카카오 사용자 정보 응답 상태: {user_response.status_code}")
+            print(f"카카오 사용자 정보 응답 내용: {user_response.text}")
+            
+            if user_response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="카카오 사용자 정보 요청에 실패했습니다"
+                )
+            
+            user_data = user_response.json()
+            kakao_account = user_data.get("kakao_account", {})
+            profile = kakao_account.get("profile", {})
+            
+            # 사용자 정보 구성
+            social_user_info = {
+                "provider": "kakao",
+                "provider_id": str(user_data.get("id")),
+                "email": kakao_account.get("email", ""),
+                "name": profile.get("nickname", ""),
+                "profile_image": profile.get("profile_image_url", ""),
+                "phone_number": kakao_account.get("phone_number", ""),
+                "gender": kakao_account.get("gender", ""),
+                "age_range": kakao_account.get("age_range", ""),
+                "birthday": kakao_account.get("birthday", "")
+            }
+            
+            print(f"사용자 정보 구성: {social_user_info}")
+            
+            # 사용자 생성 또는 조회
+            try:
+                user_create = social_auth_service.create_user_from_social(social_user_info)
+                print(f"사용자 생성 요청: {user_create}")
+                user = auth_service.create_user(user_create)
+                print(f"사용자 생성 완료: {user}")
+                
+                # 마지막 로그인 시간 업데이트
+                auth_service.update_last_login(user.id)
+                print("마지막 로그인 시간 업데이트 완료")
+            except Exception as e:
+                print(f"사용자 생성 오류: {e}")
+                raise
+            
+            # JWT 토큰 생성
+            access_token_expires = timedelta(minutes=30)
+            jwt_token = auth_service.create_access_token(
+                data={"sub": user.email}, expires_delta=access_token_expires
+            )
+            
+            return {
+                "access_token": jwt_token,
+                "token_type": "bearer",
+                "user": user
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"카카오 로그인 처리 중 오류가 발생했습니다: {str(e)}"
+        )
+
 
 # ===== 포트폴리오 API =====
 
@@ -1768,4 +2038,305 @@ async def get_portfolio_summary(current_user: User = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"포트폴리오 요약 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+# ==================== 구독 및 결제 API ====================
+
+@app.get("/subscription/plans")
+async def get_subscription_plans():
+    """구독 플랜 목록 조회"""
+    try:
+        plans = get_all_plans()
+        return {"plans": [plan.dict() for plan in plans]}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"구독 플랜 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/subscription/status")
+async def get_subscription_status(current_user: User = Depends(get_current_user)):
+    """사용자 구독 상태 조회"""
+    try:
+        status = subscription_service.check_subscription_status(current_user.id)
+        permissions = subscription_service.get_user_permissions(current_user.id)
+        
+        return {
+            "subscription": status,
+            "permissions": permissions
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"구독 상태 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/payment/create")
+async def create_payment(
+    request: PaymentRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """결제 생성"""
+    try:
+        # 플랜 확인
+        plan = get_plan(request.plan_id)
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="존재하지 않는 플랜입니다"
+            )
+        
+        # 카카오페이 결제 생성
+        payment_response = await kakao_pay_service.create_payment(
+            user_id=current_user.id,
+            plan_id=request.plan_id,
+            return_url=request.return_url,
+            cancel_url=request.cancel_url,
+            fail_url=request.cancel_url  # 실패 시에도 취소 URL로
+        )
+        
+        if not payment_response:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="결제 생성에 실패했습니다"
+            )
+        
+        return payment_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"결제 생성 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/payment/approve")
+async def approve_payment(
+    payment_id: str,
+    pg_token: str,
+    plan_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """결제 승인"""
+    try:
+        # 카카오페이 결제 승인
+        approval_data = await kakao_pay_service.approve_payment(
+            payment_id=payment_id,
+            pg_token=pg_token,
+            user_id=current_user.id,
+            plan_id=plan_id
+        )
+        
+        if not approval_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="결제 승인에 실패했습니다"
+            )
+        
+        # 구독 생성
+        success = subscription_service.create_subscription(
+            user_id=current_user.id,
+            plan_id=plan_id,
+            payment_id=payment_id,
+            amount=approval_data["amount"],
+            expires_at=approval_data["expires_at"]
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="구독 생성에 실패했습니다"
+            )
+        
+        return {
+            "message": "결제가 완료되었습니다",
+            "subscription": subscription_service.get_user_subscription(current_user.id)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"결제 승인 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/subscription/cancel")
+async def cancel_subscription(current_user: User = Depends(get_current_user)):
+    """구독 취소"""
+    try:
+        success = subscription_service.cancel_subscription(current_user.id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="구독 취소에 실패했습니다"
+            )
+        
+        return {"message": "구독이 취소되었습니다"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"구독 취소 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/subscription/history")
+async def get_subscription_history(current_user: User = Depends(get_current_user)):
+    """구독 내역 조회"""
+    try:
+        # 실제로는 데이터베이스에서 구독 내역을 조회해야 함
+        subscription = subscription_service.get_user_subscription(current_user.id)
+        
+        return {
+            "current_subscription": subscription,
+            "history": []  # TODO: 구독 내역 테이블에서 조회
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"구독 내역 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+# ==================== 관리자 API ====================
+
+def get_admin_user(current_user: User = Depends(get_current_user)):
+    """관리자 권한 확인"""
+    if not admin_service.is_admin(current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="관리자 권한이 필요합니다"
+        )
+    return current_user
+
+@app.get("/admin/stats")
+async def get_admin_stats(admin_user: User = Depends(get_admin_user)):
+    """관리자 통계 조회"""
+    try:
+        stats = admin_service.get_admin_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"관리자 통계 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/admin/users")
+async def get_all_users(
+    limit: int = 100,
+    offset: int = 0,
+    admin_user: User = Depends(get_admin_user)
+):
+    """모든 사용자 조회"""
+    try:
+        users = admin_service.get_all_users(limit, offset)
+        return {"users": users, "total": len(users)}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 목록 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/admin/users/{user_id}")
+async def get_user_by_id(
+    user_id: int,
+    admin_user: User = Depends(get_admin_user)
+):
+    """특정 사용자 조회"""
+    try:
+        user = admin_service.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다"
+            )
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.put("/admin/users/{user_id}")
+async def update_user(
+    user_id: int,
+    request: AdminUserUpdateRequest,
+    admin_user: User = Depends(get_admin_user)
+):
+    """사용자 정보 업데이트"""
+    try:
+        # 요청 데이터 구성
+        updates = {}
+        if request.membership_tier is not None:
+            updates["membership_tier"] = request.membership_tier.value
+        if request.subscription_status is not None:
+            updates["subscription_status"] = request.subscription_status.value
+        if request.subscription_expires_at is not None:
+            updates["subscription_expires_at"] = request.subscription_expires_at.isoformat()
+        if request.is_admin is not None:
+            updates["is_admin"] = request.is_admin
+        
+        success = admin_service.update_user(user_id, updates)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="사용자 정보 업데이트에 실패했습니다"
+            )
+        
+        # 업데이트된 사용자 정보 반환
+        updated_user = admin_service.get_user_by_id(user_id)
+        return {"message": "사용자 정보가 업데이트되었습니다", "user": updated_user}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 정보 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    request: AdminUserDeleteRequest,
+    admin_user: User = Depends(get_admin_user)
+):
+    """사용자 삭제"""
+    try:
+        if not request.confirm:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="사용자 삭제를 확인해주세요"
+            )
+        
+        # 자기 자신 삭제 방지
+        if user_id == admin_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="자기 자신을 삭제할 수 없습니다"
+            )
+        
+        success = admin_service.delete_user(user_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="사용자 삭제에 실패했습니다"
+            )
+        
+        return {"message": "사용자가 삭제되었습니다"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 삭제 중 오류가 발생했습니다: {str(e)}"
         )

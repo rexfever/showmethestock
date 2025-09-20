@@ -24,12 +24,13 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
   const [portfolioItems, setPortfolioItems] = useState(new Set());
 
-  // 인증 체크 (임시 비활성화 - 인증 구현 전까지)
+  // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
   // useEffect(() => {
   //   if (!authLoading && !isAuthenticated()) {
-  //     router.push('/login');
+  //     // router.push('/login'); // 주석 처리 - 게스트 사용자도 접근 가능
   //   }
   // }, [authLoading, isAuthenticated, router]);
+
 
   // 포트폴리오 조회
   const fetchPortfolio = useCallback(async () => {
@@ -424,39 +425,14 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             </div>
             <div className="flex items-center space-x-3">
               {user ? (
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => alert('준비중입니다.')}
-                    className="px-2 py-1 text-xs text-green-600 hover:text-green-700 border border-green-300 rounded"
-                  >
-                    포트폴리오
-                  </button>
-                  <span className="text-sm text-gray-600">
-                    {user.name}님 ({user.provider})
-                  </span>
-                  <button 
-                    onClick={() => {
-                      logout();
-                      router.push('/login');
-                    }}
-                    className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded"
-                  >
-                    로그아웃
-                  </button>
-                </div>
+                <span className="text-sm text-gray-600">
+                  {user.name}님 ({user.provider})
+                </span>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-500">게스트 사용자</span>
-                  <button 
-                    onClick={() => alert('준비중입니다.')}
-                    className="px-2 py-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-300 rounded"
-                  >
-                    로그인
-                  </button>
-                </div>
+                <span className="text-sm text-gray-500">게스트 사용자</span>
               )}
               <button 
-                onClick={() => alert('준비중입니다.')}
+                onClick={() => router.push('/subscription')}
                 className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 text-xs font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200"
               >
                 👑 프리미어
@@ -872,15 +848,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               className="flex flex-col items-center py-2 hover:bg-gray-800"
               onClick={() => alert('준비중입니다.')}
             >
-              <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 12h2l3-9 3 9h2l-3 9-3-9z"/>
-              </svg>
-              <span className="text-xs">메뉴</span>
-            </button>
-            <button 
-              className="flex flex-col items-center py-2 hover:bg-gray-800"
-              onClick={() => alert('준비중입니다.')}
-            >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
@@ -897,12 +864,39 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             </button>
             <button 
               className="flex flex-col items-center py-2 hover:bg-gray-800"
-              onClick={() => alert('준비중입니다.')}
+              onClick={() => router.push('/portfolio')}
             >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
               <span className="text-xs">관심종목</span>
+            </button>
+            {user?.is_admin && (
+              <button 
+                className="flex flex-col items-center py-2 hover:bg-gray-800"
+                onClick={() => router.push('/admin')}
+              >
+                <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span className="text-xs">관리자</span>
+              </button>
+            )}
+            <button 
+              className="flex flex-col items-center py-2 hover:bg-gray-800"
+              onClick={() => {
+                if (user) {
+                  logout();
+                  router.push('/login');
+                } else {
+                  router.push('/login');
+                }
+              }}
+            >
+              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="text-xs">{user ? '로그아웃' : '로그인'}</span>
             </button>
           </div>
         </div>

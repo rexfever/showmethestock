@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
+import { logoutWithKakao } from '../utils/kakaoAuth';
 
 const AuthContext = createContext();
 
@@ -88,16 +89,48 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // 카카오 로그아웃 (사용자가 카카오로 로그인한 경우)
+    if (user && user.provider === 'kakao') {
+      try {
+        await logoutWithKakao();
+      } catch (error) {
+        console.error('카카오 로그아웃 실패:', error);
+      }
+    }
+    
+    // 로컬 로그아웃
     Cookies.remove('auth_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };
 
   const isAuthenticated = () => {
-    // 임시로 항상 false 반환 (인증 구현 전까지)
-    return false;
-    // return !!token && !!user;
+    // localStorage에서 토큰 확인
+    const localToken = localStorage.getItem('token');
+    const localUser = localStorage.getItem('user');
+    
+    if (localToken && localUser) {
+      // localStorage에 토큰이 있으면 인증된 것으로 간주
+      if (!user) {
+        // user 상태가 없으면 localStorage에서 복원
+        try {
+          const userData = JSON.parse(localUser);
+          setUser(userData);
+          setToken(localToken);
+        } catch (error) {
+          console.error('사용자 정보 파싱 실패:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          return false;
+        }
+      }
+      return true;
+    }
+    
+    return !!token && !!user;
   };
 
   const value = {
