@@ -22,6 +22,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
   const [showGuide, setShowGuide] = useState(false);
   const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
+  const [portfolioItems, setPortfolioItems] = useState(new Set());
 
   // 인증 체크 (임시 비활성화 - 인증 구현 전까지)
   // useEffect(() => {
@@ -29,6 +30,45 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   //     router.push('/login');
   //   }
   // }, [authLoading, isAuthenticated, router]);
+
+  // 포트폴리오 조회
+  const fetchPortfolio = useCallback(async () => {
+    if (!isAuthenticated()) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const base = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:8010' 
+        : 'https://sohntech.ai.kr/backend';
+      
+      const response = await fetch(`${base}/portfolio`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const tickers = new Set(data.items.map(item => item.ticker));
+        setPortfolioItems(tickers);
+      }
+    } catch (error) {
+      console.error('포트폴리오 조회 실패:', error);
+    }
+  }, [isAuthenticated]);
+
+  // 포트폴리오에 종목 추가
+  const addToPortfolio = async (ticker, name) => {
+    alert('준비중입니다.');
+    return;
+  };
+
+  // 포트폴리오에서 종목 제거
+  const removeFromPortfolio = async (ticker) => {
+    alert('준비중입니다.');
+    return;
+  };
 
   // 사용 가능한 스캔 날짜 목록 가져오기
   const fetchAvailableDates = useCallback(async () => {
@@ -172,6 +212,9 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     
     // 사용 가능한 날짜 목록 가져오기
     fetchAvailableDates();
+    
+    // 포트폴리오 조회
+    fetchPortfolio();
     
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasSSRData) {
@@ -382,6 +425,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             <div className="flex items-center space-x-3">
               {user ? (
                 <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => alert('준비중입니다.')}
+                    className="px-2 py-1 text-xs text-green-600 hover:text-green-700 border border-green-300 rounded"
+                  >
+                    포트폴리오
+                  </button>
                   <span className="text-sm text-gray-600">
                     {user.name}님 ({user.provider})
                   </span>
@@ -399,7 +448,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-500">게스트 사용자</span>
                   <button 
-                    onClick={() => router.push('/login')}
+                    onClick={() => alert('준비중입니다.')}
                     className="px-2 py-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-300 rounded"
                   >
                     로그인
@@ -793,12 +842,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                       className="text-blue-500 hover:text-blue-700"
                       onClick={() => alert('준비중입니다.')}
                     >
-                      관심등록
-                    </button>
-                    <button 
-                      className="text-blue-500 hover:text-blue-700"
-                      onClick={() => alert('준비중입니다.')}
-                    >
                       차트
                     </button>
                     <button 
@@ -809,8 +852,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                     </button>
                   </div>
                   <button 
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600"
-                    onClick={() => alert('준비중입니다.')}
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
+                    onClick={() => addToPortfolio(item.ticker, item.name)}
                   >
                     관심등록
                   </button>

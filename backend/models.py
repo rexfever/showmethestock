@@ -143,3 +143,48 @@ class UpdatePositionRequest(BaseModel):
     exit_date: Optional[str] = None
 
 
+class PortfolioItem(BaseModel):
+    """포트폴리오 아이템 모델"""
+    id: Optional[int] = None
+    user_id: int
+    ticker: str
+    name: str
+    entry_price: Optional[float] = None  # 매수가
+    quantity: Optional[int] = None  # 수량
+    entry_date: Optional[str] = None  # 매수일
+    current_price: Optional[float] = None  # 현재가
+    total_investment: Optional[float] = None  # 총 투자금
+    current_value: Optional[float] = None  # 현재 평가금액
+    profit_loss: Optional[float] = None  # 손익
+    profit_loss_pct: Optional[float] = None  # 손익률
+    status: str = "watching"  # 'watching' | 'holding' | 'sold'
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class PortfolioResponse(BaseModel):
+    """포트폴리오 응답 모델"""
+    items: List[PortfolioItem]
+    total_investment: Optional[float] = None
+    total_current_value: Optional[float] = None
+    total_profit_loss: Optional[float] = None
+    total_profit_loss_pct: Optional[float] = None
+
+
+class AddToPortfolioRequest(BaseModel):
+    """포트폴리오 추가 요청"""
+    ticker: str
+    name: str
+    entry_price: Optional[float] = None
+    quantity: Optional[int] = None
+    entry_date: Optional[str] = None
+
+
+class UpdatePortfolioRequest(BaseModel):
+    """포트폴리오 업데이트 요청"""
+    entry_price: Optional[float] = None
+    quantity: Optional[int] = None
+    entry_date: Optional[str] = None
+    status: Optional[str] = None
+
+

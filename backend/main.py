@@ -11,7 +11,7 @@ from config import config, reload_from_env
 from environment import get_environment_info
 from kiwoom_api import KiwoomAPI
 from scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
-from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest
+from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest
 from utils import is_code, normalize_code_or_name
 import sqlite3
 from kakao import send_alert, format_scan_message, format_scan_alert_message
@@ -21,6 +21,9 @@ import glob
 from auth_models import User, Token, SocialLoginRequest
 from auth_service import auth_service
 from social_auth import social_auth_service
+
+# 포트폴리오 관련 import
+from portfolio_service import portfolio_service
 
 
 app = FastAPI(title='Stock Scanner API')
@@ -1651,3 +1654,118 @@ async def check_auth(current_user: User = Depends(get_current_user)):
         "authenticated": True,
         "user": current_user
     }
+
+
+# ===== 포트폴리오 API =====
+
+@app.get("/portfolio", response_model=PortfolioResponse)
+async def get_portfolio(
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """포트폴리오 조회"""
+    try:
+        portfolio = portfolio_service.get_portfolio(current_user.id, status)
+        return portfolio
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"포트폴리오 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.post("/portfolio/add", response_model=PortfolioItem)
+async def add_to_portfolio(
+    request: AddToPortfolioRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """포트폴리오에 종목 추가"""
+    try:
+        portfolio_item = portfolio_service.add_to_portfolio(current_user.id, request)
+        return portfolio_item
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"포트폴리오 추가 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.put("/portfolio/{ticker}", response_model=PortfolioItem)
+async def update_portfolio(
+    ticker: str,
+    request: UpdatePortfolioRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """포트폴리오 항목 업데이트"""
+    try:
+        portfolio_item = portfolio_service.update_portfolio(current_user.id, ticker, request)
+        if not portfolio_item:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="포트폴리오에서 해당 종목을 찾을 수 없습니다"
+            )
+        return portfolio_item
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"포트폴리오 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.delete("/portfolio/{ticker}")
+async def remove_from_portfolio(
+    ticker: str,
+    current_user: User = Depends(get_current_user)
+):
+    """포트폴리오에서 종목 제거"""
+    try:
+        success = portfolio_service.remove_from_portfolio(current_user.id, ticker)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="포트폴리오에서 해당 종목을 찾을 수 없습니다"
+            )
+        return {"message": "포트폴리오에서 종목이 제거되었습니다"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"포트폴리오 제거 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.get("/portfolio/summary")
+async def get_portfolio_summary(current_user: User = Depends(get_current_user)):
+    """포트폴리오 요약 정보"""
+    try:
+        portfolio = portfolio_service.get_portfolio(current_user.id)
+        
+        # 상태별 통계
+        watching_count = len([item for item in portfolio.items if item.status == "watching"])
+        holding_count = len([item for item in portfolio.items if item.status == "holding"])
+        sold_count = len([item for item in portfolio.items if item.status == "sold"])
+        
+        # 수익률별 통계
+        profitable_count = len([item for item in portfolio.items if item.profit_loss_pct and item.profit_loss_pct > 0])
+        loss_count = len([item for item in portfolio.items if item.profit_loss_pct and item.profit_loss_pct < 0])
+        
+        return {
+            "total_items": len(portfolio.items),
+            "watching_count": watching_count,
+            "holding_count": holding_count,
+            "sold_count": sold_count,
+            "profitable_count": profitable_count,
+            "loss_count": loss_count,
+            "total_investment": portfolio.total_investment,
+            "total_current_value": portfolio.total_current_value,
+            "total_profit_loss": portfolio.total_profit_loss,
+            "total_profit_loss_pct": portfolio.total_profit_loss_pct
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"포트폴리오 요약 조회 중 오류가 발생했습니다: {str(e)}"
+        )

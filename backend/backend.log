@@ -1,11 +1,47 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [37010] using WatchFiles
-INFO:     Started server process [37097]
+INFO:     Started reloader process [35659] using WatchFiles
+INFO:     Started server process [35769]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:51037 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51174 - "GET / HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'models.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [35769]
+INFO:     Started server process [57162]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'portfolio_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57162]
+WARNING:  WatchFiles detected changes in 'portfolio_service.py'. Reloading...
+INFO:     Started server process [61195]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61195]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [61835]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61835]
+INFO:     Started server process [62493]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [37097]
-INFO:     Stopping reloader process [37010]
+INFO:     Finished server process [62493]
+INFO:     Stopping reloader process [35659]
