@@ -108,6 +108,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => {
+    // 서버 사이드에서는 항상 false 반환
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    
     // localStorage에서 토큰 확인
     const localToken = localStorage.getItem('token');
     const localUser = localStorage.getItem('user');
