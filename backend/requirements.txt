@@ -7,3 +7,5 @@ pandas>=2.0.0
 numpy>=1.21.0
 schedule==1.2.0
 holidays==0.34
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
