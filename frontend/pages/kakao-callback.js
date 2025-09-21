@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import getConfig from '../config';
 
 export default function KakaoCallback() {
   const router = useRouter();
@@ -32,9 +33,8 @@ export default function KakaoCallback() {
 
       try {
         // 백엔드로 인증 코드 전송
-        const base = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:8010' 
-          : 'https://sohntech.ai.kr/backend';
+        const config = getConfig();
+        const base = config.backendUrl;
 
         const response = await fetch(`${base}/auth/kakao/callback`, {
           method: 'POST',
@@ -43,7 +43,7 @@ export default function KakaoCallback() {
           },
           body: JSON.stringify({
             code: code,
-            redirect_uri: window.location.origin + '/kakao-callback'
+            redirect_uri: config.domain + '/kakao-callback'
           }),
         });
 

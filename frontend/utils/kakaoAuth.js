@@ -1,4 +1,5 @@
 // 카카오 로그인 유틸리티 함수들
+import getConfig from '../config';
 
 export const loginWithKakao = () => {
   return new Promise((resolve, reject) => {
@@ -12,7 +13,8 @@ export const loginWithKakao = () => {
       console.log('SDK 방식 실패, URL 리다이렉트 방식 사용');
       
       // 카카오 로그인 URL로 리다이렉트
-      const redirectUri = encodeURIComponent(window.location.origin + '/kakao-callback');
+      const config = getConfig();
+      const redirectUri = encodeURIComponent(config.domain + '/kakao-callback');
       const kakaoLoginUrl = `https://kauth.kakao.com/oauth/authorize?client_id=4eb579e52709ea64e8b941b9c95d20da&redirect_uri=${redirectUri}&response_type=code`;
       
       console.log('카카오 로그인 URL:', kakaoLoginUrl);
