@@ -33,15 +33,24 @@ from portfolio_service import portfolio_service
 
 app = FastAPI(title='Stock Scanner API')
 
-# CORS 설정 (프론트 개발 서버 허용)
+# CORS 설정 (환경별 동적 설정)
+def get_cors_origins():
+    """환경에 따른 CORS origins 설정"""
+    env_info = get_environment_info()
+    if env_info['is_local']:
+        return [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    else:
+        return [
+            "https://sohntech.ai.kr",
+            "https://www.sohntech.ai.kr",
+        ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://sohntech.ai.kr",
-        "https://www.sohntech.ai.kr",
-    ],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

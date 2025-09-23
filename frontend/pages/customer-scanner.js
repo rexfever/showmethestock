@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import getConfig from '../config';
 
 export default function CustomerScanner({ initialData, initialScanFile }) {
   const router = useRouter();
@@ -38,9 +39,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     
     try {
       const token = localStorage.getItem('token');
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
       
       const response = await fetch(`${base}/portfolio`, {
         headers: {
@@ -74,9 +74,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   // 사용 가능한 스캔 날짜 목록 가져오기
   const fetchAvailableDates = useCallback(async () => {
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
       
       const response = await fetch(`${base}/available-scan-dates`);
       const data = await response.json();
@@ -100,9 +99,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     setLoading(true);
     setError(null);
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
       
       const response = await fetch(`${base}/scan-by-date/${date}`);
       const data = await response.json();
@@ -138,9 +136,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     setLoading(true);
     setError(null);
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
       console.log('API 호출 URL:', `${base}/latest-scan`);
       
       const controller = new AbortController();
@@ -911,7 +908,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
 export async function getServerSideProps() {
   try {
     // 서버에서 백엔드 API 호출
-    const base = 'http://localhost:8010';
+    const config = getConfig();
+    const base = config.backendUrl;
     const response = await fetch(`${base}/latest-scan`);
     
     if (!response.ok) {

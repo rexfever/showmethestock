@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { logoutWithKakao } from '../utils/kakaoAuth';
+import getConfig from '../config';
 
 const AuthContext = createContext();
 
@@ -31,7 +32,8 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserInfo = async (authToken) => {
     try {
-      const response = await fetch('http://localhost:8010/auth/me', {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -56,7 +58,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (provider, accessToken) => {
     try {
-      const response = await fetch('http://localhost:8010/auth/social-login', {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/auth/social-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

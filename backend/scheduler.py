@@ -7,6 +7,7 @@ import holidays
 import os
 import sqlite3
 import pytz
+from environment import get_environment_info
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -75,8 +76,14 @@ def run_scan():
     try:
         logger.info("자동 스캔을 시작합니다...")
         
-        # 백엔드 API 호출 (GET 요청으로 수정)
-        response = requests.get("http://localhost:8010/scan", timeout=300)
+        # 백엔드 API 호출 (환경별 URL 사용)
+        env_info = get_environment_info()
+        if env_info['is_local']:
+            backend_url = "http://localhost:8010"
+        else:
+            backend_url = "http://localhost:8010"  # 서버에서는 내부 통신
+        
+        response = requests.get(f"{backend_url}/scan", timeout=300)
         
         if response.status_code == 200:
             data = response.json()

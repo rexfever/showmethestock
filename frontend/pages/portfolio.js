@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import getConfig from '../config';
 
 export default function Portfolio() {
   const { isAuthenticated, getToken } = useAuth();
@@ -29,7 +30,8 @@ export default function Portfolio() {
       const token = getToken();
       const statusParam = selectedStatus === 'all' ? '' : `?status=${selectedStatus}`;
       
-      const response = await fetch(`http://localhost:8010/portfolio${statusParam}`, {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/portfolio${statusParam}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -52,7 +54,8 @@ export default function Portfolio() {
   const fetchSummary = async () => {
     try {
       const token = getToken();
-      const response = await fetch('http://localhost:8010/portfolio/summary', {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/portfolio/summary`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -71,7 +74,8 @@ export default function Portfolio() {
   const addToPortfolio = async (ticker, name) => {
     try {
       const token = getToken();
-      const response = await fetch('http://localhost:8010/portfolio/add', {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/portfolio/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -99,7 +103,8 @@ export default function Portfolio() {
   const updatePortfolio = async (ticker) => {
     try {
       const token = getToken();
-      const response = await fetch(`http://localhost:8010/portfolio/${ticker}`, {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/portfolio/${ticker}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -134,7 +139,8 @@ export default function Portfolio() {
 
     try {
       const token = getToken();
-      const response = await fetch(`http://localhost:8010/portfolio/${ticker}`, {
+      const config = getConfig();
+      const response = await fetch(`${config.backendUrl}/portfolio/${ticker}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
