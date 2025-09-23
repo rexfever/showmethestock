@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
+import getConfig from '../config';
 
 export default function Subscription() {
   const router = useRouter();
@@ -23,9 +24,8 @@ export default function Subscription() {
 
   const fetchSubscriptionData = async () => {
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       // 구독 플랜과 상태를 병렬로 조회
       const [plansResponse, statusResponse] = await Promise.all([
@@ -61,9 +61,8 @@ export default function Subscription() {
 
     setIsProcessing(true);
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const response = await fetch(`${base}/payment/create`, {
         method: 'POST',
@@ -101,9 +100,8 @@ export default function Subscription() {
     }
 
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const response = await fetch(`${base}/subscription/cancel`, {
         method: 'POST',

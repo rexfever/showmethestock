@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
+import getConfig from '../config';
 
 export default function EmailVerify() {
   const [verificationCode, setVerificationCode] = useState('');
@@ -29,9 +30,8 @@ export default function EmailVerify() {
     setMessage('');
 
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const response = await fetch(`${base}/auth/email/verify`, {
         method: 'POST',
@@ -66,9 +66,8 @@ export default function EmailVerify() {
     setMessage('');
 
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const response = await fetch(`${base}/auth/email/resend-verification`, {
         method: 'POST',

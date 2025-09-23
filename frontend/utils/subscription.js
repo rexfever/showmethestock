@@ -1,13 +1,13 @@
 /**
  * 구독 관련 유틸리티 함수들
  */
+import getConfig from '../config';
 
 // 구독 상태 확인
 export const checkSubscriptionStatus = async (token) => {
   try {
-    const base = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:8010' 
-      : 'https://sohntech.ai.kr/backend';
+    const config = getConfig();
+    const base = config.backendUrl;
 
     const response = await fetch(`${base}/subscription/status`, {
       headers: {

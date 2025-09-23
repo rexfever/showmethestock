@@ -137,10 +137,8 @@ export default function Privacy() {
 
           <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="flex justify-center">
-              <Link href="/signup">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition duration-200">
-                  가입하기
-                </button>
+              <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition duration-200 inline-block">
+                가입하기
               </Link>
             </div>
           </div>

@@ -135,15 +135,11 @@ export default function Page() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">국내주식 조건 스캐너</h1>
         <div className="flex items-center gap-3">
-          <Link href="/customer-scanner">
-            <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-              고객용 스캐너
-            </button>
+          <Link href="/customer-scanner" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block">
+            고객용 스캐너
           </Link>
-          <Link href="/positions">
-            <a className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
-              포지션 관리
-            </a>
+          <Link href="/positions" className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 inline-block">
+            포지션 관리
           </Link>
         </div>
       </div>

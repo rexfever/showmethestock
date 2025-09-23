@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { loginWithKakao, isKakaoSDKReady } from '../utils/kakaoAuth';
+import getConfig from '../config';
 
 export default function Signup() {
   const [agreed, setAgreed] = useState(false);
@@ -38,9 +39,8 @@ export default function Signup() {
         const kakaoUserInfo = await loginWithKakao();
         
         // 백엔드로 소셜 로그인 요청
-        const base = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:8010' 
-          : 'https://sohntech.ai.kr/backend';
+        const config = getConfig();
+        const base = config.backendUrl;
 
         const response = await fetch(`${base}/auth/social-login`, {
           method: 'POST',
@@ -99,9 +99,8 @@ export default function Signup() {
     setMessage('');
 
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const response = await fetch(`${base}/auth/email/signup`, {
         method: 'POST',
@@ -215,15 +214,11 @@ export default function Signup() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span className="ml-2 text-sm text-gray-600">
-                <Link href="/terms">
-                  <a className="text-blue-600 hover:text-blue-500">
-                    이용약관
-                  </a>
+                <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+                  이용약관
                 </Link> 및{' '}
-                <Link href="/privacy">
-                  <a className="text-blue-600 hover:text-blue-500">
-                    개인정보처리방침
-                  </a>
+                <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+                  개인정보처리방침
                 </Link>에 동의합니다
               </span>
             </label>

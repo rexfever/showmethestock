@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import Head from 'next/head';
+import getConfig from '../../config';
 
 export default function PaymentSuccess() {
   const router = useRouter();
@@ -27,9 +28,8 @@ export default function PaymentSuccess() {
       }
 
       try {
-        const base = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:8010' 
-          : 'https://sohntech.ai.kr/backend';
+        const config = getConfig();
+        const base = config.backendUrl;
 
         const response = await fetch(`${base}/payment/approve`, {
           method: 'POST',

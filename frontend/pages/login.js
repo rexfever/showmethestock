@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
+import getConfig from '../config';
 import Link from 'next/link';
 import { loginWithKakao, isKakaoSDKReady } from '../utils/kakaoAuth';
 
@@ -105,9 +106,8 @@ export default function Login() {
         const kakaoUserInfo = await loginWithKakao();
         
         // 백엔드로 소셜 로그인 요청
-        const base = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:8010' 
-          : 'https://sohntech.ai.kr/backend';
+        const config = getConfig();
+        const base = config.backendUrl;
 
         const response = await fetch(`${base}/auth/social-login`, {
           method: 'POST',
@@ -151,9 +151,8 @@ export default function Login() {
     setError('');
 
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const response = await fetch(`${base}/auth/email/login`, {
         method: 'POST',
@@ -340,10 +339,8 @@ export default function Login() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               계정이 없으신가요?{' '}
-              <Link href="/signup">
-                <a className="font-medium text-blue-600 hover:text-blue-500">
-                  회원가입하기
-                </a>
+              <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+                회원가입하기
               </Link>
             </p>
           </div>

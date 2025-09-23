@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
+import getConfig from '../config';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -31,9 +32,8 @@ export default function AdminDashboard() {
 
   const fetchAdminData = async () => {
     try {
-      const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
-        : 'https://sohntech.ai.kr/backend';
+      const config = getConfig();
+      const base = config.backendUrl;
 
       const [statsResponse, usersResponse] = await Promise.all([
         fetch(`${base}/admin/stats`, {
