@@ -13,12 +13,14 @@ class IndicatorPayload(BaseModel):
     OBV: float
     VOL: int
     VOL_MA5: float
+    close: float
 
 
 class TrendPayload(BaseModel):
     TEMA20_SLOPE20: float
     OBV_SLOPE20: float
     ABOVE_CNT5: int
+    DEMA10_SLOPE20: float
 
 
 class User(BaseModel):
@@ -41,6 +43,7 @@ class ScoreFlags(BaseModel):
     above_cnt5_ok: bool
     dema_slope_ok: bool = False
     details: Optional[dict] = None
+    label: Optional[str] = None
 
 
 class ScanItem(BaseModel):

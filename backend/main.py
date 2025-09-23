@@ -117,6 +117,7 @@ def _as_score_flags(f: dict):
             above_cnt5_ok=bool(f.get('above_cnt5_ok')),
             dema_slope_ok=bool(f.get('dema_slope_ok')),
             details=f.get('details') if isinstance(f.get('details'), dict) else None,
+            label=f.get('label'),
         )
     except Exception:
         return None
@@ -240,7 +241,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             item = ScanItem(
                 ticker=code,
                 name=api.get_stock_name(code),
-                match=bool(matched) and flags.get("match", True),
+                match=flags.get("match", bool(matched)),
                 score=float(score),
                 indicators=IndicatorPayload(
                     TEMA=float(cur.TEMA20),
@@ -252,11 +253,13 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     OBV=float(cur.OBV),
                     VOL=int(cur.volume),
                     VOL_MA5=float(cur.VOL_MA5) if pd.notna(cur.VOL_MA5) else 0.0,
+                    close=float(cur.close),
                 ),
                 trend=TrendPayload(
                     TEMA20_SLOPE20=float(df.iloc[-1].get("TEMA20_SLOPE20", 0.0)) if "TEMA20_SLOPE20" in df.columns else 0.0,
                     OBV_SLOPE20=float(df.iloc[-1].get("OBV_SLOPE20", 0.0)) if "OBV_SLOPE20" in df.columns else 0.0,
                     ABOVE_CNT5=int(((df["TEMA20"] > df["DEMA10"]).tail(5).sum()) if ("TEMA20" in df.columns and "DEMA10" in df.columns) else 0),
+                    DEMA10_SLOPE20=float(df.iloc[-1].get("DEMA10_SLOPE20", 0.0)) if "DEMA10_SLOPE20" in df.columns else 0.0,
                 ),
                 flags=_as_score_flags(flags),
                 score_label=str(flags.get("label")) if isinstance(flags, dict) else None,
@@ -661,7 +664,7 @@ def analyze(name_or_code: str):
     item = ScanItem(
         ticker=code,
         name=api.get_stock_name(code),
-        match=bool(matched),
+        match=flags.get("match", bool(matched)),
         score=float(score),
         indicators=IndicatorPayload(
             TEMA=float(cur.TEMA20),
@@ -673,11 +676,13 @@ def analyze(name_or_code: str):
             OBV=float(cur.OBV),
             VOL=int(cur.volume),
             VOL_MA5=float(cur.VOL_MA5) if pd.notna(cur.VOL_MA5) else 0.0,
+            close=float(cur.close),
         ),
         trend=TrendPayload(
             TEMA20_SLOPE20=float(df.iloc[-1].get("TEMA20_SLOPE20", 0.0)) if "TEMA20_SLOPE20" in df.columns else 0.0,
             OBV_SLOPE20=float(df.iloc[-1].get("OBV_SLOPE20", 0.0)) if "OBV_SLOPE20" in df.columns else 0.0,
             ABOVE_CNT5=int(((df["TEMA20"] > df["DEMA10"]).tail(5).sum()) if ("TEMA20" in df.columns and "DEMA10" in df.columns) else 0),
+            DEMA10_SLOPE20=float(df.iloc[-1].get("DEMA10_SLOPE20", 0.0)) if "DEMA10_SLOPE20" in df.columns else 0.0,
         ),
         flags=_as_score_flags(flags),
         score_label=str(flags.get("label")) if isinstance(flags, dict) else None,

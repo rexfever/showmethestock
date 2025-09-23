@@ -162,6 +162,18 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     cur = df.iloc[-1]
     prev = df.iloc[-2]
 
+    # 하향 추세 필터링 (주가가 TEMA/DEMA 아래에 있으면 제외)
+    downward_trend = cur.close < min(cur.TEMA20, cur.DEMA10)
+    if downward_trend:
+        return 0, {
+            "label": "하향추세",
+            "match": False,
+            "downward_trend": True,
+            "close": float(cur.close),
+            "TEMA20": float(cur.TEMA20),
+            "DEMA10": float(cur.DEMA10)
+        }
+    
     # 위험도 점수 계산
     risk_score, risk_flags = calculate_risk_score(df)
     
@@ -198,6 +210,13 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         'above_cnt5': config.score_w_above_cnt,
     }
 
+    # 0) 하향 추세 필터링 (주가가 TEMA/DEMA 아래에 있으면 제외)
+    downward_trend = cur.close < min(cur.TEMA20, cur.DEMA10)
+    if downward_trend:
+        flags["label"] = "하향추세"
+        flags["match"] = False
+        return 0, {**flags, 'details': details}
+    
     # 1) 골든크로스 교차(+3)
     cross = (cur.TEMA20 > cur.DEMA10) and (prev.TEMA20 <= prev.DEMA10)
     flags["cross"] = bool(cross)
@@ -235,8 +254,8 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         score += W['rsi']
     details['rsi'] = {'ok': bool(rsi_ok), 'w': W['rsi'], 'gain': W['rsi'] if rsi_ok else 0}
 
-    # 5) TEMA20 SLOPE > 0 (+2)
-    tema_slope_ok = float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0
+    # 5) TEMA20 SLOPE > 0 AND 주가 > TEMA20 (+2)
+    tema_slope_ok = (float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0) and (cur.close > cur.TEMA20)
     flags["tema_slope_ok"] = bool(tema_slope_ok)
     if tema_slope_ok:
         score += W['tema_slope']
@@ -256,8 +275,8 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         score += W['above_cnt5']
     details['above_cnt5'] = {'ok': bool(above_ok), 'w': W['above_cnt5'], 'gain': W['above_cnt5'] if above_ok else 0}
 
-    # (선택) DEMA10 SLOPE > 0 점수/필수 여부
-    dema_slope_ok = float(df.iloc[-1]["DEMA10_SLOPE20"]) > 0
+    # (선택) DEMA10 SLOPE > 0 AND 주가 > DEMA10 점수/필수 여부
+    dema_slope_ok = (float(df.iloc[-1]["DEMA10_SLOPE20"]) > 0) and (cur.close > cur.DEMA10)
     flags["dema_slope_ok"] = bool(dema_slope_ok)
     details['dema_slope'] = {'ok': bool(dema_slope_ok), 'w': W['dema_slope'], 'gain': W['dema_slope'] if dema_slope_ok else 0}
     mode = str(getattr(config, 'require_dema_slope', 'required')).lower()
