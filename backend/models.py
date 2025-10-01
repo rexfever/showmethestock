@@ -7,7 +7,8 @@ class IndicatorPayload(BaseModel):
     TEMA: float
     DEMA: float
     MACD_OSC: float
-    RSI: float
+    MACD_LINE: float
+    MACD_SIGNAL: float
     RSI_TEMA: float
     RSI_DEMA: float
     OBV: float
@@ -37,7 +38,11 @@ class ScoreFlags(BaseModel):
     cross: bool
     vol_expand: bool
     macd_ok: bool
-    rsi_ok: bool
+    rsi_dema_setup: bool = False
+    rsi_tema_trigger: bool = False
+    rsi_dema_value: Optional[float] = None
+    rsi_tema_value: Optional[float] = None
+    overheated_rsi_tema: bool = False
     tema_slope_ok: bool
     obv_slope_ok: bool
     above_cnt5_ok: bool
@@ -57,6 +62,8 @@ class ScanItem(BaseModel):
     flags: Optional[ScoreFlags] = None
     score_label: Optional[str] = None
     details: Optional[dict] = None
+    # 수익률 정보 (과거 스캔 검증용)
+    returns: Optional[dict] = None
 
 
 class ScanResponse(BaseModel):
@@ -67,6 +74,8 @@ class ScanResponse(BaseModel):
     rsi_period: int
     rsi_threshold: float
     items: List[ScanItem]
+    # fallback info
+    fallback_step: Optional[int] = None
     # meta
     score_weights: Optional[dict] = None
     score_level_strong: Optional[int] = None

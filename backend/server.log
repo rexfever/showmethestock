@@ -1,0 +1,20 @@
+INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+INFO:     Started reloader process [61276] using WatchFiles
+INFO:     Started server process [61314]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'kiwoom_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [61314]
+INFO:     Started server process [68452]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:60759 - "GET /stock/042660?as_of_date=2025-09-01 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [68452]
+INFO:     Stopping reloader process [61276]

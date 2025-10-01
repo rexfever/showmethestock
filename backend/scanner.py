@@ -12,6 +12,7 @@ from indicators import (
     rsi_dema,
     obv,
     linreg_slope,
+    atr,
 )
 
 
@@ -23,9 +24,11 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df["DEMA10"] = dema_smooth(close, 10)
     macd_line, signal_line, osc = macd(close, 12, 26, 9)
     df["MACD_OSC"] = osc
-    df["RSI"] = rsi_standard(close, 14)
-    df["RSI_TEMA"] = rsi_tema(close, config.rsi_period)
-    df["RSI_DEMA"] = rsi_dema(close, config.rsi_period)
+    df["MACD_LINE"] = macd_line
+    df["MACD_SIGNAL"] = signal_line
+    # === 새로운 RSI 계산 ===
+    df["RSI_TEMA"] = rsi_tema(close, 14)
+    df["RSI_DEMA"] = rsi_dema(close, 14)
     df["OBV"] = obv(close, volume)
     df["VOL_MA5"] = volume.rolling(5).mean()
     return df
@@ -68,27 +71,56 @@ def match_stats(df: pd.DataFrame) -> tuple:
 
     above_cnt = int((df["TEMA20"] > df["DEMA10"]).tail(above_lb).sum()) if len(df) >= above_lb else 0
 
-    cond_gc = (crossed_recently or (cur.TEMA20 > cur.DEMA10)) and (df.iloc[-1]["TEMA20_SLOPE20"] > 0)
-    cond_macd = (cur.MACD_OSC > config.macd_osc_min) and is_trend_up(df["MACD_OSC"], 3)
+    # ----- 유동성/가격/연속신호 컷 (매칭 초반에 하드 필터 추가) -----
+    
+    # 유동성: 최근 20일 평균 거래대금(= close * volume) 계산
+    if len(df) >= 20:
+        avg_turnover = (df["close"].iloc[-20:] * df["volume"].iloc[-20:]).mean()
+        if avg_turnover < config.min_turnover_krw:
+            return False, 0, 4
 
-    thr = config.rsi_threshold
-    mode = config.rsi_mode.lower()
-    if mode == "standard":
-        cond_rsi = (cur.RSI > thr) and is_trend_up(df["RSI"], 3)
-    elif mode == "tema":
-        cond_rsi = (cur.RSI_TEMA > thr) and is_trend_up(df["RSI_TEMA"], 3)
-    elif mode == "dema":
-        cond_rsi = (cur.RSI_DEMA > thr) and is_trend_up(df["RSI_DEMA"], 3)
-    else:  # hybrid
-        cond_rsi = (cur.RSI > thr) and (cur.RSI_TEMA > thr) and (
-            is_trend_up(df["RSI"], 3) or is_trend_up(df["RSI_TEMA"], 3)
-        )
+    # 가격 하한
+    if cur.close < config.min_price:
+        return False, 0, 4
 
-    cond_vol = (
-        cur.volume > (cur.VOL_MA5 * config.vol_ma5_mult if pd.notna(cur.VOL_MA5) else cur.volume)
-        and is_trend_up(df["VOL_MA5"], 3)
-        and (df.iloc[-1]["OBV_SLOPE20"] > 0)
+    # 연속 신호 디바운스 (구현되어 있다 가정, 없으면 skip)
+    # last_dt = get_last_entry_date(cur.code)  # 구현되어 있다 가정 (없으면 skip)
+    # if last_dt is not None and (df.index[-1] - last_dt).days < config.entry_cooldown_days:
+    #     return False, 0, 4
+
+    # ----- 하드 제외: 과열 -----
+    overheat = (
+        (cur.RSI_TEMA >= config.overheat_rsi_tema) and
+        (cur.VOL_MA5 and cur.volume >= config.overheat_vol_mult * cur.VOL_MA5)
     )
+    if overheat:
+        return False, 0, 4   # 즉시 제외
+
+    # ----- 교차 갭 품질 & 추격 이격 제한 -----
+    gap_now = (cur.TEMA20 - cur.DEMA10) / cur.close if cur.close else 0.0
+    ext_pct = (cur.close - cur.TEMA20) / cur.TEMA20 if cur.TEMA20 else 0.0
+    if not (max(gap_now, 0.0) >= config.gap_min and gap_now <= config.gap_max and ext_pct <= config.ext_from_tema20_max):
+        return False, 0, 4
+
+    # ----- 변동성 컷(너무 출렁/너무 잠잠 배제) -----
+    if config.use_atr_filter:
+        _atr = atr(df["high"], df["low"], df["close"], 14).iloc[-1]
+        if cur.close:
+            atr_pct = _atr / cur.close
+            if not (config.atr_pct_min <= atr_pct <= config.atr_pct_max):
+                return False, 0, 4
+
+    cond_gc = (crossed_recently or (cur.TEMA20 > cur.DEMA10)) and (df.iloc[-1]["TEMA20_SLOPE20"] > 0)
+    
+    # ---- MACD: 시그널 상회 또는 오실레이터 > 0 (기본값 0) ----
+    cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > config.macd_osc_min)
+
+    # ---- RSI: tema 기준, 임계 58 (config) ----
+    cond_rsi = (cur.RSI_TEMA > config.rsi_threshold)
+
+    # ---- 거래량: 당일 > MA5*1.8 그리고 당일 > MA20*1.2 (둘 다) ----
+    cond_vol = (cur.VOL_MA5 and cur.volume >= config.vol_ma5_mult * cur.VOL_MA5) and \
+               (df["volume"].iloc[-20:].mean() > 0 and cur.volume >= config.vol_ma20_mult * df["volume"].iloc[-20:].mean())
 
     # 추세 필터: TEMA20_SLOPE20>0, OBV_SLOPE20>0, above_cnt>=3
     trend_ok = (
@@ -97,10 +129,15 @@ def match_stats(df: pd.DataFrame) -> tuple:
         and (above_cnt >= 3)
     )
 
-    total = 4
+    # ----- 신호 요건 상향 (MIN_SIGNALS=3 + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
+    # 기존 cond_gc(교차/정렬)와 trend_ok(TEMA/DEMA/OBV slope 등)는 유지
     signals_true = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
-    matched = bool(signals_true >= max(1, config.min_signals)) and trend_ok
-    return matched, int(signals_true), int(total)
+    if signals_true < config.min_signals or not trend_ok:
+        return False, signals_true, 3
+    
+    # 최종 매칭: 신호 요건 충족 + 추세
+    matched = True
+    return matched, int(signals_true), 4
 
 
 def calculate_risk_score(df: pd.DataFrame) -> tuple:
@@ -114,8 +151,8 @@ def calculate_risk_score(df: pd.DataFrame) -> tuple:
     risk_score = 0
     risk_flags = {}
     
-    # 1. 과매수 구간 위험 (RSI > 80)
-    rsi_overbought = cur.RSI > config.rsi_overbought_threshold
+    # 1. 과매수 구간 위험 (RSI_TEMA > 80) - 새로운 RSI 로직 사용
+    rsi_overbought = cur.RSI_TEMA > 80  # config.rsi_overbought_threshold 대신 고정값 사용
     risk_flags["rsi_overbought"] = rsi_overbought
     if rsi_overbought:
         risk_score += 2
@@ -162,17 +199,70 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     cur = df.iloc[-1]
     prev = df.iloc[-2]
 
-    # 하향 추세 필터링 (주가가 TEMA/DEMA 아래에 있으면 제외)
-    downward_trend = cur.close < min(cur.TEMA20, cur.DEMA10)
-    if downward_trend:
+    # ----- 유동성/가격/연속신호 컷 (매칭 초반에 하드 필터 추가) -----
+    
+    # 유동성: 최근 20일 평균 거래대금(= close * volume) 계산
+    if len(df) >= 20:
+        avg_turnover = (df["close"].iloc[-20:] * df["volume"].iloc[-20:]).mean()
+        if avg_turnover < config.min_turnover_krw:
+            return 0, {
+                "label": "유동성부족",
+                "match": False,
+                "avg_turnover": round(float(avg_turnover), 0),
+                "min_turnover": config.min_turnover_krw
+            }
+
+    # 가격 하한
+    if cur.close < config.min_price:
         return 0, {
-            "label": "하향추세",
+            "label": "저가종목",
             "match": False,
-            "downward_trend": True,
-            "close": float(cur.close),
-            "TEMA20": float(cur.TEMA20),
-            "DEMA10": float(cur.DEMA10)
+            "price": round(float(cur.close), 0),
+            "min_price": config.min_price
         }
+
+    # ----- 하드 제외: 과열 -----
+    overheat = (
+        (cur.RSI_TEMA >= config.overheat_rsi_tema) and
+        (cur.VOL_MA5 and cur.volume >= config.overheat_vol_mult * cur.VOL_MA5)
+    )
+    if overheat:
+        return 0, {
+            "label": "과열",
+            "match": False,
+            "overheated_rsi_tema": True,
+            "rsi_tema_value": round(float(cur.RSI_TEMA), 2),
+            "volume_ratio": round(float(cur.volume / cur.VOL_MA5), 2) if cur.VOL_MA5 else 0
+        }
+
+    # ----- 노이즈/추격 방지 -----
+    gap_now = (cur.TEMA20 - cur.DEMA10) / cur.close if cur.close else 0.0
+    ext_pct = (cur.close - cur.TEMA20) / cur.TEMA20 if cur.TEMA20 else 0.0
+    gap_ok = (max(gap_now, 0.0) >= config.gap_min) and (gap_now <= config.gap_max)   # 음수=역배열 방지
+    ext_ok = (ext_pct <= config.ext_from_tema20_max)
+    if not (gap_ok and ext_ok):
+        return 0, {
+            "label": "노이즈/추격",
+            "match": False,
+            "gap_now": round(float(gap_now), 4),
+            "gap_ok": bool(gap_ok),
+            "ext_pct": round(float(ext_pct), 4),
+            "ext_ok": bool(ext_ok)
+        }
+
+    # ----- 변동성 컷(너무 출렁/너무 잠잠 배제) -----
+    if config.use_atr_filter:
+        _atr = atr(df["high"], df["low"], df["close"], 14).iloc[-1]
+        if cur.close:
+            atr_pct = _atr / cur.close
+            if not (config.atr_pct_min <= atr_pct <= config.atr_pct_max):
+                return 0, {
+                    "label": "변동성부적절",
+                    "match": False,
+                    "atr_pct": round(float(atr_pct), 4),
+                    "atr_min": config.atr_pct_min,
+                    "atr_max": config.atr_pct_max
+                }
     
     # 위험도 점수 계산
     risk_score, risk_flags = calculate_risk_score(df)
@@ -210,12 +300,12 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         'above_cnt5': config.score_w_above_cnt,
     }
 
-    # 0) 하향 추세 필터링 (주가가 TEMA/DEMA 아래에 있으면 제외)
-    downward_trend = cur.close < min(cur.TEMA20, cur.DEMA10)
-    if downward_trend:
-        flags["label"] = "하향추세"
-        flags["match"] = False
-        return 0, {**flags, 'details': details}
+    # 0) 하향 추세 필터링 비활성화 (새로운 RSI 로직으로 대체)
+    # downward_trend = cur.close < min(cur.TEMA20, cur.DEMA10)
+    # if downward_trend:
+    #     flags["label"] = "하향추세"
+    #     flags["match"] = False
+    #     return 0, {**flags, 'details': details}
     
     # 1) 골든크로스 교차(+3)
     cross = (cur.TEMA20 > cur.DEMA10) and (prev.TEMA20 <= prev.DEMA10)
@@ -224,32 +314,32 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         score += W['cross']
     details['cross'] = {'ok': bool(cross), 'w': W['cross'], 'gain': W['cross'] if cross else 0}
 
-    # 2) 거래량 확장(+2)
-    volx = cur.volume > (cur.VOL_MA5 * config.vol_ma5_mult if pd.notna(cur.VOL_MA5) else cur.volume)
+    # 2) 거래량: 당일 > MA5*1.8 그리고 당일 > MA20*1.2 (둘 다)
+    volx = (cur.VOL_MA5 and cur.volume >= config.vol_ma5_mult * cur.VOL_MA5) and \
+           (df["volume"].iloc[-20:].mean() > 0 and cur.volume >= config.vol_ma20_mult * df["volume"].iloc[-20:].mean())
     flags["vol_expand"] = bool(volx)
     if volx:
         score += W['volume']
     details['volume'] = {'ok': bool(volx), 'w': W['volume'], 'gain': W['volume'] if volx else 0}
 
-    # 3) MACD_OSC > -50 (+1)
-    macd_ok = cur.MACD_OSC > config.macd_osc_min
+    # 3) MACD 조건 (+1) - 골든크로스 또는 상승 모멘텀
+    macd_golden_cross = (cur.MACD_LINE > cur.MACD_SIGNAL) and (prev.MACD_LINE <= prev.MACD_SIGNAL)
+    macd_line_up = cur.MACD_LINE > cur.MACD_SIGNAL  # MACD Line이 Signal 위에 있음
+    macd_osc_ok = cur.MACD_OSC > config.macd_osc_min
+    macd_ok = macd_golden_cross or macd_line_up or macd_osc_ok  # 세 조건 중 하나라도 만족
     flags["macd_ok"] = bool(macd_ok)
+    flags["macd_golden_cross"] = bool(macd_golden_cross)
+    flags["macd_line_up"] = bool(macd_line_up)
     if macd_ok:
         score += W['macd']
     details['macd'] = {'ok': bool(macd_ok), 'w': W['macd'], 'gain': W['macd'] if macd_ok else 0}
 
-    # 4) RSI 조건(+1)
-    thr = config.rsi_threshold
-    mode = config.rsi_mode.lower()
-    if mode == "standard":
-        rsi_ok = cur.RSI > thr
-    elif mode == "tema":
-        rsi_ok = cur.RSI_TEMA > thr
-    elif mode == "dema":
-        rsi_ok = cur.RSI_DEMA > thr
-    else:  # hybrid
-        rsi_ok = (cur.RSI > thr) and (cur.RSI_TEMA > thr)
+    # 4) RSI: tema 기준, 임계 58 (config)
+    rsi_ok = (cur.RSI_TEMA > config.rsi_threshold)
+    
     flags["rsi_ok"] = bool(rsi_ok)
+    flags["rsi_mode"] = "tema"
+    flags["rsi_thr"] = config.rsi_threshold
     if rsi_ok:
         score += W['rsi']
     details['rsi'] = {'ok': bool(rsi_ok), 'w': W['rsi'], 'gain': W['rsi'] if rsi_ok else 0}
@@ -276,10 +366,12 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     details['above_cnt5'] = {'ok': bool(above_ok), 'w': W['above_cnt5'], 'gain': W['above_cnt5'] if above_ok else 0}
 
     # (선택) DEMA10 SLOPE > 0 AND 주가 > DEMA10 점수/필수 여부
+    if "DEMA10_SLOPE20" not in df.columns:
+        df["DEMA10_SLOPE20"] = linreg_slope(df["DEMA10"], 20)
     dema_slope_ok = (float(df.iloc[-1]["DEMA10_SLOPE20"]) > 0) and (cur.close > cur.DEMA10)
     flags["dema_slope_ok"] = bool(dema_slope_ok)
     details['dema_slope'] = {'ok': bool(dema_slope_ok), 'w': W['dema_slope'], 'gain': W['dema_slope'] if dema_slope_ok else 0}
-    mode = str(getattr(config, 'require_dema_slope', 'required')).lower()
+    mode = str(getattr(config, 'require_dema_slope', 'optional')).lower()
     if mode == 'required' and not dema_slope_ok:
         flags["label"] = "제외"
         flags["match"] = False  # 제외 종목은 매칭되지 않음
@@ -293,18 +385,41 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     flags["risk_score"] = risk_score
     flags["risk_flags"] = risk_flags
     
-    # 레이블링 (더 세분화된 평가)
-    if score >= 10:
+    # 필터 정보 추가 (디버깅/튜닝 편의)
+    flags.update({
+        "overheated_rsi_tema": bool(overheat),
+        "gap_now": round(float(gap_now), 4),
+        "gap_ok": bool(gap_ok),
+        "ext_pct": round(float(ext_pct), 4),
+        "ext_ok": bool(ext_ok),
+    })
+    
+    # 레이블링 (더 세분화된 평가) - 임계값 완화
+    if score >= 8:
         flags["label"] = "강한 매수"
-    elif score >= 9:
-        flags["label"] = "매수 후보"
-    elif score >= 8:
-        flags["label"] = "관심"
+        flags["match"] = True
     elif score >= 6:
+        flags["label"] = "매수 후보"
+        flags["match"] = True
+    elif score >= 4:
+        flags["label"] = "관심"
+        flags["match"] = True
+    elif score >= 2:
         flags["label"] = "관망"
+        flags["match"] = True
     else:
         flags["label"] = "제외"
         flags["match"] = False  # 제외 종목은 매칭되지 않음
+    
+    # ----- 신호 요건 상향 (MIN_SIGNALS=3) -----
+    signals_true = sum([bool(flags.get("cross", False)), bool(flags.get("vol_expand", False)), 
+                       bool(flags.get("macd_ok", False)), bool(flags.get("rsi_ok", False))])
+    flags["signals_count"] = signals_true
+    flags["min_signals_required"] = config.min_signals
+    
+    if signals_true < config.min_signals:
+        flags["match"] = False
+        flags["label"] = f"신호부족({signals_true}/{config.min_signals})"
     
     # 위험도에 따른 점수 조정
     if risk_score > 0:
@@ -353,5 +468,89 @@ def strategy_text(df: pd.DataFrame) -> str:
     if not msgs:
         return "관심"
     return " / ".join(msgs)
+
+
+def apply_preset_to_runtime(cfg_overrides: dict):
+    """
+    이 함수는 run-time으로 전역/모듈에서 참조하는 임계값을 임시 덮어쓰기 위한 헬퍼입니다.
+    프로젝트가 class Config를 쓴다면 인스턴스 값을 바꾸고, 모듈 상수면 globals() 업데이트 방식으로 반영.
+    """
+    from config import config
+    for k, v in cfg_overrides.items():
+        setattr(config, k, v)
+
+
+def scan_one_symbol(code: str, base_date: str = None) -> dict:
+    """
+    단일 종목 스캔 함수 (기존 스캔 로직을 함수로 분리)
+    """
+    try:
+        from kiwoom_api import api
+        df = api.get_ohlcv(code, config.ohlcv_count, base_date)
+        if df.empty or len(df) < 21 or df[["open","high","low","close","volume"]].isna().any().any():
+            return None
+        
+        df = compute_indicators(df)
+        matched, sig_true, sig_total = match_stats(df)
+        score, flags = score_conditions(df)
+        # 새로운 RSI 로직에서는 flags["match"]를 우선 사용
+        matched = flags.get("match", bool(matched))
+        
+        if not matched:
+            return None
+            
+        cur = df.iloc[-1]
+        
+        return {
+            "ticker": code,
+            "name": api.get_stock_name(code),
+            "match": matched,
+            "score": score,
+            "indicators": {
+                "TEMA": cur.TEMA20,
+                "DEMA": cur.DEMA10,
+                "MACD_OSC": cur.MACD_OSC,
+                "MACD_LINE": cur.MACD_LINE,
+                "MACD_SIGNAL": cur.MACD_SIGNAL,
+                "RSI_TEMA": cur.RSI_TEMA,
+                "RSI_DEMA": cur.RSI_DEMA,
+                "OBV": cur.OBV,
+                "VOL": cur.volume,
+                "VOL_MA5": cur.VOL_MA5,
+                "close": cur.close,
+            },
+            "trend": {
+                "TEMA20_SLOPE20": df.iloc[-1]["TEMA20_SLOPE20"],
+                "OBV_SLOPE20": df.iloc[-1]["OBV_SLOPE20"],
+                "ABOVE_CNT5": int((df["TEMA20"] > df["DEMA10"]).tail(5).sum()),
+                "DEMA10_SLOPE20": df.iloc[-1]["DEMA10_SLOPE20"],
+            },
+            "strategy": strategy_text(df),
+            "flags": flags,
+            "score_label": flags.get("label", "제외"),
+        }
+    except Exception:
+        return None
+
+
+def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_date: str = None) -> List[dict]:
+    """
+    프리셋을 적용하여 스캔을 실행하는 함수
+    """
+    # 1) preset 적용
+    if preset_overrides:
+        apply_preset_to_runtime(preset_overrides)
+
+    # 2) 기존 스캔 로직 그대로 실행 (하드 컷 로직은 기존대로 유지)
+    items = []
+    for code in universe_codes:
+        res = scan_one_symbol(code, base_date)
+        if res is None:
+            continue
+        items.append(res)
+
+    # 3) 정렬 및 상위 N개 자르기
+    items.sort(key=lambda x: x["score"], reverse=True)
+    return items
 
 

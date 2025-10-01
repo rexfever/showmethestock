@@ -247,7 +247,7 @@ class KiwoomAPI:
         base_dt가 지정되면 해당 기준일을 마지막 행으로 하는 시계열을 우선 시도한다(YYYYMMDD).
         """
         if self.force_mock:
-            return self._gen_mock_ohlcv(code, count)
+            return self._gen_mock_ohlcv(code, count, base_dt)
         api_id = config.kiwoom_tr_ohlcv_id
         path = config.kiwoom_tr_ohlcv_path
         # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
@@ -310,10 +310,20 @@ class KiwoomAPI:
         df = df.sort_values("date").reset_index(drop=True).tail(count)
         return df
 
-    def _gen_mock_ohlcv(self, code: str, count: int) -> pd.DataFrame:
+    def _gen_mock_ohlcv(self, code: str, count: int, base_dt: str = None) -> pd.DataFrame:
         seed = int(code[-4:], 10) if code.isdigit() else 42
         rng = np.random.default_rng(seed)
-        dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=count, freq="B")
+        
+        # base_dt가 지정되면 해당 날짜를 기준으로 생성
+        if base_dt:
+            try:
+                end_date = pd.to_datetime(base_dt, format='%Y%m%d').normalize()
+            except:
+                end_date = pd.Timestamp.today().normalize()
+        else:
+            end_date = pd.Timestamp.today().normalize()
+            
+        dates = pd.date_range(end=end_date, periods=count, freq="B")
         prices = np.cumsum(rng.normal(loc=0.2, scale=1.5, size=len(dates))) + 50000
         prices = np.clip(prices, a_min=1000, a_max=None)
         close = pd.Series(prices).astype(float)
@@ -425,5 +435,9 @@ class KiwoomAPI:
                 return cd
         # 실패 시 빈 문자열
         return ""
+
+
+# 전역 API 인스턴스
+api = KiwoomAPI()
 
 

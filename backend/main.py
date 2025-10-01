@@ -101,6 +101,87 @@ SNAPSHOT_DIR = os.path.join(os.path.dirname(__file__), 'snapshots')
 os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
 
+def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> dict:
+    """특정 종목의 수익률 계산
+    
+    Args:
+        ticker: 종목 코드
+        scan_date: 스캔 날짜 (YYYY-MM-DD)
+        current_date: 현재 날짜 (YYYY-MM-DD), None이면 오늘
+        
+    Returns:
+        dict: {
+            'current_return': float,  # 현재 수익률
+            'max_return': float,      # 기간 내 최고 수익률
+            'min_return': float,      # 기간 내 최저 수익률
+            'scan_price': float,      # 스캔 시점 가격
+            'current_price': float,   # 현재 가격
+            'max_price': float,       # 기간 내 최고가
+            'min_price': float,       # 기간 내 최저가
+            'days_elapsed': int       # 경과 일수
+        }
+    """
+    try:
+        if current_date is None:
+            current_date = datetime.now().strftime('%Y-%m-%d')
+        
+        # 스캔 날짜의 데이터 조회
+        scan_date_formatted = scan_date.replace('-', '')
+        df_scan = api.get_ohlcv(ticker, 1, scan_date_formatted)
+        
+        if df_scan.empty:
+            print(f"스캔 날짜 데이터 없음: {ticker} {scan_date}")
+            return None
+            
+        scan_price = float(df_scan.iloc[-1]['close'])
+        
+        # 현재까지의 데이터 조회 (스캔 날짜부터)
+        df_current = api.get_ohlcv(ticker, 100)  # 충분한 기간
+        
+        if df_current.empty:
+            return None
+            
+        # 스캔 날짜 이후 데이터만 필터링
+        scan_date_dt = pd.to_datetime(scan_date)
+        df_current['date_dt'] = pd.to_datetime(df_current['date'])
+        df_period = df_current[df_current['date_dt'] >= scan_date_dt]
+        
+        if df_period.empty:
+            return None
+            
+        current_price = float(df_period.iloc[-1]['close'])
+        
+        # high/low가 0인 경우 close 가격을 기준으로 추정
+        high_prices = df_period['high'].where(df_period['high'] > 0, df_period['close'])
+        low_prices = df_period['low'].where(df_period['low'] > 0, df_period['close'])
+        
+        max_price = float(high_prices.max())
+        min_price = float(low_prices.min())
+        
+        # 수익률 계산
+        current_return = ((current_price - scan_price) / scan_price) * 100
+        max_return = ((max_price - scan_price) / scan_price) * 100
+        min_return = ((min_price - scan_price) / scan_price) * 100
+        
+        # 경과 일수
+        days_elapsed = (pd.to_datetime(current_date) - scan_date_dt).days
+        
+        return {
+            'current_return': round(current_return, 2),
+            'max_return': round(max_return, 2),
+            'min_return': round(min_return, 2),
+            'scan_price': scan_price,
+            'current_price': current_price,
+            'max_price': max_price,
+            'min_price': min_price,
+            'days_elapsed': days_elapsed
+        }
+        
+    except Exception as e:
+        print(f"수익률 계산 오류 ({ticker}): {e}")
+        return None
+
+
 def _save_scan_snapshot(payload: dict) -> str:
     try:
         as_of = payload.get('as_of') or datetime.now().strftime('%Y-%m-%d')
@@ -120,7 +201,11 @@ def _as_score_flags(f: dict):
             cross=bool(f.get('cross')),
             vol_expand=bool(f.get('vol_expand')),
             macd_ok=bool(f.get('macd_ok')),
-            rsi_ok=bool(f.get('rsi_ok')),
+            rsi_dema_setup=bool(f.get('rsi_dema_setup')),
+            rsi_tema_trigger=bool(f.get('rsi_tema_trigger')),
+            rsi_dema_value=f.get('rsi_dema_value'),
+            rsi_tema_value=f.get('rsi_tema_value'),
+            overheated_rsi_tema=bool(f.get('overheated_rsi_tema')),
             tema_slope_ok=bool(f.get('tema_slope_ok')),
             obv_slope_ok=bool(f.get('obv_slope_ok')),
             above_cnt5_ok=bool(f.get('above_cnt5_ok')),
@@ -186,119 +271,144 @@ def _init_positions_table():
 
 
 @app.get('/scan', response_model=ScanResponse)
-def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score'):
+def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
     kp = kospi_limit or config.universe_kospi
     kd = kosdaq_limit or config.universe_kosdaq
     kospi = api.get_top_codes('KOSPI', kp)
     kosdaq = api.get_top_codes('KOSDAQ', kd)
     universe: List[str] = [*kospi, *kosdaq]
 
-    items: List[ScanItem] = []
-    today_as_of = datetime.now().strftime('%Y-%m-%d')
-    # 과거 재등장 이력 조회를 위한 DB 연결(가능하면 재사용)
-    conn_hist = None
-    cur_hist = None
-    try:
-        conn_hist = sqlite3.connect(_db_path())
-        cur_hist = conn_hist.cursor()
-        cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
-    except Exception:
-        conn_hist = None
-        cur_hist = None
-    for code in universe:
+    # 날짜 처리
+    if date:
         try:
-            df = api.get_ohlcv(code, config.ohlcv_count)
-            if df.empty or len(df) < 21 or df[["open","high","low","close","volume"]].isna().any().any():
-                continue
-            df = compute_indicators(df)
-            matched, sig_true, sig_total = match_stats(df)
-            score, flags = score_conditions(df)
-            cur = df.iloc[-1]
+            # YYYYMMDD 형식으로 입력된 날짜를 YYYY-MM-DD로 변환
+            scan_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+            today_as_of = scan_date
+        except:
+            raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYYMMDD 형식으로 입력해주세요.")
+    else:
+        today_as_of = datetime.now().strftime('%Y-%m-%d')
+    
+    # Fallback 로직 적용
+    from scanner import scan_with_preset
+    
+    chosen_step = None
+    if not config.fallback_enable:
+        # Fallback 비활성화 시 기존 로직
+        items = scan_with_preset(universe, {}, date)
+        items = items[:config.top_k]
+    else:
+        # Fallback 활성화 시 단계별 완화
+        final_items = []
+        chosen_step = 0
+        
+        for step, overrides in enumerate(config.fallback_presets):
+            items = scan_with_preset(universe, overrides, date)
+            # 하드 컷은 scan_one_symbol 내부에서 이미 처리되어야 함(과열/유동성/가격 등)
+            if len(items) >= config.fallback_target_min:
+                chosen_step = step
+                final_items = items[:min(config.top_k, config.fallback_target_max)]
+                break
+        
+        # 만약 모든 단계에서도 0개라면, 마지막 단계 결과에서 score 상위 TOP_K만 가져오되,
+        # 하드 컷(과열/유동성/가격)만 적용된 집합이어야 함.
+        if not final_items:
+            # 가장 완화된 단계의 결과를 그대로 사용(이미 하드 컷 적용됨)
+            final_items = items[:min(config.top_k, config.fallback_target_max)]
+        
+        items = final_items
+    
+    # ScanItem 객체로 변환
+    scan_items: List[ScanItem] = []
+    for item in items:
+        try:
             # 재등장 메타 계산
             recurrence = None
-            if cur_hist is not None:
-                try:
-                    prev_dates = []
-                    for row in cur_hist.execute("SELECT date FROM scan_rank WHERE code=? ORDER BY date DESC", (code,)):
-                        d = str(row[0])
-                        if d and d < today_as_of:
-                            prev_dates.append(d)
-                    if prev_dates:
-                        last_as_of = prev_dates[0]
-                        first_as_of = prev_dates[-1]
-                        try:
-                            days_since_last = int((pd.to_datetime(today_as_of) - pd.to_datetime(last_as_of)).days)
-                        except Exception:
-                            days_since_last = None
-                        recurrence = {
-                            'appeared_before': True,
-                            'appear_count': len(prev_dates),
-                            'last_as_of': last_as_of,
-                            'first_as_of': first_as_of,
-                            'days_since_last': days_since_last,
-                        }
-                    else:
-                        recurrence = {
-                            'appeared_before': False,
-                            'appear_count': 0,
-                            'last_as_of': None,
-                            'first_as_of': today_as_of,
-                            'days_since_last': None,
-                        }
-                except Exception:
-                    recurrence = None
-            item = ScanItem(
-                ticker=code,
-                name=api.get_stock_name(code),
-                match=flags.get("match", bool(matched)),
-                score=float(score),
+            # 과거 재등장 이력 조회를 위한 DB 연결(가능하면 재사용)
+            conn_hist = None
+            cur_hist = None
+            try:
+                conn_hist = sqlite3.connect(_db_path())
+                cur_hist = conn_hist.cursor()
+                cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+                
+                prev_dates = []
+                for row in cur_hist.execute("SELECT date FROM scan_rank WHERE code=? ORDER BY date DESC", (item["ticker"],)):
+                    d = str(row[0])
+                    if d and d < today_as_of:
+                        prev_dates.append(d)
+                if prev_dates:
+                    last_as_of = prev_dates[0]
+                    first_as_of = prev_dates[-1]
+                    try:
+                        days_since_last = int((pd.to_datetime(today_as_of) - pd.to_datetime(last_as_of)).days)
+                    except Exception:
+                        days_since_last = None
+                    recurrence = {
+                        'appeared_before': True,
+                        'appear_count': len(prev_dates),
+                        'last_as_of': last_as_of,
+                        'first_as_of': first_as_of,
+                        'days_since_last': days_since_last,
+                    }
+                else:
+                    recurrence = {
+                        'appeared_before': False,
+                        'appear_count': 0,
+                        'last_as_of': None,
+                        'first_as_of': today_as_of,
+                        'days_since_last': None,
+                    }
+            except Exception:
+                recurrence = None
+            finally:
+                if conn_hist is not None:
+                    conn_hist.close()
+            
+            scan_item = ScanItem(
+                ticker=item["ticker"],
+                name=item["name"],
+                match=item["match"],
+                score=item["score"],
                 indicators=IndicatorPayload(
-                    TEMA=float(cur.TEMA20),
-                    DEMA=float(cur.DEMA10),
-                    MACD_OSC=float(cur.MACD_OSC),
-                    RSI=float(cur.RSI),
-                    RSI_TEMA=float(cur.RSI_TEMA),
-                    RSI_DEMA=float(cur.RSI_DEMA),
-                    OBV=float(cur.OBV),
-                    VOL=int(cur.volume),
-                    VOL_MA5=float(cur.VOL_MA5) if pd.notna(cur.VOL_MA5) else 0.0,
-                    close=float(cur.close),
+                    TEMA=item["indicators"]["TEMA"],
+                    DEMA=item["indicators"]["DEMA"],
+                    MACD_OSC=item["indicators"]["MACD_OSC"],
+                    MACD_LINE=item["indicators"]["MACD_LINE"],
+                    MACD_SIGNAL=item["indicators"]["MACD_SIGNAL"],
+                    RSI_TEMA=item["indicators"]["RSI_TEMA"],
+                    RSI_DEMA=item["indicators"]["RSI_DEMA"],
+                    OBV=item["indicators"]["OBV"],
+                    VOL=item["indicators"]["VOL"],
+                    VOL_MA5=item["indicators"]["VOL_MA5"],
+                    close=item["indicators"]["close"],
                 ),
                 trend=TrendPayload(
-                    TEMA20_SLOPE20=float(df.iloc[-1].get("TEMA20_SLOPE20", 0.0)) if "TEMA20_SLOPE20" in df.columns else 0.0,
-                    OBV_SLOPE20=float(df.iloc[-1].get("OBV_SLOPE20", 0.0)) if "OBV_SLOPE20" in df.columns else 0.0,
-                    ABOVE_CNT5=int(((df["TEMA20"] > df["DEMA10"]).tail(5).sum()) if ("TEMA20" in df.columns and "DEMA10" in df.columns) else 0),
-                    DEMA10_SLOPE20=float(df.iloc[-1].get("DEMA10_SLOPE20", 0.0)) if "DEMA10_SLOPE20" in df.columns else 0.0,
+                    TEMA20_SLOPE20=item["trend"]["TEMA20_SLOPE20"],
+                    OBV_SLOPE20=item["trend"]["OBV_SLOPE20"],
+                    ABOVE_CNT5=item["trend"]["ABOVE_CNT5"],
+                    DEMA10_SLOPE20=item["trend"]["DEMA10_SLOPE20"],
                 ),
-                flags=_as_score_flags(flags),
-                score_label=str(flags.get("label")) if isinstance(flags, dict) else None,
-                details={**(flags.get("details", {}) if isinstance(flags, dict) else {}), "close": float(cur.close), "recurrence": recurrence},
-                strategy=strategy_text(df),
+                flags=_as_score_flags(item["flags"]),
+                score_label=item["score_label"],
+                details={**item["flags"].get("details", {}), "close": item["indicators"]["close"], "recurrence": recurrence},
+                strategy=item["strategy"],
+                # 수익률 계산 (과거 스캔인 경우)
+                returns=calculate_returns(item["ticker"], today_as_of) if date else None,
             )
-            if item.match:
-                items.append(item)
+            scan_items.append(scan_item)
         except Exception:
             continue
-    try:
-        if conn_hist is not None:
-            conn_hist.close()
-    except Exception:
-        pass
-
-    # 정렬: score | volume (VOL) | change_rate(추후)
-    if sort_by == 'volume':
-        items = sorted(items, key=lambda x: getattr(x.indicators, 'VOL', 0), reverse=True)
-    else:
-        items = sorted(items, key=lambda x: x.score, reverse=True)
 
     resp = ScanResponse(
-        as_of=datetime.now().strftime('%Y-%m-%d'),
+        as_of=today_as_of,
         universe_count=len(universe),
-        matched_count=len(items),
-        rsi_mode=config.rsi_mode,
-        rsi_period=config.rsi_period,
-        rsi_threshold=config.rsi_threshold,
-        items=items,
+        matched_count=len(scan_items),
+        rsi_mode="tema_dema",  # 새로운 RSI 모드
+        rsi_period=14,  # 고정값
+        rsi_threshold=config.rsi_setup_min,  # 새로운 RSI 임계값 사용
+        items=scan_items,
+        fallback_step=chosen_step if config.fallback_enable else None,
         score_weights=getattr(config, 'dynamic_score_weights')() if hasattr(config, 'dynamic_score_weights') else {},
         score_level_strong=config.score_level_strong,
         score_level_watch=config.score_level_watch,
@@ -308,7 +418,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         # 스냅샷에는 핵심 메타/랭킹만 저장(용량 절약)
         # 스냅샷에 종가, 거래량, 변동률 추가
         enhanced_rank = []
-        for it in items:
+        for it in scan_items:
             try:
                 # 최신 OHLCV 데이터 가져오기 (스냅샷 생성 시점)
                 df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터 (전일 대비 변동률 계산용)
@@ -368,6 +478,27 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         _save_scan_snapshot(snapshot)
         _save_snapshot_db(resp.as_of, items)
     return resp
+
+
+@app.get('/scan/historical', response_model=ScanResponse)
+def scan_historical(date: str, kospi_limit: int = None, kosdaq_limit: int = None):
+    """과거 날짜로 스캔하고 성과를 측정하는 엔드포인트
+    
+    Args:
+        date: 스캔할 날짜 (YYYYMMDD 형식)
+        kospi_limit: KOSPI 종목 수 제한
+        kosdaq_limit: KOSDAQ 종목 수 제한
+        
+    Returns:
+        ScanResponse: 스캔 결과와 각 종목의 현재까지의 성과
+    """
+    return scan(
+        kospi_limit=kospi_limit,
+        kosdaq_limit=kosdaq_limit,
+        save_snapshot=False,  # 과거 스캔은 스냅샷 저장하지 않음
+        sort_by='score',
+        date=date
+    )
 
 
 @app.get('/universe', response_model=UniverseResponse)
@@ -679,7 +810,8 @@ def analyze(name_or_code: str):
             TEMA=float(cur.TEMA20),
             DEMA=float(cur.DEMA10),
             MACD_OSC=float(cur.MACD_OSC),
-            RSI=float(cur.RSI),
+            MACD_LINE=float(cur.MACD_LINE),
+            MACD_SIGNAL=float(cur.MACD_SIGNAL),
             RSI_TEMA=float(cur.RSI_TEMA),
             RSI_DEMA=float(cur.RSI_DEMA),
             OBV=float(cur.OBV),
@@ -1349,6 +1481,23 @@ async def get_scan_by_date(date: str):
                     enhanced_item["change_rate"] = item.get("change_rate", 0)
                     enhanced_item["volume"] = item.get("volume", 0)
                     
+                    # 수익률 정보 계산 (과거 스캔 결과이므로)
+                    scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+                    returns_info = calculate_returns(ticker, scan_date_formatted)
+                    if returns_info:
+                        enhanced_item["returns"] = returns_info
+                    else:
+                        enhanced_item["returns"] = {
+                            "current_return": 0,
+                            "max_return": 0,
+                            "min_return": 0,
+                            "scan_price": 0,
+                            "current_price": 0,
+                            "max_price": 0,
+                            "min_price": 0,
+                            "days_elapsed": 0
+                        }
+                    
                     # 시장 관심도 (거래량 기반)
                     if item.get("volume", 0) > 1000000:
                         enhanced_item["market_interest"] = "높음"
@@ -1405,6 +1554,23 @@ async def get_scan_by_date(date: str):
                     enhanced_item["current_price"] = details.get("close", 0)  # details.close
                     enhanced_item["volume"] = indicators.get("VOL", 0)        # indicators.VOL
                     enhanced_item["change_rate"] = 0  # auto-scan에는 변동률이 없음
+                    
+                    # 수익률 정보 계산 (과거 스캔 결과이므로)
+                    scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+                    returns_info = calculate_returns(ticker, scan_date_formatted)
+                    if returns_info:
+                        enhanced_item["returns"] = returns_info
+                    else:
+                        enhanced_item["returns"] = {
+                            "current_return": 0,
+                            "max_return": 0,
+                            "min_return": 0,
+                            "scan_price": 0,
+                            "current_price": 0,
+                            "max_price": 0,
+                            "min_price": 0,
+                            "days_elapsed": 0
+                        }
                     
                     # 거래금액 기반 시장 관심도 설정
                     volume = enhanced_item["volume"]
@@ -1565,6 +1731,23 @@ async def get_latest_scan():
                     enhanced_item["current_price"] = details.get("close", 0)  # details.close
                     enhanced_item["volume"] = indicators.get("VOL", 0)        # indicators.VOL
                     enhanced_item["change_rate"] = 0  # auto-scan에는 변동률이 없음
+                    
+                    # 수익률 정보 계산 (과거 스캔 결과이므로)
+                    scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+                    returns_info = calculate_returns(ticker, scan_date_formatted)
+                    if returns_info:
+                        enhanced_item["returns"] = returns_info
+                    else:
+                        enhanced_item["returns"] = {
+                            "current_return": 0,
+                            "max_return": 0,
+                            "min_return": 0,
+                            "scan_price": 0,
+                            "current_price": 0,
+                            "max_price": 0,
+                            "min_price": 0,
+                            "days_elapsed": 0
+                        }
                     
                     # 거래금액 기반 시장 관심도 설정
                     volume = enhanced_item["volume"]
