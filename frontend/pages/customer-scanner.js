@@ -16,7 +16,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('score');
+  const [sortBy, setSortBy] = useState('price');
   const [filterBy, setFilterBy] = useState('전체종목');
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -252,26 +252,11 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
 
   // 정렬
   const sortedResults = [...filteredResults].sort((a, b) => {
-    if (sortBy === 'score') return (b.score || 0) - (a.score || 0);
     if (sortBy === 'price') return (b.details?.close || 0) - (a.details?.close || 0);
-    if (sortBy === 'change') return (b.score || 0) - (a.score || 0); // 점수로 정렬
+    if (sortBy === 'change') return (b.change_rate || 0) - (a.change_rate || 0);
     return 0;
   });
 
-  // 별점 렌더링
-  const renderStars = (score) => {
-    const stars = [];
-    const starCount = Math.min(5, Math.max(1, Math.floor((score || 0) / 2)));
-    
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <span key={i} className={`text-lg ${i < starCount ? 'text-yellow-400' : 'text-gray-300'}`}>
-          ★
-        </span>
-      );
-    }
-    return stars;
-  };
 
   // 수익률 색상
   const getReturnColor = (returnRate) => {
@@ -280,126 +265,8 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     return 'text-gray-500';
   };
 
-  // 상태 정보 표시 (일반인 친화적 용어)
-  const getStatusAndInterest = (item) => {
-    const strategy = item.strategy;
-    if (!strategy) return '-';
-    
-    // 상태 관련 키워드를 일반인이 이해하기 쉬운 용어로 변환
-    if (strategy.includes('거래확대')) return '관심증가';
-    if (strategy.includes('상승추세 정착')) return '상승중(안정)';
-    if (strategy.includes('상승추세')) return '상승중';
-    if (strategy.includes('하락추세')) return '하락중';
-    if (strategy.includes('횡보')) return '횡보';
-    if (strategy.includes('양전환')) return '반등';
-    if (strategy.includes('음전환')) return '하락전환';
-    
-    // 기본적으로 전략의 첫 번째 부분을 상태로 표시
-    return strategy.split(' / ')[0] || strategy;
-  };
 
-  // 거래대금 기반 시장관심도 표시
-  const getSimpleStrategy = (item) => {
-    if (!item.volume || !item.current_price) return '-';
-    
-    const tradingAmount = item.volume * item.current_price / 100000000; // 억원 단위
-    
-    if (tradingAmount > 1000) return '매우높음';      // 1,000억원 이상
-    else if (tradingAmount > 500) return '높음';      // 500억원 이상
-    else if (tradingAmount > 100) return '보통';      // 100억원 이상
-    else return '낮음';                               // 100억원 미만
-  };
 
-  // 매매전략 정보 표시 (백엔드에서 이미 사용자 친화적으로 변환됨)
-  const getStrategyInfo = (item) => {
-    const strategy = item.strategy;
-    if (!strategy) return '-';
-    
-    // 백엔드에서 이미 사용자 친화적 용어로 변환되어 있으므로 그대로 사용
-    // 상승신호, 상승시작, 관심증가, 상승추세정착, 관심
-    return strategy.split(' / ')[0] || strategy;
-  };
-
-  // 전략기반 액션 생성 (관리자용과 동일한 로직)
-  const getStrategyActions = (strategy) => {
-    if (!strategy) return '';
-    const labels = String(strategy)
-      .split('/')
-      .map(s => s.trim())
-      .map(s => s.replace(/\s+/g, '')); // 공백 제거해 라벨 표준화
-    const actions = [];
-    
-    // 백엔드의 새로운 사용자 친화적 전략 용어와 매칭
-    if (labels.includes('상승신호')) {
-      actions.push('돌파하면 매수, 단기 이동평균 아래로 떨어지면 정리');
-    }
-    if (labels.includes('상승시작')) {
-      actions.push('오늘 최고가 돌파 시 매수, 상승세가 꺾이면 비중 줄이기');
-    }
-    if (labels.includes('관심증가')) {
-      actions.push('거래량이 5일평균↑이면 비중 늘리기, 다음 날 거래량 줄면 일부 청산');
-    }
-    if (labels.includes('상승추세정착')) {
-      actions.push('추세 지속 시 비중 유지, 추세 전환 시 정리');
-    }
-    if (labels.includes('관심') || actions.length === 0) {
-      actions.push('아직 기다리기 (신호 2개 이상 뜨면 매수)');
-    }
-    
-    // 기존 용어도 호환성을 위해 유지
-    if (labels.includes('골든크로스형성')) {
-      actions.push('돌파하면 매수, 단기 이동평균 아래로 떨어지면 정리');
-    }
-    if (labels.includes('모멘텀양전환')) {
-      actions.push('오늘 최고가 돌파 시 매수, 상승세가 꺾이면 비중 줄이기');
-    }
-    if (labels.includes('거래확대')) {
-      actions.push('거래량이 5일평균↑이면 비중 늘리기, 다음 날 거래량 줄면 일부 청산');
-    }
-    if (labels.includes('관망')) {
-      actions.push('아직 기다리기 (신호 2개 이상 뜨면 매수)');
-    }
-    
-    return actions.join(' · ');
-  };
-
-  // 평가 라벨 변환 함수 (관리자 화면과 동일)
-  const getLabelMeta = (label) => {
-    const v = String(label || '').trim();
-    if (v === '강한 매수') {
-      return {
-        text: '매수 후보(강)',
-        hint: '신호 충족도 높음. 오늘 최고가 돌파 시 분할 매수 고려, 단기 이동평균 하회 시 정리.',
-        cls: 'bg-emerald-100 text-emerald-800',
-      };
-    }
-    if (v === '매수 후보') {
-      return {
-        text: '매수 후보',
-        hint: '신호 충족도 양호. 오늘 최고가 돌파 시 매수 고려, 추세 전환 시 정리.',
-        cls: 'bg-blue-100 text-blue-800',
-      };
-    }
-    if (v === '관심') {
-      return {
-        text: '관심',
-        hint: '신호 일부 충족. 거래량 증가·상승세 확인 후 매수 판단.',
-        cls: 'bg-amber-100 text-amber-800',
-      };
-    }
-    if (v === '관망') {
-      return {
-        text: '관망',
-        hint: '신호 부족. 추가 신호 대기 후 매수 판단.',
-        cls: 'bg-yellow-100 text-yellow-800',
-      };
-    }
-    return {
-      text: '제외',
-      hint: '조건 미충족. 대기.',
-      cls: 'bg-slate-100 text-slate-700',
-    };
-  };
 
   // mounted 체크 제거 - SSR 데이터가 있으므로 바로 렌더링
 
@@ -632,7 +499,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               onChange={(e) => setSortBy(e.target.value)}
               className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="score">점수순</option>
               <option value="price">현재가순</option>
               <option value="change">변동률순</option>
             </select>
@@ -709,104 +575,86 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 </div>
               ) : (
                 sortedResults.map((item) => (
-              <div key={item.ticker} className="bg-white rounded-lg shadow-sm border p-4">
-              {/* 상단: 종목명 + 종목코드 + 시장 + 현재가 + 변동률 */}
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="font-semibold text-gray-800">
-                    {item.name}
-                    <span className="text-xs text-gray-500 ml-2">({item.ticker})</span>
-                    <span className="text-xs text-blue-600 ml-2">
-                      {item.market || (item.ticker && item.ticker.length === 6 ? 
-                        (item.ticker.startsWith('0') ? '코스닥' : '코스피') : '')}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {item.current_price > 0 ? `${item.current_price.toLocaleString()}원` : '데이터 없음'}
-                    <span className={`ml-2 ${getReturnColor(item.change_rate)}`}>
-                      {item.change_rate !== 0 ? `${item.change_rate > 0 ? '+' : ''}${item.change_rate}%` : ''}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  {renderStars(item.score)}
-                </div>
-              </div>
-
-                {/* 하단: 추가 정보 */}
-                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                  <div>
-                    <span className="text-gray-500">거래량:</span>
-                    <span className="ml-2 text-gray-800">
-                      {item.volume > 0 ? `${(item.volume / 1000).toFixed(0)}K` : '데이터 없음'}
-                    </span>
-                    {item.volume > 0 && item.current_price > 0 && (
-                      <span className="ml-1 text-xs text-gray-500">
-                        ({Math.round(item.volume * item.current_price / 100000000).toLocaleString()}억원)
+              <div key={item.ticker} className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+                {/* 종목명과 가격 */}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 truncate">
+                      {item.name}
+                    </h3>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="text-xs text-gray-500 font-mono">
+                        {item.ticker}
                       </span>
-                    )}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                        {item.market || (item.ticker && item.ticker.length === 6 ? 
+                          (item.ticker.startsWith('0') ? '코스닥' : '코스피') : '')}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500">시장관심도:</span>
-                    <span className="ml-2 text-gray-800 text-xs">
-                      {item.market_interest || getSimpleStrategy(item)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">상태:</span>
-                    <span className="ml-2 text-gray-800 text-xs">
-                      {item.strategy || getStrategyInfo(item)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">점수:</span>
-                    <span className="ml-2 text-gray-800">
-                      {item.score ? `${item.score}/15` : '-'}
-                    </span>
+                  <div className="text-right ml-4">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {item.current_price > 0 ? `${item.current_price.toLocaleString()}원` : '데이터 없음'}
+                    </div>
+                    <div className={`text-sm font-semibold ${getReturnColor(item.change_rate)}`}>
+                      {item.change_rate !== 0 ? `${item.change_rate > 0 ? '+' : ''}${item.change_rate}%` : ''}
+                    </div>
                   </div>
                 </div>
 
-                {/* 평가 정보 */}
-                {item.score_label && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-xs text-gray-600 font-medium">📊 투자 평가</div>
-                  <div 
-                    className="px-2 py-1 rounded-full text-xs font-medium"
-                    style={{
-                      backgroundColor: getLabelMeta(item.score_label).cls.includes('emerald') ? '#d1fae5' : 
-                                     getLabelMeta(item.score_label).cls.includes('blue') ? '#dbeafe' :
-                                     getLabelMeta(item.score_label).cls.includes('amber') ? '#fef3c7' :
-                                     getLabelMeta(item.score_label).cls.includes('yellow') ? '#fef3c7' : '#f1f5f9',
-                      color: getLabelMeta(item.score_label).cls.includes('emerald') ? '#065f46' : 
-                            getLabelMeta(item.score_label).cls.includes('blue') ? '#1e40af' :
-                            getLabelMeta(item.score_label).cls.includes('amber') ? '#92400e' :
-                            getLabelMeta(item.score_label).cls.includes('yellow') ? '#92400e' : '#374151'
-                    }}
-                  >
-                    {getLabelMeta(item.score_label).text}
+                {/* 거래 정보 */}
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">거래량</div>
+                    <div className="text-sm font-semibold text-gray-800">
+                      {item.volume > 0 ? `${(item.volume / 1000).toFixed(0)}K` : '데이터 없음'}
+                    </div>
                   </div>
-                    </div>
-                    <div className="text-xs text-gray-700 leading-relaxed">
-                      {getLabelMeta(item.score_label).hint}
-                    </div>
-                    {item.evaluation && item.evaluation.total_score && (
-                      <div className="mt-2 text-xs text-gray-600">
-                        종합 점수: <span className="font-semibold">{item.evaluation.total_score}점</span>
+                  {item.volume > 0 && item.current_price > 0 && (
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">거래금액</div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {Math.round(item.volume * item.current_price / 100000000).toLocaleString()}억원
                       </div>
-                    )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 수익률 정보 (과거 스캔 결과인 경우) */}
+                {item.returns && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs text-blue-600 font-medium">📈 수익률 정보</div>
+                      <div className="text-xs text-blue-500">
+                        {item.returns.days_elapsed ? `${item.returns.days_elapsed}일 경과` : ''}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">현재 수익률</div>
+                        <div className={`font-semibold ${item.returns.current_return > 0 ? 'text-red-500' : item.returns.current_return < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
+                          {item.returns.current_return > 0 ? '+' : ''}{item.returns.current_return}%
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">최고 수익률</div>
+                        <div className="font-semibold text-red-500">
+                          +{item.returns.max_return}%
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">최저 수익률</div>
+                        <div className="font-semibold text-blue-500">
+                          {item.returns.min_return}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-600">
+                      스캔가: {item.returns.scan_price?.toLocaleString()}원 → 현재가: {item.returns.current_price?.toLocaleString()}원
+                    </div>
                   </div>
                 )}
 
-                {/* 전략기반 액션 */}
-                {item.strategy && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                    <div className="text-xs text-blue-600 font-medium mb-1">📋 매매 가이드</div>
-                    <div className="text-xs text-blue-800 leading-relaxed">
-                      {getStrategyActions(item.strategy)}
-                    </div>
-                  </div>
-                )}
 
                 {/* 액션 버튼 */}
                 <div className="flex items-center justify-between pt-3 border-t">
