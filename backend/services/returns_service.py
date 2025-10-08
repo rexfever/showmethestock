@@ -51,8 +51,9 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
         if df_current.empty:
             return None
             
-        scan_date_dt = pd.to_datetime(scan_date)
-        df_current['date_dt'] = pd.to_datetime(df_current['date'])
+        # 날짜 형식 통일 (YYYYMMDD -> datetime)
+        scan_date_dt = pd.to_datetime(scan_date_formatted, format='%Y%m%d')
+        df_current['date_dt'] = pd.to_datetime(df_current['date'], format='%Y%m%d')
         df_period = df_current[df_current['date_dt'] >= scan_date_dt]
         
         if df_period.empty:

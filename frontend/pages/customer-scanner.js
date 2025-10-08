@@ -18,6 +18,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('price');
   const [filterBy, setFilterBy] = useState('전체종목');
+  const [showOnlyRecurring, setShowOnlyRecurring] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
@@ -247,6 +248,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   // 필터링 (시장별 필터 제거)
   const filteredResults = scanResults.filter(item => {
     if (!item) return false;
+    
+    // 재등장 종목만 보기 필터
+    if (showOnlyRecurring && !item.recurrence?.appeared_before) {
+      return false;
+    }
+    
     return true;
   });
 
@@ -512,6 +519,17 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               <option value="보유종목">보유종목</option>
             </select>
           </div>
+          <div className="mt-3">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={showOnlyRecurring}
+                onChange={(e) => setShowOnlyRecurring(e.target.checked)}
+                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span className="text-sm text-gray-700">🔄 재등장 종목만 보기</span>
+            </label>
+          </div>
         </div>
 
         {/* 통합된 스캔 정보 */}
@@ -579,9 +597,16 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 {/* 종목명과 가격 */}
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 truncate">
-                      {item.name}
-                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-lg font-bold text-gray-900 truncate">
+                        {item.name}
+                      </h3>
+                      {item.recurrence?.appeared_before && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          🔄 {item.recurrence.appear_count}회 등장
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className="text-xs text-gray-500 font-mono">
                         {item.ticker}
@@ -591,6 +616,11 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                           (item.ticker.startsWith('0') ? '코스닥' : '코스피') : '')}
                       </span>
                     </div>
+                    {item.recurrence?.appeared_before && item.recurrence.days_since_last && (
+                      <div className="text-xs text-green-600 mt-1">
+                        마지막 등장: {item.recurrence.days_since_last}일 전
+                      </div>
+                    )}
                   </div>
                   <div className="text-right ml-4">
                     <div className="text-2xl font-bold text-gray-900">
