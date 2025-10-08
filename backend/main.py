@@ -1318,6 +1318,7 @@ async def get_scan_by_date(date: str):
             data = json.load(f)
         
         # 스캔 날짜 정보 추가
+        scan_date = date  # 변수 정의 추가
         data["scan_date"] = date
         data["is_latest"] = False
         
@@ -1366,24 +1367,8 @@ async def get_scan_by_date(date: str):
             if enhanced_items:
                 scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
                 tickers = [item["ticker"] for item in enhanced_items]
-                # 간단한 수익률 계산 (스캔가 대비 현재가)
-                returns_batch_data = {}
-                for item in enhanced_items:
-                    ticker = item["ticker"]
-                    scan_price = item.get("current_price", 0)  # 스캔 당시 가격
-                    current_price = scan_price  # 현재는 동일 (실제로는 API 호출 필요)
-                    
-                    # 간단한 수익률 계산 (실제로는 0%로 표시)
-                    returns_batch_data[ticker] = {
-                        "current_return": 0.0,
-                        "max_return": 0.0,
-                        "min_return": 0.0,
-                        "scan_price": scan_price,
-                        "current_price": current_price,
-                        "max_price": current_price,
-                        "min_price": current_price,
-                        "days_elapsed": 0
-                    }
+                # 실제 수익률 계산 (병렬 처리)
+                returns_batch_data = calculate_returns_batch(tickers, scan_date_formatted)
                 
                 # 수익률 정보 추가
                 for item in enhanced_items:
@@ -1486,24 +1471,8 @@ async def get_scan_by_date(date: str):
             if enhanced_items:
                 scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
                 tickers = [item["ticker"] for item in enhanced_items]
-                # 간단한 수익률 계산 (스캔가 대비 현재가)
-                returns_batch_data = {}
-                for item in enhanced_items:
-                    ticker = item["ticker"]
-                    scan_price = item.get("current_price", 0)  # 스캔 당시 가격
-                    current_price = scan_price  # 현재는 동일 (실제로는 API 호출 필요)
-                    
-                    # 간단한 수익률 계산 (실제로는 0%로 표시)
-                    returns_batch_data[ticker] = {
-                        "current_return": 0.0,
-                        "max_return": 0.0,
-                        "min_return": 0.0,
-                        "scan_price": scan_price,
-                        "current_price": current_price,
-                        "max_price": current_price,
-                        "min_price": current_price,
-                        "days_elapsed": 0
-                    }
+                # 실제 수익률 계산 (병렬 처리)
+                returns_batch_data = calculate_returns_batch(tickers, scan_date_formatted)
                 
                 # 수익률 정보 추가
                 for item in enhanced_items:
