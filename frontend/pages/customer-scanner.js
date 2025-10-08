@@ -616,6 +616,13 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                           (item.ticker.startsWith('0') ? '코스닥' : '코스피') : '')}
                       </span>
                     </div>
+                    {/* 거래량과 거래대금 */}
+                    <div className="text-xs text-gray-600 mt-1">
+                      거래량: {item.volume > 0 ? `${(item.volume / 1000).toFixed(0)}K` : '데이터 없음'}
+                      {item.volume > 0 && item.current_price > 0 && (
+                        <span className="ml-4">거래대금: {Math.round(item.volume * item.current_price / 100000000).toLocaleString()}억</span>
+                      )}
+                    </div>
                     {item.recurrence?.appeared_before && item.recurrence.days_since_last && (
                       <div className="text-xs text-green-600 mt-1">
                         마지막 등장: {item.recurrence.days_since_last}일 전
@@ -632,23 +639,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                   </div>
                 </div>
 
-                {/* 거래 정보 */}
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-1">거래량</div>
-                    <div className="text-sm font-semibold text-gray-800">
-                      {item.volume > 0 ? `${(item.volume / 1000).toFixed(0)}K` : '데이터 없음'}
-                    </div>
-                  </div>
-                  {item.volume > 0 && item.current_price > 0 && (
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">거래금액</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {Math.round(item.volume * item.current_price / 100000000).toLocaleString()}억원
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 {/* 수익률 정보 (과거 스캔 결과인 경우) */}
                 {item.returns && (

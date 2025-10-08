@@ -2,10 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  experimental: {
-    // Next.js 13.x 호환성 설정
-    appDir: false, // Pages Router 사용
-  },
+  // experimental 설정 제거 (Next.js 13.5.6에서 불필요)
   // Node.js 18+ 호환성
   webpack: (config, { isServer }) => {
     if (!isServer) {
