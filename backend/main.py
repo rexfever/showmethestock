@@ -8,6 +8,7 @@ from typing import List, Optional, Dict
 import pandas as pd
 import asyncio
 import glob
+import httpx
 
 from config import config, reload_from_env
 from environment import get_environment_info
