@@ -33,10 +33,10 @@ class Config:
     ohlcv_count: int = int(os.getenv("OHLCV_COUNT", "220"))
 
     # === Tight preset ===
-    min_signals: int = 3              # 2 -> 3 (신호 최소 3개 충족)
-    macd_osc_min: float = 0.0        # -10 -> 0 (음모멘텀 제외)
-    rsi_mode: str = "tema"              # hybrid -> tema
-    rsi_threshold: float = 58       # 55 -> 58
+    min_signals: int = int(os.getenv("MIN_SIGNALS", "3"))              # 2 -> 3 (신호 최소 3개 충족)
+    macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "0.0"))        # -10 -> 0 (음모멘텀 제외)
+    rsi_mode: str = os.getenv("RSI_MODE", "tema")              # hybrid -> tema
+    rsi_threshold: float = float(os.getenv("RSI_THRESHOLD", "58"))       # 55 -> 58
     
     # 교차/이격 타이트
     gap_min: float = float(os.getenv("GAP_MIN", "0.002"))                # 0.1% -> 0.2%
@@ -70,7 +70,7 @@ class Config:
     fallback_target_max: int = int(os.getenv("FALLBACK_TARGET_MAX", "5"))  # 최대 반환 개수(=TOP_K와 동일 권장)
     
     # === RSI (TEMA/DEMA 기반) - 기존 로직 유지 ===
-    rsi_setup_min: int = int(os.getenv("RSI_SETUP_MIN", "45"))   # RSI_DEMA Setup 구간 최소
+    rsi_setup_min: int = int(os.getenv("RSI_SETUP_MIN", "58"))   # RSI_DEMA Setup 구간 최소 (Tight preset)
     rsi_setup_max: int = int(os.getenv("RSI_SETUP_MAX", "75"))   # RSI_DEMA Setup 구간 최대
     rsi_trigger_min: int = int(os.getenv("RSI_TRIGGER_MIN", "50"))  # RSI_TEMA Trigger 기준
     rsi_overheat: int = int(os.getenv("RSI_OVERHEAT", "85"))     # RSI_TEMA 과열 컷
@@ -83,8 +83,7 @@ class Config:
     # 실데이터 실패 시 모의 폴백 허용 여부 (기본: 0=비허용)
     use_mock_fallback: bool = os.getenv("USE_MOCK_FALLBACK", "0").lower() in ("1", "true", "yes")
 
-    # 매칭에 필요한 최소 신호 개수(골든크로스/모멘텀/RSI/거래량 중)
-    min_signals: int = int(os.getenv("MIN_SIGNALS", "2"))
+    # 매칭에 필요한 최소 신호 개수(골든크로스/모멘텀/RSI/거래량 중) - 중복 제거됨
 
     # Kiwoom REST TR 설정 (필요 시 .env에서 오버라이드)
     kiwoom_tr_topvalue_id: str = os.getenv("KIWOOM_TR_TOPVALUE_ID", "ka10032")

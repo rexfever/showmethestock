@@ -15,7 +15,8 @@ export const loginWithKakao = () => {
       // 카카오 로그인 URL로 리다이렉트
       const config = getConfig();
       const redirectUri = encodeURIComponent(config.domain + '/kakao-callback');
-      const kakaoLoginUrl = `https://kauth.kakao.com/oauth/authorize?client_id=4eb579e52709ea64e8b941b9c95d20da&redirect_uri=${redirectUri}&response_type=code`;
+      const kakaoClientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || '4eb579e52709ea64e8b941b9c95d20da';
+      const kakaoLoginUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoClientId}&redirect_uri=${redirectUri}&response_type=code`;
       
       console.log('카카오 로그인 URL:', kakaoLoginUrl);
       window.location.href = kakaoLoginUrl;
