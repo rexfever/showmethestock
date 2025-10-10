@@ -116,13 +116,13 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
         print(f"스냅샷 저장 오류: {e}")
 
 
-def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None) -> tuple:
+def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, market_condition=None) -> tuple:
     """Fallback 로직을 적용한 스캔 실행"""
     chosen_step = None
     
     if not config.fallback_enable:
         # Fallback 비활성화 시 기존 로직
-        items = scan_with_preset(universe, {}, date)
+        items = scan_with_preset(universe, {}, date, market_condition)
         items = items[:config.top_k]
     else:
         # Fallback 활성화 시 단계별 완화
@@ -130,7 +130,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None) 
         chosen_step = 0
         
         for step, overrides in enumerate(config.fallback_presets):
-            items = scan_with_preset(universe, overrides, date)
+            items = scan_with_preset(universe, overrides, date, market_condition)
             # 하드 컷은 scan_one_symbol 내부에서 이미 처리되어야 함(과열/유동성/가격 등)
             if len(items) >= config.fallback_target_min:
                 chosen_step = step

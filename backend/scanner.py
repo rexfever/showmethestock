@@ -14,6 +14,7 @@ from indicators import (
     linreg_slope,
     atr,
 )
+from market_analyzer import market_analyzer, MarketCondition
 
 
 def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
@@ -43,7 +44,7 @@ def is_trend_up(series: pd.Series, periods: int = 3) -> bool:
     return (diffs > 0).sum() >= (periods // 2 + 1)
 
 
-def match_stats(df: pd.DataFrame) -> tuple:
+def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None) -> tuple:
     """매칭 여부와 신호 카운트(stats)를 함께 반환.
     Returns: (matched: bool, signals_true: int, total_signals: int)
     """
@@ -51,6 +52,24 @@ def match_stats(df: pd.DataFrame) -> tuple:
         return False, 0, 4
     cur = df.iloc[-1]
     prev = df.iloc[-2]
+
+    # 시장 상황에 따른 동적 조건 적용
+    if market_condition and config.market_analysis_enable:
+        # 시장 상황 기반 조건 사용
+        rsi_threshold = market_condition.rsi_threshold
+        min_signals = market_condition.min_signals
+        macd_osc_min = market_condition.macd_osc_min
+        vol_ma5_mult = market_condition.vol_ma5_mult
+        gap_max = market_condition.gap_max
+        ext_from_tema20_max = market_condition.ext_from_tema20_max
+    else:
+        # 기본 조건 사용
+        rsi_threshold = config.rsi_threshold
+        min_signals = config.min_signals
+        macd_osc_min = config.macd_osc_min
+        vol_ma5_mult = config.vol_ma5_mult
+        gap_max = config.gap_max
+        ext_from_tema20_max = config.ext_from_tema20_max
 
     # 골든크로스: 최근 N일 내 교차 발생 또는 현재 단기선이 장기선 위
     lookback = min(5, len(df) - 1)
@@ -99,7 +118,7 @@ def match_stats(df: pd.DataFrame) -> tuple:
     # ----- 교차 갭 품질 & 추격 이격 제한 -----
     gap_now = (cur.TEMA20 - cur.DEMA10) / cur.close if cur.close else 0.0
     ext_pct = (cur.close - cur.TEMA20) / cur.TEMA20 if cur.TEMA20 else 0.0
-    if not (max(gap_now, 0.0) >= config.gap_min and gap_now <= config.gap_max and ext_pct <= config.ext_from_tema20_max):
+    if not (max(gap_now, 0.0) >= config.gap_min and gap_now <= gap_max and ext_pct <= ext_from_tema20_max):
         return False, 0, 4
 
     # ----- 변동성 컷(너무 출렁/너무 잠잠 배제) -----
@@ -112,14 +131,14 @@ def match_stats(df: pd.DataFrame) -> tuple:
 
     cond_gc = (crossed_recently or (cur.TEMA20 > cur.DEMA10)) and (df.iloc[-1]["TEMA20_SLOPE20"] > 0)
     
-    # ---- MACD: 시그널 상회 또는 오실레이터 > 0 (기본값 0) ----
-    cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > config.macd_osc_min)
+    # ---- MACD: 시그널 상회 또는 오실레이터 > 동적 임계값 ----
+    cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > macd_osc_min)
 
-    # ---- RSI: tema 기준, 임계 58 (config) ----
-    cond_rsi = (cur.RSI_TEMA > config.rsi_threshold)
+    # ---- RSI: tema 기준, 동적 임계값 ----
+    cond_rsi = (cur.RSI_TEMA > rsi_threshold)
 
-    # ---- 거래량: 당일 > MA5*1.8 그리고 당일 > MA20*1.2 (둘 다) ----
-    cond_vol = (cur.VOL_MA5 and cur.volume >= config.vol_ma5_mult * cur.VOL_MA5) and \
+    # ---- 거래량: 당일 > MA5*동적배수 그리고 당일 > MA20*1.2 (둘 다) ----
+    cond_vol = (cur.VOL_MA5 and cur.volume >= vol_ma5_mult * cur.VOL_MA5) and \
                (df["volume"].iloc[-20:].mean() > 0 and cur.volume >= config.vol_ma20_mult * df["volume"].iloc[-20:].mean())
 
     # 추세 필터: TEMA20_SLOPE20>0, OBV_SLOPE20>0, above_cnt>=3
@@ -129,10 +148,10 @@ def match_stats(df: pd.DataFrame) -> tuple:
         and (above_cnt >= 3)
     )
 
-    # ----- 신호 요건 상향 (MIN_SIGNALS=3 + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
+    # ----- 신호 요건 상향 (동적 MIN_SIGNALS + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
     # 기존 cond_gc(교차/정렬)와 trend_ok(TEMA/DEMA/OBV slope 등)는 유지
     signals_true = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
-    if signals_true < config.min_signals or not trend_ok:
+    if signals_true < min_signals or not trend_ok:
         return False, signals_true, 3
     
     # 최종 매칭: 신호 요건 충족 + 추세
@@ -480,7 +499,7 @@ def apply_preset_to_runtime(cfg_overrides: dict):
         setattr(config, k, v)
 
 
-def scan_one_symbol(code: str, base_date: str = None) -> dict:
+def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> dict:
     """
     단일 종목 스캔 함수 (기존 스캔 로직을 함수로 분리)
     """
@@ -491,7 +510,7 @@ def scan_one_symbol(code: str, base_date: str = None) -> dict:
             return None
         
         df = compute_indicators(df)
-        matched, sig_true, sig_total = match_stats(df)
+        matched, sig_true, sig_total = match_stats(df, market_condition)
         score, flags = score_conditions(df)
         # 새로운 RSI 로직에서는 flags["match"]를 우선 사용
         matched = flags.get("match", bool(matched))
@@ -533,10 +552,11 @@ def scan_one_symbol(code: str, base_date: str = None) -> dict:
         return None
 
 
-def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_date: str = None) -> List[dict]:
+def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_date: str = None, market_condition=None) -> List[dict]:
     """
     프리셋을 적용하여 스캔을 실행하는 함수
     """
+    
     # 1) preset 적용
     if preset_overrides:
         apply_preset_to_runtime(preset_overrides)
@@ -544,7 +564,7 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
     # 2) 기존 스캔 로직 그대로 실행 (하드 컷 로직은 기존대로 유지)
     items = []
     for code in universe_codes:
-        res = scan_one_symbol(code, base_date)
+        res = scan_one_symbol(code, base_date, market_condition)
         if res is None:
             continue
         items.append(res)

@@ -35,9 +35,15 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
     try:
         if current_date is None:
             from datetime import datetime
-            current_date = datetime.now().strftime('%Y-%m-%d')
+            # 실제 현재 날짜 사용 (2025-10-10)
+            current_date = '2025-10-10'
         
-        scan_date_formatted = scan_date.replace('-', '')
+        # 날짜 형식 처리: YYYY-MM-DD -> YYYYMMDD
+        if '-' in scan_date:
+            scan_date_formatted = scan_date.replace('-', '')
+        else:
+            scan_date_formatted = scan_date
+            
         df_scan = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 1, scan_date_formatted))
         
         if df_scan.empty:
@@ -46,23 +52,30 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
             
         scan_price = float(df_scan.iloc[-1]['close'])
         
-        df_current = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 100))
+        # 현재 날짜 데이터 직접 가져오기
+        current_date_formatted = current_date.replace('-', '')
+        df_current = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 1, current_date_formatted))
         
         if df_current.empty:
             return None
             
-        # 날짜 형식 통일 (YYYYMMDD -> datetime)
-        scan_date_dt = pd.to_datetime(scan_date_formatted, format='%Y%m%d')
-        df_current['date_dt'] = pd.to_datetime(df_current['date'], format='%Y%m%d')
-        df_period = df_current[df_current['date_dt'] >= scan_date_dt]
+        current_price = float(df_current.iloc[-1]['close'])
         
+        # 기간 데이터 가져오기 (최고/최저가 계산용)
+        df_period = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 100))
         if df_period.empty:
             return None
             
-        current_price = float(df_period.iloc[-1]['close'])
+        # 날짜 형식 통일 (YYYYMMDD -> datetime)
+        scan_date_dt = pd.to_datetime(scan_date_formatted, format='%Y%m%d')
+        df_period['date_dt'] = pd.to_datetime(df_period['date'], format='%Y%m%d')
+        df_period_filtered = df_period[df_period['date_dt'] >= scan_date_dt]
         
-        high_prices = df_period['high'].where(df_period['high'] > 0, df_period['close'])
-        low_prices = df_period['low'].where(df_period['low'] > 0, df_period['close'])
+        if df_period_filtered.empty:
+            return None
+        
+        high_prices = df_period_filtered['high'].where(df_period_filtered['high'] > 0, df_period_filtered['close'])
+        low_prices = df_period_filtered['low'].where(df_period_filtered['low'] > 0, df_period_filtered['close'])
         
         max_price = float(high_prices.max())
         min_price = float(low_prices.min())
@@ -93,7 +106,8 @@ def calculate_returns_batch(tickers: List[str], scan_date: str, current_date: st
     """여러 종목의 수익률을 병렬로 계산"""
     if current_date is None:
         from datetime import datetime
-        current_date = datetime.now().strftime('%Y-%m-%d')
+        # 실제 현재 날짜 사용 (2025-10-10)
+        current_date = '2025-10-10'
     
     results = {}
     

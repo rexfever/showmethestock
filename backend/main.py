@@ -14,6 +14,7 @@ from config import config, reload_from_env
 from environment import get_environment_info
 from kiwoom_api import KiwoomAPI
 from scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
+from market_analyzer import market_analyzer
 from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest
 from utils import is_code, normalize_code_or_name
 from kakao import send_alert, format_scan_message, format_scan_alert_message
@@ -216,14 +217,30 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     else:
         today_as_of = datetime.now().strftime('%Y-%m-%d')
     
-    # Fallback 로직 적용
-    items, chosen_step = execute_scan_with_fallback(universe, date)
+    # 시장 상황 분석 (활성화된 경우)
+    market_condition = None
+    if config.market_analysis_enable:
+        try:
+            # 캐시 클리어 후 새로 분석
+            market_analyzer.clear_cache()
+            market_condition = market_analyzer.analyze_market_condition(today_as_of)
+            print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (KOSPI: {market_condition.kospi_return:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+        except Exception as e:
+            print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+    
+    # Fallback 로직 적용 (시장 상황 포함)
+    items, chosen_step = execute_scan_with_fallback(universe, date, market_condition)
     
     # 수익률 계산 (병렬 처리)
     returns_data = {}
     if date:  # 과거 스캔인 경우에만 수익률 계산
         tickers = [item["ticker"] for item in items]
+        print(f"💰 수익률 계산 시작: {len(tickers)}개 종목, 날짜: {today_as_of}")
         returns_data = calculate_returns_batch(tickers, today_as_of)
+        print(f"💰 수익률 계산 완료: {len(returns_data)}개 결과")
+        for ticker, ret in returns_data.items():
+            if ret:
+                print(f"  {ticker}: {ret.get('current_return', 0):.2f}%")
     
     # 재등장 이력 조회 (배치 처리)
     tickers = [item["ticker"] for item in items]
@@ -278,7 +295,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         matched_count=len(scan_items),
         rsi_mode="tema_dema",  # 새로운 RSI 모드
         rsi_period=14,  # 고정값
-        rsi_threshold=config.rsi_setup_min,  # 새로운 RSI 임계값 사용
+        rsi_threshold=market_condition.rsi_threshold if market_condition else config.rsi_setup_min,  # 시장 상황 기반 RSI 임계값
         items=scan_items,
         fallback_step=chosen_step if config.fallback_enable else None,
         score_weights=getattr(config, 'dynamic_score_weights')() if hasattr(config, 'dynamic_score_weights') else {},
