@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 from dotenv import load_dotenv
 from environment import env_detector, get_config_overrides
@@ -80,8 +80,15 @@ class Config:
     market_preset_bear_rsi: float = float(os.getenv("MARKET_PRESET_BEAR_RSI", "45.0"))  # 약세장: 낮은 RSI 허용
     
     # KOSPI 임계값 (시장 상황 판단용)
-    kospi_bull_threshold: float = float(os.getenv("KOSPI_BULL_THRESHOLD", "0.02"))  # +2%
-    kospi_bear_threshold: float = float(os.getenv("KOSPI_BEAR_THRESHOLD", "-0.02"))  # -2%
+    kospi_bull_threshold: float = float(os.getenv("KOSPI_BULL_THRESHOLD", "0.02"))  # +2% (0.02 -> 0.02)
+    kospi_bear_threshold: float = float(os.getenv("KOSPI_BEAR_THRESHOLD", "-0.02"))  # -2% (0.02 -> 0.02)
+    
+    # === 필터링 설정 ===
+    # RSI 상한선 (과매수 구간 진입 방지)
+    rsi_upper_limit: float = float(os.getenv("RSI_UPPER_LIMIT", "70.0"))
+    
+    # 인버스 ETF 필터링 키워드
+    inverse_etf_keywords: list = field(default_factory=lambda: os.getenv("INVERSE_ETF_KEYWORDS", "인버스,2X,레버리지,SHORT,BEAR,DOWN").split(","))
     
     # === RSI (TEMA/DEMA 기반) - 기존 로직 유지 ===
     rsi_setup_min: int = int(os.getenv("RSI_SETUP_MIN", "58"))   # RSI_DEMA Setup 구간 최소 (Tight preset)
@@ -164,8 +171,8 @@ class Config:
         return [
             # step 0: current strict (현 설정 그대로 사용)
             {},
-            # step 1: 신호/RSI 약간 완화
-            {"min_signals": 2, "rsi_threshold": 56},
+            # step 1: 신호 완화 (RSI 절대값 조건 제거)
+            {"min_signals": 2},
             # step 2: 거래량 완화
             {"vol_ma5_mult": 1.6, "vol_ma20_mult": 1.1},
             # step 3: 갭/이격 범위 완화

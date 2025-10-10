@@ -44,7 +44,7 @@ def is_trend_up(series: pd.Series, periods: int = 3) -> bool:
     return (diffs > 0).sum() >= (periods // 2 + 1)
 
 
-def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None) -> tuple:
+def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stock_name: str = None) -> tuple:
     """매칭 여부와 신호 카운트(stats)를 함께 반환.
     Returns: (matched: bool, signals_true: int, total_signals: int)
     """
@@ -92,6 +92,9 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None) -> t
 
     # ----- 유동성/가격/연속신호 컷 (매칭 초반에 하드 필터 추가) -----
     
+    # 인버스 ETF 필터링은 scan_one_symbol에서 이미 처리됨
+    # (중복 제거를 위해 주석 처리)
+    
     # 유동성: 최근 20일 평균 거래대금(= close * volume) 계산
     if len(df) >= 20:
         avg_turnover = (df["close"].iloc[-20:] * df["volume"].iloc[-20:]).mean()
@@ -131,21 +134,24 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None) -> t
 
     cond_gc = (crossed_recently or (cur.TEMA20 > cur.DEMA10)) and (df.iloc[-1]["TEMA20_SLOPE20"] > 0)
     
-    # ---- MACD: 시그널 상회 또는 오실레이터 > 동적 임계값 ----
-    cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > macd_osc_min)
+    # ---- MACD: 상승 초입 신호 조건 ----
+    # MACD 신호: 골든크로스 또는 오실레이터 양수
+    cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > 0)
 
-    # ---- RSI: tema 기준, 동적 임계값 ----
-    cond_rsi = (cur.RSI_TEMA > rsi_threshold)
+    # ---- RSI: 상승 초입 모멘텀 조건 ----
+    # RSI 모멘텀: TEMA > DEMA 또는 수렴 후 상승
+    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > 35)
+    cond_rsi = rsi_momentum
 
-    # ---- 거래량: 당일 > MA5*동적배수 그리고 당일 > MA20*1.2 (둘 다) ----
-    cond_vol = (cur.VOL_MA5 and cur.volume >= vol_ma5_mult * cur.VOL_MA5) and \
-               (df["volume"].iloc[-20:].mean() > 0 and cur.volume >= config.vol_ma20_mult * df["volume"].iloc[-20:].mean())
+    # ---- 거래량: 상승 초입 급증 조건 ----
+    # 거래량 급증: 평균 대비 1.3배 이상 (완화)
+    cond_vol = (cur.VOL_MA5 and cur.volume >= 1.3 * cur.VOL_MA5)
 
-    # 추세 필터: TEMA20_SLOPE20>0, OBV_SLOPE20>0, above_cnt>=3
+    # 상승 초입 추세 필터: 가격 상승 + OBV 상승 + 연속 상승
     trend_ok = (
-        (df.iloc[-1]["TEMA20_SLOPE20"] > 0)
-        and (df.iloc[-1]["OBV_SLOPE20"] > 0)
-        and (above_cnt >= 3)
+        (df.iloc[-1]["TEMA20_SLOPE20"] > 0)  # 가격 상승 추세
+        and (df.iloc[-1]["OBV_SLOPE20"] > 0)  # OBV 상승 (자금 유입)
+        and (above_cnt >= 2)  # 연속 상승 (3일 중 2일 이상)
     )
 
     # ----- 신호 요건 상향 (동적 MIN_SIGNALS + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
@@ -353,12 +359,13 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         score += W['macd']
     details['macd'] = {'ok': bool(macd_ok), 'w': W['macd'], 'gain': W['macd'] if macd_ok else 0}
 
-    # 4) RSI: tema 기준, 임계 58 (config)
-    rsi_ok = (cur.RSI_TEMA > config.rsi_threshold)
+    # 4) RSI: 상승 초입 모멘텀 조건 (TEMA > DEMA 또는 수렴 후 상승)
+    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > 35)
+    rsi_ok = rsi_momentum
     
     flags["rsi_ok"] = bool(rsi_ok)
-    flags["rsi_mode"] = "tema"
-    flags["rsi_thr"] = config.rsi_threshold
+    flags["rsi_mode"] = "tema_dema_momentum"
+    flags["rsi_thr"] = "momentum"
     if rsi_ok:
         score += W['rsi']
     details['rsi'] = {'ok': bool(rsi_ok), 'w': W['rsi'], 'gain': W['rsi'] if rsi_ok else 0}
@@ -509,8 +516,23 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         if df.empty or len(df) < 21 or df[["open","high","low","close","volume"]].isna().any().any():
             return None
         
+        # 인버스 ETF 필터링 (9월 손실 방지)
+        stock_name = api.get_stock_name(code)
+        if any(keyword in stock_name for keyword in config.inverse_etf_keywords):
+            print(f"🚫 필터링됨: {stock_name} (인버스 ETF)")
+            return None  # 인버스 ETF 즉시 제외
+        
         df = compute_indicators(df)
-        matched, sig_true, sig_total = match_stats(df, market_condition)
+        # 종목명을 DataFrame에 추가
+        df['name'] = stock_name
+        
+        # RSI 상한선 필터링 (과매수 구간 진입 방지)
+        cur = df.iloc[-1]
+        if cur.RSI_TEMA > config.rsi_upper_limit:
+            print(f"📊 필터링됨: {stock_name} (RSI {cur.RSI_TEMA:.1f} > {config.rsi_upper_limit})")
+            return None  # RSI 상한선 초과 종목 즉시 제외
+        
+        matched, sig_true, sig_total = match_stats(df, market_condition, stock_name)
         score, flags = score_conditions(df)
         # 새로운 RSI 로직에서는 flags["match"]를 우선 사용
         matched = flags.get("match", bool(matched))

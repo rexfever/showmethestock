@@ -4,6 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime, timedelta
 import os
 import json
+import sqlite3
 from typing import List, Optional, Dict
 import pandas as pd
 import asyncio
@@ -149,17 +150,20 @@ def _db_path() -> str:
 
 def _save_snapshot_db(as_of: str, items: List[ScanItem]):
     try:
+        print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
         rows = []
         for it in items:
             rows.append((as_of, it.ticker, float(it.score), json.dumps(it.flags or {} , ensure_ascii=False), it.score_label or '', float(it.indicators.VOL if hasattr(it.indicators,'VOL') else 0)))
+        print(f"💾 {len(rows)}개 레코드 삽입 시도")
         cur.executemany("INSERT OR REPLACE INTO scan_rank(date, code, score, flags, score_label, close_price) VALUES (?,?,?,?,?,?)", rows)
         conn.commit()
         conn.close()
-    except Exception:
-        pass
+        print(f"✅ 데이터베이스 저장 완료: {as_of}")
+    except Exception as e:
+        print(f"❌ 데이터베이스 저장 오류: {e}")
 
 def _log_send(to: str, matched_count: int):
     try:
@@ -200,6 +204,7 @@ def _init_positions_table():
 
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
+    print(f"🔍 스캔 API 호출: save_snapshot={save_snapshot}, date={date}")
     kp = kospi_limit or config.universe_kospi
     kd = kosdaq_limit or config.universe_kosdaq
     kospi = api.get_top_codes('KOSPI', kp)
@@ -209,11 +214,16 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     # 날짜 처리
     if date:
         try:
-            # YYYYMMDD 형식으로 입력된 날짜를 YYYY-MM-DD로 변환
-            scan_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+            # 날짜 형식 확인 및 변환
+            if len(date) == 8 and date.isdigit():  # YYYYMMDD 형식
+                scan_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+            elif len(date) == 10 and date.count('-') == 2:  # YYYY-MM-DD 형식
+                scan_date = date
+            else:
+                raise ValueError("날짜 형식이 올바르지 않습니다.")
             today_as_of = scan_date
         except:
-            raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYYMMDD 형식으로 입력해주세요.")
+            raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
     else:
         today_as_of = datetime.now().strftime('%Y-%m-%d')
     
@@ -354,18 +364,23 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 }
             enhanced_rank.append(enhanced_item)
         
-        snapshot = {
-            'as_of': resp.as_of,
-            'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-            'universe_count': resp.universe_count,
-            'matched_count': resp.matched_count,
-            'rsi_mode': resp.rsi_mode,
-            'rsi_period': resp.rsi_period,
-            'rsi_threshold': resp.rsi_threshold,
-            'rank': enhanced_rank,
-        }
-        _save_scan_snapshot(snapshot)
-        _save_snapshot_db(resp.as_of, items)
+        print(f"🔍 save_snapshot 조건 확인: {save_snapshot} (타입: {type(save_snapshot)})")
+        if save_snapshot:
+            print(f"✅ save_snapshot=True, 스냅샷 저장 시작")
+            snapshot = {
+                'as_of': resp.as_of,
+                'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                'universe_count': resp.universe_count,
+                'matched_count': resp.matched_count,
+                'rsi_mode': resp.rsi_mode,
+                'rsi_period': resp.rsi_period,
+                'rsi_threshold': resp.rsi_threshold,
+                'rank': enhanced_rank,
+            }
+            _save_scan_snapshot(snapshot)
+            _save_snapshot_db(resp.as_of, items)
+        else:
+            print(f"❌ save_snapshot=False, 스냅샷 저장 건너뜀")
     return resp
 
 
@@ -430,6 +445,48 @@ def _debug_stockinfo(market_tp: str = '001'):
 
 
 # 기존 /validate 제거 → 스냅샷 기반 검증만 유지
+
+
+@app.delete('/scan/{date}')
+def delete_scan_result(date: str):
+    """특정 날짜의 스캔 결과 삭제"""
+    try:
+        # 날짜 형식 변환 (YYYY-MM-DD)
+        if len(date) == 8:  # YYYYMMDD 형식
+            formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+        else:
+            formatted_date = date
+        
+        # 1. 데이터베이스에서 삭제
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        
+        # scan_rank 테이블에서 삭제
+        cur.execute("DELETE FROM scan_rank WHERE date = ?", (formatted_date,))
+        deleted_count = cur.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        # 2. JSON 스냅샷 파일 삭제
+        snapshot_file = os.path.join(SNAPSHOT_DIR, f"scan-{formatted_date}.json")
+        file_deleted = False
+        if os.path.exists(snapshot_file):
+            os.remove(snapshot_file)
+            file_deleted = True
+        
+        return {
+            "ok": True,
+            "message": f"{formatted_date} 스캔 결과가 삭제되었습니다",
+            "deleted_records": deleted_count,
+            "file_deleted": file_deleted
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e)
+        }
 
 
 @app.get('/snapshots')
