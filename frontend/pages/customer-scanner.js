@@ -537,7 +537,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-3">
               <div className="text-blue-800">
-                <span className="font-medium">📅 스캔 날짜:</span>
+                <span className="font-medium">📅 추천 날짜:</span>
               </div>
               <select 
                 value={selectedDate} 
@@ -556,6 +556,20 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             </div>
             <div className="text-blue-600">
               <span className="font-medium">매칭종목:</span> {scanResults.length}개
+            </div>
+          </div>
+          
+          {/* 수익률 정보 설명 */}
+          <div className="mt-3 pt-3 border-t border-blue-200">
+            <div className="text-xs text-blue-700 leading-relaxed">
+              <div className="font-medium mb-1">💡 수익률 정보 안내</div>
+              <div className="space-y-1">
+                <div>• <span className="font-medium">추천가</span>: 해당 날짜에 추천된 가격</div>
+                <div>• <span className="font-medium">현재가</span>: 실시간 현재 주가</div>
+                <div>• <span className="font-medium">수익률</span>: 추천가 대비 현재가 기준 수익률</div>
+                <div>• <span className="font-medium">최고수익률</span>: 추천 후 최고점 대비 수익률</div>
+                <div className="text-blue-600 font-medium">📈 과거 추천 종목의 성과를 확인하여 투자 참고자료로 활용하세요</div>
+              </div>
             </div>
           </div>
         </div>
@@ -670,7 +684,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-600">
-                      스캔가: {item.returns.scan_price?.toLocaleString()}원 → 현재가: {item.returns.current_price?.toLocaleString()}원
+                      추천가: {item.returns.scan_price?.toLocaleString()}원 → 현재가: {item.returns.current_price?.toLocaleString()}원
                     </div>
                   </div>
                 )}

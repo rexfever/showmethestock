@@ -1,0 +1,1 @@
+{"as_of": "2024-09-02", "created_at": "2025-09-27T00:28:00", "universe_count": 100, "matched_count": 1, "rsi_mode": "standard", "rsi_period": 14, "rsi_threshold": 43.0, "rank": [{"ticker": "411060", "name": "ACE KRX금현물", "score": 12.0, "score_label": "강한 매수", "close_price": 24950, "volume": 2895070, "change_rate": -0.22}]}

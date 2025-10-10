@@ -1,0 +1,18 @@
+# SSH 설정 파일 (~/.ssh/config)
+# 이 파일을 ~/.ssh/config에 추가하면 SSH 연결이 안정화됩니다
+
+Host stock-server
+    HostName 52.79.145.238
+    User ubuntu
+    Port 22
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    TCPKeepAlive yes
+    ConnectTimeout 10
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+    LogLevel ERROR
+
+# 사용법:
+# ssh stock-server
+# scp file.txt stock-server:/home/ubuntu/

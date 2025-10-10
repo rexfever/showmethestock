@@ -16,13 +16,28 @@ export default function Portfolio() {
     entry_date: '',
     status: 'watching'
   });
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated()) {
+    // 인증 상태 확인 후 데이터 로드
+    const checkAuth = () => {
+      if (isAuthenticated()) {
+        fetchPortfolio();
+        fetchSummary();
+      }
+      setAuthChecked(true);
+    };
+    
+    checkAuth();
+  }, [selectedStatus]);
+
+  useEffect(() => {
+    // 인증 상태가 변경될 때마다 데이터 다시 로드
+    if (authChecked && isAuthenticated()) {
       fetchPortfolio();
       fetchSummary();
     }
-  }, [isAuthenticated, selectedStatus]);
+  }, [isAuthenticated, authChecked]);
 
   const fetchPortfolio = async () => {
     try {
@@ -207,6 +222,18 @@ export default function Portfolio() {
       default: return status;
     }
   };
+
+  // 인증 상태 확인 중이면 로딩 표시
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">인증 상태를 확인하는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated()) {
     return (

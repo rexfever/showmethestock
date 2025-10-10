@@ -18,13 +18,29 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
 
-  // 토큰을 쿠키에서 가져오기
+  // 토큰을 쿠키와 localStorage에서 가져오기
   useEffect(() => {
     const savedToken = Cookies.get('auth_token');
+    const localToken = localStorage.getItem('token');
+    const localUser = localStorage.getItem('user');
+    
     if (savedToken) {
       setToken(savedToken);
       // 토큰이 있으면 사용자 정보 가져오기
       fetchUserInfo(savedToken);
+    } else if (localToken && localUser) {
+      // localStorage에서 토큰과 사용자 정보 복원
+      try {
+        const userData = JSON.parse(localUser);
+        setUser(userData);
+        setToken(localToken);
+        setLoading(false);
+      } catch (error) {
+        console.error('사용자 정보 파싱 실패:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
@@ -116,29 +132,30 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
     
-    // localStorage에서 토큰 확인
-    const localToken = localStorage.getItem('token');
-    const localUser = localStorage.getItem('user');
-    
-    if (localToken && localUser) {
-      // localStorage에 토큰이 있으면 인증된 것으로 간주
-      if (!user) {
-        // user 상태가 없으면 localStorage에서 복원
-        try {
-          const userData = JSON.parse(localUser);
-          setUser(userData);
-          setToken(localToken);
-        } catch (error) {
-          console.error('사용자 정보 파싱 실패:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          return false;
-        }
-      }
-      return true;
+    // 현재 상태에서 토큰과 사용자 정보 확인
+    return !!token && !!user;
+  };
+
+  const getToken = () => {
+    // 서버 사이드에서는 null 반환
+    if (typeof window === 'undefined') {
+      return null;
     }
     
-    return !!token && !!user;
+    // localStorage에서 토큰 확인
+    const localToken = localStorage.getItem('token');
+    if (localToken) {
+      return localToken;
+    }
+    
+    // 쿠키에서 토큰 확인
+    const cookieToken = Cookies.get('auth_token');
+    if (cookieToken) {
+      return cookieToken;
+    }
+    
+    // 상태에서 토큰 확인
+    return token;
   };
 
   const value = {
@@ -148,7 +165,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    fetchUserInfo
+    fetchUserInfo,
+    getToken
   };
 
   return (

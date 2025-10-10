@@ -2,51 +2,36 @@
 > dev
 > NODE_ENV=development next dev
 
- ⚠ Invalid next.config.js options detected: 
- ⚠     Unrecognized key(s) in object: 'appDir' at "experimental"
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
- ⚠ App router is available by default now, `experimental.appDir` option can be safely removed.
   ▲ Next.js 13.5.11
   - Local:        http://localhost:3000
   - Environments: .env.local
-  - Experiments (use at your own risk):
-     · appDir
 
- ✓ Ready in 2.2s
- ✓ Compiled / in 975ms (250 modules)
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ✓ Compiled /login in 524ms (296 modules)
- ✓ Compiled /kakao-callback in 280ms (300 modules)
- ✓ Compiled /customer-scanner in 273ms (304 modules)
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:2415:26) {
-  cause: ConnectTimeoutError: Connect Timeout Error
-      at onConnectTimeout (/Users/rexsmac/workspace/stock-finder/frontend/node_modules/next/dist/compiled/undici/index.js:1:93144)
-      at /Users/rexsmac/workspace/stock-finder/frontend/node_modules/next/dist/compiled/undici/index.js:1:92636
-      at Immediate._onImmediate (/Users/rexsmac/workspace/stock-finder/frontend/node_modules/next/dist/compiled/undici/index.js:1:93026)
-      at process.processImmediate (node:internal/timers:478:21) {
-    code: 'UND_ERR_CONNECT_TIMEOUT'
-  }
-}
- ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
- ⚠ Invalid next.config.js options detected: 
- ⚠     Unrecognized key(s) in object: 'appDir' at "experimental"
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
- ⚠ App router is available by default now, `experimental.appDir` option can be safely removed.
-  ▲ Next.js 13.5.11
-  - Local:        http://localhost:3000
-  - Environments: .env.local
-  - Experiments (use at your own risk):
-     · appDir
-
- ✓ Ready in 3.9s
+ ✓ Ready in 3.5s
  ○ Compiling /customer-scanner ...
- ✓ Compiled /customer-scanner in 8.8s (296 modules)
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /customer-scanner in 8.6s (273 modules)
+ ✓ Compiled /_error in 181ms (275 modules)
+ ✓ Compiled /login in 520ms (290 modules)
+ ✓ Compiled /kakao-callback in 113ms (294 modules)
+ ✓ Compiled /portfolio in 280ms (298 modules)
+ ✓ Compiled in 1533ms (290 modules)
+ ✓ Compiled / in 970ms (300 modules)
+ ✓ Compiled in 191ms (300 modules)
+ ✓ Compiled /_error in 105ms (302 modules)
+ ✓ Compiled in 313ms (290 modules)
+ ✓ Compiled in 421ms (290 modules)
+ ✓ Compiled in 981ms (290 modules)
+ ✓ Compiled in 303ms (290 modules)
+ ✓ Compiled in 168ms (290 modules)
+ ✓ Compiled /customer-scanner in 88ms (292 modules)
+ ✓ Compiled /subscription in 126ms (289 modules)
+ ✓ Compiled in 261ms (279 modules)
+ ✓ Compiled in 192ms (279 modules)
+ ✓ Compiled /_error in 664ms (281 modules)
+ ✓ Compiled in 408ms (279 modules)
+ ✓ Compiled in 189ms (279 modules)
+ ✓ Compiled in 276ms (279 modules)
+ ✓ Compiled in 297ms (279 modules)
+ ✓ Compiled /_error in 326ms (281 modules)
+ ✓ Compiled in 583ms (279 modules)
+ ✓ Compiled in 236ms (279 modules)
+ ✓ Compiled in 168ms (279 modules)
