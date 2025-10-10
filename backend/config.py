@@ -74,10 +74,10 @@ class Config:
     market_analysis_interval: int = int(os.getenv("MARKET_ANALYSIS_INTERVAL", "60"))  # 분 단위
     market_analysis_cache_ttl: int = int(os.getenv("MARKET_ANALYSIS_CACHE_TTL", "300"))  # 초 단위
     
-    # 시장 상황별 기본 프리셋
-    market_preset_bull_rsi: float = float(os.getenv("MARKET_PRESET_BULL_RSI", "45.0"))
-    market_preset_neutral_rsi: float = float(os.getenv("MARKET_PRESET_NEUTRAL_RSI", "50.0"))
-    market_preset_bear_rsi: float = float(os.getenv("MARKET_PRESET_BEAR_RSI", "65.0"))
+    # 시장 상황별 기본 프리셋 (RSI 기준 수정)
+    market_preset_bull_rsi: float = float(os.getenv("MARKET_PRESET_BULL_RSI", "65.0"))  # 강세장: 높은 RSI 허용
+    market_preset_neutral_rsi: float = float(os.getenv("MARKET_PRESET_NEUTRAL_RSI", "58.0"))  # 중립장: 기본값
+    market_preset_bear_rsi: float = float(os.getenv("MARKET_PRESET_BEAR_RSI", "45.0"))  # 약세장: 낮은 RSI 허용
     
     # KOSPI 임계값 (시장 상황 판단용)
     kospi_bull_threshold: float = float(os.getenv("KOSPI_BULL_THRESHOLD", "0.02"))  # +2%

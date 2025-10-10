@@ -168,9 +168,9 @@ class MarketAnalyzer:
         
         # 시장 상황별 조정
         if market_sentiment == 'bull':
-            # 강세장: 더 관대한 조건
+            # 강세장: 높은 RSI 허용 (과매수 구간까지 상승 가능)
             base_conditions.update({
-                'rsi_threshold': 45.0,  # 58 -> 45
+                'rsi_threshold': 65.0,  # 58 -> 65 (높은 RSI 허용)
                 'min_signals': 2,       # 3 -> 2
                 'macd_osc_min': -5.0,   # 0 -> -5
                 'vol_ma5_mult': 1.5,    # 1.8 -> 1.5
@@ -179,9 +179,9 @@ class MarketAnalyzer:
             })
             
         elif market_sentiment == 'bear':
-            # 약세장: 더 엄격한 조건
+            # 약세장: 낮은 RSI 허용 (과매도 구간에서 반등 기대)
             base_conditions.update({
-                'rsi_threshold': 65.0,  # 58 -> 65
+                'rsi_threshold': 45.0,  # 58 -> 45 (낮은 RSI 허용)
                 'min_signals': 4,       # 3 -> 4
                 'macd_osc_min': 5.0,    # 0 -> 5
                 'vol_ma5_mult': 2.0,    # 1.8 -> 2.0
@@ -190,9 +190,9 @@ class MarketAnalyzer:
             })
             
         else:  # neutral
-            # 중립장: 약간 관대한 조건 (9월 13일 같은 상황)
+            # 중립장: 기본 조건 유지
             base_conditions.update({
-                'rsi_threshold': 50.0,  # 58 -> 50
+                'rsi_threshold': 58.0,  # 기본값 유지
                 'min_signals': 3,       # 유지
                 'macd_osc_min': 0.0,    # 유지
                 'vol_ma5_mult': 1.6,    # 1.8 -> 1.6
@@ -200,13 +200,13 @@ class MarketAnalyzer:
                 'ext_from_tema20_max': 0.018
             })
         
-        # 변동성 기반 추가 조정
+        # 변동성 기반 추가 조정 (제한적)
         if volatility > 0.04:  # 고변동성
-            base_conditions['rsi_threshold'] += 5.0  # 더 엄격하게
+            base_conditions['rsi_threshold'] += 2.0  # 5.0 -> 2.0 (제한적)
             base_conditions['min_signals'] += 1
             
         elif volatility < 0.02:  # 저변동성
-            base_conditions['rsi_threshold'] -= 3.0  # 더 관대하게
+            base_conditions['rsi_threshold'] -= 1.0  # 3.0 -> 1.0 (제한적)
             
         # 거래량 추세 기반 조정
         if volume_trend == 'high':
@@ -238,16 +238,16 @@ class MarketAnalyzer:
         """시장 상황별 프리셋 반환"""
         presets = {
             'bull': {
-                'rsi_threshold': 45.0,
+                'rsi_threshold': 65.0,  # 높은 RSI 허용
                 'min_signals': 2,
                 'macd_osc_min': -5.0,
                 'vol_ma5_mult': 1.5,
                 'gap_max': 0.02,
                 'ext_from_tema20_max': 0.02,
-                'description': '강세장: 관대한 조건으로 상승 추세 포착'
+                'description': '강세장: 높은 RSI 허용으로 상승 추세 포착'
             },
             'neutral': {
-                'rsi_threshold': 50.0,
+                'rsi_threshold': 58.0,  # 기본값 유지
                 'min_signals': 3,
                 'macd_osc_min': 0.0,
                 'vol_ma5_mult': 1.6,
@@ -256,7 +256,7 @@ class MarketAnalyzer:
                 'description': '중립장: 균형잡힌 조건 (9월 13일 스타일)'
             },
             'bear': {
-                'rsi_threshold': 65.0,
+                'rsi_threshold': 45.0,  # 낮은 RSI 허용
                 'min_signals': 4,
                 'macd_osc_min': 5.0,
                 'vol_ma5_mult': 2.0,
