@@ -35,3 +35,191 @@
  ✓ Compiled in 583ms (279 modules)
  ✓ Compiled in 236ms (279 modules)
  ✓ Compiled in 168ms (279 modules)
+ ⨯ ./contexts/AuthContext.js
+Error: 
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:176:1]
+ [2m176[0m |       return false;
+ [2m177[0m |     }
+ [2m178[0m |     
+ [2m179[0m | <<<<<<< HEAD
+     : [31;1m^^^^^^^[0m
+ [2m180[0m |     // 현재 상태에서 토큰과 사용자 정보 확인
+ [2m181[0m |     return !!token && !!user;
+ [2m182[0m | =======
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:179:1]
+ [2m179[0m | <<<<<<< HEAD
+ [2m180[0m |     // 현재 상태에서 토큰과 사용자 정보 확인
+ [2m181[0m |     return !!token && !!user;
+ [2m182[0m | =======
+     : [31;1m^^^^^^^[0m
+ [2m183[0m |     // 단순화: 우선순위대로 토큰 확인
+ [2m184[0m |     const availableToken = getToken();
+ [2m185[0m |     return !!availableToken && (!!user || !!localStorage.getItem('user'));
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:183:1]
+ [2m183[0m |     // 단순화: 우선순위대로 토큰 확인
+ [2m184[0m |     const availableToken = getToken();
+ [2m185[0m |     return !!availableToken && (!!user || !!localStorage.getItem('user'));
+ [2m186[0m | >>>>>>> 6af1fab762210156d0f3662b82cd2f9542f97519
+     : [31;1m^^^^^^^[0m
+ [2m187[0m |   };
+ [2m188[0m | 
+ [2m189[0m |   const getToken = () => {
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:190:1]
+ [2m190[0m |     // 서버 사이드에서는 null 반환
+ [2m191[0m |     if (typeof window === 'undefined') {
+ [2m192[0m |       return null;
+ [2m193[0m | <<<<<<< HEAD
+     : [31;1m^^^^^^^[0m
+ [2m194[0m |     }
+ [2m195[0m |     
+ [2m196[0m |     // localStorage에서 토큰 확인
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:207:1]
+ [2m207[0m |     
+ [2m208[0m |     // 상태에서 토큰 확인
+ [2m209[0m |     return token;
+ [2m210[0m | =======
+     : [31;1m^^^^^^^[0m
+ [2m211[0m |     }
+ [2m212[0m |     
+ [2m213[0m |     // 쿠키 우선, localStorage 차선으로 토큰 조회
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:224:1]
+ [2m224[0m |   const handleLoginError = (error) => {
+ [2m225[0m |     console.error('로그인 오류:', error);
+ [2m226[0m |     // 여기서 토스트나 다른 UI 컴포넌트로 에러 표시 가능
+ [2m227[0m | >>>>>>> 6af1fab762210156d0f3662b82cd2f9542f97519
+     : [31;1m^^^^^^^[0m
+ [2m228[0m |   };
+ [2m229[0m | 
+ [2m230[0m |   const value = {
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:240:1]
+ [2m240[0m |     login, // deprecated, socialLogin과 동일
+ [2m241[0m |     logout,
+ [2m242[0m |     isAuthenticated,
+ [2m243[0m | <<<<<<< HEAD
+     : [31;1m^^^^^^^[0m
+ [2m244[0m |     fetchUserInfo,
+ [2m245[0m |     getToken
+ [2m246[0m | =======
+     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:243:1]
+ [2m243[0m | <<<<<<< HEAD
+ [2m244[0m |     fetchUserInfo,
+ [2m245[0m |     getToken
+ [2m246[0m | =======
+     : [31;1m^^^^^^^[0m
+ [2m247[0m |     getToken,
+ [2m248[0m |     fetchUserInfo
+ [2m249[0m | >>>>>>> 6af1fab762210156d0f3662b82cd2f9542f97519
+     `----
+
+  [31mx[0m Unexpected token `getToken`. Expected ... , *,  (, [, :, , ?, = or an identifier
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/contexts/AuthContext.js[0m:243:1]
+ [2m243[0m |     <<<<<<< HEAD
+ [2m244[0m |         fetchUserInfo,
+ [2m245[0m |         getToken
+ [2m246[0m | [31;1m,[0m[31;1m-[0m[31;1m>[0m =======
+ [2m247[0m | [31;1m`[0m[31;1m-[0m[31;1m>[0m     getToken,
+ [2m248[0m |         fetchUserInfo
+ [2m249[0m |     >>>>>>> 6af1fab762210156d0f3662b82cd2f9542f97519
+ [2m250[0m |       };
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./contexts/AuthContext.js
+ ✓ Compiled in 1530ms (279 modules)
+ ✓ Compiled /_error in 367ms (281 modules)
+ ⨯ Module not found: Error: Can't resolve './node_modules/next/dist/client/next-dev.js' in '/Users/rexsmac/workspace/stock-finder/frontend'
+[Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+[Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+[Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+[Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+(node:40816) PromiseRejectionHandledWarning: Promise rejection was handled asynchronously (rejection id: 246)
+(Use `node --trace-warnings ...` to show where the warning was created)
+[Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+[Error: ENOENT: no such file or directory, scandir '/Users/rexsmac/workspace/stock-finder/frontend/pages'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: '/Users/rexsmac/workspace/stock-finder/frontend/pages'
+}
+ ⨯ Module not found: Error: Can't resolve './node_modules/next/dist/client/next-dev.js' in '/Users/rexsmac/workspace/stock-finder/frontend'
+ ○ Compiling /customer-scanner ...
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+  ▲ Next.js 13.5.11
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Ready in 3.1s
