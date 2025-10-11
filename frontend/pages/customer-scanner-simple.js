@@ -188,7 +188,7 @@ export default function CustomerScannerSimple({ initialData }) {
                   }}>
                     <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
                       <button style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        관심등록
+                        투자등록
                       </button>
                       <button style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer' }}>
                         차트

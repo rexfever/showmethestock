@@ -716,7 +716,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                     className="px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
                     onClick={() => addToPortfolio(item.ticker, item.name)}
                   >
-                    관심등록
+                    투자등록
                   </button>
                 </div>
               </div>
@@ -788,7 +788,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                         className="px-2 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
                         onClick={() => addToPortfolio(stock.code || stock.ticker, stock.name)}
                       >
-                        관심등록
+                        투자등록
                       </button>
                     </div>
                   </div>
@@ -826,7 +826,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span className="text-xs">관심종목</span>
+              <span className="text-xs">투자포트폴리오</span>
             </button>
             {user?.is_admin && (
               <button 

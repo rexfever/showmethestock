@@ -372,7 +372,7 @@ export default function CustomerScannerStatic({ initialData }) {
                   {/* 액션 버튼 */}
                   <div className="stock-actions">
                     <div className="action-links">
-                      <button className="action-link">관심등록</button>
+                      <button className="action-link">투자등록</button>
                       <button className="action-link">차트</button>
                       <button className="action-link">기업정보</button>
                     </div>

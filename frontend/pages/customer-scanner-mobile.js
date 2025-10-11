@@ -264,7 +264,7 @@ export default function CustomerScannerMobile({ initialData }) {
                   {/* 액션 버튼 */}
                   <div className="flex items-center justify-between pt-3 border-t">
                     <div className="flex space-x-4 text-sm">
-                      <button className="text-blue-500">관심등록</button>
+                      <button className="text-blue-500">투자등록</button>
                       <button className="text-blue-500">차트</button>
                       <button className="text-blue-500">기업정보</button>
                     </div>
@@ -294,7 +294,7 @@ export default function CustomerScannerMobile({ initialData }) {
               <span className="text-xs">통합검색</span>
             </button>
             <button className="flex flex-col items-center py-2">
-              <span className="text-xs">관심종목</span>
+              <span className="text-xs">투자포트폴리오</span>
             </button>
             <button className="flex flex-col items-center py-2">
               <span className="text-xs">주식현재가</span>

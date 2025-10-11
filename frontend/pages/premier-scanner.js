@@ -325,7 +325,7 @@ export default function PremierScanner({ initialData }) {
                     >
                       상세분석
                     </button>
-                    <button className="text-blue-500 hover:text-blue-700">관심등록</button>
+                    <button className="text-blue-500 hover:text-blue-700">투자등록</button>
                     <button className="text-blue-500 hover:text-blue-700">차트</button>
                   </div>
                   <button className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">
