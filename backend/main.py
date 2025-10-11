@@ -447,11 +447,13 @@ def _debug_stockinfo(market_tp: str = '001'):
 def delete_scan_result(date: str):
     """특정 날짜의 스캔 결과 삭제"""
     try:
-        # 날짜 형식 변환 (YYYY-MM-DD)
+        # 날짜 형식 변환 (YYYY-MM-DD for DB, YYYYMMDD for files)
         if len(date) == 8:  # YYYYMMDD 형식
-            formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+            formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"  # DB용
+            file_date = date  # 파일용
         else:
-            formatted_date = date
+            formatted_date = date  # DB용
+            file_date = date.replace('-', '')  # 파일용
         
         # 1. 데이터베이스에서 삭제
         conn = sqlite3.connect(_db_path())
@@ -465,10 +467,17 @@ def delete_scan_result(date: str):
         conn.close()
         
         # 2. JSON 스냅샷 파일 삭제
-        snapshot_file = os.path.join(SNAPSHOT_DIR, f"scan-{formatted_date}.json")
+        snapshot_file = f"snapshots/scan-{file_date}.json"
         file_deleted = False
         if os.path.exists(snapshot_file):
             os.remove(snapshot_file)
+            file_deleted = True
+        
+        # 3. auto-scan 파일도 삭제 (패턴 매칭)
+        import glob
+        auto_scan_files = glob.glob(f"snapshots/auto-scan-{file_date}_*.json")
+        for auto_file in auto_scan_files:
+            os.remove(auto_file)
             file_deleted = True
         
         return {
