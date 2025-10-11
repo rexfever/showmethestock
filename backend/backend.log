@@ -1,46 +1,259 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [40699] using WatchFiles
-INFO:     Started server process [40718]
+INFO:     Started reloader process [30550] using WatchFiles
+INFO:     Started server process [30568]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:58687 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58696 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58713 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58714 - "OPTIONS /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58713 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58716 - "OPTIONS /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58714 - "GET /portfolio HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:58713 - "GET /portfolio HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:58718 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
-카카오 콜백 요청: {'code': 'n2ILcgTptzSOTEn-Qg48ioQYqSlQbajoiKet-7W0cS13kgkBCaaxpAAAAAQKFxAvAAABmcmzH6um1x-HnlkNwQ', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
-카카오 토큰 응답 상태: 200
-카카오 토큰 응답 내용: {"access_token":"GiIMzM7L13W1wJIqvsM-iSu6ThF5kFbbAAAAAQoXACcAAAGZybMoGrG7d-HwzTGR","token_type":"bearer","refresh_token":"SKzjpLWjHdpIdWPYLhry98woc55PR715AAAAAgoXACcAAAGZybMoFrG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjAwMjU1ODUsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjAwMzI3ODUsImlhdCI6MTc2MDAyNTU4NSwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.G-euZFECGssT8IcceEXRf87vIFATL5A2useUTz65roGGYbmX4DQl8SBnwQq7sQu_Som_tjBvh375QieDO7AbKMZjIpKHR1XC3ShfsQCa18dRjDy5HT5THkjLdjl1rDfWhj5KXCQ7zqrD3yz0UPI1h7IhF_eEoJs-A1V7ubvx-HSfP8YeMfM93Q368HIuuiyVU9KyRG0U7c89MeicV_uGiWUbzjdJkwQWHEqNJDYSW8kQmypV1rpDHs5aC8oT6QciMt-2xn4-iSuAfsGALmGEhaSrU7ORDMQ7VAODgoYI48CRheZ_LDFdwNpAE7MJpAAk6f7O4RwjK-47nMYIEPfMBg","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
-카카오 사용자 정보 응답 상태: 200
-카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
-사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
-사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
-INSERT 시도: email=emozero@naver.com, name=손진형, provider=kakao, provider_id=4456585023
-IntegrityError 발생: UNIQUE constraint failed: users.email
-get_user_by_provider 결과: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 9, 23, 15, 40, 16)
-사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 9, 23, 15, 40, 16)
-마지막 로그인 시간 업데이트 완료
-INFO:     127.0.0.1:58718 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58792 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58718 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58779 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58718 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58779 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59146 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59148 - "OPTIONS /portfolio/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59150 - "OPTIONS /portfolio/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59146 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59148 - "GET /portfolio/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59148 - "GET /portfolio/summary HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59148 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59146 - "GET /portfolio/summary HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [40718]
-INFO:     Stopping reloader process [40699]
+INFO:     Finished server process [30568]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [30930]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30930]
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Started server process [31615]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_market_analyzer.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [31615]
+WARNING:  WatchFiles detected changes in 'tests/test_market_analyzer.py'. Reloading...
+INFO:     Started server process [31996]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_user_friendly_analysis.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [31996]
+WARNING:  WatchFiles detected changes in 'tests/test_user_friendly_analysis.py'. Reloading...
+INFO:     Started server process [32488]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [32488]
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Started server process [32926]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/run_all_tests.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [32926]
+WARNING:  WatchFiles detected changes in 'tests/run_all_tests.py'. Reloading...
+INFO:     Started server process [33177]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33177]
+INFO:     Started server process [33644]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33644]
+INFO:     Started server process [33757]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33757]
+INFO:     Started server process [33867]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33867]
+INFO:     Started server process [33999]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33999]
+INFO:     Started server process [34140]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34140]
+INFO:     Started server process [34291]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34291]
+INFO:     Started server process [34423]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34423]
+INFO:     Started server process [34559]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34559]
+INFO:     Started server process [35051]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:49588 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49590 - "GET /recurring-stocks?days=-1&min_appearances=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49592 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49594 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49596 - "GET /scan-with-recurring?days=7&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49599 - "GET /health HTTP/1.1" 404 Not Found
+WARNING:  WatchFiles detected changes in 'tests/test_user_friendly_analysis.py', 'tests/test_integration.py', 'tests/test_market_analyzer.py', 'tests/run_all_tests.py', 'tests/test_scanner_core.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [35051]
+INFO:     Started server process [35994]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:49808 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49811 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49812 - "GET /recurring-stocks?days=7&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49811 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49812 - "GET /recurring-stocks?days=7&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49888 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49946 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49948 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49955 - "GET /health HTTP/1.1" 404 Not Found
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [35994]
+INFO:     Started server process [36835]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36835]
+INFO:     Started server process [36978]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:50109 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50111 - "GET /analyze-friendly?name_or_code=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50119 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50121 - "GET /recurring-stocks?days=-1&min_appearances=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50123 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50125 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50128 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50130 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50132 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50133 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50135 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50137 - "OPTIONS /recurring-stocks HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50139 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50141 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50143 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50145 - "GET /scan-with-recurring?days=7&min_appearances=2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36978]
+INFO:     Started server process [37391]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37391]
+INFO:     Started server process [37532]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:50323 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50325 - "GET /analyze-friendly?name_or_code=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50333 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50335 - "GET /recurring-stocks?days=-1&min_appearances=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50337 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50339 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50343 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50345 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50346 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50347 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50349 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50351 - "OPTIONS /recurring-stocks HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50353 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50355 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50357 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50359 - "GET /scan-with-recurring?days=7&min_appearances=2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37532]
+INFO:     Started server process [37798]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37798]
+INFO:     Started server process [37921]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:50496 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50498 - "GET /analyze-friendly?name_or_code=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50506 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50508 - "GET /recurring-stocks?days=-1&min_appearances=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50510 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50512 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50515 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50517 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50519 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50521 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50522 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50524 - "OPTIONS /recurring-stocks HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:50526 - "GET /recurring-stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50528 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50530 - "GET /recurring-stocks?days=30&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50532 - "GET /scan-with-recurring?days=7&min_appearances=2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'tests/test_integration.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37921]
+INFO:     Started server process [38282]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

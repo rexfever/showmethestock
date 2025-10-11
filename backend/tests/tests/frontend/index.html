@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주식 스캐너 - 재등장 종목</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .recurring-card {
+            transition: all 0.3s ease;
+        }
+        .recurring-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 헤더 -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl font-bold text-gray-900">📊 주식 스캐너</h1>
+                <div class="flex space-x-4">
+                    <button 
+                        onclick="loadRecurringStocks()" 
+                        id="refreshBtn"
+                        class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 transition-colors"
+                    >
+                        🔄 재등장 종목 새로고침
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 재등장 종목 섹션 -->
+        <div id="recurringSection" class="mb-8">
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-lg mb-4">
+                <h2 class="text-xl font-bold flex items-center">
+                    🔄 재등장 종목 (최근 7일간 2회 이상)
+                </h2>
+                <p class="text-sm opacity-90 mt-1">
+                    지속적으로 추천되는 종목들을 확인하세요
+                </p>
+            </div>
+            
+            <div id="recurringStocks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 재등장 종목 카드들이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+
+        <!-- 최신 스캔 결과 섹션 -->
+        <div id="latestScanSection" class="mb-8">
+            <div class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-4 rounded-lg mb-4">
+                <h2 class="text-xl font-bold flex items-center">
+                    🔥 오늘의 추천 종목
+                </h2>
+                <p class="text-sm opacity-90 mt-1">
+                    최신 스캔 결과를 확인하세요
+                </p>
+            </div>
+            
+            <div id="latestStocks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 최신 스캔 결과가 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+
+        <!-- 로딩 상태 -->
+        <div id="loadingState" class="text-center py-8 hidden">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <p class="mt-2 text-gray-600">데이터를 불러오는 중...</p>
+        </div>
+
+        <!-- 에러 상태 -->
+        <div id="errorState" class="text-center py-8 hidden">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <p>데이터를 불러오는 중 오류가 발생했습니다.</p>
+                <button onclick="loadData()" class="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    다시 시도
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8010';
+        
+        // 재등장 종목 로드
+        async function loadRecurringStocks() {
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE}/recurring-stocks?days=7&min_appearances=2`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    displayRecurringStocks(data.data.recurring_stocks);
+                } else {
+                    showError('재등장 종목 데이터를 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('재등장 종목 로드 실패:', error);
+                showError('서버 연결에 실패했습니다.');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 최신 스캔 결과 로드
+        async function loadLatestScan() {
+            try {
+                const response = await fetch(`${API_BASE}/scan-with-recurring?days=7&min_appearances=2`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    displayLatestStocks(data.data.latest_scan.stocks);
+                } else {
+                    showError('최신 스캔 데이터를 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('최신 스캔 로드 실패:', error);
+                showError('서버 연결에 실패했습니다.');
+            }
+        }
+        
+        // 재등장 종목 표시
+        function displayRecurringStocks(recurringStocks) {
+            const container = document.getElementById('recurringStocks');
+            
+            if (!recurringStocks || Object.keys(recurringStocks).length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <p>재등장 종목이 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = Object.entries(recurringStocks).map(([code, data]) => `
+                <div class="recurring-card bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500 cursor-pointer" 
+                     onclick="showStockDetail('${code}', '${data.name || '종목 ' + code}')">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-gray-800">
+                            ${data.name || `종목 ${code}`}
+                        </h3>
+                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                            ${data.appear_count}회 등장
+                        </span>
+                    </div>
+                    
+                    <div class="text-sm text-gray-600 mb-2">
+                        <div>종목코드: ${code}</div>
+                        <div>최신 점수: ${data.latest_score}점</div>
+                        <div>최신 날짜: ${data.latest_date}</div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500">
+                        등장 이력: ${data.appearances.map(app => app.date).join(', ')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 최신 스캔 결과 표시
+        function displayLatestStocks(stocks) {
+            const container = document.getElementById('latestStocks');
+            
+            if (!stocks || stocks.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <p>최신 스캔 결과가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = stocks.map(stock => `
+                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 cursor-pointer"
+                     onclick="showStockDetail('${stock[0]}', '${stock[1] || '종목 ' + stock[0]}')">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-gray-800">
+                            ${stock[1] || `종목 ${stock[0]}`}
+                        </h3>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            ${stock[3]}
+                        </span>
+                    </div>
+                    
+                    <div class="text-sm text-gray-600 mb-2">
+                        <div>종목코드: ${stock[0]}</div>
+                        <div>점수: ${stock[2]}점</div>
+                        <div>현재가: ${stock[4].toLocaleString()}원</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 종목 상세 정보 표시
+        function showStockDetail(code, name) {
+            alert(`종목 상세 정보\n종목코드: ${code}\n종목명: ${name}`);
+        }
+        
+        // 로딩 상태 표시
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('refreshBtn').disabled = true;
+        }
+        
+        // 로딩 상태 숨김
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('refreshBtn').disabled = false;
+        }
+        
+        // 에러 상태 표시
+        function showError(message) {
+            const errorDiv = document.getElementById('errorState');
+            errorDiv.querySelector('p').textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+        
+        // 에러 상태 숨김
+        function hideError() {
+            document.getElementById('errorState').classList.add('hidden');
+        }
+        
+        // 전체 데이터 로드
+        async function loadData() {
+            hideError();
+            await Promise.all([
+                loadRecurringStocks(),
+                loadLatestScan()
+            ]);
+        }
+        
+        // 페이지 로드 시 데이터 로드
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

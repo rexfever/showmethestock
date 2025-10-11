@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객용 스캐너 - 스톡인사이트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .nav {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .nav a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .nav a:hover {
+            background: #0056b3;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .date-selector select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .scan-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .scan-info h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .scan-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .positive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .negative {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .score-high {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .score-medium {
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .score-low {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .recurring-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .recurring-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .recurring-section p {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .date-selector {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-selector select {
+                width: 100%;
+            }
+            
+            .table-container {
+                font-size: 0.9rem;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 고객용 스캐너</h1>
+            <p>AI 기반 주식 추천 시스템</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/">홈으로</a>
+            <a href="/customer-scanner">고객 스캐너</a>
+        </div>
+        
+        <div class="controls">
+            <h2>📊 추천 종목 조회</h2>
+            <div class="date-selector">
+                <select id="dateSelect">
+                    <option value="">날짜를 선택하세요</option>
+                </select>
+                <button class="btn btn-primary" onclick="loadSelectedDate()" id="loadBtn">조회</button>
+                <button class="btn btn-success" onclick="loadLatestScan()" id="latestBtn">최신 추천</button>
+            </div>
+            <div id="scanStatus"></div>
+        </div>
+        
+        <div class="results">
+            <h2>📈 오늘의 추천 종목</h2>
+            <div id="scanResults"></div>
+        </div>
+        
+        <div class="recurring-section">
+            <h3>🔄 재등장 종목</h3>
+            <p>최근 여러 날에 걸쳐 추천된 종목들입니다.</p>
+            <div id="recurringResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8010';
+        
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            loadAvailableDates();
+            loadLatestScan();
+            loadRecurringStocks();
+        };
+        
+        // 사용 가능한 날짜 목록 로드
+        async function loadAvailableDates() {
+            try {
+                const response = await fetch(`${API_BASE}/available-scan-dates`);
+                const result = await response.json();
+                
+                if (result.ok && result.dates) {
+                    const dateSelect = document.getElementById('dateSelect');
+                    dateSelect.innerHTML = '<option value="">날짜를 선택하세요</option>';
+                    
+                    result.dates.forEach(date => {
+                        const option = document.createElement('option');
+                        option.value = date;
+                        option.textContent = date;
+                        dateSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('날짜 목록 로드 실패:', error);
+            }
+        }
+        
+        // 선택한 날짜의 데이터 로드
+        async function loadSelectedDate() {
+            const date = document.getElementById('dateSelect').value;
+            const loadBtn = document.getElementById('loadBtn');
+            const status = document.getElementById('scanStatus');
+            
+            if (!date) {
+                status.innerHTML = '<div class="error">날짜를 선택해주세요.</div>';
+                return;
+            }
+            
+            loadBtn.disabled = true;
+            loadBtn.textContent = '로딩 중...';
+            status.innerHTML = '<div class="loading">선택한 날짜의 데이터를 불러오고 있습니다...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/scan/${date}`);
+                const result = await response.json();
+                
+                if (result.ok) {
+                    status.innerHTML = '<div class="success">데이터를 불러왔습니다!</div>';
+                    displayResults(result.data);
+                } else {
+                    status.innerHTML = `<div class="error">로드 실패: ${result.error}</div>`;
+                }
+            } catch (error) {
+                status.innerHTML = `<div class="error">오류 발생: ${error.message}</div>`;
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = '조회';
+            }
+        }
+        
+        // 최신 스캔 로드
+        async function loadLatestScan() {
+            const latestBtn = document.getElementById('latestBtn');
+            const status = document.getElementById('scanStatus');
+            
+            latestBtn.disabled = true;
+            latestBtn.textContent = '로딩 중...';
+            status.innerHTML = '<div class="loading">최신 추천을 불러오고 있습니다...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/latest-scan`);
+                const result = await response.json();
+                
+                if (result.ok) {
+                    status.innerHTML = '<div class="success">최신 추천을 불러왔습니다!</div>';
+                    displayResults(result.data);
+                } else {
+                    status.innerHTML = `<div class="error">로드 실패: ${result.error}</div>`;
+                }
+            } catch (error) {
+                status.innerHTML = `<div class="error">오류 발생: ${error.message}</div>`;
+            } finally {
+                latestBtn.disabled = false;
+                latestBtn.textContent = '최신 추천';
+            }
+        }
+        
+        // 재등장 종목 로드
+        async function loadRecurringStocks() {
+            try {
+                const response = await fetch(`${API_BASE}/recurring-stocks`);
+                const result = await response.json();
+                
+                if (result.ok && result.stocks && result.stocks.length > 0) {
+                    displayRecurringResults(result.stocks);
+                } else {
+                    document.getElementById('recurringResults').innerHTML = '<div class="loading">재등장 종목이 없습니다.</div>';
+                }
+            } catch (error) {
+                console.error('재등장 종목 로드 실패:', error);
+                document.getElementById('recurringResults').innerHTML = '<div class="error">재등장 종목을 불러올 수 없습니다.</div>';
+            }
+        }
+        
+        // 결과 표시
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('scanResults');
+            
+            if (!data || !data.items || data.items.length === 0) {
+                resultsDiv.innerHTML = '<div class="error">추천 종목이 없습니다.</div>';
+                return;
+            }
+            
+            let html = `
+                <div class="scan-info">
+                    <h3>📊 스캔 정보</h3>
+                    <p><strong>날짜:</strong> ${data.as_of}</p>
+                    <p><strong>추천 종목:</strong> ${data.matched_count}개</p>
+                    <p><strong>RSI 임계값:</strong> ${data.rsi_threshold}</p>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>종목명</th>
+                                <th>현재가</th>
+                                <th>등락률</th>
+                                <th>거래량</th>
+                                <th>점수</th>
+                                <th>전략</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.items.forEach(item => {
+                const changeClass = item.change_rate > 0 ? 'positive' : 'negative';
+                const scoreClass = item.score >= 10 ? 'score-high' : item.score >= 7 ? 'score-medium' : 'score-low';
+                
+                html += `
+                    <tr>
+                        <td><strong>${item.name}</strong></td>
+                        <td>${item.current_price?.toLocaleString() || 'N/A'}</td>
+                        <td class="${changeClass}">${item.change_rate?.toFixed(2) || 'N/A'}%</td>
+                        <td>${item.volume?.toLocaleString() || 'N/A'}</td>
+                        <td><span class="${scoreClass}">${item.score || 'N/A'}</span></td>
+                        <td>${item.strategy || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        // 재등장 종목 표시
+        function displayRecurringResults(stocks) {
+            const resultsDiv = document.getElementById('recurringResults');
+            
+            let html = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>종목명</th>
+                                <th>등장 횟수</th>
+                                <th>최근 등장일</th>
+                                <th>첫 등장일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            stocks.forEach(stock => {
+                html += `
+                    <tr>
+                        <td><strong>${stock.name}</strong></td>
+                        <td><span class="score-high">${stock.appear_count}회</span></td>
+                        <td>${stock.last_as_of}</td>
+                        <td>${stock.first_as_of}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

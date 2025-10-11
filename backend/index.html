@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스톡인사이트 - 손테크</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* PC 스타일 */
+        .pc-version {
+            display: none;
+        }
+
+        .pc-version .hero {
+            text-align: center;
+            padding: 80px 0;
+            color: white;
+        }
+
+        .pc-version .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .pc-version .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .pc-version .cta-button {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .pc-version .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .pc-version .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin: 80px 0;
+        }
+
+        .pc-version .feature-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .pc-version .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pc-version .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .pc-version .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .pc-version .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .pc-version .company-info {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 15px;
+            margin-top: 60px;
+            backdrop-filter: blur(10px);
+        }
+
+        .pc-version .company-info h2 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .pc-version .company-info p {
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 10px;
+        }
+
+        /* 모바일 스타일 */
+        .mobile-version {
+            display: none;
+        }
+
+        .mobile-version .hero {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .mobile-version .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mobile-version .hero p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .mobile-version .cta-button {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .mobile-version .features {
+            padding: 0 20px;
+            margin: 40px 0;
+        }
+
+        .mobile-version .feature-card {
+            background: white;
+            padding: 25px 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .mobile-version .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .mobile-version .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .mobile-version .feature-card p {
+            color: #666;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .mobile-version .company-info {
+            background: rgba(255,255,255,0.1);
+            padding: 25px 20px;
+            margin: 40px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .mobile-version .company-info h2 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .mobile-version .company-info p {
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* 공통 스타일 */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        로딩 중...
+    </div>
+
+    <!-- PC 버전 -->
+    <div class="pc-version" id="pc-version">
+        <div class="container">
+            <div class="hero">
+                <h1>스톡인사이트</h1>
+                <p>AI 기반 주식 스캐너로 투자 기회를 발견하세요</p>
+                <a href="/customer-scanner" class="cta-button">스캐너 시작하기</a>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>실시간 분석</h3>
+                    <p>실시간 주식 데이터 분석으로 최신 시장 동향을 파악합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI 스캐닝</h3>
+                    <p>다양한 기술적 지표를 종합하여 매수/매도 신호를 자동으로 분석하고 추천합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>모바일 알림</h3>
+                    <p>카카오톡 알림톡을 통해 중요한 투자 기회를 놓치지 않고 실시간으로 알려드립니다.</p>
+                </div>
+            </div>
+
+            <div class="company-info">
+                <h2>손테크</h2>
+                <p><strong>서비스명:</strong> 스톡인사이트</p>
+                <p><strong>주소:</strong> 서울시 송파구 올림픽로 435</p>
+                <p><strong>이메일:</strong> sohnaitech@gmail.com</p>
+                <p><strong>연락처:</strong> 02-501-0956</p>
+                <p><strong>사업자등록번호:</strong> 530-44-01163</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모바일 버전 -->
+    <div class="mobile-version" id="mobile-version">
+        <div class="hero">
+            <h1>스톡인사이트</h1>
+            <p>AI 기반 주식 스캐너</p>
+            <a href="/customer-scanner" class="cta-button">스캐너 시작</a>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>실시간 분석</h3>
+                <p>실시간 주식 데이터 분석</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI 스캐닝</h3>
+                <p>기술적 지표 종합 분석으로 매수/매도 신호 제공</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>모바일 알림</h3>
+                <p>카카오톡 알림톡으로 실시간 투자 기회 알림</p>
+            </div>
+        </div>
+
+        <div class="company-info">
+            <h2>손테크</h2>
+            <p><strong>서비스:</strong> 스톡인사이트</p>
+            <p><strong>주소:</strong> 서울시 송파구 올림픽로 435</p>
+            <p><strong>이메일:</strong> sohnaitech@gmail.com</p>
+            <p><strong>연락처:</strong> 02-501-0956</p>
+        </div>
+    </div>
+
+    <script>
+        function detectDevice() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            
+            // 로딩 화면 숨기기
+            document.getElementById('loading').style.display = 'none';
+            
+            if (isMobile) {
+                document.getElementById('mobile-version').style.display = 'block';
+            } else {
+                document.getElementById('pc-version').style.display = 'block';
+            }
+        }
+
+        // 페이지 로드 시 디바이스 감지
+        window.addEventListener('load', detectDevice);
+    </script>
+</body>
+</html>

@@ -48,7 +48,6 @@ class ScoreFlags(BaseModel):
     above_cnt5_ok: bool
     dema_slope_ok: bool = False
     details: Optional[dict] = None
-    recurrence: Optional[dict] = None
     label: Optional[str] = None
 
 
@@ -63,7 +62,6 @@ class ScanItem(BaseModel):
     flags: Optional[ScoreFlags] = None
     score_label: Optional[str] = None
     details: Optional[dict] = None
-    recurrence: Optional[dict] = None
     # 수익률 정보 (과거 스캔 검증용)
     returns: Optional[dict] = None
 

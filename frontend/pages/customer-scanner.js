@@ -18,13 +18,14 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('price');
   const [filterBy, setFilterBy] = useState('전체종목');
-  const [showOnlyRecurring, setShowOnlyRecurring] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
   const [showGuide, setShowGuide] = useState(false);
   const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
   const [portfolioItems, setPortfolioItems] = useState(new Set());
+  const [recurringStocks, setRecurringStocks] = useState([]);
+  const [recurringLoading, setRecurringLoading] = useState(false);
 
   // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
   // useEffect(() => {
@@ -62,6 +63,11 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
 
   // 포트폴리오에 종목 추가
   const addToPortfolio = async (ticker, name) => {
+    if (!isAuthenticated()) {
+      alert('관심종목 기능을 사용하려면 로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
     alert('준비중입니다.');
     return;
   };
@@ -71,6 +77,30 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     alert('준비중입니다.');
     return;
   };
+
+  // 재등장 종목 조회
+  const fetchRecurringStocks = useCallback(async () => {
+    setRecurringLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/recurring-stocks?days=7&min_appearances=2`);
+      const data = await response.json();
+      
+      if (data.ok && data.data && data.data.recurring_stocks) {
+        const stocks = Object.values(data.data.recurring_stocks);
+        setRecurringStocks(stocks);
+      } else {
+        setRecurringStocks([]);
+      }
+    } catch (error) {
+      console.error('재등장 종목 조회 실패:', error);
+      setRecurringStocks([]);
+    } finally {
+      setRecurringLoading(false);
+    }
+  }, []);
 
   // 사용 가능한 스캔 날짜 목록 가져오기
   const fetchAvailableDates = useCallback(async () => {
@@ -215,6 +245,9 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     // 포트폴리오 조회
     fetchPortfolio();
     
+    // 재등장 종목 조회
+    fetchRecurringStocks();
+    
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasSSRData) {
       console.log('SSR 데이터 사용, 클라이언트 API 호출 생략');
@@ -249,10 +282,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const filteredResults = scanResults.filter(item => {
     if (!item) return false;
     
-    // 재등장 종목만 보기 필터
-    if (showOnlyRecurring && !item.recurrence?.appeared_before) {
-      return false;
-    }
     
     return true;
   });
@@ -307,14 +336,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 text-xs font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200"
               >
                 👑 프리미어
-              </button>
-              <button 
-                className="p-2 text-gray-600 hover:text-gray-800"
-                onClick={() => alert('준비중입니다.')}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
               </button>
             </div>
           </div>
@@ -483,7 +504,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                     <ul className="space-y-1 text-orange-600">
                       <li>• <strong>상세 차트</strong>: 기술적 분석 도구</li>
                       <li>• <strong>기업정보</strong>: 재무제표 및 뉴스</li>
-                      <li>• <strong>통합검색</strong>: 종목 검색 기능</li>
+                      <li>• <strong>종목분석</strong>: 단일 종목 상세 분석</li>
                     </ul>
                   </div>
                 </div>
@@ -520,15 +541,6 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             </select>
           </div>
           <div className="mt-3">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={showOnlyRecurring}
-                onChange={(e) => setShowOnlyRecurring(e.target.checked)}
-                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-              <span className="text-sm text-gray-700">🔄 재등장 종목만 보기</span>
-            </label>
           </div>
         </div>
 
@@ -559,19 +571,17 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             </div>
           </div>
           
-          {/* 수익률 정보 설명 */}
-          <div className="mt-3 pt-3 border-t border-blue-200">
-            <div className="text-xs text-blue-700 leading-relaxed">
-              <div className="font-medium mb-1">💡 수익률 정보 안내</div>
-              <div className="space-y-1">
-                <div>• <span className="font-medium">추천가</span>: 해당 날짜에 추천된 가격</div>
-                <div>• <span className="font-medium">현재가</span>: 실시간 현재 주가</div>
-                <div>• <span className="font-medium">수익률</span>: 추천가 대비 현재가 기준 수익률</div>
-                <div>• <span className="font-medium">최고수익률</span>: 추천 후 최고점 대비 수익률</div>
-                <div className="text-blue-600 font-medium">📈 과거 추천 종목의 성과를 확인하여 투자 참고자료로 활용하세요</div>
+          {/* 수익률 정보 설명 (과거 날짜에서만 표시) */}
+          {selectedDate && selectedDate !== new Date().toISOString().slice(0, 10).replace(/-/g, '') && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="text-xs text-gray-600">
+                <div className="font-medium mb-1 text-gray-800">💡 수익률 정보</div>
+                <div className="text-xs leading-relaxed">
+                  추천한 날짜의 종가로 매수하여 현재까지 보유했을 때의 수익률입니다.
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* 스캔 결과 목록 */}
@@ -656,35 +666,32 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
 
                 {/* 수익률 정보 (과거 스캔 결과인 경우) */}
                 {item.returns && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-xs text-blue-600 font-medium">📈 수익률 정보</div>
-                      <div className="text-xs text-blue-500">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs text-gray-700 font-medium">📈 수익률</div>
+                      <div className="text-xs text-gray-500">
                         {item.returns.days_elapsed ? `${item.returns.days_elapsed}일 경과` : ''}
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="flex justify-between text-sm">
                       <div className="text-center">
-                        <div className="text-xs text-gray-500">현재 수익률</div>
+                        <div className="text-xs text-gray-500">현재</div>
                         <div className={`font-semibold ${item.returns.current_return > 0 ? 'text-red-500' : item.returns.current_return < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
                           {item.returns.current_return > 0 ? '+' : ''}{item.returns.current_return}%
                         </div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-gray-500">최고 수익률</div>
+                        <div className="text-xs text-gray-500">최고</div>
                         <div className="font-semibold text-red-500">
                           +{item.returns.max_return}%
                         </div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-gray-500">최저 수익률</div>
+                        <div className="text-xs text-gray-500">최저</div>
                         <div className="font-semibold text-blue-500">
                           {item.returns.min_return}%
                         </div>
                       </div>
-                    </div>
-                    <div className="mt-2 text-xs text-gray-600">
-                      추천가: {item.returns.scan_price?.toLocaleString()}원 → 현재가: {item.returns.current_price?.toLocaleString()}원
                     </div>
                   </div>
                 )}
@@ -695,15 +702,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                   <div className="flex space-x-4 text-sm">
                     <button 
                       className="text-blue-500 hover:text-blue-700"
-                      onClick={() => alert('준비중입니다.')}
+                      onClick={() => {
+                        const naverInfoUrl = `https://finance.naver.com/item/main.naver?code=${item.ticker}`;
+                        window.open(naverInfoUrl, '_blank');
+                      }}
                     >
-                      차트
-                    </button>
-                    <button 
-                      className="text-blue-500 hover:text-blue-700"
-                      onClick={() => alert('준비중입니다.')}
-                    >
-                      기업정보
+                      차트 & 기업정보
                     </button>
                   </div>
                   <button 
@@ -720,6 +724,78 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
           )}
         </div>
 
+        {/* 재등장 종목 섹션 */}
+        {recurringStocks.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center mb-3">
+              <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-yellow-800">🔄 재등장 종목</h3>
+            </div>
+            <p className="text-sm text-yellow-700 mb-4">
+              최근 7일간 여러 번 추천된 종목들입니다. 지속적인 관심이 필요한 종목일 수 있습니다.
+            </p>
+            
+            {recurringLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-600 mx-auto"></div>
+                <p className="text-sm text-yellow-600 mt-2">재등장 종목을 불러오는 중...</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {recurringStocks.map((stock, index) => (
+                  <div key={index} className="bg-white rounded-lg p-3 border border-yellow-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <h4 className="font-semibold text-gray-900">{stock.name}</h4>
+                          <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            {stock.appear_count}회 등장
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          최근 등장일: {stock.latest_date} | 최신 점수: {stock.latest_score}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-yellow-700">
+                          {stock.latest_score}점
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {stock.appearances.length}일간 추천
+                        </div>
+                      </div>
+                    </div>
+                    {/* 재등장 종목 액션 버튼 */}
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-yellow-100">
+                      <div className="flex space-x-2">
+                        <button 
+                          className="text-xs text-blue-500 hover:text-blue-700"
+                          onClick={() => {
+                            const naverInfoUrl = `https://finance.naver.com/item/main.naver?code=${stock.code || stock.ticker}`;
+                            window.open(naverInfoUrl, '_blank');
+                          }}
+                        >
+                          차트 & 기업정보
+                        </button>
+                      </div>
+                      <button 
+                        className="px-2 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
+                        onClick={() => addToPortfolio(stock.code || stock.ticker, stock.name)}
+                      >
+                        관심등록
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 하단 네비게이션 */}
         <div className="fixed bottom-0 left-0 right-0 bg-black text-white">
           <div className="flex items-center justify-around py-2">
@@ -734,12 +810,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
             </button>
             <button 
               className="flex flex-col items-center py-2 hover:bg-gray-800"
-              onClick={() => alert('준비중입니다.')}
+              onClick={() => router.push('/stock-analysis')}
             >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <span className="text-xs">통합검색</span>
+              <span className="text-xs">종목분석</span>
             </button>
             <button 
               className="flex flex-col items-center py-2 hover:bg-gray-800"

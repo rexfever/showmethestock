@@ -22,9 +22,8 @@ from kakao import send_alert, format_scan_message, format_scan_alert_message
 
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch
-from services.scan_service import execute_scan_with_fallback
+from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
 from services.auth_service import process_kakao_callback
-from user_friendly_analysis import get_user_friendly_analysis
 
 # 인증 관련 import
 from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, EmailLoginRequest, EmailVerificationRequest, PasswordResetRequest, PasswordResetConfirmRequest, PaymentRequest, PaymentResponse, AdminUserUpdateRequest, AdminUserDeleteRequest, AdminStatsResponse
@@ -154,12 +153,12 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, name TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+        cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
         rows = []
         for it in items:
-            rows.append((as_of, it.ticker, it.name, float(it.score), json.dumps(it.flags or {} , ensure_ascii=False), it.score_label or '', float(it.indicators.VOL if hasattr(it.indicators,'VOL') else 0)))
+            rows.append((as_of, it.ticker, float(it.score), json.dumps(it.flags or {} , ensure_ascii=False), it.score_label or '', float(it.indicators.VOL if hasattr(it.indicators,'VOL') else 0)))
         print(f"💾 {len(rows)}개 레코드 삽입 시도")
-        cur.executemany("INSERT OR REPLACE INTO scan_rank(date, code, name, score, flags, score_label, close_price) VALUES (?,?,?,?,?,?,?)", rows)
+        cur.executemany("INSERT OR REPLACE INTO scan_rank(date, code, score, flags, score_label, close_price) VALUES (?,?,?,?,?,?)", rows)
         conn.commit()
         conn.close()
         print(f"✅ 데이터베이스 저장 완료: {as_of}")
@@ -253,11 +252,16 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             if ret:
                 print(f"  {ticker}: {ret.get('current_return', 0):.2f}%")
     
+    # 재등장 이력 조회 (배치 처리)
+    tickers = [item["ticker"] for item in items]
+    recurrence_data = get_recurrence_data(tickers, today_as_of)
+
     # ScanItem 객체로 변환
     scan_items: List[ScanItem] = []
     for item in items:
         try:
             ticker = item["ticker"]
+            recurrence = recurrence_data.get(ticker)
             returns = returns_data.get(ticker) if date else None
             
             scan_item = ScanItem(
@@ -286,7 +290,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 ),
                 flags=_as_score_flags(item["flags"]),
                 score_label=item["score_label"],
-                details={**item["flags"].get("details", {}), "close": item["indicators"]["close"]},
+                details={**item["flags"].get("details", {}), "close": item["indicators"]["close"], "recurrence": recurrence},
                 strategy=item["strategy"],
                 returns=returns,
             )
@@ -772,24 +776,6 @@ def analyze(name_or_code: str):
         strategy=strategy_text(df),
     )
     return AnalyzeResponse(ok=True, item=item)
-
-
-@app.get('/analyze-friendly')
-def analyze_friendly(name_or_code: str):
-    """일반인도 이해할 수 있는 친화적인 종목 분석"""
-    # 기본 분석 수행
-    analysis_result = analyze(name_or_code)
-    
-    # 사용자 친화적인 분석으로 변환
-    friendly_analysis = get_user_friendly_analysis(analysis_result)
-    
-    return {
-        "ok": analysis_result.ok,
-        "ticker": analysis_result.item.ticker if analysis_result.item else None,
-        "name": analysis_result.item.name if analysis_result.item else None,
-        "friendly_analysis": friendly_analysis,
-        "error": analysis_result.error
-    }
 
 
 @app.get('/positions', response_model=PositionResponse)
@@ -2533,121 +2519,3 @@ async def delete_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"사용자 삭제 중 오류가 발생했습니다: {str(e)}"
         )
-
-# 새로운 재등장 로직 함수들
-from collections import defaultdict
-
-def get_recurring_stocks(days: int = 7, min_appearances: int = 2):
-    """
-    최근 N일간 스캔된 종목 중 재등장한 종목들을 찾는 함수
-    """
-    conn = sqlite3.connect(_db_path())
-    cur = conn.cursor()
-    
-    # 최근 N일간의 스캔 결과 조회
-    query = """
-    SELECT code, name, date, score, score_label, close_price
-    FROM scan_rank 
-    WHERE date >= date('now', '-{} days')
-    ORDER BY date DESC, score DESC
-    """.format(days)
-    
-    cur.execute(query)
-    results = cur.fetchall()
-    conn.close()
-    
-    # 종목별 등장 횟수 계산
-    stock_appearances = defaultdict(list)
-    for row in results:
-        code, name, date, score, score_label, close_price = row
-        stock_appearances[code].append({
-            'name': name,
-            'date': date,
-            'score': score,
-            'score_label': score_label,
-            'close_price': close_price
-        })
-    
-    # 재등장 종목 필터링
-    recurring_stocks = {}
-    for code, appearances in stock_appearances.items():
-        if len(appearances) >= min_appearances:
-            recurring_stocks[code] = {
-                'name': appearances[0]['name'],
-                'appear_count': len(appearances),
-                'appearances': appearances,
-                'latest_score': appearances[0]['score'],
-                'latest_date': appearances[0]['date']
-            }
-    
-    return recurring_stocks
-
-@app.get("/recurring-stocks")
-async def get_recurring_stocks_api(
-    days: int = 7,
-    min_appearances: int = 2
-):
-    """
-    최근 N일간 재등장한 종목들을 조회하는 API
-    """
-    try:
-        recurring_stocks = get_recurring_stocks(days, min_appearances)
-        
-        return {
-            "ok": True,
-            "data": {
-                "recurring_stocks": recurring_stocks,
-                "total_count": len(recurring_stocks),
-                "days": days,
-                "min_appearances": min_appearances
-            }
-        }
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-@app.get("/scan-with-recurring")
-async def get_scan_with_recurring_api(
-    days: int = 7,
-    min_appearances: int = 2
-):
-    """
-    최신 스캔 결과와 재등장 종목을 함께 조회하는 API
-    """
-    try:
-        # 최신 스캔 결과 조회
-        conn = sqlite3.connect(_db_path())
-        cur = conn.cursor()
-        
-        # 최신 스캔 날짜 조회
-        cur.execute("SELECT MAX(date) FROM scan_rank")
-        latest_date = cur.fetchone()[0]
-        
-        # 최신 스캔 결과 조회
-        cur.execute("""
-            SELECT code, name, score, score_label, close_price
-            FROM scan_rank 
-            WHERE date = ?
-            ORDER BY score DESC
-        """, (latest_date,))
-        
-        latest_scan = cur.fetchall()
-        
-        # 재등장 종목 조회
-        recurring_stocks = get_recurring_stocks(days, min_appearances)
-        
-        conn.close()
-        
-        return {
-            "ok": True,
-            "data": {
-                "latest_scan": {
-                    "date": latest_date,
-                    "stocks": latest_scan
-                },
-                "recurring_stocks": recurring_stocks,
-                "total_recurring": len(recurring_stocks)
-            }
-        }
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-

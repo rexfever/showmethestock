@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 스캐너</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .admin-card {
+            transition: all 0.3s ease;
+        }
+        .admin-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 헤더 -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-2xl font-bold text-gray-900">🔧 관리자 스캐너</h1>
+                <div class="flex space-x-4">
+                    <button 
+                        onclick="loadAdminData()" 
+                        id="refreshBtn"
+                        class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                    >
+                        🔄 관리자 데이터 새로고침
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 관리자 기능 섹션 -->
+        <div id="adminSection" class="mb-8">
+            <div class="bg-gradient-to-r from-green-500 to-teal-500 text-white p-4 rounded-lg mb-4">
+                <h2 class="text-xl font-bold flex items-center">
+                    🔧 관리자 기능
+                </h2>
+                <p class="text-sm opacity-90 mt-1">
+                    시스템 관리 및 모니터링 기능
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 관리자 기능 카드들 -->
+                <div class="admin-card bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500 cursor-pointer"
+                     onclick="showAdminFunction('scan')">
+                    <h3 class="font-semibold text-gray-800 mb-2">📊 스캔 실행</h3>
+                    <p class="text-sm text-gray-600">새로운 스캔을 실행합니다</p>
+                </div>
+                
+                <div class="admin-card bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 cursor-pointer"
+                     onclick="showAdminFunction('monitor')">
+                    <h3 class="font-semibold text-gray-800 mb-2">📈 시스템 모니터링</h3>
+                    <p class="text-sm text-gray-600">시스템 상태를 모니터링합니다</p>
+                </div>
+                
+                <div class="admin-card bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500 cursor-pointer"
+                     onclick="showAdminFunction('settings')">
+                    <h3 class="font-semibold text-gray-800 mb-2">⚙️ 설정 관리</h3>
+                    <p class="text-sm text-gray-600">시스템 설정을 관리합니다</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 고객 스캐너 링크 -->
+        <div id="customerLinkSection" class="mb-8">
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-lg mb-4">
+                <h2 class="text-xl font-bold flex items-center">
+                    👥 고객 서비스
+                </h2>
+                <p class="text-sm opacity-90 mt-1">
+                    고객용 스캐너 페이지로 이동
+                </p>
+            </div>
+            
+            <div class="text-center">
+                <a href="/customer-scanner" 
+                   class="inline-block bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors">
+                    🎯 고객 스캐너로 이동
+                </a>
+            </div>
+        </div>
+
+        <!-- 로딩 상태 -->
+        <div id="loadingState" class="text-center py-8 hidden">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <p class="mt-2 text-gray-600">데이터를 불러오는 중...</p>
+        </div>
+    </div>
+
+    <script>
+        // 관리자 기능 표시
+        function showAdminFunction(functionName) {
+            const functions = {
+                'scan': '스캔 실행 기능',
+                'monitor': '시스템 모니터링 기능',
+                'settings': '설정 관리 기능'
+            };
+            alert(`관리자 기능: ${functions[functionName]}`);
+        }
+        
+        // 관리자 데이터 로드
+        async function loadAdminData() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('refreshBtn').disabled = true;
+            
+            // 시뮬레이션된 로딩
+            setTimeout(() => {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('refreshBtn').disabled = false;
+                alert('관리자 데이터 새로고침 완료');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

@@ -13,6 +13,8 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -27,8 +29,35 @@ export default function AdminDashboard() {
       return;
     }
     
-    fetchAdminData();
-  }, [isAuthenticated, user, router]);
+    // URL 파라미터에서 analyze 값 확인
+    if (router.query.analyze) {
+      performAnalysis(router.query.analyze);
+    } else {
+      fetchAdminData();
+    }
+  }, [isAuthenticated, user, router, router.query.analyze]);
+
+  const performAnalysis = async (ticker) => {
+    setAnalysisLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/analyze?name_or_code=${encodeURIComponent(ticker)}`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        setAnalysisResult(data);
+      } else {
+        alert(`분석 실패: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('분석 오류:', error);
+      alert('분석 중 오류가 발생했습니다.');
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
 
   const fetchAdminData = async () => {
     try {
@@ -160,12 +189,146 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) {
+  if (loading || analysisLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">관리자 데이터를 불러오는 중...</p>
+          <p className="mt-4 text-gray-600">
+            {analysisLoading ? '종목 분석 중...' : '관리자 데이터를 불러오는 중...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 분석 결과가 있으면 분석 화면 표시
+  if (analysisResult) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Head>
+          <title>종목 분석 결과 - Stock Insight</title>
+        </Head>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* 헤더 */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">종목 분석 결과</h1>
+              <p className="mt-2 text-gray-600">{analysisResult.item?.name} ({analysisResult.item?.ticker})</p>
+            </div>
+            <button
+              onClick={() => {
+                setAnalysisResult(null);
+                router.push('/admin');
+              }}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-700 border border-gray-300 rounded-md"
+            >
+              관리자 대시보드로 돌아가기
+            </button>
+          </div>
+
+          {/* 분석 결과 카드 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 기본 정보 */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">종목명:</span>
+                    <span className="font-medium">{analysisResult.item?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">종목코드:</span>
+                    <span className="font-medium">{analysisResult.item?.ticker}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">현재가:</span>
+                    <span className="font-medium">{analysisResult.item?.indicators?.close?.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">거래량:</span>
+                    <span className="font-medium">{analysisResult.item?.indicators?.VOL?.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 분석 결과 */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">분석 결과</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">매칭 여부:</span>
+                    <span className={`font-medium ${analysisResult.item?.match ? 'text-green-600' : 'text-red-600'}`}>
+                      {analysisResult.item?.match ? '매칭' : '비매칭'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">점수:</span>
+                    <span className="font-medium">{analysisResult.item?.score}점</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">전략:</span>
+                    <span className="font-medium">{analysisResult.item?.strategy}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">시장:</span>
+                    <span className="font-medium">{analysisResult.item?.market}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 기술적 지표 */}
+            {analysisResult.item?.indicators && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">기술적 지표</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600">TEMA(20)</div>
+                    <div className="font-medium">{analysisResult.item.indicators.TEMA?.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600">DEMA(10)</div>
+                    <div className="font-medium">{analysisResult.item.indicators.DEMA?.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600">RSI(14)</div>
+                    <div className="font-medium">{analysisResult.item.indicators.RSI?.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-sm text-gray-600">MACD</div>
+                    <div className="font-medium">{analysisResult.item.indicators.MACD?.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 액션 버튼 */}
+            <div className="mt-8 flex justify-center space-x-4">
+              <button
+                onClick={() => {
+                  const naverUrl = `https://finance.naver.com/item/main.naver?code=${analysisResult.item?.ticker}`;
+                  window.open(naverUrl, '_blank');
+                }}
+                className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                네이버 금융에서 보기
+              </button>
+              <button
+                onClick={() => {
+                  const newTicker = prompt('다른 종목을 분석하시겠습니까? 종목 코드 또는 종목명을 입력하세요:');
+                  if (newTicker) {
+                    performAnalysis(newTicker);
+                  }
+                }}
+                className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              >
+                다른 종목 분석
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
