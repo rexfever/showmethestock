@@ -294,7 +294,7 @@ export default function CustomerScannerMobile({ initialData }) {
               <span className="text-xs">통합검색</span>
             </button>
             <button className="flex flex-col items-center py-2">
-              <span className="text-xs">투자포트폴리오</span>
+              <span className="text-xs">나의투자종목</span>
             </button>
             <button className="flex flex-col items-center py-2">
               <span className="text-xs">주식현재가</span>

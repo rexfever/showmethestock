@@ -13,14 +13,27 @@ export default function StockAnalysis() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // 로그인 체크
+    if (authChecked && !authLoading && !isAuthenticated()) {
+      alert('종목분석 기능을 사용하려면 로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+    
     // URL 파라미터에서 초기 종목 코드 확인
-    if (router.query.ticker) {
+    if (router.query.ticker && isAuthenticated()) {
       setTicker(router.query.ticker);
       performAnalysis(router.query.ticker);
     }
-  }, [router.query.ticker]);
+  }, [router.query.ticker, authChecked, authLoading, isAuthenticated]);
 
   const performAnalysis = async (tickerInput) => {
+    if (!isAuthenticated()) {
+      alert('종목분석 기능을 사용하려면 로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+    
     if (!tickerInput.trim()) {
       setError('종목 코드 또는 종목명을 입력해주세요.');
       return;
@@ -370,7 +383,7 @@ export default function StockAnalysis() {
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span className="text-xs">투자포트폴리오</span>
+              <span className="text-xs">나의투자종목</span>
             </button>
             {user?.is_admin && (
               <button 
