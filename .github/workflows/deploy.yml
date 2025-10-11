@@ -21,7 +21,7 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          cd /home/ubuntu/stock-finder
+          cd /home/ubuntu/showmethestock
           echo "🔄 코드 업데이트 중..."
           git pull origin main
           
