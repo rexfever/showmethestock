@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import getConfig from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import Cookies from 'js-cookie';
 
 export default function KakaoCallback() {
   const router = useRouter();
+  const { setUser, setToken } = useAuth();
   const [status, setStatus] = useState('카카오 로그인 처리 중...');
 
   useEffect(() => {
@@ -50,9 +53,14 @@ export default function KakaoCallback() {
         const data = await response.json();
 
         if (response.ok) {
-          // 토큰 저장
+          // 토큰을 쿠키와 localStorage에 저장 (7일간 유효)
+          Cookies.set('auth_token', data.access_token, { expires: 7 });
           localStorage.setItem('token', data.access_token);
           localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // AuthContext 상태 업데이트
+          setToken(data.access_token);
+          setUser(data.user);
           
           setStatus('로그인 성공! 메인 페이지로 이동합니다.');
           setTimeout(() => {
