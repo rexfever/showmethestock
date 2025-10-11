@@ -128,21 +128,35 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // 카카오 로그아웃 (사용자가 카카오로 로그인한 경우)
-    if (user && user.provider === 'kakao') {
-      try {
-        await logoutWithKakao();
-      } catch (error) {
-        console.error('카카오 로그아웃 실패:', error);
+    try {
+      // 카카오 로그아웃 (사용자가 카카오로 로그인한 경우)
+      if (user && user.provider === 'kakao') {
+        try {
+          await logoutWithKakao();
+          console.log('카카오 로그아웃 성공');
+        } catch (error) {
+          console.error('카카오 로그아웃 실패:', error);
+          // 카카오 로그아웃 실패해도 로컬 로그아웃은 진행
+        }
       }
+      
+      // 로컬 로그아웃
+      Cookies.remove('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
+      
+      console.log('로그아웃 완료');
+    } catch (error) {
+      console.error('로그아웃 중 오류 발생:', error);
+      // 오류가 발생해도 로컬 상태는 초기화
+      Cookies.remove('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
     }
-    
-    // 로컬 로그아웃
-    Cookies.remove('auth_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
   };
 
   const isAuthenticated = () => {

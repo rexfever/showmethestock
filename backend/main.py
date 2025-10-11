@@ -203,6 +203,11 @@ def _init_positions_table():
         pass
 
 
+@app.get('/health')
+def health_check():
+    """헬스 체크 엔드포인트"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
     print(f"🔍 스캔 API 호출: save_snapshot={save_snapshot}, date={date}")
