@@ -3,6 +3,10 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import getConfig from '../config';
+import { addToPortfolio } from '../services/portfolioService';
+import { validateInvestmentForm } from '../utils/portfolioUtils';
+import { handleError } from '../utils/errorHandler';
+import NoticePopup from '../components/NoticePopup';
 
 export default function CustomerScanner({ initialData, initialScanFile }) {
   const router = useRouter();
@@ -26,6 +30,16 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [portfolioItems, setPortfolioItems] = useState(new Set());
   const [recurringStocks, setRecurringStocks] = useState([]);
   const [recurringLoading, setRecurringLoading] = useState(false);
+  
+  // 투자등록 모달 상태
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [investmentForm, setInvestmentForm] = useState({
+    entry_price: '',
+    quantity: '',
+    entry_date: ''
+  });
+  const [investmentLoading, setInvestmentLoading] = useState(false);
 
   // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
   // useEffect(() => {
@@ -40,7 +54,16 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     if (!isAuthenticated()) return;
     
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+      
+      if (!token) {
+        console.log('토큰이 없어서 포트폴리오 조회를 건너뜁니다.');
+        return;
+      }
+      
       const config = getConfig();
       const base = config.backendUrl;
       
@@ -55,6 +78,9 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         const data = await response.json();
         const tickers = new Set(data.items.map(item => item.ticker));
         setPortfolioItems(tickers);
+      } else if (response.status === 401) {
+        console.log('인증 실패 - 포트폴리오 조회를 건너뜁니다.');
+        // 401 오류 시 자동 로그아웃 처리하지 않고 조용히 건너뜀
       }
     } catch (error) {
       console.error('포트폴리오 조회 실패:', error);
@@ -76,6 +102,64 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const removeFromPortfolio = async (ticker) => {
     alert('준비중입니다.');
     return;
+  };
+
+  // 투자등록 모달 열기
+  const openInvestmentModal = (stock) => {
+    if (!isAuthenticated()) {
+      alert('투자등록을 하려면 로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+    
+    setSelectedStock(stock);
+    setInvestmentForm({
+      entry_price: stock.current_price?.toString() || stock.details?.close?.toString() || '',
+      quantity: '',
+      entry_date: new Date().toISOString().split('T')[0] // 오늘 날짜
+    });
+    setShowInvestmentModal(true);
+  };
+
+  // 투자등록 모달 닫기
+  const closeInvestmentModal = () => {
+    setShowInvestmentModal(false);
+    setSelectedStock(null);
+    setInvestmentForm({
+      entry_price: '',
+      quantity: '',
+      entry_date: ''
+    });
+  };
+
+  // 투자등록 실행
+  const handleInvestmentRegistration = async () => {
+    if (!selectedStock) return;
+    
+    // 폼 데이터 검증
+    const validation = validateInvestmentForm(investmentForm);
+    if (!validation.isValid) {
+      alert(validation.errors.join('\n'));
+      return;
+    }
+
+    setInvestmentLoading(true);
+    try {
+      await addToPortfolio({
+        ticker: selectedStock.ticker,
+        name: selectedStock.name,
+        ...investmentForm
+      });
+
+      alert(`${selectedStock.name}이(가) 투자종목에 등록되었습니다.`);
+      closeInvestmentModal();
+      // 포트폴리오 목록 새로고침
+      fetchPortfolio();
+    } catch (error) {
+      handleError(error, '투자등록', alert);
+    } finally {
+      setInvestmentLoading(false);
+    }
   };
 
   // 재등장 종목 조회
@@ -321,7 +405,12 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         <div className="bg-white shadow-sm">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">
-              <span className="text-lg font-semibold text-gray-800">스톡인사이트</span>
+              <button 
+                onClick={() => router.push('/')}
+                className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors"
+              >
+                스톡인사이트
+              </button>
             </div>
             <div className="flex items-center space-x-3">
               {!authLoading && authChecked && user ? (
@@ -393,70 +482,16 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 </div>
                 <div className="bg-white rounded-lg p-4 shadow-sm">
                   <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-xl">⚡</span>
+                    <span className="text-xl">📈</span>
                     <h3 className="font-semibold text-gray-800">투자 방법</h3>
                   </div>
-                  <p className="text-sm text-gray-600">3-10일 정도 보유하는 단기 투자</p>
-                  <p className="text-xs text-gray-500 mt-1">참고 수익률: 3-5% (개인 판단 필요)</p>
-                  <p className="text-xs text-red-500 mt-1 font-medium">※ 실제 매매는 증권사에서 진행하세요</p>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-xl">📈</span>
-                    <h3 className="font-semibold text-gray-800">투자 주의사항</h3>
-                  </div>
-                  <p className="text-sm text-gray-600">차트 분석 기반, 손실 시 빠른 매도</p>
-                  <p className="text-xs text-gray-500 mt-1">투자 결정은 신중히 하시기 바랍니다.</p>
+                  <p className="text-sm text-gray-600">3~10일 정도 보유 단기 투자, 3~5% 수익 실현</p>
+                  <p className="text-sm text-gray-600 mt-1">-3~5% 손실 시 즉시 매도(손절)</p>
+                  <p className="text-xs text-red-500 mt-2 font-medium">※ 실제 매매는 증권사에서 진행하세요</p>
+                  <p className="text-xs text-gray-500 mt-1">※ 투자는 개인의 책임이며, 투자 결정은 신중히 하시기 바랍니다.</p>
                 </div>
               </div>
               
-              {/* 상세 매매 전략 설명 */}
-              <div className="mt-6 bg-blue-50 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-3">📋 상세 매매 전략</h4>
-                <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                  <p className="text-sm text-yellow-800">
-                    <strong>💡 점수 시스템 해석:</strong> 8개 조건을 종합해서 점수를 부여합니다. (만점 15점)
-                    <br/>• <strong>10점 이상</strong>: 강한 매수 (우선 검토)
-                    <br/>• <strong>8-9점</strong>: 매수 후보/관심 (신중한 검토)
-                    <br/>• <strong>6-7점</strong>: 관망 (추가 분석 필요)
-                    <br/>• <strong>6점 미만</strong>: 제외 (투자 부적합)
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">🎯 매매 방식</h5>
-                    <ul className="space-y-1 text-blue-600">
-                      <li>• <strong>단기 투자</strong>: 3-10일 보유 (추천)</li>
-                      <li>• <strong>단타 매매</strong>: 개인 판단 (고위험)</li>
-                      <li>• <strong>장기 투자</strong>: 개인 판단 (별도 분석 필요)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">💰 수익률 목표</h5>
-                    <ul className="space-y-1 text-blue-600">
-                      <li>• <strong>단기</strong>: 3-5% (추천 수익률)</li>
-                      <li>• <strong>단타</strong>: 개인 판단 (고위험)</li>
-                      <li>• <strong>장기</strong>: 개인 판단 (별도 분석 필요)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">🛡️ 리스크 관리</h5>
-                    <ul className="space-y-1 text-blue-600">
-                      <li>• <strong>손절매</strong>: -3~5% 도달 시</li>
-                      <li>• <strong>분할 매수</strong>: 2-3회에 나누어</li>
-                      <li>• <strong>포지션 크기</strong>: 자금의 10-20%</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">📊 진입/청산 기준</h5>
-                    <ul className="space-y-1 text-blue-600">
-                      <li>• <strong>진입</strong>: 스캔 결과 + 추가 분석</li>
-                      <li>• <strong>청산</strong>: 목표가 도달 또는 손절</li>
-                      <li>• <strong>관리</strong>: 일일 모니터링 필수</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -714,7 +749,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                   </div>
                   <button 
                     className="px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
-                    onClick={() => addToPortfolio(item.ticker, item.name)}
+                    onClick={() => openInvestmentModal(item)}
                   >
                     투자등록
                   </button>
@@ -786,7 +821,11 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                       </div>
                       <button 
                         className="px-2 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
-                        onClick={() => addToPortfolio(stock.code || stock.ticker, stock.name)}
+                        onClick={() => openInvestmentModal({
+                          ticker: stock.code || stock.ticker,
+                          name: stock.name,
+                          current_price: stock.latest_score
+                        })}
                       >
                         투자등록
                       </button>
@@ -803,7 +842,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
           <div className="flex items-center justify-around py-2">
             <button 
               className="flex flex-col items-center py-2 hover:bg-gray-800"
-              onClick={() => alert('준비중입니다.')}
+              onClick={() => router.push('/customer-scanner')}
             >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -845,11 +884,11 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                 if (user) {
                   try {
                     await logout();
-                    router.push('/login');
+                    router.push('/customer-scanner');
                   } catch (error) {
                     console.error('로그아웃 중 오류:', error);
-                    // 오류가 발생해도 로그인 페이지로 이동
-                    router.push('/login');
+                    // 오류가 발생해도 고객스캔 페이지로 이동
+                    router.push('/customer-scanner');
                   }
                 } else {
                   router.push('/login');
@@ -867,6 +906,91 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         {/* 하단 네비게이션 공간 확보 */}
         <div className="h-20"></div>
       </div>
+
+      {/* 투자등록 모달 */}
+      {showInvestmentModal && selectedStock && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">투자등록</h3>
+              <button 
+                onClick={closeInvestmentModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="font-medium text-gray-800">{selectedStock.name}</div>
+                <div className="text-sm text-gray-600">({selectedStock.ticker})</div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  매수가격 (원)
+                </label>
+                <input
+                  type="number"
+                  value={investmentForm.entry_price}
+                  onChange={(e) => setInvestmentForm({...investmentForm, entry_price: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="매수가격을 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  수량 (주)
+                </label>
+                <input
+                  type="number"
+                  value={investmentForm.quantity}
+                  onChange={(e) => setInvestmentForm({...investmentForm, quantity: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="수량을 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  매수일
+                </label>
+                <input
+                  type="date"
+                  value={investmentForm.entry_date}
+                  onChange={(e) => setInvestmentForm({...investmentForm, entry_date: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={closeInvestmentModal}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleInvestmentRegistration}
+                disabled={investmentLoading}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {investmentLoading ? '등록 중...' : '투자등록'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 공지사항 팝업 */}
+      <NoticePopup />
     </>
   );
 }
