@@ -15,6 +15,10 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [scanDates, setScanDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [rescanLoading, setRescanLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -34,6 +38,7 @@ export default function AdminDashboard() {
       performAnalysis(router.query.analyze);
     } else {
       fetchAdminData();
+      fetchScanDates();
     }
   }, [isAuthenticated, user, router, router.query.analyze]);
 
@@ -90,6 +95,91 @@ export default function AdminDashboard() {
       console.error('관리자 데이터 조회 실패:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchScanDates = async () => {
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/available-scan-dates`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        setScanDates(data.dates || []);
+      } else {
+        console.error('스캔 날짜 가져오기 실패:', data.error);
+      }
+    } catch (error) {
+      console.error('스캔 날짜 가져오기 실패:', error);
+    }
+  };
+
+  const handleRescan = async () => {
+    if (!selectedDate) {
+      alert('날짜를 선택해주세요.');
+      return;
+    }
+
+    if (!confirm(`${selectedDate} 날짜로 재스캔을 실행하시겠습니까?`)) {
+      return;
+    }
+
+    setRescanLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/scan?date=${selectedDate}&save_snapshot=true`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        alert(`${selectedDate} 재스캔이 완료되었습니다. 추천 종목: ${data.items.length}개`);
+        fetchScanDates(); // 날짜 목록 새로고침
+      } else {
+        alert(`재스캔 실패: ${data.error || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error('재스캔 오류:', error);
+      alert('재스캔 중 오류가 발생했습니다.');
+    } finally {
+      setRescanLoading(false);
+    }
+  };
+
+  const handleDeleteScan = async () => {
+    if (!selectedDate) {
+      alert('날짜를 선택해주세요.');
+      return;
+    }
+
+    if (!confirm(`${selectedDate} 날짜의 스캔 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/scan/${selectedDate}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      
+      if (data.ok) {
+        alert(`${selectedDate} 스캔 데이터가 삭제되었습니다. (삭제된 레코드: ${data.deleted_records}개)`);
+        fetchScanDates(); // 날짜 목록 새로고침
+        setSelectedDate(''); // 선택 초기화
+      } else {
+        alert(`삭제 실패: ${data.error || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -415,6 +505,105 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* 스캔 데이터 관리 */}
+        <div className="bg-white rounded-lg shadow mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">스캔 데이터 관리</h2>
+            <p className="text-sm text-gray-600">날짜별 스캔 데이터 삭제 및 재스캔</p>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 날짜 선택 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  스캔 날짜 선택
+                </label>
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">날짜를 선택하세요</option>
+                  {scanDates.map((date) => (
+                    <option key={date} value={date}>
+                      {date}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 액션 버튼들 */}
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={handleRescan}
+                  disabled={!selectedDate || rescanLoading}
+                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {rescanLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      재스캔 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      재스캔 실행
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleDeleteScan}
+                  disabled={!selectedDate || deleteLoading}
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      삭제 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      스캔 데이터 삭제
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 스캔 날짜 목록 */}
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">사용 가능한 스캔 날짜 ({scanDates.length}개)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {scanDates.map((date) => (
+                  <button
+                    key={date}
+                    onClick={() => setSelectedDate(date)}
+                    className={`px-3 py-2 text-sm rounded-md border ${
+                      selectedDate === date
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {date}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* 사용자 목록 */}
         <div className="bg-white shadow rounded-lg">
