@@ -6,7 +6,7 @@ import getConfig from '../config';
 
 export default function CustomerScanner({ initialData, initialScanFile }) {
   const router = useRouter();
-  const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
+  const { user, loading: authLoading, authChecked, isAuthenticated, logout } = useAuth();
   
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
@@ -324,12 +324,14 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               <span className="text-lg font-semibold text-gray-800">스톡인사이트</span>
             </div>
             <div className="flex items-center space-x-3">
-              {user ? (
+              {!authLoading && authChecked && user ? (
                 <span className="text-sm text-gray-600">
                   {user.name}님 ({user.provider})
                 </span>
-              ) : (
+              ) : !authLoading && authChecked ? (
                 <span className="text-sm text-gray-500">게스트 사용자</span>
+              ) : (
+                <span className="text-sm text-gray-400">로딩 중...</span>
               )}
               <button 
                 onClick={() => router.push('/subscription')}

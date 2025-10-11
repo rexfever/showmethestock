@@ -50,32 +50,61 @@ class AuthService:
         conn.close()
     
     def create_user(self, user: UserCreate) -> User:
-        """새 사용자 생성"""
+        """새 사용자 생성 또는 기존 사용자 업데이트"""
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
         
         try:
-            print(f"INSERT 시도: email={user.email}, name={user.name}, provider={user.provider}, provider_id={user.provider_id}")
-            cur.execute("""
-                INSERT INTO users (email, name, provider, provider_id, membership_tier, subscription_status, is_active, is_admin)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user.email, user.name, user.provider, user.provider_id, 
-                  user.membership_tier.value, user.subscription_status.value, 
-                  user.is_active, user.is_admin))
+            # 먼저 이메일로 기존 사용자 확인
+            existing_user = self.get_user_by_email(user.email)
             
-            user_id = cur.lastrowid
-            print(f"INSERT 성공: user_id={user_id}")
-            conn.commit()
-            
-            result = self.get_user_by_id(user_id)
-            print(f"get_user_by_id 결과: {result}")
-            return result
+            if existing_user:
+                print(f"기존 사용자 발견: email={user.email}, provider={existing_user.provider}")
+                
+                # provider가 다르면 업데이트
+                if existing_user.provider != user.provider:
+                    print(f"provider 업데이트: {existing_user.provider} -> {user.provider}")
+                    cur.execute("""
+                        UPDATE users SET provider = ?, provider_id = ?, name = ?
+                        WHERE email = ?
+                    """, (user.provider, user.provider_id, user.name, user.email))
+                    conn.commit()
+                    print("사용자 정보 업데이트 완료")
+                
+                # 업데이트된 사용자 정보 반환
+                result = self.get_user_by_email(user.email)
+                print(f"업데이트된 사용자: {result}")
+                return result
+            else:
+                # 새 사용자 생성
+                print(f"새 사용자 생성: email={user.email}, name={user.name}, provider={user.provider}, provider_id={user.provider_id}")
+                cur.execute("""
+                    INSERT INTO users (email, name, provider, provider_id, membership_tier, subscription_status, is_active, is_admin)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (user.email, user.name, user.provider, user.provider_id, 
+                      user.membership_tier.value, user.subscription_status.value, 
+                      user.is_active, user.is_admin))
+                
+                user_id = cur.lastrowid
+                print(f"새 사용자 생성 완료: user_id={user_id}")
+                conn.commit()
+                
+                result = self.get_user_by_id(user_id)
+                print(f"생성된 사용자: {result}")
+                return result
+                
         except sqlite3.IntegrityError as e:
             print(f"IntegrityError 발생: {e}")
-            # 이미 존재하는 사용자
+            # provider로 사용자 조회 시도
             result = self.get_user_by_provider(user.provider, user.provider_id)
             print(f"get_user_by_provider 결과: {result}")
-            return result
+            if result:
+                return result
+            else:
+                # 이메일로 조회 시도
+                result = self.get_user_by_email(user.email)
+                print(f"get_user_by_email 결과: {result}")
+                return result
         except Exception as e:
             print(f"기타 오류 발생: {e}")
             raise

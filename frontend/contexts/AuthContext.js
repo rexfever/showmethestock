@@ -17,33 +17,43 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // 토큰을 쿠키와 localStorage에서 가져오기
   useEffect(() => {
-    const savedToken = Cookies.get('auth_token');
-    const localToken = localStorage.getItem('token');
-    const localUser = localStorage.getItem('user');
-    
-    if (savedToken) {
-      setToken(savedToken);
-      // 토큰이 있으면 사용자 정보 가져오기
-      fetchUserInfo(savedToken);
-    } else if (localToken && localUser) {
-      // localStorage에서 토큰과 사용자 정보 복원
+    const initializeAuth = async () => {
       try {
-        const userData = JSON.parse(localUser);
-        setUser(userData);
-        setToken(localToken);
-        setLoading(false);
+        const savedToken = Cookies.get('auth_token');
+        const localToken = localStorage.getItem('token');
+        const localUser = localStorage.getItem('user');
+        
+        if (savedToken) {
+          setToken(savedToken);
+          // 토큰이 있으면 사용자 정보 가져오기
+          await fetchUserInfo(savedToken);
+        } else if (localToken && localUser) {
+          // localStorage에서 토큰과 사용자 정보 복원
+          try {
+            const userData = JSON.parse(localUser);
+            setUser(userData);
+            setToken(localToken);
+            // localStorage 토큰도 쿠키에 동기화
+            Cookies.set('auth_token', localToken, { expires: 7 });
+          } catch (error) {
+            console.error('사용자 정보 파싱 실패:', error);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        }
       } catch (error) {
-        console.error('사용자 정보 파싱 실패:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        console.error('인증 초기화 실패:', error);
+      } finally {
         setLoading(false);
+        setAuthChecked(true);
       }
-    } else {
-      setLoading(false);
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   const fetchUserInfo = async (authToken) => {
@@ -58,17 +68,24 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        // 사용자 정보를 localStorage에도 저장
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', authToken);
       } else {
-        // 토큰이 유효하지 않으면 쿠키에서 제거
+        // 토큰이 유효하지 않으면 모든 저장소에서 제거
         Cookies.remove('auth_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setToken(null);
+        setUser(null);
       }
     } catch (error) {
       console.error('사용자 정보 가져오기 실패:', error);
       Cookies.remove('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setToken(null);
-    } finally {
-      setLoading(false);
+      setUser(null);
     }
   };
 
@@ -91,8 +108,10 @@ export const AuthProvider = ({ children }) => {
         const data = await response.json();
         const { access_token, user: userData } = data;
         
-        // 토큰을 쿠키에 저장 (7일간 유효)
+        // 토큰을 쿠키와 localStorage에 저장 (7일간 유효)
         Cookies.set('auth_token', access_token, { expires: 7 });
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('user', JSON.stringify(userData));
         
         setToken(access_token);
         setUser(userData);
@@ -162,6 +181,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
+    authChecked,
     login,
     logout,
     isAuthenticated,
