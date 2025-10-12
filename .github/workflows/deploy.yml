@@ -95,6 +95,28 @@ jobs:
             fi
           done
           
+          echo "💾 데이터베이스 백업 설정 확인 중..."
+          # 백업 디렉토리 생성
+          mkdir -p /home/ubuntu/backups
+          
+          # 백업 스크립트 실행 권한 확인
+          if [ -f "scripts/backup-database.sh" ]; then
+            chmod +x scripts/backup-database.sh
+            echo "✅ 백업 스크립트 권한 설정 완료"
+          fi
+          
+          # cron 작업 설정 (한 번만 실행)
+          if [ -f "scripts/setup-backup-cron.sh" ]; then
+            chmod +x scripts/setup-backup-cron.sh
+            # 기존 cron 작업이 없으면 설정
+            if ! crontab -l 2>/dev/null | grep -q "backup-database.sh"; then
+              echo "⏰ 자동 백업 cron 작업 설정 중..."
+              ./scripts/setup-backup-cron.sh
+            else
+              echo "✅ 자동 백업 cron 작업이 이미 설정되어 있습니다"
+            fi
+          fi
+          
           echo "✅ 배포 완료!"
           echo "📊 최종 서비스 상태:"
           sudo systemctl status stock-finder-backend --no-pager -l | head -3
