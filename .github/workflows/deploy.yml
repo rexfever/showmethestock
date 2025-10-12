@@ -21,31 +21,81 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          set -e  # 에러 발생 시 스크립트 중단
           cd /home/ubuntu/showmethestock
           echo "🔄 코드 업데이트 중..."
           
-          # 로컬 변경사항 무시하고 강제 동기화
+          # 로컬 변경사항 무시하고 강제 동기화 (데이터베이스 파일은 .gitignore로 보호됨)
+          git fetch origin
           git reset --hard origin/main
-          git pull origin main
           
-          echo "📦 프론트엔드 빌드 중..."
+          echo "📦 의존성 설치 중..."
+          # 프론트엔드 의존성 설치
           cd frontend
+          npm ci --production=false
+          
+          echo "🔨 프론트엔드 빌드 중..."
+          # 이전 빌드 캐시 제거
+          rm -rf .next
           npm run build
           
-          echo "🔧 백엔드 서비스 재시작 중..."
+          # 백엔드로 이동
+          cd ../backend
+          echo "🐍 백엔드 의존성 확인 중..."
+          pip install -r requirements.txt --quiet
+          
+          echo "🔧 서비스 재시작 중..."
+          # 백엔드 먼저 재시작
           sudo systemctl restart stock-finder-backend
+          sleep 5
           
-          echo "🔧 프론트엔드 서비스 재시작 중..."
+          # 프론트엔드 재시작
           sudo systemctl restart stock-finder-frontend
-          
-          echo "⏳ 서비스 시작 대기 중..."
           sleep 10
           
-          echo "✅ 배포 완료!"
-          echo "📊 서비스 상태 확인:"
-          sudo systemctl status stock-finder-backend --no-pager -l | head -5
-          sudo systemctl status stock-finder-frontend --no-pager -l | head -5
+          echo "🔍 서비스 상태 확인 중..."
+          # 서비스 상태 확인
+          if ! sudo systemctl is-active --quiet stock-finder-backend; then
+            echo "❌ 백엔드 서비스 시작 실패"
+            sudo systemctl status stock-finder-backend --no-pager -l
+            exit 1
+          fi
           
-          echo "🌐 서비스 접근 테스트:"
-          curl -s -o /dev/null -w "백엔드: %{http_code}" http://localhost:8010/health 2>/dev/null || echo "백엔드: 접근 실패"
-          curl -s -o /dev/null -w "프론트엔드: %{http_code}" http://localhost:3000/admin 2>/dev/null || echo "프론트엔드: 접근 실패"
+          if ! sudo systemctl is-active --quiet stock-finder-frontend; then
+            echo "❌ 프론트엔드 서비스 시작 실패"
+            sudo systemctl status stock-finder-frontend --no-pager -l
+            exit 1
+          fi
+          
+          echo "🌐 헬스 체크 중..."
+          # 헬스 체크 (최대 3회 시도)
+          for i in {1..3}; do
+            if curl -f -s http://localhost:8010/health > /dev/null; then
+              echo "✅ 백엔드 헬스 체크 성공"
+              break
+            elif [ $i -eq 3 ]; then
+              echo "❌ 백엔드 헬스 체크 실패"
+              exit 1
+            else
+              echo "⏳ 백엔드 헬스 체크 재시도 중... ($i/3)"
+              sleep 5
+            fi
+          done
+          
+          for i in {1..3}; do
+            if curl -f -s http://localhost:3000/admin > /dev/null; then
+              echo "✅ 프론트엔드 헬스 체크 성공"
+              break
+            elif [ $i -eq 3 ]; then
+              echo "❌ 프론트엔드 헬스 체크 실패"
+              exit 1
+            else
+              echo "⏳ 프론트엔드 헬스 체크 재시도 중... ($i/3)"
+              sleep 5
+            fi
+          done
+          
+          echo "✅ 배포 완료!"
+          echo "📊 최종 서비스 상태:"
+          sudo systemctl status stock-finder-backend --no-pager -l | head -3
+          sudo systemctl status stock-finder-frontend --no-pager -l | head -3

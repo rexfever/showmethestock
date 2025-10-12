@@ -4,6 +4,11 @@ backend/venv/
 *.pyc
 backend/.env
 
+# Database files (should not be tracked)
+backend/*.db
+backend/*.db.backup
+backend/snapshots/
+
 # Node/Next.js
 frontend/node_modules/
 frontend/.next/
