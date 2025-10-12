@@ -28,6 +28,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
   const [showGuide, setShowGuide] = useState(false);
   const [showUpcomingFeatures, setShowUpcomingFeatures] = useState(false);
   const [portfolioItems, setPortfolioItems] = useState(new Set());
+  const [portfolioData, setPortfolioData] = useState([]);
   const [recurringStocks, setRecurringStocks] = useState([]);
   const [recurringLoading, setRecurringLoading] = useState(false);
   
@@ -78,6 +79,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         const data = await response.json();
         const tickers = new Set(data.items.map(item => item.ticker));
         setPortfolioItems(tickers);
+        setPortfolioData(data.items || []);
       } else if (response.status === 401) {
         console.log('인증 실패 - 포트폴리오 조회를 건너뜁니다.');
         // 401 오류 시 자동 로그아웃 처리하지 않고 조용히 건너뜀
@@ -87,16 +89,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     }
   }, [isAuthenticated]);
 
-  // 포트폴리오에 종목 추가
-  const addToPortfolio = async (ticker, name) => {
-    if (!isAuthenticated()) {
-      alert('관심종목 기능을 사용하려면 로그인이 필요합니다.');
-      router.push('/login');
-      return;
-    }
-    alert('준비중입니다.');
-    return;
-  };
+  // 포트폴리오에 종목 추가 (로컬 함수 제거 - portfolioService의 함수 사용)
 
   // 포트폴리오에서 종목 제거
   const removeFromPortfolio = async (ticker) => {
