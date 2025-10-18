@@ -24,3 +24,7 @@ echo "📋 백업 완료 후 확인사항:"
 echo "1. 백업 파일이 생성되었는지 확인: ls -la /home/ubuntu/backups/"
 echo "2. 백업 로그 확인: tail -f /home/ubuntu/backups/backup.log"
 echo "3. cron 작업 상태 확인: crontab -l"
+
+
+
+

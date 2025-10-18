@@ -5,6 +5,7 @@ import Head from 'next/head';
 import { fetchPortfolio } from '../services/portfolioService';
 import { calculateHoldingPeriod, formatDate, formatCurrency, formatPercentage } from '../utils/portfolioUtils';
 import { handleError } from '../utils/errorHandler';
+import Header from '../components/Header';
 
 export default function Portfolio() {
   const router = useRouter();
@@ -74,24 +75,17 @@ export default function Portfolio() {
       
       <div className="min-h-screen bg-gray-50">
         {/* 상단 헤더 */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center">
-              <button 
-                onClick={() => router.push('/')}
-                className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
-              >
-                Stock Insight
-              </button>
+        <Header title="Stock Insight" />
+
+        {/* 정보 배너 */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">나의 투자 종목</h2>
+              <p className="text-sm opacity-90">관심 종목의 투자 현황과 수익률을 확인하세요</p>
             </div>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <span className="text-sm text-gray-600">
-                  {user.name}님 ({user.provider})
-                </span>
-              ) : (
-                <span className="text-sm text-gray-500">게스트 사용자</span>
-              )}
+            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <span className="text-2xl">📊</span>
             </div>
           </div>
         </div>
@@ -182,7 +176,7 @@ export default function Portfolio() {
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-              <span className="text-xs">홈</span>
+              <span className="text-xs">추천종목</span>
             </button>
             <button 
               className="flex flex-col items-center py-2 hover:bg-gray-800"
@@ -202,27 +196,25 @@ export default function Portfolio() {
               </svg>
               <span className="text-xs">나의투자종목</span>
             </button>
+            {user?.is_admin && (
+              <button 
+                className="flex flex-col items-center py-2 hover:bg-gray-800"
+                onClick={() => router.push('/admin')}
+              >
+                <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span className="text-xs">관리자</span>
+              </button>
+            )}
             <button 
               className="flex flex-col items-center py-2 hover:bg-gray-800"
-              onClick={async () => {
-                if (user && logout) {
-                  try {
-                    await logout();
-                    router.push('/customer-scanner');
-                  } catch (error) {
-                    console.error('로그아웃 중 오류:', error);
-                    // 오류가 발생해도 고객스캔 페이지로 이동
-                    router.push('/customer-scanner');
-                  }
-                } else {
-                  router.push('/login');
-                }
-              }}
+              onClick={() => router.push('/more')}
             >
               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
               </svg>
-              <span className="text-xs">{user ? '로그아웃' : '로그인'}</span>
+              <span className="text-xs">더보기</span>
             </button>
           </div>
         </div>

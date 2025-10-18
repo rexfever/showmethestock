@@ -4,7 +4,6 @@ import Head from 'next/head';
 export default function CustomerScannerMobile({ initialData }) {
   const [scanResults, setScanResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedMarket, setSelectedMarket] = useState('전체');
   const [sortBy, setSortBy] = useState('score');
   const [error, setError] = useState(null);
 
@@ -53,12 +52,9 @@ export default function CustomerScannerMobile({ initialData }) {
     }
   }, []);
 
-  // 시장별 필터링
+  // 필터링 제거 - 모든 결과 표시
   const filteredResults = scanResults.filter(item => {
     if (!item) return false;
-    if (selectedMarket === '전체') return true;
-    if (selectedMarket === '코스피') return item.market === 'KOSPI';
-    if (selectedMarket === '코스닥') return item.market === 'KOSDAQ';
     return true;
   });
 
@@ -66,6 +62,7 @@ export default function CustomerScannerMobile({ initialData }) {
   const sortedResults = [...filteredResults].sort((a, b) => {
     if (!a || !b) return 0;
     if (sortBy === 'score') return (b.score || 0) - (a.score || 0);
+    if (sortBy === 'change') return (b.change_rate || 0) - (a.change_rate || 0);
     return 0;
   });
 
@@ -85,14 +82,6 @@ export default function CustomerScannerMobile({ initialData }) {
     return stars;
   };
 
-  // 안전한 버튼 클릭 핸들러
-  const handleMarketChange = (market) => {
-    try {
-      setSelectedMarket(market);
-    } catch (err) {
-      console.error('Market change error:', err);
-    }
-  };
 
   const handleSortChange = (sort) => {
     try {
@@ -149,25 +138,6 @@ export default function CustomerScannerMobile({ initialData }) {
           </div>
         </div>
 
-        {/* 시장 선택 탭 */}
-        <div className="bg-white border-b">
-          <div className="flex">
-            {['전체', '코스피', '코스닥'].map((market) => (
-              <button
-                key={market}
-                onClick={() => handleMarketChange(market)}
-                className={`flex-1 py-3 px-4 text-center font-medium ${
-                  selectedMarket === market
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 bg-white'
-                }`}
-                style={{ touchAction: 'manipulation' }}
-              >
-                {market}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* 필터 및 정렬 */}
         <div className="bg-white p-4 border-b">
@@ -178,7 +148,6 @@ export default function CustomerScannerMobile({ initialData }) {
               className="flex-1 p-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="score">스타레이팅종합</option>
-              <option value="price">현재가순</option>
               <option value="change">변동률순</option>
             </select>
           </div>

@@ -519,8 +519,11 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         # 인버스 ETF 필터링 (9월 손실 방지)
         stock_name = api.get_stock_name(code)
         if any(keyword in stock_name for keyword in config.inverse_etf_keywords):
-            print(f"🚫 필터링됨: {stock_name} (인버스 ETF)")
             return None  # 인버스 ETF 즉시 제외
+        
+        # 금리/채권 ETF 필터링 (투자 가치 없음)
+        if any(keyword in stock_name for keyword in config.bond_etf_keywords):
+            return None  # 금리/채권 ETF 즉시 제외
         
         df = compute_indicators(df)
         # 종목명을 DataFrame에 추가
@@ -529,7 +532,6 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         # RSI 상한선 필터링 (과매수 구간 진입 방지)
         cur = df.iloc[-1]
         if cur.RSI_TEMA > config.rsi_upper_limit:
-            print(f"📊 필터링됨: {stock_name} (RSI {cur.RSI_TEMA:.1f} > {config.rsi_upper_limit})")
             return None  # RSI 상한선 초과 종목 즉시 제외
         
         matched, sig_true, sig_total = match_stats(df, market_condition, stock_name)
@@ -581,18 +583,26 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
     
     # 1) preset 적용
     if preset_overrides:
+        print(f"🔧 프리셋 적용: {preset_overrides}")
         apply_preset_to_runtime(preset_overrides)
 
     # 2) 기존 스캔 로직 그대로 실행 (하드 컷 로직은 기존대로 유지)
     items = []
+    matched_count = 0
+    filtered_count = 0
+    
     for code in universe_codes:
         res = scan_one_symbol(code, base_date, market_condition)
         if res is None:
+            filtered_count += 1
             continue
         items.append(res)
+        matched_count += 1
 
     # 3) 정렬 및 상위 N개 자르기
     items.sort(key=lambda x: x["score"], reverse=True)
+    
+    print(f"📊 스캔 완료: {matched_count}개 매칭, {filtered_count}개 필터링, 총 {len(universe_codes)}개 중")
     return items
 
 

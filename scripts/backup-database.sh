@@ -76,3 +76,7 @@ echo ""
 echo "✅ 데이터베이스 백업 완료!"
 echo "📁 백업 위치: $BACKUP_DIR"
 echo "📅 백업 시간: $DATE"
+
+
+
+

@@ -42,3 +42,7 @@ echo "📁 백업 로그: /home/ubuntu/backups/backup.log"
 echo ""
 echo "📋 현재 cron 작업 목록:"
 crontab -l
+
+
+
+

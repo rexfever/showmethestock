@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수익률 분석 대시보드</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-item label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .control-item select, .control-item input {
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .control-item select:focus, .control-item input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .quarter-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .quarter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .quarter-btn:hover {
+            border-color: #667eea;
+            background: #f8fafc;
+        }
+
+        .quarter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        .neutral { color: #6b7280; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .stocks-table {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .stocks-table h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .quarter-buttons {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 추천종목 성과 보고서</h1>
+            <p>추천 종목의 성과 분석 및 투자 결과 리포트</p>
+        </div>
+
+        <!-- 분기별 분석 컨트롤 -->
+        <div class="controls">
+            <h2 style="margin-bottom: 20px; color: #333;">📅 분기별 추천 성과</h2>
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="year-select">연도</label>
+                    <select id="year-select">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>분기</label>
+                    <div class="quarter-buttons">
+                        <button class="quarter-btn active" data-quarter="1">1분기</button>
+                        <button class="quarter-btn" data-quarter="2">2분기</button>
+                        <button class="quarter-btn" data-quarter="3">3분기</button>
+                        <button class="quarter-btn" data-quarter="4">4분기</button>
+                    </div>
+                </div>
+                <div class="control-item">
+                    <button class="btn" onclick="loadQuarterlyAnalysis()">분기 성과 확인</button>
+                </div>
+                <div class="control-item">
+                    <button class="btn" onclick="loadYearlySummary()">연도 전체 요약</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="loading" class="loading hidden">
+            📊 추천종목 성과를 분석 중입니다...
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <!-- 분기별 성과 요약 -->
+        <div id="quarterly-summary" class="stats-grid hidden">
+            <h3>📊 분기별 성과 요약</h3>
+            <!-- 분기별 통계가 여기에 표시됩니다 -->
+        </div>
+
+        <!-- 분기별 종목 리스트 -->
+        <div id="quarterly-stocks" class="stocks-table hidden">
+            <h3>📋 분기별 추천 종목 리스트</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>종목명</th>
+                            <th>추천가</th>
+                            <th>추천일</th>
+                            <th>현재수익률</th>
+                            <th>최고수익률</th>
+                            <th>최저수익률</th>
+                            <th>경과일</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quarterly-stocks-table">
+                        <!-- 종목 리스트가 여기에 표시됩니다 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 연도 전체 요약 -->
+        <div id="yearly-summary" class="stats-grid hidden">
+            <h3>📈 연도 전체 성과 요약</h3>
+            <!-- 연도 전체 통계가 여기에 표시됩니다 -->
+        </div>
+
+        <!-- 분기 내 월별 트렌드 차트 -->
+        <div id="monthly-trend-chart" class="chart-container hidden">
+            <h3>📈 분기 내 월별 트렌드</h3>
+            <canvas id="monthlyTrendChart"></canvas>
+        </div>
+
+        <!-- 수익률 분포 히스토그램 -->
+        <div id="returns-distribution-chart" class="chart-container hidden">
+            <h3>📊 추천종목 수익률 분포</h3>
+            <canvas id="returnsDistributionChart"></canvas>
+        </div>
+
+    </div>
+
+    <script>
+        let returnsChart = null;
+        let distributionChart = null;
+        let monthlyTrendChart = null;
+        let returnsDistributionChart = null;
+        let currentQuarter = 1;
+        let currentYear = 2025;
+
+        // 분기 버튼 이벤트
+        document.querySelectorAll('.quarter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.quarter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentQuarter = parseInt(this.dataset.quarter);
+            });
+        });
+
+        // 연도 변경 이벤트
+        document.getElementById('year-select').addEventListener('change', function() {
+            currentYear = parseInt(this.value);
+        });
+
+        async function loadQuarterlyAnalysis() {
+            showLoading();
+            hideError();
+            
+            try {
+                const response = await fetch(`/quarterly-analysis?year=${currentYear}&quarter=${currentQuarter}`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    displayQuarterlyAnalysis(data.data);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('분기별 성과 보고서 로딩 중 오류가 발생했습니다: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayQuarterlyAnalysis(data) {
+            // 기존 차트 제거
+            if (monthlyTrendChart) {
+                monthlyTrendChart.destroy();
+                monthlyTrendChart = null;
+            }
+            if (returnsDistributionChart) {
+                returnsDistributionChart.destroy();
+                returnsDistributionChart = null;
+            }
+            
+            // 분기별 성과 요약 표시
+            const summaryContainer = document.getElementById('quarterly-summary');
+            summaryContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value ${data.avg_return >= 0 ? 'positive' : 'negative'}">
+                        ${data.avg_return}%
+                    </div>
+                    <div class="stat-label">평균 수익률</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value positive">${data.positive_rate}%</div>
+                    <div class="stat-label">수익 종목 비율</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value neutral">${data.total_stocks}</div>
+                    <div class="stat-label">총 추천 종목 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value neutral">${data.dates.length}</div>
+                    <div class="stat-label">추천 일수</div>
+                </div>
+            `;
+            summaryContainer.classList.remove('hidden');
+
+            // 종목 리스트 표시
+            displayQuarterlyStocks(data.stocks);
+            
+            // 월별 트렌드 차트 표시
+            if (data.monthly_trend && data.monthly_trend.length > 0) {
+                displayMonthlyTrendChart(data.monthly_trend);
+            }
+            
+            // 수익률 분포 히스토그램 표시
+            if (data.returns_distribution) {
+                displayReturnsDistributionChart(data.returns_distribution);
+            }
+        }
+
+        function displayQuarterlyStocks(stocks) {
+            const tableBody = document.getElementById('quarterly-stocks-table');
+            
+            // 수익률 순으로 정렬
+            const sortedStocks = stocks.sort((a, b) => b.current_return - a.current_return);
+            
+            tableBody.innerHTML = sortedStocks.map(stock => `
+                <tr>
+                    <td><strong>${stock.name}</strong></td>
+                    <td>${stock.scan_price.toLocaleString()}원</td>
+                    <td>${stock.scan_date}</td>
+                    <td class="${stock.current_return >= 0 ? 'positive' : 'negative'}">
+                        <strong>${stock.current_return >= 0 ? '+' : ''}${stock.current_return}%</strong>
+                    </td>
+                    <td class="positive">+${stock.max_return}%</td>
+                    <td class="negative">${stock.min_return}%</td>
+                    <td>${stock.days_elapsed}일</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('quarterly-stocks').classList.remove('hidden');
+        }
+
+        async function loadYearlySummary() {
+            showLoading();
+            hideError();
+            
+            try {
+                const response = await fetch(`/quarterly-summary?year=${currentYear}`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    displayYearlySummary(data.data);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('연도 전체 성과 요약 로딩 중 오류가 발생했습니다: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayYearlySummary(data) {
+            const yearlySummary = document.getElementById('yearly-summary');
+            const yearly = data.yearly_summary;
+            
+            yearlySummary.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value ${yearly.avg_return >= 0 ? 'positive' : 'negative'}">
+                        ${yearly.avg_return}%
+                    </div>
+                    <div class="stat-label">연도 전체 평균 수익률</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value positive">${yearly.positive_rate}%</div>
+                    <div class="stat-label">연도 전체 수익 종목 비율</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value neutral">${yearly.total_stocks}</div>
+                    <div class="stat-label">연도 전체 추천 종목 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value ${yearly.best_quarter ? (yearly.best_quarter.avg_return >= 0 ? 'positive' : 'negative') : 'neutral'}">
+                        ${yearly.best_quarter ? yearly.best_quarter.avg_return + '%' : 'N/A'}
+                    </div>
+                    <div class="stat-label">최고 성과 분기 (${yearly.best_quarter ? yearly.best_quarter.quarter + '분기' : 'N/A'})</div>
+                </div>
+            `;
+            yearlySummary.classList.remove('hidden');
+        }
+
+        function displayMonthlyTrendChart(monthlyTrend) {
+            const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+            
+            const months = monthlyTrend.map(m => m.month);
+            const avgReturns = monthlyTrend.map(m => m.avg_return);
+            const positiveRates = monthlyTrend.map(m => m.positive_rate);
+            
+            monthlyTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: '평균 수익률 (%)',
+                        data: avgReturns,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    }, {
+                        label: '수익 종목 비율 (%)',
+                        data: positiveRates,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '평균 수익률 (%)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '수익 종목 비율 (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+            
+            document.getElementById('monthly-trend-chart').classList.remove('hidden');
+        }
+
+        function displayReturnsDistributionChart(distribution) {
+            const ctx = document.getElementById('returnsDistributionChart').getContext('2d');
+            
+            returnsDistributionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['고수익 (20%+)', '중수익 (0-20%)', '보합 (0%)', '중손실 (-20-0%)', '고손실 (-20% 이하)'],
+                    datasets: [{
+                        label: '종목 수',
+                        data: [
+                            distribution.high_gain,
+                            distribution.moderate_gain,
+                            distribution.neutral,
+                            distribution.moderate_loss,
+                            distribution.high_loss
+                        ],
+                        backgroundColor: [
+                            '#10b981',  // 고수익 - 초록
+                            '#10b981',  // 중수익 - 초록 (동일)
+                            '#6b7280',  // 보합 - 회색
+                            '#ef4444',  // 중손실 - 빨강
+                            '#ef4444'   // 고손실 - 빨강 (동일)
+                        ],
+                        borderColor: [
+                            '#10b981',
+                            '#10b981',
+                            '#6b7280',
+                            '#ef4444',
+                            '#ef4444'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '종목 수'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            document.getElementById('returns-distribution-chart').classList.remove('hidden');
+        }
+
+
+
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.add('hidden');
+        }
+
+        // 페이지 로드 시 기본 분석 실행
+        window.addEventListener('load', () => {
+            // 기본적으로 2025년 3분기 분석 실행
+            loadQuarterlyAnalysis();
+        });
+    </script>
+</body>
+</html>

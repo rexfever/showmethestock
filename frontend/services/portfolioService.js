@@ -106,3 +106,7 @@ export const removeFromPortfolio = async (ticker) => {
 
   return await response.json();
 };
+
+
+
+

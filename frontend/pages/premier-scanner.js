@@ -4,7 +4,6 @@ import Head from 'next/head';
 export default function PremierScanner({ initialData }) {
   const [scanResults, setScanResults] = useState(initialData || []);
   const [loading, setLoading] = useState(false);
-  const [selectedMarket, setSelectedMarket] = useState('전체');
   const [sortBy, setSortBy] = useState('score');
   const [analysisInput, setAnalysisInput] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -81,12 +80,9 @@ export default function PremierScanner({ initialData }) {
     }
   }, [initialData]);
 
-  // 시장별 필터링
+  // 필터링 제거 - 모든 결과 표시
   const filteredResults = scanResults.filter(item => {
     if (!item) return false;
-    if (selectedMarket === '전체') return true;
-    if (selectedMarket === '코스피') return item.ticker && !item.ticker.startsWith('0');
-    if (selectedMarket === '코스닥') return item.ticker && item.ticker.startsWith('0');
     return true;
   });
 
@@ -238,24 +234,6 @@ export default function PremierScanner({ initialData }) {
           </div>
         )}
 
-        {/* 시장 선택 탭 */}
-        <div className="bg-white border-b">
-          <div className="flex">
-            {['전체', '코스피', '코스닥'].map((market) => (
-              <button
-                key={market}
-                onClick={() => setSelectedMarket(market)}
-                className={`flex-1 py-3 text-center font-medium ${
-                  selectedMarket === market
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {market}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">

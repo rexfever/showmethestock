@@ -120,29 +120,49 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
     """Fallback 로직을 적용한 스캔 실행"""
     chosen_step = None
     
+    print(f"🔄 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={config.fallback_enable}")
+    
     if not config.fallback_enable:
         # Fallback 비활성화 시 기존 로직
+        print(f"📊 Fallback 비활성화 - 기본 조건으로 스캔")
         items = scan_with_preset(universe, {}, date, market_condition)
         items = items[:config.top_k]
+        print(f"📊 기본 스캔 결과: {len(items)}개 종목")
     else:
         # Fallback 활성화 시 단계별 완화
         final_items = []
         chosen_step = 0
         
+        print(f"📊 Fallback 활성화 - {len(config.fallback_presets)}단계 완화 시도")
+        print(f"📊 목표: 최소 {config.fallback_target_min}개, 최대 {config.fallback_target_max}개")
+        
         for step, overrides in enumerate(config.fallback_presets):
+            print(f"🔄 Step {step}: {overrides if overrides else '기본 조건'}")
             items = scan_with_preset(universe, overrides, date, market_condition)
+            print(f"📊 Step {step} 결과: {len(items)}개 종목")
+            
             # 하드 컷은 scan_one_symbol 내부에서 이미 처리되어야 함(과열/유동성/가격 등)
             if len(items) >= config.fallback_target_min:
                 chosen_step = step
                 final_items = items[:min(config.top_k, config.fallback_target_max)]
+                print(f"✅ Step {step}에서 목표 달성: {len(final_items)}개 종목 선택")
                 break
+            else:
+                print(f"❌ Step {step} 목표 미달: {len(items)} < {config.fallback_target_min}")
         
-        # 만약 모든 단계에서도 0개라면, 마지막 단계 결과에서 score 상위 TOP_K만 가져오되,
-        # 하드 컷(과열/유동성/가격)만 적용된 집합이어야 함.
+        # 만약 모든 단계에서도 목표 미달이라면, 마지막 단계 결과에서 score 상위만 가져오기
         if not final_items:
-            # 가장 완화된 단계의 결과를 그대로 사용(이미 하드 컷 적용됨)
-            final_items = items[:min(config.top_k, config.fallback_target_max)]
+            print(f"⚠️ 모든 단계에서 목표 미달 - 마지막 단계 결과 사용")
+            if items:  # 마지막 단계에서 결과가 있다면
+                final_items = items[:min(config.top_k, config.fallback_target_max)]
+                chosen_step = len(config.fallback_presets) - 1
+                print(f"📊 최종 결과: {len(final_items)}개 종목 (마지막 단계)")
+            else:
+                print(f"❌ 모든 단계에서 0개 결과 - 빈 리스트 반환")
+                print(f"🔍 디버깅: universe={len(universe)}개, market_condition={market_condition}")
+                final_items = []
         
         items = final_items
     
+    print(f"🎯 최종 선택: Step {chosen_step}, {len(items)}개 종목")
     return items, chosen_step

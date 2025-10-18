@@ -21,10 +21,11 @@ from utils import is_code, normalize_code_or_name
 from kakao import send_alert, format_scan_message, format_scan_alert_message
 
 # 서비스 모듈 import
-from services.returns_service import calculate_returns, calculate_returns_batch
-from services.scan_service import execute_scan_with_fallback
+from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
+from services.report_generator import report_generator
+from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
 from services.auth_service import process_kakao_callback
-from user_friendly_analysis import get_user_friendly_analysis
+from new_recurrence_api import router as recurrence_router
 
 # 인증 관련 import
 from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, EmailLoginRequest, EmailVerificationRequest, PasswordResetRequest, PasswordResetConfirmRequest, PaymentRequest, PaymentResponse, AdminUserUpdateRequest, AdminUserDeleteRequest, AdminStatsResponse
@@ -154,12 +155,63 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, name TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+        
+        # 최신 스키마로 테이블 생성
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS scan_rank(
+                date TEXT,
+                code TEXT,
+                name TEXT,
+                score REAL,
+                score_label TEXT,
+                close_price REAL,
+                volume INTEGER,
+                change_rate REAL,
+                market TEXT,
+                strategy TEXT,
+                indicators TEXT,
+                trend TEXT,
+                flags TEXT,
+                details TEXT,
+                returns TEXT,
+                recurrence TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY(date, code)
+            )
+        """)
+        
         rows = []
         for it in items:
-            rows.append((as_of, it.ticker, it.name, float(it.score), json.dumps(it.flags or {} , ensure_ascii=False), it.score_label or '', float(it.indicators.VOL if hasattr(it.indicators,'VOL') else 0)))
+            # 각 필드를 적절히 처리
+            name = getattr(it, 'name', '') or ''
+            close_price = float(getattr(it.indicators, 'close', 0)) if hasattr(it, 'indicators') and hasattr(it.indicators, 'close') else 0.0
+            volume = 0  # 기본값
+            change_rate = 0.0  # 기본값
+            market = ''  # 기본값
+            strategy = ''  # 기본값
+            
+            # JSON 필드들
+            indicators_json = json.dumps(it.indicators.__dict__ if hasattr(it.indicators, '__dict__') else {}, ensure_ascii=False)
+            trend_json = json.dumps(it.trend.__dict__ if hasattr(it.trend, '__dict__') else {}, ensure_ascii=False)
+            flags_json = json.dumps(it.flags.__dict__ if hasattr(it.flags, '__dict__') else {}, ensure_ascii=False)
+            details_json = json.dumps({}, ensure_ascii=False)  # 기본값
+            returns_json = json.dumps({}, ensure_ascii=False)  # 기본값
+            recurrence_json = json.dumps({}, ensure_ascii=False)  # 기본값
+            
+            rows.append((
+                as_of, it.ticker, name, float(it.score), it.score_label or '', 
+                close_price, volume, change_rate, market, strategy,
+                indicators_json, trend_json, flags_json, details_json, 
+                returns_json, recurrence_json
+            ))
+        
         print(f"💾 {len(rows)}개 레코드 삽입 시도")
-        cur.executemany("INSERT OR REPLACE INTO scan_rank(date, code, name, score, flags, score_label, close_price) VALUES (?,?,?,?,?,?,?)", rows)
+        cur.executemany("""
+            INSERT OR REPLACE INTO scan_rank(
+                date, code, name, score, score_label, close_price, volume, change_rate, 
+                market, strategy, indicators, trend, flags, details, returns, recurrence
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, rows)
         conn.commit()
         conn.close()
         print(f"✅ 데이터베이스 저장 완료: {as_of}")
@@ -202,11 +254,6 @@ def _init_positions_table():
     except Exception:
         pass
 
-
-@app.get('/health')
-def health_check():
-    """헬스 체크 엔드포인트"""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
@@ -258,11 +305,16 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             if ret:
                 print(f"  {ticker}: {ret.get('current_return', 0):.2f}%")
     
+    # 재등장 이력 조회 (배치 처리)
+    tickers = [item["ticker"] for item in items]
+    recurrence_data = get_recurrence_data(tickers, today_as_of)
+    
     # ScanItem 객체로 변환
     scan_items: List[ScanItem] = []
     for item in items:
         try:
             ticker = item["ticker"]
+            recurrence = recurrence_data.get(ticker)
             returns = returns_data.get(ticker) if date else None
             
             scan_item = ScanItem(
@@ -291,7 +343,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 ),
                 flags=_as_score_flags(item["flags"]),
                 score_label=item["score_label"],
-                details={**item["flags"].get("details", {}), "close": item["indicators"]["close"]},
+                details={**item["flags"].get("details", {}), "close": item["indicators"]["close"], "recurrence": recurrence},
                 strategy=item["strategy"],
                 returns=returns,
             )
@@ -378,8 +430,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 'rsi_threshold': resp.rsi_threshold,
                 'rank': enhanced_rank,
             }
-            _save_scan_snapshot(snapshot)
-            _save_snapshot_db(resp.as_of, items)
+            _save_snapshot_db(resp.as_of, resp.items)
         else:
             print(f"❌ save_snapshot=False, 스냅샷 저장 건너뜀")
     return resp
@@ -452,13 +503,11 @@ def _debug_stockinfo(market_tp: str = '001'):
 def delete_scan_result(date: str):
     """특정 날짜의 스캔 결과 삭제"""
     try:
-        # 날짜 형식 변환 (YYYY-MM-DD for DB, YYYYMMDD for files)
+        # 날짜 형식 변환 (YYYY-MM-DD)
         if len(date) == 8:  # YYYYMMDD 형식
-            formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"  # DB용
-            file_date = date  # 파일용
+            formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
         else:
-            formatted_date = date  # DB용
-            file_date = date.replace('-', '')  # 파일용
+            formatted_date = date
         
         # 1. 데이터베이스에서 삭제
         conn = sqlite3.connect(_db_path())
@@ -472,17 +521,10 @@ def delete_scan_result(date: str):
         conn.close()
         
         # 2. JSON 스냅샷 파일 삭제
-        snapshot_file = f"snapshots/scan-{file_date}.json"
+        snapshot_file = os.path.join(SNAPSHOT_DIR, f"scan-{formatted_date}.json")
         file_deleted = False
         if os.path.exists(snapshot_file):
             os.remove(snapshot_file)
-            file_deleted = True
-        
-        # 3. auto-scan 파일도 삭제 (패턴 매칭)
-        import glob
-        auto_scan_files = glob.glob(f"snapshots/auto-scan-{file_date}_*.json")
-        for auto_file in auto_scan_files:
-            os.remove(auto_file)
             file_deleted = True
         
         return {
@@ -786,24 +828,6 @@ def analyze(name_or_code: str):
         strategy=strategy_text(df),
     )
     return AnalyzeResponse(ok=True, item=item)
-
-
-@app.get('/analyze-friendly')
-def analyze_friendly(name_or_code: str):
-    """일반인도 이해할 수 있는 친화적인 종목 분석"""
-    # 기본 분석 수행
-    analysis_result = analyze(name_or_code)
-    
-    # 사용자 친화적인 분석으로 변환
-    friendly_analysis = get_user_friendly_analysis(analysis_result)
-    
-    return {
-        "ok": analysis_result.ok,
-        "ticker": analysis_result.item.ticker if analysis_result.item else None,
-        "name": analysis_result.item.name if analysis_result.item else None,
-        "friendly_analysis": friendly_analysis,
-        "error": analysis_result.error
-    }
 
 
 @app.get('/positions', response_model=PositionResponse)
@@ -1371,22 +1395,19 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
 async def get_available_scan_dates():
     """사용 가능한 스캔 날짜 목록을 가져옵니다."""
     try:
-        # 스냅샷 파일들에서 날짜 추출
-        snapshot_files = glob.glob("snapshots/scan-*.json")
-        auto_scan_files = glob.glob("snapshots/auto-scan-*.json")
+        # DB에서 날짜 목록 조회
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
         
-        all_files = snapshot_files + auto_scan_files
+        cur.execute("SELECT DISTINCT date FROM scan_rank ORDER BY date DESC")
+        rows = cur.fetchall()
+        conn.close()
         
-        if not all_files:
+        if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 날짜 추출 및 중복 제거
-        import re
-        dates = set()
-        for file in all_files:
-            date_match = re.search(r'(\d{8})', file)
-            if date_match:
-                dates.add(date_match.group(1))
+        # 날짜를 YYYYMMDD 형식으로 변환
+        dates = [row[0].replace('-', '') for row in rows]
         
         # 날짜 정렬 (최신순)
         sorted_dates = sorted(list(dates), reverse=True)
@@ -1405,382 +1426,200 @@ async def get_scan_by_date(date: str):
         if len(date) != 8 or not date.isdigit():
             return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."}
         
-        # 해당 날짜의 스캔 파일 찾기
-        snapshot_files = glob.glob(f"snapshots/scan-{date}.json")
-        auto_scan_files = glob.glob(f"snapshots/auto-scan-{date}_*.json")
+        # YYYY-MM-DD 형식으로 변환
+        formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
         
-        all_files = snapshot_files + auto_scan_files
+        # DB에서 해당 날짜의 스캔 결과 조회
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
         
-        if not all_files:
+        cur.execute("""
+            SELECT code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            FROM scan_rank 
+            WHERE date = ?
+            ORDER BY score DESC
+        """, (formatted_date,))
+        
+        rows = cur.fetchall()
+        conn.close()
+        
+        if not rows:
             return {"ok": False, "error": f"{date} 날짜의 스캔 결과가 없습니다."}
         
-        # 가장 최신 파일 선택 (auto-scan이 있으면 우선)
-        target_file = max(all_files, key=lambda x: x.split("-")[-1].replace(".json", ""))
-        
-        with open(target_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        
-        # 스캔 날짜 정보 추가
-        scan_date = date  # 변수 정의 추가
-        data["scan_date"] = date
-        data["is_latest"] = False
-        
-        # 사용자 화면에 필요한 정보 추가 (latest-scan과 동일한 로직)
-        enhanced_items = []
-        
-        # rank 배열이 있는 경우 (일반 스캔 파일)
-        if data.get("rank"):
-            for item in data["rank"]:
-                ticker = item.get("ticker")
-                score_label = item.get("score_label", "")
-                if ticker and score_label != "제외":
-                    # 기본 정보
-                    enhanced_item = {
-                        "ticker": ticker,
-                        "name": item.get("name", ""),
-                        "score": item.get("score", 0),
-                        "score_label": item.get("score_label", ""),
-                        "match": True,
-                    }
-                    
-                    # 시장 구분
-                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
-                    enhanced_item["market"] = market
-                    
-                    # 매매전략과 평가 항목
-                    enhanced_item["strategy"] = "상승추세정착" if item.get("score", 0) >= 10 else "상승시작"
-                    enhanced_item["evaluation"] = {"total_score": item.get("score", 0)}
-                    
-                    # 현재가, 변동률, 거래량 (스냅샷 데이터에서)
-                    enhanced_item["current_price"] = item.get("close_price", 0)
-                    enhanced_item["change_rate"] = item.get("change_rate", 0)
-                    enhanced_item["volume"] = item.get("volume", 0)
-                    
-                    # 시장 관심도 (거래량 기반)
-                    if item.get("volume", 0) > 1000000:
-                        enhanced_item["market_interest"] = "높음"
-                    elif item.get("volume", 0) > 500000:
-                        enhanced_item["market_interest"] = "보통"
-                    else:
-                        enhanced_item["market_interest"] = "낮음"
-                    
-                    enhanced_items.append(enhanced_item)
+        # 데이터 변환
+        items = []
+        for row in rows:
+            code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
-            # 수익률 정보 계산 (배치 처리)
-            if enhanced_items:
-                scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
-                tickers = [item["ticker"] for item in enhanced_items]
-                # 실제 수익률 계산 (병렬 처리)
-                returns_batch_data = calculate_returns_batch(tickers, scan_date_formatted)
-                
-                # 수익률 정보 추가
-                for item in enhanced_items:
-                    ticker = item["ticker"]
-                    returns_info = returns_batch_data.get(ticker)
-                    if returns_info:
-                        item["returns"] = returns_info
-                    else:
-                        item["returns"] = {
-                            "current_return": 0,
-                            "max_return": 0,
-                            "min_return": 0,
-                            "scan_price": 0,
-                            "current_price": 0,
-                            "max_price": 0,
-                            "min_price": 0,
-                            "days_elapsed": 0
-                        }
-        
-        # items 배열이 있는 경우 (auto-scan 파일)
-        elif data.get("items"):
-            for item in data["items"]:
-                ticker = item.get("ticker")
-                if ticker:
-                    # 기본 정보
-                    enhanced_item = {
-                        "ticker": ticker,
-                        "name": item.get("name", ""),
-                        "score": item.get("score", 0),
-                        "score_label": item.get("score_label", ""),
-                        "match": item.get("match", True),
-                    }
-                    
-                    # 사용자 화면에 필요한 추가 정보 생성
-                    # 시장 구분
-                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
-                    enhanced_item["market"] = market
-                    
-                    # 매매전략과 평가 항목
-                    score = item.get("score", 0)
-                    score_label = item.get("score_label", "관심")
-                    
-                    # 점수 기반으로 전략 설정
-                    if score >= 10:
-                        enhanced_item["strategy"] = "상승추세정착"
-                    elif score >= 8:
-                        enhanced_item["strategy"] = "상승시작"
-                    elif score >= 6:
-                        enhanced_item["strategy"] = "관심증가"
-                    else:
-                        enhanced_item["strategy"] = "관심"
-                    
-                    # 스냅샷 데이터 활용
-                    enhanced_item["score_label"] = score_label
-                    enhanced_item["evaluation"] = {
-                        "total_score": score
-                    }
-                    
-                    # auto-scan 파일에서 종가, 거래량, 변동률 가져오기
-                    indicators = item.get("indicators", {})
-                    details = item.get("details", {})
-                    
-                    enhanced_item["current_price"] = details.get("close", 0)  # details.close
-                    enhanced_item["volume"] = indicators.get("VOL", 0)        # indicators.VOL
-                    enhanced_item["change_rate"] = 0  # auto-scan에는 변동률이 없음
-                    
-                    # 수익률 정보 계산 (과거 스캔 결과이므로)
-                    scan_date_formatted = f"{scan_date[:4]}-{scan_date[4:6]}-{scan_date[6:8]}"
-                    # 개별 호출 대신 배치 처리에서 처리됨
-                    returns_info = None
-                    if returns_info:
-                        enhanced_item["returns"] = returns_info
-                    else:
-                        enhanced_item["returns"] = {
-                            "current_return": 0,
-                            "max_return": 0,
-                            "min_return": 0,
-                            "scan_price": 0,
-                            "current_price": 0,
-                            "max_price": 0,
-                            "min_price": 0,
-                            "days_elapsed": 0
-                        }
-                    
-                    # 거래금액 기반 시장 관심도 설정
-                    volume = enhanced_item["volume"]
-                    current_price = enhanced_item["current_price"]
-                    trade_amount = volume * current_price  # 거래금액 (원)
-                    
-                    if trade_amount > 100000000000:  # 1,000억원 이상
-                        enhanced_item["market_interest"] = "높음"
-                    elif trade_amount > 50000000000:  # 500억원 이상
-                        enhanced_item["market_interest"] = "보통"
-                    else:
-                        enhanced_item["market_interest"] = "낮음"
-                    
-                    enhanced_items.append(enhanced_item)
+            # 수익률 계산 (실시간)
+            try:
+                returns_info = calculate_returns(code, formatted_date)
+                current_return = returns_info.get('current_return', 0)
+                max_return = returns_info.get('max_return', 0)
+                min_return = returns_info.get('min_return', 0)
+                days_elapsed = returns_info.get('days_elapsed', 0)
+            except:
+                current_return = 0
+                max_return = 0
+                min_return = 0
+                days_elapsed = 0
             
-            # 수익률 정보 계산 (배치 처리)
-            if enhanced_items:
-                scan_date_formatted = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
-                tickers = [item["ticker"] for item in enhanced_items]
-                # 실제 수익률 계산 (병렬 처리)
-                returns_batch_data = calculate_returns_batch(tickers, scan_date_formatted)
-                
-                # 수익률 정보 추가
-                for item in enhanced_items:
-                    ticker = item["ticker"]
-                    returns_info = returns_batch_data.get(ticker)
-                    if returns_info:
-                        item["returns"] = returns_info
-                    else:
-                        item["returns"] = {
-                            "current_return": 0,
-                            "max_return": 0,
-                            "min_return": 0,
-                            "scan_price": 0,
-                            "current_price": 0,
-                            "max_price": 0,
-                            "min_price": 0,
-                            "days_elapsed": 0
-                        }
+            item = {
+                "ticker": code,
+                "name": name,
+                "score": score,
+                "score_label": score_label,
+                "close_price": close_price,
+                "volume": volume,
+                "change_rate": change_rate,
+                "market": market,
+                "strategy": strategy,
+                "indicators": json.loads(indicators) if indicators else {},
+                "trend": json.loads(trend) if trend else {},
+                "flags": json.loads(flags) if flags else {},
+                "details": json.loads(details) if details else {},
+                "returns": {
+                    "current_return": current_return,
+                    "max_return": max_return,
+                    "min_return": min_return,
+                    "days_elapsed": days_elapsed
+                },
+                "recurrence": json.loads(recurrence) if recurrence else {}
+            }
+            items.append(item)
         
-        # items 필드에 향상된 데이터 추가
-        data["items"] = enhanced_items
+        # 응답 데이터 구성
+        data = {
+            "as_of": formatted_date,
+            "scan_date": date,
+            "is_latest": False,
+            "universe_count": 100,  # 기본값
+            "matched_count": len(items),
+            "rsi_mode": "tema_dema",
+            "rsi_period": 14,
+            "rsi_threshold": 57.0,
+            "items": items
+        }
         
-        return {"ok": True, "data": data, "file": target_file}
+        # enhanced_items 추가 (호환성을 위해)
+        data["enhanced_items"] = items
+        
+        return {"ok": True, "data": data}
         
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}"}
 
+
+# 기존 스냅샷 파일 관련 함수들은 제거됨 - DB만 사용
 
 @app.get("/latest-scan")
 async def get_latest_scan():
-    """최신 스캔 결과를 가져옵니다."""
+    """최신 스캔 결과를 가져옵니다. 휴일이나 오늘 데이터가 없으면 전날 데이터를 보여줍니다."""
     try:
-        # 스냅샷 파일들 중에서 가장 최신 파일 찾기
-        snapshot_files = glob.glob("snapshots/scan-*.json")
-        auto_scan_files = glob.glob("snapshots/auto-scan-*.json")
+        from datetime import datetime, timedelta
         
-        all_files = snapshot_files + auto_scan_files
+        # DB에서 가장 최신 날짜의 스캔 결과 조회
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
         
-        if not all_files:
+        # 오늘 날짜 확인
+        today = datetime.now().strftime('%Y%m%d')
+        
+        # 오늘 데이터가 있는지 확인
+        cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ?", (today,))
+        today_count = cur.fetchone()[0]
+        
+        if today_count > 0:
+            # 오늘 데이터가 있으면 오늘 데이터 사용
+            latest_date = today
+                    else:
+            # 오늘 데이터가 없으면 가장 최신 날짜 사용 (전날 또는 그 이전)
+            cur.execute("SELECT MAX(date) FROM scan_rank")
+            latest_date = cur.fetchone()[0]
+        
+        if not latest_date:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 파일명에서 날짜 추출하여 정렬
-        latest_file = max(all_files, key=lambda x: x.split("-")[-1].replace(".json", ""))
+        # 해당 날짜의 스캔 결과 조회
+        cur.execute("""
+            SELECT code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            FROM scan_rank 
+            WHERE date = ?
+            ORDER BY score DESC
+        """, (latest_date,))
         
-        # 파일명에서 날짜 추출
-        import re
-        date_match = re.search(r'(\d{8})', latest_file)
-        scan_date = date_match.group(1) if date_match else "알 수 없음"
+        rows = cur.fetchall()
+        conn.close()
         
-        with open(latest_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if not rows:
+            return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 스캔 날짜 정보 추가
-        data["scan_date"] = scan_date
-        data["is_latest"] = True
+        # 데이터 변환
+        items = []
+        for row in rows:
+            code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            
+            # 스캐너에서는 수익률 계산 생략 (성능 최적화)
+            current_return = 0
+            max_return = 0
+            min_return = 0
+            days_elapsed = 0
+            
+            # 스캐너에서는 실시간 등락률 계산 생략 (성능 최적화)
+            real_time_change_rate = change_rate  # DB에 저장된 등락률 사용
+            
+            item = {
+                "ticker": code,
+                "name": name,
+                "score": score,
+                "score_label": score_label,
+                "close_price": close_price,
+                "current_price": close_price,  # 프론트엔드 호환성을 위해 추가
+                "volume": volume,
+                "change_rate": real_time_change_rate,  # 실시간 등락률 사용
+                "market": market,
+                "strategy": strategy,
+                "indicators": json.loads(indicators) if indicators else {},
+                "trend": json.loads(trend) if trend else {},
+                "flags": json.loads(flags) if flags else {},
+                "details": json.loads(details) if details else {},
+                "returns": {
+                    "current_return": current_return,
+                    "max_return": max_return,
+                    "min_return": min_return,
+                    "days_elapsed": days_elapsed
+                },
+                "recurrence": json.loads(recurrence) if recurrence else {}
+            }
+            items.append(item)
         
-        # 사용자 화면에 필요한 정보 추가
-        enhanced_items = []
+        # 응답 데이터 구성
+        scan_date = latest_date.replace('-', '')
+        is_today = (latest_date == today)
+        data = {
+            "as_of": latest_date,
+            "scan_date": scan_date,
+            "is_latest": True,
+            "is_today": is_today,
+            "is_holiday": not is_today,
+            "universe_count": 100,  # 기본값
+            "matched_count": len(items),
+            "rsi_mode": "tema_dema",
+            "rsi_period": 14,
+            "rsi_threshold": 57.0,
+            "items": items
+        }
         
-        # rank 배열이 있는 경우 (일반 스캔 파일)
-        if data.get("rank"):
-            for item in data["rank"]:
-                ticker = item.get("ticker")
-                score_label = item.get("score_label", "")
-                if ticker and score_label != "제외":
-                    # 기본 정보
-                    enhanced_item = {
-                        "ticker": ticker,
-                        "name": item.get("name", ""),
-                        "score": item.get("score", 0),
-                        "score_label": item.get("score_label", ""),
-                        "match": True,  # rank에 있는 것은 모두 매칭된 것
-                    }
-                    
-                    # 사용자 화면에 필요한 추가 정보 생성
-                    # 시장 구분
-                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
-                    enhanced_item["market"] = market
-                    
-                    # 매매전략과 평가 항목 (스냅샷 데이터 기반, 성능 최적화)
-                    score = item.get("score", 0)
-                    score_label = item.get("score_label", "관심")
-                    
-                    # 점수 기반으로 전략 설정 (API 호출 없음)
-                    if score >= 10:
-                        enhanced_item["strategy"] = "상승추세정착"
-                    elif score >= 8:
-                        enhanced_item["strategy"] = "상승시작"
-                    elif score >= 6:
-                        enhanced_item["strategy"] = "관심증가"
-                    else:
-                        enhanced_item["strategy"] = "관심"
-                    
-                    # 스냅샷 데이터 활용
-                    enhanced_item["score_label"] = score_label
-                    enhanced_item["evaluation"] = {
-                        "total_score": score
-                    }
-                    
-                    # 스냅샷에서 종가, 거래량, 변동률 가져오기
-                    enhanced_item["current_price"] = item.get("close_price", 0)  # 스냅샷의 종가
-                    enhanced_item["change_rate"] = item.get("change_rate", 0)    # 스냅샷의 변동률
-                    enhanced_item["volume"] = item.get("volume", 0)             # 스냅샷의 거래량
-                    
-                    # 거래금액 기반 시장 관심도 설정
-                    volume = enhanced_item["volume"]
-                    current_price = enhanced_item["current_price"]
-                    trade_amount = volume * current_price  # 거래금액 (원)
-                    
-                    if trade_amount > 100000000000:  # 1,000억원 이상
-                        enhanced_item["market_interest"] = "높음"
-                    elif trade_amount > 50000000000:  # 500억원 이상
-                        enhanced_item["market_interest"] = "보통"
-                    else:
-                        enhanced_item["market_interest"] = "낮음"
-                    
-                    enhanced_items.append(enhanced_item)
+        # enhanced_items 추가 (호환성을 위해)
+        data["enhanced_items"] = items
         
-        # items 배열이 있는 경우 (auto-scan 파일)
-        elif data.get("items"):
-            for item in data["items"]:
-                ticker = item.get("ticker")
-                if ticker:
-                    # 기본 정보
-                    enhanced_item = {
-                        "ticker": ticker,
-                        "name": item.get("name", ""),
-                        "score": item.get("score", 0),
-                        "score_label": item.get("score_label", ""),
-                        "match": item.get("match", True),
-                    }
-                    
-                    # 사용자 화면에 필요한 추가 정보 생성
-                    # 시장 구분
-                    market = "코스피" if ticker.startswith(("00", "01", "02", "03", "04", "05", "06", "07", "08", "09")) else "코스닥"
-                    enhanced_item["market"] = market
-                    
-                    # 매매전략과 평가 항목
-                    score = item.get("score", 0)
-                    score_label = item.get("score_label", "관심")
-                    
-                    # 점수 기반으로 전략 설정
-                    if score >= 10:
-                        enhanced_item["strategy"] = "상승추세정착"
-                    elif score >= 8:
-                        enhanced_item["strategy"] = "상승시작"
-                    elif score >= 6:
-                        enhanced_item["strategy"] = "관심증가"
-                    else:
-                        enhanced_item["strategy"] = "관심"
-                    
-                    # 스냅샷 데이터 활용
-                    enhanced_item["score_label"] = score_label
-                    enhanced_item["evaluation"] = {
-                        "total_score": score
-                    }
-                    
-                    # auto-scan 파일에서 종가, 거래량, 변동률 가져오기
-                    indicators = item.get("indicators", {})
-                    details = item.get("details", {})
-                    
-                    enhanced_item["current_price"] = details.get("close", 0)  # details.close
-                    enhanced_item["volume"] = indicators.get("VOL", 0)        # indicators.VOL
-                    enhanced_item["change_rate"] = 0  # auto-scan에는 변동률이 없음
-                    
-                    # 수익률 정보 계산 (과거 스캔 결과이므로)
-                    scan_date_formatted = f"{scan_date[:4]}-{scan_date[4:6]}-{scan_date[6:8]}"
-                    # 개별 호출 대신 배치 처리에서 처리됨
-                    returns_info = None
-                    if returns_info:
-                        enhanced_item["returns"] = returns_info
-                    else:
-                        enhanced_item["returns"] = {
-                            "current_return": 0,
-                            "max_return": 0,
-                            "min_return": 0,
-                            "scan_price": 0,
-                            "current_price": 0,
-                            "max_price": 0,
-                            "min_price": 0,
-                            "days_elapsed": 0
-                        }
-                    
-                    # 거래금액 기반 시장 관심도 설정
-                    volume = enhanced_item["volume"]
-                    current_price = enhanced_item["current_price"]
-                    trade_amount = volume * current_price  # 거래금액 (원)
-                    
-                    if trade_amount > 100000000000:  # 1,000억원 이상
-                        enhanced_item["market_interest"] = "높음"
-                    elif trade_amount > 50000000000:  # 500억원 이상
-                        enhanced_item["market_interest"] = "보통"
-                    else:
-                        enhanced_item["market_interest"] = "낮음"
-                    
-                    enhanced_items.append(enhanced_item)
-        
-        # items 필드에 향상된 데이터 추가
-        data["items"] = enhanced_items
-        
-        return {"ok": True, "data": data, "file": latest_file}
+        return {"ok": True, "data": data}
         
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}"}
 
+
+# 인증 관련 라우터들
 
 # ==================== 인증 관련 엔드포인트 ====================
 
@@ -2548,120 +2387,566 @@ async def delete_user(
             detail=f"사용자 삭제 중 오류가 발생했습니다: {str(e)}"
         )
 
-# 새로운 재등장 로직 함수들
-from collections import defaultdict
 
-def get_recurring_stocks(days: int = 7, min_appearances: int = 2):
-    """
-    최근 N일간 스캔된 종목 중 재등장한 종목들을 찾는 함수
-    """
-    conn = sqlite3.connect(_db_path())
-    cur = conn.cursor()
-    
-    # 최근 N일간의 스캔 결과 조회
-    query = """
-    SELECT code, name, date, score, score_label, close_price
+@app.post("/clear-cache")
+async def clear_returns_cache():
+    """수익률 계산 캐시를 클리어합니다"""
+    try:
+        clear_cache()
+        return {"ok": True, "message": "캐시가 클리어되었습니다"}
+    except Exception as e:
+        return {"ok": False, "error": f"캐시 클리어 중 오류: {str(e)}"}
+
+
+@app.get("/quarterly-analysis")
+async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
+    """분기별 추천 종목 성과 분석"""
+    try:
+        # 분기별 날짜 범위 계산
+        if quarter == 1:
+            start_date = f"{year}-01-01"
+            end_date = f"{year}-03-31"
+        elif quarter == 2:
+            start_date = f"{year}-04-01"
+            end_date = f"{year}-06-30"
+        elif quarter == 3:
+            start_date = f"{year}-07-01"
+            end_date = f"{year}-09-30"
+        elif quarter == 4:
+            start_date = f"{year}-10-01"
+            end_date = f"{year}-12-31"
+        else:
+            raise HTTPException(status_code=400, detail="잘못된 분기입니다")
+        
+        # 데이터베이스에서 해당 기간의 스캔 데이터 조회
+        conn = sqlite3.connect('snapshots.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
     FROM scan_rank 
-    WHERE date >= date('now', '-{} days')
-    ORDER BY date DESC, score DESC
-    """.format(days)
-    
-    cur.execute(query)
-    results = cur.fetchall()
+            WHERE date BETWEEN ? AND ?
+            ORDER BY date
+        """, (start_date, end_date))
+        
+        rows = cursor.fetchall()
     conn.close()
     
-    # 종목별 등장 횟수 계산
-    stock_appearances = defaultdict(list)
-    for row in results:
-        code, name, date, score, score_label, close_price = row
-        stock_appearances[code].append({
-            'name': name,
-            'date': date,
-            'score': score,
-            'score_label': score_label,
-            'close_price': close_price
-        })
-    
-    # 재등장 종목 필터링
-    recurring_stocks = {}
-    for code, appearances in stock_appearances.items():
-        if len(appearances) >= min_appearances:
-            recurring_stocks[code] = {
-                'name': appearances[0]['name'],
-                'appear_count': len(appearances),
-                'appearances': appearances,
-                'latest_score': appearances[0]['score'],
-                'latest_date': appearances[0]['date']
+        if not rows:
+            return {
+                "ok": True,
+                "data": {
+                    "total_stocks": 0,
+                    "avg_return": 0,
+                    "positive_rate": 0,
+                    "dates": [],
+                    "stocks": [],
+                    "best_stock": None,
+                    "worst_stock": None
+                }
             }
-    
-    return recurring_stocks
-
-@app.get("/recurring-stocks")
-async def get_recurring_stocks_api(
-    days: int = 7,
-    min_appearances: int = 2
-):
-    """
-    최근 N일간 재등장한 종목들을 조회하는 API
-    """
-    try:
-        recurring_stocks = get_recurring_stocks(days, min_appearances)
+        
+        # 데이터 처리
+        stocks = []
+        dates = set()
+        total_return = 0
+        positive_count = 0
+        
+        for row in rows:
+            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            
+            if not name or not close_price:
+                continue
+                
+            dates.add(date)
+            
+            # 수익률 계산 (실시간)
+            try:
+                returns_info = calculate_returns(code, date)
+                current_return = returns_info.get('current_return', 0)
+                max_return = returns_info.get('max_return', 0)
+                min_return = returns_info.get('min_return', 0)
+                days_elapsed = returns_info.get('days_elapsed', 0)
+            except:
+                current_return = 0
+                max_return = 0
+                min_return = 0
+                days_elapsed = 0
+            
+            stock_data = {
+                "ticker": code,
+                "name": name,
+                "scan_price": close_price,
+                "scan_date": date,
+                "current_return": current_return,
+                "max_return": max_return,
+                "min_return": min_return,
+                "days_elapsed": days_elapsed
+            }
+            
+            stocks.append(stock_data)
+            total_return += current_return
+            
+            if max_return > 0:
+                positive_count += 1
+        
+        # 통계 계산
+        total_stocks = len(stocks)
+        avg_return = total_return / total_stocks if total_stocks > 0 else 0
+        positive_rate = (positive_count / total_stocks * 100) if total_stocks > 0 else 0
+        
+        # 최고/최저 성과 종목 찾기
+        best_stock = max(stocks, key=lambda x: x['current_return']) if stocks else None
+        worst_stock = min(stocks, key=lambda x: x['current_return']) if stocks else None
         
         return {
             "ok": True,
             "data": {
-                "recurring_stocks": recurring_stocks,
-                "total_count": len(recurring_stocks),
-                "days": days,
-                "min_appearances": min_appearances
+                "total_stocks": total_stocks,
+                "avg_return": round(avg_return, 2),
+                "positive_rate": round(positive_rate, 2),
+                "dates": sorted(list(dates)),
+                "stocks": stocks,
+                "best_stock": best_stock,
+                "worst_stock": worst_stock
             }
         }
+        
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {
+            "ok": False,
+            "error": f"분기별 분석 중 오류가 발생했습니다: {str(e)}"
+        }
 
-@app.get("/scan-with-recurring")
-async def get_scan_with_recurring_api(
-    days: int = 7,
-    min_appearances: int = 2
-):
-    """
-    최신 스캔 결과와 재등장 종목을 함께 조회하는 API
-    """
+
+# ==================== 보고서 조회 API ====================
+
+@app.get("/reports/weekly/{year}/{month}/{week}")
+async def get_weekly_report(year: int, month: int, week: int):
+    """주간 보고서 조회"""
     try:
-        # 최신 스캔 결과 조회
-        conn = sqlite3.connect(_db_path())
-        cur = conn.cursor()
+        filename = f"weekly_{year}_{month:02d}_week{week}.json"
+        report_data = report_generator._load_report("weekly", filename)
         
-        # 최신 스캔 날짜 조회
-        cur.execute("SELECT MAX(date) FROM scan_rank")
-        latest_date = cur.fetchone()[0]
+        if not report_data:
+            return {
+                "ok": False,
+                "error": f"{year}년 {month}월 {week}주차 보고서가 없습니다."
+            }
         
-        # 최신 스캔 결과 조회
-        cur.execute("""
-            SELECT code, name, score, score_label, close_price
+        return {
+            "ok": True,
+            "data": report_data
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"주간 보고서 조회 중 오류가 발생했습니다: {str(e)}"
+        }
+
+
+@app.get("/reports/monthly/{year}/{month}")
+async def get_monthly_report(year: int, month: int):
+    """월간 보고서 조회"""
+    try:
+        filename = f"monthly_{year}_{month:02d}.json"
+        report_data = report_generator._load_report("monthly", filename)
+        
+        if not report_data:
+            return {
+                "ok": False,
+                "error": f"{year}년 {month}월 보고서가 없습니다."
+            }
+        
+        return {
+            "ok": True,
+            "data": report_data
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"월간 보고서 조회 중 오류가 발생했습니다: {str(e)}"
+        }
+
+
+@app.get("/reports/quarterly/{year}/{quarter}")
+async def get_quarterly_report(year: int, quarter: int):
+    """분기 보고서 조회"""
+    try:
+        filename = f"quarterly_{year}_Q{quarter}.json"
+        report_data = report_generator._load_report("quarterly", filename)
+        
+        if not report_data:
+            return {
+                "ok": False,
+                "error": f"{year}년 {quarter}분기 보고서가 없습니다."
+            }
+        
+        return {
+            "ok": True,
+            "data": report_data
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"분기 보고서 조회 중 오류가 발생했습니다: {str(e)}"
+        }
+
+
+@app.get("/reports/yearly/{year}")
+async def get_yearly_report(year: int):
+    """연간 보고서 조회"""
+    try:
+        filename = f"yearly_{year}.json"
+        report_data = report_generator._load_report("yearly", filename)
+        
+        if not report_data:
+            return {
+                "ok": False,
+                "error": f"{year}년 보고서가 없습니다."
+            }
+        
+        return {
+            "ok": True,
+            "data": report_data
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"연간 보고서 조회 중 오류가 발생했습니다: {str(e)}"
+        }
+
+
+@app.get("/reports/available/{report_type}")
+async def get_available_reports(report_type: str):
+    """사용 가능한 보고서 목록 조회"""
+    try:
+        import os
+        import glob
+        
+        if report_type not in ["weekly", "monthly", "quarterly", "yearly"]:
+            return {
+                "ok": False,
+                "error": "잘못된 보고서 유형입니다."
+            }
+        
+        report_dir = f"backend/reports/{report_type}"
+        if not os.path.exists(report_dir):
+            return {
+                "ok": True,
+                "data": []
+            }
+        
+        # 파일 목록 조회
+        pattern = f"{report_dir}/*.json"
+        files = glob.glob(pattern)
+        
+        reports = []
+        for file_path in files:
+            filename = os.path.basename(file_path)
+            # 파일명에서 정보 추출
+            if report_type == "weekly":
+                # weekly_2025_08_week1.json
+                parts = filename.replace(".json", "").split("_")
+                if len(parts) == 4:
+                    year = int(parts[1])
+                    month = int(parts[2])
+                    week = int(parts[3].replace("week", ""))
+                    reports.append({
+                        "year": year,
+                        "month": month,
+                        "week": week,
+                        "filename": filename
+                    })
+            elif report_type == "monthly":
+                # monthly_2025_08.json
+                parts = filename.replace(".json", "").split("_")
+                if len(parts) == 3:
+                    year = int(parts[1])
+                    month = int(parts[2])
+                    reports.append({
+                        "year": year,
+                        "month": month,
+                        "filename": filename
+                    })
+            elif report_type == "quarterly":
+                # quarterly_2025_Q1.json
+                parts = filename.replace(".json", "").split("_")
+                if len(parts) == 3:
+                    year = int(parts[1])
+                    quarter = int(parts[2].replace("Q", ""))
+                    reports.append({
+                        "year": year,
+                        "quarter": quarter,
+                        "filename": filename
+                    })
+            elif report_type == "yearly":
+                # yearly_2025.json
+                parts = filename.replace(".json", "").split("_")
+                if len(parts) == 2:
+                    year = int(parts[1])
+                    reports.append({
+                        "year": year,
+                        "filename": filename
+                    })
+        
+        # 정렬
+        reports.sort(key=lambda x: (x["year"], x.get("month", 0), x.get("quarter", 0), x.get("week", 0)))
+        
+        return {
+            "ok": True,
+            "data": reports
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"보고서 목록 조회 중 오류가 발생했습니다: {str(e)}"
+        }
+
+
+@app.get("/weekly-analysis")
+async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
+    """주별 추천 종목 성과 분석"""
+    try:
+        # 월별 날짜 범위 계산
+        if month < 1 or month > 12:
+            raise HTTPException(status_code=400, detail="잘못된 월입니다 (1-12)")
+        
+        if week < 1 or week > 5:
+            raise HTTPException(status_code=400, detail="잘못된 주차입니다 (1-5)")
+        
+        # 해당 월의 첫날과 마지막날 계산
+        import calendar
+        last_day = calendar.monthrange(year, month)[1]
+        
+        # 주차별 날짜 범위 계산
+        week_start = (week - 1) * 7 + 1
+        week_end = min(week_start + 6, last_day)
+        
+        start_date = f"{year}-{month:02d}-{week_start:02d}"
+        end_date = f"{year}-{month:02d}-{week_end:02d}"
+        
+        # 데이터베이스에서 해당 기간의 스캔 데이터 조회
+        conn = sqlite3.connect('snapshots.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
-            WHERE date = ?
-            ORDER BY score DESC
-        """, (latest_date,))
+            WHERE date BETWEEN ? AND ?
+            ORDER BY date
+        """, (start_date, end_date))
         
-        latest_scan = cur.fetchall()
-        
-        # 재등장 종목 조회
-        recurring_stocks = get_recurring_stocks(days, min_appearances)
-        
+        rows = cursor.fetchall()
         conn.close()
         
+        if not rows:
         return {
             "ok": True,
             "data": {
-                "latest_scan": {
-                    "date": latest_date,
-                    "stocks": latest_scan
-                },
-                "recurring_stocks": recurring_stocks,
-                "total_recurring": len(recurring_stocks)
+                    "total_stocks": 0,
+                    "avg_return": 0,
+                    "positive_rate": 0,
+                    "dates": [],
+                    "stocks": [],
+                    "best_stock": None,
+                    "worst_stock": None
+                }
+            }
+        
+        # 데이터 처리
+        stocks = []
+        dates = set()
+        total_return = 0
+        positive_count = 0
+        
+        # 유효한 데이터만 필터링
+        valid_rows = []
+        for row in rows:
+            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            
+            if not name or not close_price:
+                continue
+                
+            dates.add(date)
+            valid_rows.append(row)
+        
+        # 데이터 구성 및 수익률 계산
+        for row in valid_rows:
+            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            
+            # 수익률 계산 (임시로 비활성화 - 성능 문제)
+            current_return = 0
+            max_return = 0
+            min_return = 0
+            days_elapsed = 0
+            
+            stock_data = {
+                "ticker": code,
+                "name": name,
+                "scan_price": close_price,
+                "scan_date": date,
+                "current_return": current_return,
+                "max_return": max_return,
+                "min_return": min_return,
+                "days_elapsed": days_elapsed
+            }
+            
+            stocks.append(stock_data)
+            total_return += current_return
+            
+            if max_return > 0:
+                positive_count += 1
+        
+        # 통계 계산
+        total_stocks = len(stocks)
+        avg_return = total_return / total_stocks if total_stocks > 0 else 0
+        positive_rate = (positive_count / total_stocks * 100) if total_stocks > 0 else 0
+        
+        # 최고/최저 성과 종목 찾기
+        best_stock = max(stocks, key=lambda x: x['current_return']) if stocks else None
+        worst_stock = min(stocks, key=lambda x: x['current_return']) if stocks else None
+        
+        return {
+            "ok": True,
+            "data": {
+                "total_stocks": total_stocks,
+                "avg_return": round(avg_return, 2),
+                "positive_rate": round(positive_rate, 2),
+                "dates": sorted(list(dates)),
+                "stocks": stocks,
+                "best_stock": best_stock,
+                "worst_stock": worst_stock
             }
         }
+        
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {
+            "ok": False,
+            "error": f"월별 분석 중 오류가 발생했습니다: {str(e)}"
+        }
 
+
+@app.get("/quarterly-summary")
+async def get_quarterly_summary(year: int = 2025):
+    """연도별 분기 요약"""
+    try:
+        quarters = []
+        yearly_total_stocks = 0
+        yearly_total_return = 0
+        yearly_positive_count = 0
+        
+        for quarter in range(1, 5):
+            # 분기별 데이터 조회
+            quarterly_response = await get_quarterly_analysis(year, quarter)
+            
+            if quarterly_response["ok"]:
+                quarterly_data = quarterly_response["data"]
+                quarters.append({
+                    "quarter": quarter,
+                    "total_stocks": quarterly_data["total_stocks"],
+                    "avg_return": quarterly_data["avg_return"],
+                    "positive_rate": quarterly_data["positive_rate"]
+                })
+                
+                yearly_total_stocks += quarterly_data["total_stocks"]
+                yearly_total_return += quarterly_data["avg_return"] * quarterly_data["total_stocks"]
+                yearly_positive_count += quarterly_data["positive_rate"] * quarterly_data["total_stocks"] / 100
+        
+        # 연도 전체 요약
+        yearly_avg_return = yearly_total_return / yearly_total_stocks if yearly_total_stocks > 0 else 0
+        yearly_positive_rate = yearly_positive_count / yearly_total_stocks * 100 if yearly_total_stocks > 0 else 0
+        
+        return {
+            "ok": True,
+            "data": {
+                "year": year,
+                "quarters": quarters,
+                "yearly_summary": {
+                    "total_stocks": yearly_total_stocks,
+                    "avg_return": round(yearly_avg_return, 2),
+                    "positive_rate": round(yearly_positive_rate, 2)
+                }
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"연도별 요약 중 오류가 발생했습니다: {str(e)}"
+        }
+
+
+@app.get("/recurring-stocks")
+async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
+    """재등장 종목 정보를 가져옵니다."""
+    try:
+        from datetime import datetime, timedelta
+        
+        conn = sqlite3.connect('snapshots.db')
+        cursor = conn.cursor()
+        
+        # 최근 N일간의 데이터 조회
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        
+        cursor.execute("""
+            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            FROM scan_rank 
+            WHERE date BETWEEN ? AND ?
+            ORDER BY date DESC
+        """, (start_date, end_date))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        if not rows:
+            return {"ok": True, "data": {"recurring_stocks": {}}}
+        
+        # 종목별 등장 횟수와 날짜 수집
+        stock_data = {}
+        for row in rows:
+            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            
+            if not name or not code:
+                continue
+                
+            if code not in stock_data:
+                stock_data[code] = {
+                    "name": name,
+                    "appearances": 0,
+                    "dates": [],
+                    "latest_price": close_price,
+                    "latest_change_rate": change_rate
+                }
+            
+            stock_data[code]["appearances"] += 1
+            stock_data[code]["dates"].append(date)
+            stock_data[code]["latest_price"] = close_price
+            stock_data[code]["latest_change_rate"] = change_rate
+        
+        # 최소 등장 횟수 이상인 종목만 필터링
+        recurring_stocks = {}
+        for code, data in stock_data.items():
+            if data["appearances"] >= min_appearances:
+                recurring_stocks[code] = {
+                    "name": data["name"],
+                    "appearances": data["appearances"],
+                    "dates": sorted(data["dates"], reverse=True),  # 최신 날짜부터
+                    "latest_price": data["latest_price"],
+                    "latest_change_rate": data["latest_change_rate"]
+                }
+        
+        return {"ok": True, "data": {"recurring_stocks": recurring_stocks}}
+        
+    except Exception as e:
+        return {"ok": False, "error": f"재등장 종목 조회 중 오류가 발생했습니다: {str(e)}"}
+
+
+# 라우터 포함
+app.include_router(recurrence_router)

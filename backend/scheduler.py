@@ -83,25 +83,15 @@ def run_scan():
         else:
             backend_url = "http://localhost:8010"  # 서버에서는 내부 통신
         
-        response = requests.get(f"{backend_url}/scan", timeout=300)
+        response = requests.get(f"{backend_url}/scan?save_snapshot=true", timeout=300)
         
         if response.status_code == 200:
             data = response.json()
             matched_count = data.get('matched_count', 0)
             logger.info(f"자동 스캔 완료: {matched_count}개 종목 매칭")
             
-            # 스캔 결과를 파일로 저장
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            # 현재 스크립트 위치 기준으로 절대경로 계산
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            snapshots_dir = os.path.join(current_dir, 'snapshots')
-            filename = os.path.join(snapshots_dir, f"auto-scan-{timestamp}.json")
-            
-            with open(filename, 'w', encoding='utf-8') as f:
-                import json
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            
-            logger.info(f"스캔 결과가 {filename}에 저장되었습니다.")
+            # 스캔 결과는 DB에 저장됨 (JSON 파일 저장 제거)
+            logger.info("스캔 결과가 DB에 저장되었습니다.")
             
             # 자동 알림 발송
             send_auto_notification(matched_count)

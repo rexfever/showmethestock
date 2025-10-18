@@ -90,6 +90,9 @@ class Config:
     # 인버스 ETF 필터링 키워드
     inverse_etf_keywords: list = field(default_factory=lambda: os.getenv("INVERSE_ETF_KEYWORDS", "인버스,2X,레버리지,SHORT,BEAR,DOWN").split(","))
     
+    # 금리/채권 ETF 필터링 키워드
+    bond_etf_keywords: list = field(default_factory=lambda: os.getenv("BOND_ETF_KEYWORDS", "금리액티브,머니마켓액티브,CD금리,채권,국채,KRX금현물").split(","))
+    
     # === RSI (TEMA/DEMA 기반) - 기존 로직 유지 ===
     rsi_setup_min: int = int(os.getenv("RSI_SETUP_MIN", "58"))   # RSI_DEMA Setup 구간 최소 (Tight preset)
     rsi_setup_max: int = int(os.getenv("RSI_SETUP_MAX", "75"))   # RSI_DEMA Setup 구간 최대
