@@ -5,8 +5,8 @@ backend/venv/
 backend/.env
 
 # Database files (should not be tracked)
-backend/*.db
-backend/*.db.backup
+*.db
+*.db.backup
 backend/snapshots/
 
 # Node/Next.js
