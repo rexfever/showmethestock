@@ -1565,8 +1565,23 @@ async def get_latest_scan():
             min_return = 0
             days_elapsed = 0
             
-            # 스캐너에서는 실시간 등락률 계산 생략 (성능 최적화)
-            real_time_change_rate = change_rate  # DB에 저장된 등락률 사용
+            # 실시간 등락률 계산 (스캐너에서도 표시 필요)
+            try:
+                from kiwoom_api import KiwoomAPI
+                kiwoom = KiwoomAPI()
+                ohlcv_data = kiwoom.get_ohlcv(code, "D", 2)  # 최근 2일 데이터
+                if ohlcv_data and len(ohlcv_data) >= 2:
+                    current_price = float(ohlcv_data[0]["close"])
+                    prev_close = float(ohlcv_data[1]["close"])
+                    if prev_close > 0:
+                        real_time_change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
+                    else:
+                        real_time_change_rate = change_rate
+                else:
+                    real_time_change_rate = change_rate
+            except Exception as e:
+                print(f"⚠️ {code} 실시간 등락률 계산 실패: {e}")
+                real_time_change_rate = change_rate
             
             item = {
                 "ticker": code,

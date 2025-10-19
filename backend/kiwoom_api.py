@@ -352,6 +352,42 @@ class KiwoomAPI:
         })
         return df.reset_index(drop=True)
 
+    def get_stock_quote(self, code: str) -> dict:
+        """종목의 현재가, 등락률 등 실시간 정보 조회"""
+        if self.force_mock:
+            return {
+                "current_price": 50000.0,
+                "change_rate": 2.5,
+                "volume": 1000000,
+                "market_cap": 1000000000000
+            }
+        
+        try:
+            # 키움 API에서 종목 정보 조회 (등락률 포함)
+            api_id = config.kiwoom_tr_stockinfo_id
+            path = config.kiwoom_tr_stockinfo_path
+            
+            # 종목별 상세 정보 조회를 위한 API 호출
+            # 실제 키움 API 스펙에 맞게 수정 필요
+            payload = {"stk_cd": code}
+            data = self._post(api_id, path, payload)
+            
+            if data.get("rt_cd") == "0" or data.get("return_code") == 0:
+                # 응답에서 등락률 정보 추출
+                stock_info = data.get("output", {}) or data.get("data", {})
+                return {
+                    "current_price": float(stock_info.get("stck_prpr", 0)),
+                    "change_rate": float(stock_info.get("prdy_vrss_ctrt", 0)),  # 전일 대비 등락률
+                    "volume": int(stock_info.get("acml_vol", 0)),
+                    "market_cap": int(stock_info.get("hts_avls", 0))
+                }
+            else:
+                return {"error": "API 호출 실패"}
+                
+        except Exception as e:
+            print(f"⚠️ {code} 종목 정보 조회 실패: {e}")
+            return {"error": str(e)}
+
     def get_stock_name(self, code: str) -> str:
         """코드→이름 매핑 (캐시 우선). 실패 시 코드 그대로 반환"""
         if code in self._code_to_name:

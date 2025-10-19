@@ -6,13 +6,13 @@ import getConfig from '../config';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
 
-export default function CustomerScanner({ initialData, initialScanFile }) {
+export default function CustomerScanner({ initialData, initialScanFile, initialScanDate }) {
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
   
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
-  const [scanDate, setScanDate] = useState('');
+  const [scanDate, setScanDate] = useState(initialScanDate || '');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -105,6 +105,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
         console.log('설정할 scanFile 값:', data.file);
         setScanResults(items);
         setScanFile(data.file || '');
+        console.log('받은 scan_date:', data.data.scan_date);
         setScanDate(data.data.scan_date || '');
         setError(null);
       } else {
@@ -227,6 +228,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
                   {mounted && scanDate ? (() => {
+                    console.log('scanDate 값:', scanDate);
                     // YYYYMMDD 형식을 YYYY년 M월 D일 형식으로 변환
                     const year = scanDate.substring(0, 4);
                     const month = parseInt(scanDate.substring(4, 6));
@@ -238,7 +240,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                       day: 'numeric',
                       weekday: 'short'
                     });
-                  })() : '로딩 중...'}
+                  })() : `로딩 중... (scanDate: ${scanDate}, mounted: ${mounted})`}
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -249,17 +251,22 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               </div>
               
               {/* 오른쪽: 버튼 */}
-          <button
+              <button
                 onClick={() => router.push('/performance-report')}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="relative bg-gradient-to-br from-red-500 via-rose-600 to-pink-700 hover:from-red-600 hover:via-rose-700 hover:to-pink-800 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 active:scale-95 overflow-hidden group min-w-[180px]"
               >
-                <div className="flex flex-col items-center space-y-0.5">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-lg">📈</span>
-                    <span className="text-sm font-semibold">추천종목</span>
+                {/* 배경 애니메이션 효과 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:translate-x-full transition-all duration-700"></div>
+                
+                <div className="relative flex items-center justify-center space-x-2">
+                  <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span className="text-sm">📋</span>
                   </div>
-                  <div className="text-sm font-semibold">성과보고서</div>
+                  <span className="text-sm font-bold tracking-wide whitespace-nowrap">추천 성과보고서</span>
                 </div>
+                
+                {/* 하단 글로우 효과 */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
               </button>
             </div>
           </div>
@@ -334,7 +341,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                       {item.current_price > 0 ? `${item.current_price.toLocaleString()}원` : '데이터 없음'}
                     </div>
                     <div className={`text-sm font-semibold ${item.change_rate > 0 ? 'text-red-500' : item.change_rate < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
-                      {item.change_rate !== 0 ? `${item.change_rate > 0 ? '+' : ''}${item.change_rate}%` : ''}
+                      {item.change_rate !== 0 ? `${item.change_rate > 0 ? '+' : ''}${item.change_rate}%` : '데이터 없음'}
                     </div>
                   </div>
                 </div>
@@ -417,7 +424,8 @@ export async function getServerSideProps() {
       return {
         props: {
           initialData: items,
-          initialScanFile: data.file || ''
+          initialScanFile: data.file || '',
+          initialScanDate: data.data.scan_date || ''
         }
       };
     }
@@ -427,7 +435,8 @@ export async function getServerSideProps() {
   
   return {
     props: {
-      initialData: []
+      initialData: [],
+      initialScanDate: ''
     }
   };
 }

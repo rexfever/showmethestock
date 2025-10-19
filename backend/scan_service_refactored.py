@@ -175,27 +175,34 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
             returns_json = json.dumps(getattr(it, 'returns', None), ensure_ascii=False)
             recurrence_json = json.dumps(getattr(it, 'recurrence', None), ensure_ascii=False)
             
-            # 키움 API에서 최신 데이터 가져와서 volume과 change_rate 계산
+            # 키움 API에서 종목 정보 직접 조회 (등락률 포함)
             try:
-                df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터
-                if not df.empty and len(df) >= 2:
-                    latest = df.iloc[-1]
-                    prev_close = df.iloc[-2]["close"]
-                    
-                    # 현재가와 거래량
-                    current_price = float(latest["close"])
-                    volume = int(latest["volume"])
-                    
-                    # 등락률 계산 (전일 종가 대비)
-                    if prev_close > 0:
-                        change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
-                    else:
-                        change_rate = 0.0
+                quote = api.get_stock_quote(it.ticker)
+                if "error" not in quote:
+                    current_price = quote.get("current_price", 0)
+                    volume = quote.get("volume", 0)
+                    change_rate = quote.get("change_rate", 0)
                 else:
-                    # 데이터가 없으면 indicators에서 가져오기
-                    current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
-                    volume = int(it.indicators.VOL if hasattr(it.indicators, 'VOL') else 0)
-                    change_rate = 0.0
+                    # 실패 시 OHLCV 데이터로 계산
+                    df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터
+                    if not df.empty and len(df) >= 2:
+                        latest = df.iloc[-1]
+                        prev_close = df.iloc[-2]["close"]
+                        
+                        # 현재가와 거래량
+                        current_price = float(latest["close"])
+                        volume = int(latest["volume"])
+                        
+                        # 등락률 계산 (전일 종가 대비)
+                        if prev_close > 0:
+                            change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
+                        else:
+                            change_rate = 0.0
+                    else:
+                        # 데이터가 없으면 indicators에서 가져오기
+                        current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
+                        volume = int(it.indicators.VOL if hasattr(it.indicators, 'VOL') else 0)
+                        change_rate = 0.0
             except Exception as e:
                 print(f"⚠️ {it.ticker} 데이터 가져오기 실패: {e}")
                 # 실패 시 indicators에서 가져오기
@@ -292,6 +299,7 @@ def execute_scan(kospi_limit: int = None, kosdaq_limit: int = None,
         _save_snapshot_db(resp.as_of, scan_items, api)
     
     return resp
+
 
 
 

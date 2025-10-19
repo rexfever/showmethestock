@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import NoticePopup from '../components/NoticePopup';
 
 export default function HomePage() {
   const router = useRouter();
@@ -141,8 +140,6 @@ export default function HomePage() {
           </div>
         )}
         
-        {/* 공지사항 팝업 */}
-        <NoticePopup />
       </div>
     </>
   );
