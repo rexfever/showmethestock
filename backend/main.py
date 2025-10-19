@@ -1544,7 +1544,7 @@ def get_latest_scan_from_db():
         cur = conn.cursor()
         
         # 오늘 날짜 확인
-        today = datetime.now().strftime('%Y%m%d')
+        today = datetime.now().strftime('%Y-%m-%d')
         
         # 오늘 데이터가 있는지 확인
         cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ?", (today,))
