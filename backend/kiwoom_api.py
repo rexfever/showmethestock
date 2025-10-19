@@ -363,26 +363,29 @@ class KiwoomAPI:
             }
         
         try:
-            # 키움 API에서 종목 정보 조회 (등락률 포함)
-            api_id = config.kiwoom_tr_stockinfo_id
-            path = config.kiwoom_tr_stockinfo_path
-            
-            # 종목별 상세 정보 조회를 위한 API 호출
-            # 실제 키움 API 스펙에 맞게 수정 필요
-            payload = {"stk_cd": code}
-            data = self._post(api_id, path, payload)
-            
-            if data.get("rt_cd") == "0" or data.get("return_code") == 0:
-                # 응답에서 등락률 정보 추출
-                stock_info = data.get("output", {}) or data.get("data", {})
+            # OHLCV 데이터에서 등락률 계산 (기존 방식 사용)
+            df = self.get_ohlcv(code, 2)  # 최근 2일 데이터
+            if not df.empty and len(df) >= 2:
+                latest = df.iloc[-1]
+                prev_close = df.iloc[-2]["close"]
+                
+                current_price = float(latest["close"])
+                volume = int(latest["volume"])
+                
+                # 등락률 계산 (전일 종가 대비)
+                if prev_close > 0:
+                    change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
+                else:
+                    change_rate = 0.0
+                
                 return {
-                    "current_price": float(stock_info.get("stck_prpr", 0)),
-                    "change_rate": float(stock_info.get("prdy_vrss_ctrt", 0)),  # 전일 대비 등락률
-                    "volume": int(stock_info.get("acml_vol", 0)),
-                    "market_cap": int(stock_info.get("hts_avls", 0))
+                    "current_price": current_price,
+                    "change_rate": change_rate,
+                    "volume": volume,
+                    "market_cap": 0  # 시가총액은 별도 조회 필요
                 }
             else:
-                return {"error": "API 호출 실패"}
+                return {"error": "OHLCV 데이터 없음"}
                 
         except Exception as e:
             print(f"⚠️ {code} 종목 정보 조회 실패: {e}")

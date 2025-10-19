@@ -20,6 +20,32 @@ from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, Analy
 from utils import is_code, normalize_code_or_name
 from kakao import send_alert, format_scan_message, format_scan_alert_message
 
+# 공통 함수: scan_rank 테이블 생성
+def create_scan_rank_table(cur):
+    """scan_rank 테이블을 최신 스키마로 생성"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS scan_rank(
+            date TEXT,
+            code TEXT,
+            name TEXT,
+            score REAL,
+            score_label TEXT,
+            close_price REAL,
+            volume INTEGER,
+            change_rate REAL,
+            market TEXT,
+            strategy TEXT,
+            indicators TEXT,
+            trend TEXT,
+            flags TEXT,
+            details TEXT,
+            returns TEXT,
+            recurrence TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(date, code)
+        )
+    """)
+
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
 from services.report_generator import report_generator
@@ -157,28 +183,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
         cur = conn.cursor()
         
         # 최신 스키마로 테이블 생성
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS scan_rank(
-                date TEXT,
-                code TEXT,
-                name TEXT,
-                score REAL,
-                score_label TEXT,
-                close_price REAL,
-                volume INTEGER,
-                change_rate REAL,
-                market TEXT,
-                strategy TEXT,
-                indicators TEXT,
-                trend TEXT,
-                flags TEXT,
-                details TEXT,
-                returns TEXT,
-                recurrence TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY(date, code)
-            )
-        """)
+        create_scan_rank_table(cur)
         
         rows = []
         for it in items:
@@ -189,6 +194,16 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
             change_rate = 0.0  # 기본값
             market = ''  # 기본값
             strategy = ''  # 기본값
+            
+            # 키움 API에서 종목 정보 직접 조회 (등락률 포함)
+            try:
+                quote = api.get_stock_quote(it.ticker)
+                if "error" not in quote:
+                    close_price = quote.get("current_price", close_price)
+                    volume = quote.get("volume", volume)
+                    change_rate = quote.get("change_rate", change_rate)
+            except Exception as e:
+                pass  # 조회 실패 시 기본값 사용
             
             # JSON 필드들
             indicators_json = json.dumps(it.indicators.__dict__ if hasattr(it.indicators, '__dict__') else {}, ensure_ascii=False)
@@ -205,7 +220,6 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
                 returns_json, recurrence_json
             ))
         
-        print(f"💾 {len(rows)}개 레코드 삽입 시도")
         cur.executemany("""
             INSERT OR REPLACE INTO scan_rank(
                 date, code, name, score, score_label, close_price, volume, change_rate, 
@@ -257,7 +271,6 @@ def _init_positions_table():
 
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
-    print(f"🔍 스캔 API 호출: save_snapshot={save_snapshot}, date={date}")
     kp = kospi_limit or config.universe_kospi
     kd = kosdaq_limit or config.universe_kosdaq
     kospi = api.get_top_codes('KOSPI', kp)
@@ -372,38 +385,47 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         enhanced_rank = []
         for it in scan_items:
             try:
-                # 최신 OHLCV 데이터 가져오기 (스냅샷 생성 시점)
-                df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터 (전일 대비 변동률 계산용)
-                if not df.empty:
-                    latest = df.iloc[-1]
-                    prev_close = df.iloc[-2]["close"] if len(df) > 1 else latest["open"]
-                    
-                    # 변동률 계산 (전일 종가 대비)
-                    if prev_close != 0:
-                        change_rate = round(((latest["close"] - prev_close) / prev_close) * 100, 2)
-                    else:
-                        change_rate = 0
-                    
-                    enhanced_item = {
-                        'ticker': it.ticker,
-                        'name': it.name,
-                        'score': it.score,
-                        'score_label': it.score_label,
-                        'close_price': int(latest["close"]),  # 종가
-                        'volume': int(latest["volume"]),      # 거래량
-                        'change_rate': change_rate,           # 변동률
-                    }
+                # 키움 API에서 종목 정보 직접 조회 (등락률 포함)
+                print(f"🔍 {it.ticker} 등락률 조회 중...")
+                quote = api.get_stock_quote(it.ticker)
+                print(f"📊 {it.ticker} 조회 결과: {quote}")
+                if "error" not in quote:
+                    current_price = quote.get("current_price", 0)
+                    volume = quote.get("volume", 0)
+                    change_rate = quote.get("change_rate", 0)
+                    # 데이터베이스 저장용 변수 업데이트
+                    close_price = current_price
+                    volume = volume
+                    change_rate = change_rate
                 else:
-                    # 데이터 없을 때 기본값
-                    enhanced_item = {
-                        'ticker': it.ticker,
-                        'name': it.name,
-                        'score': it.score,
-                        'score_label': it.score_label,
-                        'close_price': 0,
-                        'volume': 0,
-                        'change_rate': 0,
-                    }
+                    # 실패 시 OHLCV 데이터로 계산
+                    df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터 (전일 대비 변동률 계산용)
+                    if not df.empty:
+                        latest = df.iloc[-1]
+                        prev_close = df.iloc[-2]["close"] if len(df) > 1 else latest["open"]
+                        
+                        # 변동률 계산 (전일 종가 대비)
+                        if prev_close != 0:
+                            change_rate = round(((latest["close"] - prev_close) / prev_close) * 100, 2)
+                        else:
+                            change_rate = 0
+                        
+                        current_price = int(latest["close"])
+                        volume = int(latest["volume"])
+                    else:
+                        current_price = 0
+                        volume = 0
+                        change_rate = 0
+                
+                enhanced_item = {
+                    'ticker': it.ticker,
+                    'name': it.name,
+                    'score': it.score,
+                    'score_label': it.score_label,
+                    'close_price': int(current_price),  # 종가
+                    'volume': int(volume),              # 거래량
+                    'change_rate': change_rate,         # 변동률
+                }
             except Exception as e:
                 # API 호출 실패시 기본값
                 enhanced_item = {
@@ -565,7 +587,7 @@ def list_snapshots():
         try:
             conn = sqlite3.connect(_db_path())
             cur = conn.cursor()
-            cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+            create_scan_rank_table(cur)
             for row in cur.execute("SELECT date, COUNT(1) FROM scan_rank GROUP BY date"):
                 date, cnt = row
                 # 이미 파일 항목이 있으면 rank_count만 업데이트
@@ -591,7 +613,7 @@ def backfill_snapshots():
     try:
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
+        create_scan_rank_table(cur)
         for fn in os.listdir(SNAPSHOT_DIR):
             if not fn.startswith('scan-') or not fn.endswith('.json'):
                 continue
@@ -1532,7 +1554,7 @@ async def get_latest_scan():
         if today_count > 0:
             # 오늘 데이터가 있으면 오늘 데이터 사용
             latest_date = today
-                    else:
+        else:
             # 오늘 데이터가 없으면 가장 최신 날짜 사용 (전날 또는 그 이전)
             cur.execute("SELECT MAX(date) FROM scan_rank")
             latest_date = cur.fetchone()[0]
@@ -1569,14 +1591,9 @@ async def get_latest_scan():
             try:
                 from kiwoom_api import KiwoomAPI
                 kiwoom = KiwoomAPI()
-                ohlcv_data = kiwoom.get_ohlcv(code, "D", 2)  # 최근 2일 데이터
-                if ohlcv_data and len(ohlcv_data) >= 2:
-                    current_price = float(ohlcv_data[0]["close"])
-                    prev_close = float(ohlcv_data[1]["close"])
-                    if prev_close > 0:
-                        real_time_change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
-                    else:
-                        real_time_change_rate = change_rate
+                quote = kiwoom.get_stock_quote(code)
+                if "error" not in quote:
+                    real_time_change_rate = quote.get("change_rate", change_rate)
                 else:
                     real_time_change_rate = change_rate
             except Exception as e:
@@ -2445,8 +2462,8 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
         """, (start_date, end_date))
         
         rows = cursor.fetchall()
-    conn.close()
-    
+        conn.close()
+        
         if not rows:
             return {
                 "ok": True,
@@ -2761,7 +2778,7 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         conn.close()
         
         if not rows:
-        return {
+            return {
             "ok": True,
             "data": {
                     "total_stocks": 0,

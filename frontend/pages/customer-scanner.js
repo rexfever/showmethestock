@@ -50,7 +50,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         setRecurringStocks({});
       }
     } catch (error) {
-      console.error('재등장 종목 조회 실패:', error);
       setRecurringStocks({});
     }
   }, []);
@@ -68,7 +67,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     try {
       const config = getConfig();
       const base = config.backendUrl;
-      console.log('API 호출 URL:', `${base}/latest-scan`);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
@@ -86,36 +84,26 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       
       clearTimeout(timeoutId);
       
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('최신 스캔 결과:', data);
-      console.log('data.file 값:', data.file);
-      console.log('data.ok 값:', data.ok);
-      console.log('data.data 값:', data.data);
       
       if (data.ok && data.data) {
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
-        console.log('설정할 scanFile 값:', data.file);
         setScanResults(items);
         setScanFile(data.file || '');
-        console.log('받은 scan_date:', data.data.scan_date);
         setScanDate(data.data.scan_date || '');
         setError(null);
       } else {
         const errorMsg = data.error || '스캔 결과 조회 실패';
-        console.error('스캔 결과 조회 실패:', errorMsg);
         setError(errorMsg);
         setScanResults([]);
       }
     } catch (error) {
-      console.error('스캔 결과 조회 실패:', error);
       if (error.name === 'AbortError') {
         setError('요청 시간이 초과되었습니다. 다시 시도해주세요.');
       } else if (error.message.includes('Failed to fetch')) {
@@ -146,8 +134,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasSSRData) {
-      console.log('SSR 데이터 사용, 클라이언트 API 호출 생략');
-      console.log('SSR scanFile:', initialScanFile);
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
       setError(null);
@@ -228,7 +214,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
                   {mounted && scanDate ? (() => {
-                    console.log('scanDate 값:', scanDate);
                     // YYYYMMDD 형식을 YYYY년 M월 D일 형식으로 변환
                     const year = scanDate.substring(0, 4);
                     const month = parseInt(scanDate.substring(4, 6));
@@ -386,9 +371,9 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                   </div>
                   <button 
                     className="px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
-                    onClick={() => addToPortfolio(item.ticker, item.name)}
+                    onClick={() => router.push(`/stock-analysis?ticker=${item.ticker}`)}
                   >
-                    관심등록
+                    상세분석
                   </button>
                 </div>
               </div>
@@ -430,7 +415,6 @@ export async function getServerSideProps() {
       };
     }
   } catch (error) {
-    console.error('서버에서 스캔 결과 조회 실패:', error);
   }
   
   return {

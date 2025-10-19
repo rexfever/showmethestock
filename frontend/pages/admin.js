@@ -57,7 +57,6 @@ export default function AdminDashboard() {
         alert(`분석 실패: ${data.error}`);
       }
     } catch (error) {
-      console.error('분석 오류:', error);
       alert('분석 중 오류가 발생했습니다.');
     } finally {
       setAnalysisLoading(false);
@@ -92,7 +91,6 @@ export default function AdminDashboard() {
         setUsers(usersData.users);
       }
     } catch (error) {
-      console.error('관리자 데이터 조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -109,10 +107,8 @@ export default function AdminDashboard() {
       if (data.ok) {
         setScanDates(data.dates || []);
       } else {
-        console.error('스캔 날짜 가져오기 실패:', data.error);
       }
     } catch (error) {
-      console.error('스캔 날짜 가져오기 실패:', error);
     }
   };
 
@@ -141,7 +137,6 @@ export default function AdminDashboard() {
         alert(`재스캔 실패: ${data.error || '알 수 없는 오류'}`);
       }
     } catch (error) {
-      console.error('재스캔 오류:', error);
       alert('재스캔 중 오류가 발생했습니다.');
     } finally {
       setRescanLoading(false);
@@ -176,7 +171,6 @@ export default function AdminDashboard() {
         alert(`삭제 실패: ${data.error || '알 수 없는 오류'}`);
       }
     } catch (error) {
-      console.error('삭제 오류:', error);
       alert('삭제 중 오류가 발생했습니다.');
     } finally {
       setDeleteLoading(false);
