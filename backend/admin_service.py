@@ -191,9 +191,13 @@ class AdminService:
                 recent_users.append({
                     "id": row[0],
                     "email": row[1],
-                    "name": row[2],
-                    "provider": row[3],
-                    "membership_tier": row[4],
+                    "name": row[2] or "이름 없음",  # None 값 처리
+                    "provider": row[3] or "local",  # None 값 처리
+                    "provider_id": f"{row[3] or 'local'}_{row[0]}",  # provider_id 추가
+                    "membership_tier": row[4] or "free",  # None 값 처리
+                    "subscription_status": "active",  # 기본값
+                    "is_admin": False,  # 기본값
+                    "is_active": True,  # 기본값
                     "created_at": row[5]
                 })
             
