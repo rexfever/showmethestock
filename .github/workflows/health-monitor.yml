@@ -1,0 +1,401 @@
+name: Health Monitor
+
+on:
+  schedule:
+    # 매 5분마다 실행
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      check-duration:
+        description: 'Health check duration in minutes'
+        required: false
+        default: '5'
+        type: string
+
+env:
+  HEALTH_CHECK_INTERVAL: 30  # 30초마다 체크
+  MAX_FAILURES: 3           # 최대 실패 횟수
+  CHECK_DURATION: ${{ github.event.inputs.check-duration || '5' }}
+
+jobs:
+  # 1. 현재 환경 확인
+  check-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      current-env: ${{ steps.detect-env.outputs.current-env }}
+      backend-port: ${{ steps.detect-env.outputs.backend-port }}
+      frontend-port: ${{ steps.detect-env.outputs.frontend-port }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Detect current environment
+      id: detect-env
+      run: |
+        echo "🔍 현재 환경 감지 중..."
+        
+        # 현재 환경 확인
+        ENV_INFO=$(ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          if curl -s http://localhost:8010/health > /dev/null 2>&1; then
+            echo "blue:8010:3000"
+          elif curl -s http://localhost:8011/health > /dev/null 2>&1; then
+            echo "green:8011:3001"
+          else
+            echo "none:0:0"
+          fi
+        ')
+        
+        CURRENT_ENV=$(echo $ENV_INFO | cut -d: -f1)
+        BACKEND_PORT=$(echo $ENV_INFO | cut -d: -f2)
+        FRONTEND_PORT=$(echo $ENV_INFO | cut -d: -f3)
+        
+        echo "current-env=$CURRENT_ENV" >> $GITHUB_OUTPUT
+        echo "backend-port=$BACKEND_PORT" >> $GITHUB_OUTPUT
+        echo "frontend-port=$FRONTEND_PORT" >> $GITHUB_OUTPUT
+        
+        echo "📍 현재 환경: $CURRENT_ENV"
+        echo "🔌 백엔드 포트: $BACKEND_PORT"
+        echo "🔌 프론트엔드 포트: $FRONTEND_PORT"
+
+  # 2. 헬스체크 실행
+  health-check:
+    runs-on: ubuntu-latest
+    needs: check-environment
+    if: needs.check-environment.outputs.current-env != 'none'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Run health checks
+      run: |
+        echo "🏥 헬스체크 시작..."
+        echo "환경: ${{ needs.check-environment.outputs.current-env }}"
+        echo "백엔드 포트: ${{ needs.check-environment.outputs.backend-port }}"
+        echo "프론트엔드 포트: ${{ needs.check-environment.outputs.frontend-port }}"
+        echo "체크 지속 시간: ${{ env.CHECK_DURATION }}분"
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          set -e
+          
+          CURRENT_ENV="${{ needs.check-environment.outputs.current-env }}"
+          BACKEND_PORT="${{ needs.check-environment.outputs.backend-port }}"
+          FRONTEND_PORT="${{ needs.check-environment.outputs.frontend-port }}"
+          CHECK_DURATION="${{ env.CHECK_DURATION }}"
+          HEALTH_CHECK_INTERVAL="${{ env.HEALTH_CHECK_INTERVAL }}"
+          MAX_FAILURES="${{ env.MAX_FAILURES }}"
+          
+          # 헬스체크 함수
+          check_backend() {
+            if curl -s -f http://localhost:$BACKEND_PORT/health > /dev/null 2>&1; then
+              return 0
+            else
+              return 1
+            fi
+          }
+          
+          check_frontend() {
+            if curl -s -f http://localhost:$FRONTEND_PORT > /dev/null 2>&1; then
+              return 0
+            else
+              return 1
+            fi
+          }
+          
+          check_external() {
+            if curl -s -f http://sohntech.ai.kr > /dev/null 2>&1; then
+              return 0
+            else
+              return 1
+            fi
+          }
+          
+          # 헬스체크 실행
+          END_TIME=$(($(date +%s) + CHECK_DURATION * 60))
+          FAILURE_COUNT=0
+          CHECK_COUNT=0
+          
+          echo "⏰ 헬스체크 시작: $(date)"
+          echo "⏰ 헬스체크 종료 예정: $(date -d @$END_TIME)"
+          
+          while [ $(date +%s) -lt $END_TIME ]; do
+            CHECK_COUNT=$((CHECK_COUNT + 1))
+            CURRENT_TIME=$(date)
+            
+            echo "🔍 헬스체크 #$CHECK_COUNT ($CURRENT_TIME)"
+            
+            # 백엔드 체크
+            if check_backend; then
+              echo "  ✅ 백엔드: 정상"
+            else
+              echo "  ❌ 백엔드: 실패"
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+            fi
+            
+            # 프론트엔드 체크
+            if check_frontend; then
+              echo "  ✅ 프론트엔드: 정상"
+            else
+              echo "  ❌ 프론트엔드: 실패"
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+            fi
+            
+            # 외부 접근 체크
+            if check_external; then
+              echo "  ✅ 외부 접근: 정상"
+            else
+              echo "  ❌ 외부 접근: 실패"
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+            fi
+            
+            # 응답 시간 측정
+            BACKEND_TIME=$(curl -s -w "%{time_total}" -o /dev/null http://localhost:$BACKEND_PORT/health 2>/dev/null || echo "N/A")
+            FRONTEND_TIME=$(curl -s -w "%{time_total}" -o /dev/null http://localhost:$FRONTEND_PORT 2>/dev/null || echo "N/A")
+            EXTERNAL_TIME=$(curl -s -w "%{time_total}" -o /dev/null http://sohntech.ai.kr 2>/dev/null || echo "N/A")
+            
+            echo "  ⏱️ 응답 시간: 백엔드=${BACKEND_TIME}s, 프론트엔드=${FRONTEND_TIME}s, 외부=${EXTERNAL_TIME}s"
+            
+            # 실패 횟수 확인
+            if [ $FAILURE_COUNT -ge $MAX_FAILURES ]; then
+              echo "❌ 최대 실패 횟수 도달 ($FAILURE_COUNT/$MAX_FAILURES)"
+              echo "🚨 서비스 장애 감지!"
+              exit 1
+            fi
+            
+            # 다음 체크까지 대기
+            if [ $(date +%s) -lt $END_TIME ]; then
+              echo "  ⏳ 다음 체크까지 $HEALTH_CHECK_INTERVAL초 대기..."
+              sleep $HEALTH_CHECK_INTERVAL
+            fi
+          done
+          
+          echo "🎉 헬스체크 완료!"
+          echo "📊 체크 횟수: $CHECK_COUNT"
+          echo "📊 실패 횟수: $FAILURE_COUNT"
+          echo "📊 성공률: $(( (CHECK_COUNT * 3 - FAILURE_COUNT) * 100 / (CHECK_COUNT * 3) ))%"
+        '
+
+  # 3. 데이터베이스 상태 확인
+  database-check:
+    runs-on: ubuntu-latest
+    needs: check-environment
+    if: needs.check-environment.outputs.current-env != 'none'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Check database status
+      run: |
+        echo "💾 데이터베이스 상태 확인 중..."
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          cd /home/ubuntu/showmethestock/backend
+          
+          # DB 파일 존재 확인
+          DB_FILES=("snapshots.db" "portfolio.db" "email_verifications.db" "news_data.db")
+          
+          echo "📁 데이터베이스 파일 상태:"
+          for db_file in "${DB_FILES[@]}"; do
+            if [ -f "$db_file" ]; then
+              SIZE=$(du -h "$db_file" | cut -f1)
+              echo "  ✅ $db_file: $SIZE"
+            else
+              echo "  ❌ $db_file: 파일 없음"
+            fi
+          done
+          
+          # DB 연결 테스트
+          echo "🔗 데이터베이스 연결 테스트:"
+          if python3 -c "
+import sqlite3
+import sys
+
+try:
+    # snapshots.db 연결 테스트
+    conn = sqlite3.connect(\"snapshots.db\")
+    cursor = conn.cursor()
+    cursor.execute(\"SELECT COUNT(*) FROM scan_rank\")
+    count = cursor.fetchone()[0]
+    conn.close()
+    print(f\"✅ snapshots.db: {count}개 레코드\")
+except Exception as e:
+    print(f\"❌ snapshots.db: {e}\")
+    sys.exit(1)
+
+try:
+    # portfolio.db 연결 테스트
+    conn = sqlite3.connect(\"portfolio.db\")
+    cursor = conn.cursor()
+    cursor.execute(\"SELECT COUNT(*) FROM portfolio\")
+    count = cursor.fetchone()[0]
+    conn.close()
+    print(f\"✅ portfolio.db: {count}개 레코드\")
+except Exception as e:
+    print(f\"❌ portfolio.db: {e}\")
+
+try:
+    # email_verifications.db 연결 테스트
+    conn = sqlite3.connect(\"email_verifications.db\")
+    cursor = conn.cursor()
+    cursor.execute(\"SELECT COUNT(*) FROM email_verifications\")
+    count = cursor.fetchone()[0]
+    conn.close()
+    print(f\"✅ email_verifications.db: {count}개 레코드\")
+except Exception as e:
+    print(f\"❌ email_verifications.db: {e}\")
+
+try:
+    # news_data.db 연결 테스트
+    conn = sqlite3.connect(\"news_data.db\")
+    cursor = conn.cursor()
+    cursor.execute(\"SELECT COUNT(*) FROM news_data\")
+    count = cursor.fetchone()[0]
+    conn.close()
+    print(f\"✅ news_data.db: {count}개 레코드\")
+except Exception as e:
+    print(f\"❌ news_data.db: {e}\")
+" 2>/dev/null; then
+            echo "🎉 모든 데이터베이스 연결 정상"
+          else
+            echo "❌ 일부 데이터베이스 연결 실패"
+            exit 1
+          fi
+        '
+
+  # 4. 시스템 리소스 확인
+  system-resources:
+    runs-on: ubuntu-latest
+    needs: check-environment
+    if: needs.check-environment.outputs.current-env != 'none'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Check system resources
+      run: |
+        echo "💻 시스템 리소스 확인 중..."
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          echo "🖥️ 시스템 정보:"
+          
+          # CPU 사용률
+          CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk "{print \$2}" | awk -F"%" "{print \$1}")
+          echo "  💾 CPU 사용률: ${CPU_USAGE}%"
+          
+          # 메모리 사용률
+          MEMORY_INFO=$(free | grep Mem)
+          MEMORY_TOTAL=$(echo $MEMORY_INFO | awk "{print \$2}")
+          MEMORY_USED=$(echo $MEMORY_INFO | awk "{print \$3}")
+          MEMORY_USAGE=$((MEMORY_USED * 100 / MEMORY_TOTAL))
+          echo "  🧠 메모리 사용률: ${MEMORY_USAGE}%"
+          
+          # 디스크 사용률
+          DISK_USAGE=$(df /home/ubuntu | tail -1 | awk "{print \$5}" | sed "s/%//")
+          echo "  💽 디스크 사용률: ${DISK_USAGE}%"
+          
+          # 로드 평균
+          LOAD_AVG=$(uptime | awk -F"load average:" "{print \$2}" | awk "{print \$1}" | sed "s/,//")
+          echo "  ⚖️ 로드 평균: $LOAD_AVG"
+          
+          # 서비스 상태
+          echo "🔧 서비스 상태:"
+          CURRENT_ENV="${{ needs.check-environment.outputs.current-env }}"
+          
+          if sudo systemctl is-active --quiet stock-finder-backend-$CURRENT_ENV; then
+            echo "  ✅ 백엔드 서비스: 실행 중"
+          else
+            echo "  ❌ 백엔드 서비스: 중지됨"
+          fi
+          
+          if sudo systemctl is-active --quiet stock-finder-frontend-$CURRENT_ENV; then
+            echo "  ✅ 프론트엔드 서비스: 실행 중"
+          else
+            echo "  ❌ 프론트엔드 서비스: 중지됨"
+          fi
+          
+          if sudo systemctl is-active --quiet nginx; then
+            echo "  ✅ Nginx: 실행 중"
+          else
+            echo "  ❌ Nginx: 중지됨"
+          fi
+          
+          # 경고 체크
+          WARNINGS=0
+          
+          if [ $CPU_USAGE -gt 80 ]; then
+            echo "  ⚠️ 경고: CPU 사용률이 높습니다 (${CPU_USAGE}%)"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+          
+          if [ $MEMORY_USAGE -gt 80 ]; then
+            echo "  ⚠️ 경고: 메모리 사용률이 높습니다 (${MEMORY_USAGE}%)"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+          
+          if [ $DISK_USAGE -gt 80 ]; then
+            echo "  ⚠️ 경고: 디스크 사용률이 높습니다 (${DISK_USAGE}%)"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+          
+          if [ $WARNINGS -eq 0 ]; then
+            echo "🎉 모든 시스템 리소스 정상"
+          else
+            echo "⚠️ $WARNINGS개의 경고가 있습니다"
+          fi
+        '
+
+  # 5. 모니터링 결과 요약
+  monitoring-summary:
+    runs-on: ubuntu-latest
+    needs: [check-environment, health-check, database-check, system-resources]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Generate monitoring summary
+      run: |
+        echo "📊 모니터링 결과 요약"
+        echo "========================"
+        
+        CURRENT_ENV="${{ needs.check-environment.outputs.current-env }}"
+        HEALTH_STATUS="${{ needs.health-check.result }}"
+        DATABASE_STATUS="${{ needs.database-check.result }}"
+        SYSTEM_STATUS="${{ needs.system-resources.result }}"
+        
+        echo "📍 현재 환경: $CURRENT_ENV"
+        echo "🏥 헬스체크: $HEALTH_STATUS"
+        echo "💾 데이터베이스: $DATABASE_STATUS"
+        echo "💻 시스템 리소스: $SYSTEM_STATUS"
+        
+        # 전체 상태 계산
+        if [ "$HEALTH_STATUS" = "success" ] && [ "$DATABASE_STATUS" = "success" ] && [ "$SYSTEM_STATUS" = "success" ]; then
+          OVERALL_STATUS="success"
+          echo "🎉 전체 시스템 상태: 정상"
+        else
+          OVERALL_STATUS="failure"
+          echo "❌ 전체 시스템 상태: 문제 있음"
+        fi
+        
+        # 모니터링 정보 저장
+        echo "{
+          \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+          \"environment\": \"$CURRENT_ENV\",
+          \"overall_status\": \"$OVERALL_STATUS\",
+          \"health_check\": \"$HEALTH_STATUS\",
+          \"database_check\": \"$DATABASE_STATUS\",
+          \"system_resources\": \"$SYSTEM_STATUS\",
+          \"github_workflow\": \"${{ github.workflow }}\",
+          \"github_run_id\": \"${{ github.run_id }}\"
+        }" > monitoring-summary.json
+        
+        echo "📄 모니터링 요약이 monitoring-summary.json에 저장되었습니다."
+        
+        # 상태에 따른 종료 코드
+        if [ "$OVERALL_STATUS" = "failure" ]; then
+          exit 1
+        fi

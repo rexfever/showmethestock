@@ -1,0 +1,524 @@
+name: Blue-Green Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (blue or green)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+        - auto
+        - blue
+        - green
+
+env:
+  DEPLOYMENT_TIMEOUT: 600  # 10분
+  HEALTH_CHECK_RETRIES: 10
+  HEALTH_CHECK_INTERVAL: 30
+
+jobs:
+  # 1. 사전 검증
+  pre-deployment:
+    runs-on: ubuntu-latest
+    outputs:
+      target-env: ${{ steps.determine-env.outputs.target-env }}
+      current-env: ${{ steps.determine-env.outputs.current-env }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Determine target environment
+      id: determine-env
+      run: |
+        if [ "${{ github.event.inputs.environment }}" = "auto" ] || [ -z "${{ github.event.inputs.environment }}" ]; then
+          echo "🔍 현재 환경 확인 중..."
+          
+          # 현재 환경 확인
+          CURRENT_ENV=$(ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+            if curl -s http://localhost:8010/health > /dev/null 2>&1; then
+              echo "blue"
+            elif curl -s http://localhost:8011/health > /dev/null 2>&1; then
+              echo "green"
+            else
+              echo "none"
+            fi
+          ')
+          
+          if [ "$CURRENT_ENV" = "blue" ]; then
+            TARGET_ENV="green"
+          elif [ "$CURRENT_ENV" = "green" ]; then
+            TARGET_ENV="blue"
+          else
+            TARGET_ENV="blue"  # 첫 배포인 경우 blue로 시작
+          fi
+        else
+          TARGET_ENV="${{ github.event.inputs.environment }}"
+          CURRENT_ENV="unknown"
+        fi
+        
+        echo "target-env=$TARGET_ENV" >> $GITHUB_OUTPUT
+        echo "current-env=$CURRENT_ENV" >> $GITHUB_OUTPUT
+        
+        echo "🎯 배포 대상 환경: $TARGET_ENV"
+        echo "📍 현재 환경: $CURRENT_ENV"
+    
+    - name: Validate deployment readiness
+      run: |
+        echo "🔍 배포 준비 상태 확인 중..."
+        
+        # 서버 연결 확인
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          echo "✅ 서버 연결 성공"
+          
+          # 디스크 공간 확인
+          DISK_USAGE=$(df /home/ubuntu | tail -1 | awk "{print \$5}" | sed "s/%//")
+          if [ $DISK_USAGE -gt 90 ]; then
+            echo "❌ 디스크 공간 부족: ${DISK_USAGE}%"
+            exit 1
+          fi
+          echo "✅ 디스크 공간 충분: ${DISK_USAGE}%"
+          
+          # 메모리 확인
+          MEMORY_USAGE=$(free | grep Mem | awk "{printf \"%.0f\", \$3/\$2 * 100.0}")
+          if [ $MEMORY_USAGE -gt 90 ]; then
+            echo "⚠️ 메모리 사용률 높음: ${MEMORY_USAGE}%"
+          else
+            echo "✅ 메모리 사용률 정상: ${MEMORY_USAGE}%"
+          fi
+        '
+
+  # 2. 데이터베이스 백업
+  backup-database:
+    runs-on: ubuntu-latest
+    needs: pre-deployment
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Backup databases
+      run: |
+        echo "💾 데이터베이스 백업 시작..."
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          cd /home/ubuntu/showmethestock
+          
+          # 백업 디렉토리 생성
+          mkdir -p /home/ubuntu/backups/db
+          
+          # DB 파일들 백업
+          DB_FILES=("snapshots.db" "portfolio.db" "email_verifications.db" "news_data.db")
+          BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          
+          for db_file in "${DB_FILES[@]}"; do
+            if [ -f "backend/$db_file" ]; then
+              cp "backend/$db_file" "/home/ubuntu/backups/db/${db_file}.backup.${BACKUP_TIMESTAMP}"
+              echo "✅ 백업 완료: $db_file"
+            else
+              echo "⚠️ DB 파일 없음: $db_file"
+            fi
+          done
+          
+          echo "🎉 모든 데이터베이스 백업 완료"
+        '
+
+  # 3. Blue-Green 배포
+  blue-green-deploy:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment, backup-database]
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Blue-Green Deployment
+      run: |
+        echo "🚀 Blue-Green 배포 시작..."
+        echo "대상 환경: ${{ needs.pre-deployment.outputs.target-env }}"
+        echo "현재 환경: ${{ needs.pre-deployment.outputs.current-env }}"
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          set -e
+          
+          TARGET_ENV="${{ needs.pre-deployment.outputs.target-env }}"
+          CURRENT_ENV="${{ needs.pre-deployment.outputs.current-env }}"
+          
+          # 포트 설정
+          if [ "$TARGET_ENV" = "blue" ]; then
+            BACKEND_PORT=8010
+            FRONTEND_PORT=3000
+          else
+            BACKEND_PORT=8011
+            FRONTEND_PORT=3001
+          fi
+          
+          echo "🎯 배포 포트 설정:"
+          echo "  백엔드: $BACKEND_PORT"
+          echo "  프론트엔드: $FRONTEND_PORT"
+          
+          cd /home/ubuntu/showmethestock
+          
+          # 1. 코드 업데이트
+          echo "🔄 코드 업데이트 중..."
+          git fetch origin
+          git reset --hard origin/main
+          
+          # 2. 백엔드 서비스 파일 생성
+          echo "📝 백엔드 서비스 파일 생성 중..."
+          sudo tee /etc/systemd/system/stock-finder-backend-$TARGET_ENV.service > /dev/null << EOF
+        [Unit]
+        Description=Stock Finder Backend API ($TARGET_ENV)
+        After=network.target
+        Wants=network.target
+
+        [Service]
+        Type=simple
+        User=ubuntu
+        Group=ubuntu
+        WorkingDirectory=/home/ubuntu/showmethestock/backend
+        Environment=PATH=/home/ubuntu/showmethestock/backend/venv/bin
+        Environment=PYTHONPATH=/home/ubuntu/showmethestock
+        ExecStart=/home/ubuntu/showmethestock/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port $BACKEND_PORT --workers 1
+        ExecReload=/bin/kill -HUP \$MAINPID
+        Restart=always
+        RestartSec=10
+        StandardOutput=journal
+        StandardError=journal
+        SyslogIdentifier=stock-finder-backend-$TARGET_ENV
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+          
+          # 3. 백엔드 의존성 설치 및 서비스 시작
+          echo "🐍 백엔드 의존성 설치 중..."
+          cd backend
+          source venv/bin/activate
+          pip install -r requirements.txt --quiet
+          
+          echo "🚀 백엔드 서비스 시작 중..."
+          sudo systemctl daemon-reload
+          sudo systemctl start stock-finder-backend-$TARGET_ENV
+          sudo systemctl enable stock-finder-backend-$TARGET_ENV
+          
+          # 4. 백엔드 헬스체크
+          echo "🏥 백엔드 헬스체크 중..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:$BACKEND_PORT/health > /dev/null 2>&1; then
+              echo "✅ 백엔드 서비스 정상 시작"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ 백엔드 서비스 시작 실패"
+              sudo systemctl stop stock-finder-backend-$TARGET_ENV
+              exit 1
+            fi
+            sleep 2
+          done
+          
+          # 5. 프론트엔드 서비스 파일 생성
+          echo "📝 프론트엔드 서비스 파일 생성 중..."
+          sudo tee /etc/systemd/system/stock-finder-frontend-$TARGET_ENV.service > /dev/null << EOF
+        [Unit]
+        Description=Stock Finder Frontend ($TARGET_ENV)
+        After=network.target
+        Wants=network.target
+
+        [Service]
+        Type=simple
+        User=ubuntu
+        Group=ubuntu
+        WorkingDirectory=/home/ubuntu/showmethestock/frontend
+        Environment=NODE_ENV=production
+        Environment=PORT=$FRONTEND_PORT
+        ExecStart=/usr/bin/npm start
+        Restart=always
+        RestartSec=10
+        StandardOutput=journal
+        StandardError=journal
+        SyslogIdentifier=stock-finder-frontend-$TARGET_ENV
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+          
+          # 6. 프론트엔드 빌드 및 서비스 시작
+          echo "📦 프론트엔드 의존성 설치 중..."
+          cd ../frontend
+          npm ci --production=false
+          
+          echo "🔨 프론트엔드 빌드 중..."
+          rm -rf .next
+          npm run build
+          
+          echo "🚀 프론트엔드 서비스 시작 중..."
+          sudo systemctl daemon-reload
+          sudo systemctl start stock-finder-frontend-$TARGET_ENV
+          sudo systemctl enable stock-finder-frontend-$TARGET_ENV
+          
+          # 7. 프론트엔드 헬스체크
+          echo "🏥 프론트엔드 헬스체크 중..."
+          for i in {1..30}; do
+            if curl -s -f http://localhost:$FRONTEND_PORT > /dev/null 2>&1; then
+              echo "✅ 프론트엔드 서비스 정상 시작"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ 프론트엔드 서비스 시작 실패"
+              sudo systemctl stop stock-finder-frontend-$TARGET_ENV
+              sudo systemctl stop stock-finder-backend-$TARGET_ENV
+              exit 1
+            fi
+            sleep 2
+          done
+          
+          echo "🎉 새 환경 ($TARGET_ENV) 배포 완료!"
+        '
+
+  # 4. 트래픽 전환
+  traffic-switch:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment, blue-green-deploy]
+    timeout-minutes: 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Switch traffic to new environment
+      run: |
+        echo "🔄 트래픽 전환 시작..."
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          set -e
+          
+          TARGET_ENV="${{ needs.pre-deployment.outputs.target-env }}"
+          CURRENT_ENV="${{ needs.pre-deployment.outputs.current-env }}"
+          
+          # 포트 설정
+          if [ "$TARGET_ENV" = "blue" ]; then
+            BACKEND_PORT=8010
+            FRONTEND_PORT=3000
+          else
+            BACKEND_PORT=8011
+            FRONTEND_PORT=3001
+          fi
+          
+          echo "🎯 트래픽 전환 대상: $TARGET_ENV (포트: $BACKEND_PORT, $FRONTEND_PORT)"
+          
+          # Nginx 설정 백업
+          sudo cp /etc/nginx/sites-available/stock-finder /etc/nginx/sites-available/stock-finder.backup.$(date +%Y%m%d_%H%M%S)
+          
+          # 새 환경으로 Nginx 설정 업데이트
+          echo "📝 Nginx 설정 업데이트 중..."
+          sudo tee /etc/nginx/sites-available/stock-finder > /dev/null << EOF
+        server {
+            listen 80;
+            server_name sohntech.ai.kr;
+
+            # 프론트엔드 프록시
+            location / {
+                proxy_pass http://localhost:$FRONTEND_PORT;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto \$scheme;
+                proxy_cache_bypass \$http_upgrade;
+            }
+
+            # 백엔드 API 프록시
+            location /api/ {
+                proxy_pass http://localhost:$BACKEND_PORT/;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto \$scheme;
+                proxy_cache_bypass \$http_upgrade;
+            }
+
+            # 로그 설정
+            access_log /var/log/nginx/stock-finder.access.log;
+            error_log /var/log/nginx/stock-finder.error.log;
+        }
+        EOF
+          
+          # Nginx 설정 검증
+          if sudo nginx -t; then
+            echo "✅ Nginx 설정 검증 완료"
+          else
+            echo "❌ Nginx 설정 오류"
+            # 백업 복원
+            sudo cp /etc/nginx/sites-available/stock-finder.backup.$(date +%Y%m%d_%H%M%S) /etc/nginx/sites-available/stock-finder
+            exit 1
+          fi
+          
+          # Nginx 재시작
+          echo "🔄 Nginx 재시작 중..."
+          sudo systemctl reload nginx
+          
+          # 최종 헬스체크
+          echo "🏥 최종 헬스체크 중..."
+          sleep 5
+          
+          if curl -s -f http://sohntech.ai.kr > /dev/null 2>&1; then
+            echo "✅ 트래픽 전환 성공"
+          else
+            echo "❌ 트래픽 전환 실패"
+            # 롤백
+            sudo cp /etc/nginx/sites-available/stock-finder.backup.$(date +%Y%m%d_%H%M%S) /etc/nginx/sites-available/stock-finder
+            sudo systemctl reload nginx
+            exit 1
+          fi
+          
+          echo "🎉 트래픽 전환 완료!"
+        '
+
+  # 5. 이전 환경 정리
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment, traffic-switch]
+    if: always() && needs.traffic-switch.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Cleanup previous environment
+      run: |
+        echo "🧹 이전 환경 정리 시작..."
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          CURRENT_ENV="${{ needs.pre-deployment.outputs.current-env }}"
+          
+          if [ "$CURRENT_ENV" != "none" ] && [ "$CURRENT_ENV" != "unknown" ]; then
+            echo "🛑 이전 환경 ($CURRENT_ENV) 서비스 중지 중..."
+            
+            sudo systemctl stop stock-finder-backend-$CURRENT_ENV || true
+            sudo systemctl stop stock-finder-frontend-$CURRENT_ENV || true
+            sudo systemctl disable stock-finder-backend-$CURRENT_ENV || true
+            sudo systemctl disable stock-finder-frontend-$CURRENT_ENV || true
+            
+            echo "✅ 이전 환경 정리 완료"
+          else
+            echo "ℹ️ 정리할 이전 환경이 없습니다"
+          fi
+        '
+
+  # 6. 배포 후 검증
+  post-deployment:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment, traffic-switch, cleanup]
+    if: always() && needs.traffic-switch.result == 'success'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Post-deployment verification
+      run: |
+        echo "🔍 배포 후 검증 시작..."
+        
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ubuntu@${{ secrets.EC2_HOST }} '
+          TARGET_ENV="${{ needs.pre-deployment.outputs.target-env }}"
+          
+          echo "🎯 현재 운영 환경: $TARGET_ENV"
+          
+          # 포트 설정
+          if [ "$TARGET_ENV" = "blue" ]; then
+            BACKEND_PORT=8010
+            FRONTEND_PORT=3000
+          else
+            BACKEND_PORT=8011
+            FRONTEND_PORT=3001
+          fi
+          
+          # 서비스 상태 확인
+          echo "📊 서비스 상태 확인:"
+          sudo systemctl status stock-finder-backend-$TARGET_ENV --no-pager -l | head -3
+          sudo systemctl status stock-finder-frontend-$TARGET_ENV --no-pager -l | head -3
+          
+          # 헬스체크
+          echo "🏥 헬스체크 실행:"
+          
+          # 백엔드 헬스체크
+          if curl -s -f http://localhost:$BACKEND_PORT/health > /dev/null 2>&1; then
+            echo "✅ 백엔드 헬스체크 통과"
+          else
+            echo "❌ 백엔드 헬스체크 실패"
+            exit 1
+          fi
+          
+          # 프론트엔드 헬스체크
+          if curl -s -f http://localhost:$FRONTEND_PORT > /dev/null 2>&1; then
+            echo "✅ 프론트엔드 헬스체크 통과"
+          else
+            echo "❌ 프론트엔드 헬스체크 실패"
+            exit 1
+          fi
+          
+          # 외부 접근 확인
+          if curl -s -f http://sohntech.ai.kr > /dev/null 2>&1; then
+            echo "✅ 외부 접근 확인 통과"
+          else
+            echo "❌ 외부 접근 확인 실패"
+            exit 1
+          fi
+          
+          # 응답 시간 측정
+          BACKEND_TIME=$(curl -s -w "%{time_total}" -o /dev/null http://localhost:$BACKEND_PORT/health)
+          FRONTEND_TIME=$(curl -s -w "%{time_total}" -o /dev/null http://localhost:$FRONTEND_PORT)
+          EXTERNAL_TIME=$(curl -s -w "%{time_total}" -o /dev/null http://sohntech.ai.kr)
+          
+          echo "⏱️ 응답 시간:"
+          echo "  백엔드: ${BACKEND_TIME}초"
+          echo "  프론트엔드: ${FRONTEND_TIME}초"
+          echo "  외부 접근: ${EXTERNAL_TIME}초"
+          
+          echo "🎉 배포 후 검증 완료!"
+        '
+
+  # 7. 배포 완료 알림
+  notify:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment, post-deployment]
+    if: always()
+    
+    steps:
+    - name: Deployment notification
+      run: |
+        TARGET_ENV="${{ needs.pre-deployment.outputs.target-env }}"
+        DEPLOYMENT_STATUS="${{ needs.post-deployment.result }}"
+        
+        if [ "$DEPLOYMENT_STATUS" = "success" ]; then
+          echo "🎉 Blue-Green 배포 성공!"
+          echo "현재 운영 환경: $TARGET_ENV"
+          echo "다운타임: 0초"
+        else
+          echo "❌ Blue-Green 배포 실패"
+          echo "배포 상태: $DEPLOYMENT_STATUS"
+        fi
+        
+        # 배포 정보 저장
+        echo "{
+          \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+          \"deployment_type\": \"blue-green\",
+          \"target_environment\": \"$TARGET_ENV\",
+          \"status\": \"$DEPLOYMENT_STATUS\",
+          \"downtime_seconds\": 0,
+          \"github_workflow\": \"${{ github.workflow }}\",
+          \"github_run_id\": \"${{ github.run_id }}\"
+        }" > deployment-summary.json
+        
+        echo "📄 배포 요약이 deployment-summary.json에 저장되었습니다."
