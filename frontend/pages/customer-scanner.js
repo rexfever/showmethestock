@@ -142,7 +142,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
     
     // 재등장 종목 조회
     fetchRecurringStocks();
-
+    
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasSSRData) {
       console.log('SSR 데이터 사용, 클라이언트 API 호출 생략');
@@ -238,12 +238,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
                       day: 'numeric',
                       weekday: 'short'
                     });
-                  })() : mounted ? new Date().toLocaleDateString('ko-KR', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    weekday: 'short'
-                  }) : '로딩 중...'}
+                  })() : '로딩 중...'}
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -254,7 +249,7 @@ export default function CustomerScanner({ initialData, initialScanFile }) {
               </div>
               
               {/* 오른쪽: 버튼 */}
-              <button
+          <button
                 onClick={() => router.push('/performance-report')}
                 className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
