@@ -1,514 +1,118 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [15853] using WatchFiles
-INFO:     Started server process [15862]
+INFO:     Started reloader process [93388] using WatchFiles
+INFO:     Started server process [93392]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:51510 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51583 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51585 - "OPTIONS /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51583 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51587 - "OPTIONS /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51585 - "GET /auth/me HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:51583 - "GET /auth/me HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:51589 - "GET /reports/available/weekly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51731 - "GET /reports/available/monthly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51733 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51734 - "GET /reports/available/yearly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51736 - "GET /reports/weekly/2025/8/1 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51738 - "GET /reports/available/weekly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51740 - "GET /reports/available/monthly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51742 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51744 - "GET /reports/available/yearly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51744 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
-카카오 콜백 요청: {'code': '1VCn7SiK8ZBTT1wcfOFu2jfD47L5Raj8V5Ka9tvVUb2gCSgKK48-0AAAAAQKDRTdAAABmfydZV9HueF-5ScOZw', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+INFO:     127.0.0.1:59491 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59515 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59517 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59519 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59515 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59517 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59515 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:59515 - "GET /reports/available/weekly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59517 - "GET /reports/available/monthly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59519 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59521 - "GET /reports/available/yearly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59539 - "GET /reports/weekly/2025/8/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59541 - "GET /reports/available/weekly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59543 - "GET /reports/available/monthly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59545 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59547 - "GET /reports/available/yearly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59549 - "GET /reports/weekly/2025/8/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59549 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
+카카오 콜백 요청: {'code': 'M4upqgdnGmK1FqMMOQ0fgTiwCiNDJ1utMtjapFhQF3BeVm-3wATERwAAAAQKFxAvAAABmfzskUpPBWDH3LuH7A', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
 카카오 토큰 응답 상태: 200
-카카오 토큰 응답 내용: {"access_token":"ulhZk_utxq6_PUIGKl6_a6PnhR9CM8ycAAAAAQoNIpkAAAGZ_J1rgrG7d-HwzTGR","token_type":"bearer","refresh_token":"07dUt472dgu6kPipBEvUT-5OIsVP_AD9AAAAAgoNIpkAAAGZ_J1rfbG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4Nzk3OTksImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4ODY5OTksImlhdCI6MTc2MDg3OTc5OSwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.fFcrOd0e10EthX8--BJj3jRO_cC6m5fyvUDrSlA-ZCa6N8iXF2WyT7p-PxCzCG2HS3qVuAxAAeW5Ggj-QLNzoSEyyJEIrnz_-CR9CCym4-iRmP9386Nf5x4N7UTUk_5BDMIhzR_GkEPRExUzymrrep0y6Ez4ShfGUj8VeYEiFkYEblT5I01hc4voBiGBTTOu3v-he4RX0L_yiC3_YFW-XXNBj_Q_rotgnje2VUP041dwmaaT_HFD5euy-TOTKEBRnQTIMJ7Mx8zrTPrmIHmdzBHQtA5TWV63FvgofgzJ-1_xU7Xa7G2zXhnJ5asB2E6R45_Zr93UXkDxcEwSKoK2Ow","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 토큰 응답 내용: {"access_token":"7rijeE8hDrqE6BRiPE0BnHrELYxspB0VAAAAAQoNIdkAAAGZ_OyaC7G7d-HwzTGR","token_type":"bearer","refresh_token":"TaMzXZew5hnk-LKsGXQraKSg-U_rCITHAAAAAgoNIdkAAAGZ_OyaBrG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4ODQ5ODgsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4OTIxODgsImlhdCI6MTc2MDg4NDk4OCwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.QxFtXPwU7UNHuRbly_IrEAyei371Kk0zG_QnqkF603dasONZDl6UsZokC47Do85GplcBrOa5-bjG8k8e4N5SQ0HtjLfIJYm_sqNawhtFKCfYtBWS7jFdfvF-cDnD9uoplMij2CXxbY-MD1O2mX4v1WpAOBNBv86F65iM511l3InzBCjhwVwNFKmKTBISw4SnDeD6mn8tnaKZgCWjdoVby8fYAMLvp0SxQksXbrmh5G7u2DizmQyFwPstHyQ-18RKFDdq4Odfud7HKA5RoPwxpvtmaT6MwSmkfQGVFeer9icgAtSd7nH0oaUyIZDH-KMvyxwQxgZ4SEq3BVx5Bmo4pA","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
 카카오 사용자 정보 응답 상태: 200
 카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
 사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
 사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
-기존 사용자 발견: email=emozero@naver.com, provider=kakao
-업데이트된 사용자: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 19, 11, 37, 5)
-사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 19, 11, 37, 5)
-마지막 로그인 시간 업데이트 완료
-INFO:     127.0.0.1:51742 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51780 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51845 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51845 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56021 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56039 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56088 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56088 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56088 - "OPTIONS /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56181 - "OPTIONS /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56088 - "GET /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56183 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56183 - "GET /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56500 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56568 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56568 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56595 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56663 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56663 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58090 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58432 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58496 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58559 - "GET /latest-scan HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 7개 매칭, 93개 필터링, 총 100개 중
-📊 Step 1 결과: 7개 종목
-✅ Step 1에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 1, 5개 종목
-🔍 055550 등락률 조회 중...
-📊 055550 조회 결과: {'current_price': 72700.0, 'change_rate': 2.25, 'volume': 1244136, 'market_cap': 0}
-🔍 082740 등락률 조회 중...
-📊 082740 조회 결과: {'current_price': 47750.0, 'change_rate': 1.06, 'volume': 1285221, 'market_cap': 0}
-🔍 278470 등락률 조회 중...
-📊 278470 조회 결과: {'current_price': 242500.0, 'change_rate': -2.22, 'volume': 488318, 'market_cap': 0}
-🔍 005690 등락률 조회 중...
-📊 005690 조회 결과: {'current_price': 12420.0, 'change_rate': -2.2, 'volume': 978167, 'market_cap': 0}
-🔍 034730 등락률 조회 중...
-📊 034730 조회 결과: {'current_price': 218500.0, 'change_rate': -5.62, 'volume': 994779, 'market_cap': 0}
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-19, 5개 항목
-✅ 데이터베이스 저장 완료: 2025-10-19
-INFO:     127.0.0.1:61427 - "OPTIONS /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61429 - "OPTIONS /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61427 - "GET /portfolio HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:61429 - "GET /portfolio HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:61449 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61429 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61427 - "OPTIONS /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61431 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61511 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61512 - "OPTIONS /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61431 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61429 - "GET /admin/users HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:61427 - "GET /admin/stats HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:61512 - "GET /admin/users HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:61431 - "GET /admin/stats HTTP/1.1" 401 Unauthorized
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [15862]
-INFO:     Started server process [46491]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:61531 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61622 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61622 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61702 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61704 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61704 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61944 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62072 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62121 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62392 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63155 - "GET /reports/available/weekly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63158 - "GET /reports/available/monthly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63160 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63162 - "GET /reports/available/yearly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63163 - "GET /reports/weekly/2025/8/1 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63165 - "GET /reports/available/weekly HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [46491]
-INFO:     Started server process [51521]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/1 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/3 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/4 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/3 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/4 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63200 - "GET /reports/weekly/2025/7/1 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63339 - "GET /reports/weekly/2025/7/3 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63374 - "GET /reports/weekly/2025/7/2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63414 - "GET /reports/monthly/2025/7 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63500 - "GET /reports/monthly/2025/8 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63524 - "GET /reports/monthly/2025/9 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63556 - "GET /reports/monthly/2025/10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63556 - "GET /reports/monthly/2025/9 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63622 - "GET /reports/monthly/2025/8 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63622 - "GET /reports/monthly/2025/7 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63622 - "GET /reports/monthly/2025/6 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63622 - "GET /reports/monthly/2025/7 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63622 - "GET /reports/quarterly/2025/1 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63622 - "GET /reports/quarterly/2025/3 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64011 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64087 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64087 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [51521]
-INFO:     Started server process [55615]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [55615]
-INFO:     Started server process [55727]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [55727]
-INFO:     Started server process [56185]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:64845 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64874 - "GET /latest-scan HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [56185]
-INFO:     Started server process [56628]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:64956 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "OPTIONS /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "GET /portfolio HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:64969 - "OPTIONS /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "GET /portfolio HTTP/1.1" 401 Unauthorized
-INFO:     127.0.0.1:64989 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64958 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64971 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
-카카오 콜백 요청: {'code': 'Fl6b1JBCiHHNyVVPg0vHYgvMWL51Vouw4hyaOTiaaVlhmKQBC4E1vAAAAAQKDQ0hAAABmfzIIFJPBWDH3LuH7A', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+기타 오류 발생: 1 validation error for User
+provider_id
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+사용자 생성 오류: 1 validation error for User
+provider_id
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+INFO:     127.0.0.1:59547 - "POST /auth/kakao/callback HTTP/1.1" 500 Internal Server Error
+카카오 콜백 요청: {'code': 'Ibqm8qCkQR2e7cBlnq61aU2DCG8MiRZ_05X9ouBw8LuD7TQzoNdMUAAAAAQKFwHPAAABmfztPbvkNSpXBP-m7Q', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
 카카오 토큰 응답 상태: 200
-카카오 토큰 응답 내용: {"access_token":"5VW3sBzmjivwT5ZPHm0YPvPKPjGDEOQfAAAAAQoNDV8AAAGZ_MgoQ7G7d-HwzTGR","token_type":"bearer","refresh_token":"nqSkVzGeWHk9veYjzq5y_hxUXKY-7In6AAAAAgoNDV8AAAGZ_MgoP7G7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4ODI2MDAsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4ODk4MDAsImlhdCI6MTc2MDg4MjYwMCwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.E9A0M1k0gtQVcqUmeeZFy4VI0N6y8uyIkiYdAundMxryLj6KM-i5-zdCz3ZOBd-NjydkKZeQWM8uM_P-bAN-XfrU8lKtcGNn75XsMSVqT4f_PA4t4jJxQD7VBC1_jt_MYG4p6Sn2IHIzzqApm3ax70clxwgEd5RyvDIA966loUZSmeb6CK9K6PB-L-jtqKKxyyIT2gLrChXx_YK22qT8oMaSNwJIV8JL5GymKwWYKvrQKR7_ALiu9q8PWiM_7F7qKydTbWKxl-eCrkNlKUhNiKXILrEgeW_6csd6MdrRu9Ho0eqW0PlrGROlR6g7_mgw2BXRgqXj_M6ZS2YxZUfa4w","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 토큰 응답 내용: {"access_token":"ou3WZprLgUS2Xhmd8ZNRGNqWMUomSBOCAAAAAQoXNVcAAAGZ_O1FerG7d-HwzTGR","token_type":"bearer","refresh_token":"7-aYYhrpoh7_UZkmn46_inH9mhA9St-jAAAAAgoXNVcAAAGZ_O1FdbG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4ODUwMzIsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4OTIyMzIsImlhdCI6MTc2MDg4NTAzMiwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.F7nNfCIlNY44z1Sy9ARx_g87SB6aO-0P8E7ESjbHPy-7ZFE0IR453FpM0YoFWRjzWc2mNbd30GF7kVzof4ltp71O09bN6uY8bUrZoc-tPplpg-Nw0ls06f78feFkNO1b3cG8zwTMv0HS4w4KGnf6aOAU6D6BAC2qhcBiUX62yS0Nx3aMSsvnCwzCX7XkI_sheS0nzmrA7UGrowKqvf4RDb3OGuGTO_KOvSkWOJexvAmcEuMOAvzeifXZy-f9IXrMQaqtv6LxIMKK73XZ8r692CQur0EmaZtyROXiF4CBWH8iqYBOFt-lbx942qtEu244R1Pyf0Ll7hRtaf7mAuaomg","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
 카카오 사용자 정보 응답 상태: 200
 카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
 사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
 사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
-기존 사용자 발견: email=emozero@naver.com, provider=kakao
-업데이트된 사용자: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 19, 13, 16, 39)
-사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 19, 13, 16, 39)
-마지막 로그인 시간 업데이트 완료
-INFO:     127.0.0.1:64971 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65066 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64971 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64971 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65358 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65382 - "OPTIONS /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65382 - "GET /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65382 - "GET /auth/me HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65397 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65397 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65470 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65384 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65384 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65384 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65384 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65384 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65491 - "OPTIONS /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65494 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65496 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65494 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65497 - "OPTIONS /admin/users HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
+기타 오류 발생: 1 validation error for User
+provider_id
   Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
     For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
+사용자 생성 오류: 1 validation error for User
+provider_id
   Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
     For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
+INFO:     127.0.0.1:59788 - "POST /auth/kakao/callback HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:60295 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60320 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60352 - "GET /latest-scan HTTP/1.1" 200 OK
+카카오 콜백 요청: {'code': 'Xj2iyuX18X1tRn1vbw7mezcXfj7IpsjtI7McTaE9RibkkznlMMp33wAAAAQKFwFQAAABmfzvUgf6Fwx8Dt1GgQ', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"Z2axikAeLBKop5UTa8aUbw6FQ1mCoCtTAAAAAQoXACcAAAGZ_O9aPrG7d-HwzTGR","token_type":"bearer","refresh_token":"hnTPOW4Z1RLRAe9a5W2u4l_IxfsvRfg5AAAAAgoXACcAAAGZ_O9aN7G7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4ODUxNjgsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4OTIzNjgsImlhdCI6MTc2MDg4NTE2OCwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.M3KdkC4eH2fOQT4DIoh1gs3FtdjbBMlMthqLnen-szpS5rE1vcElvQ-u7dp6r3j8KG6SJjkceIqh94C3sGaDNtj4YzValCpTnl8Jvl9AkuyDPnuG5L3LQBFGNUiYEGVg52-ABRiu2PziMgOB4LBZPKBsS0ufrj25TX4HVQyCWj3VVn7UoargQ18cfKEBniV3n3Lijnkn6QtLfFf27sqzzWq0oArL7oUOCMPogQeN6l_QxbC7XvUmViNzRgGbERX3VBdN6Kf1mXKeOyAF9cxsMQYlv7BAtabaFCX8GjNZFa3ITc9VrrXygYoLb5dvhH2EXbuTopsSwqOZME5MlzjLzA","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+기타 오류 발생: 1 validation error for User
+provider_id
   Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
     For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:65384 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65499 - "GET /admin/users HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
+사용자 생성 오류: 1 validation error for User
+provider_id
   Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
     For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:65384 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65499 - "GET /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65509 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65499 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65499 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65509 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65499 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49163 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49163 - "GET /portfolio HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:49163 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49171 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49171 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49170 - "GET /admin/users HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:49163 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49170 - "GET /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49182 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49170 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49170 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49182 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49170 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49431 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49805 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50098 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50098 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50106 - "GET /available-scan-dates HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:50098 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50106 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /admin/users HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:50098 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50112 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50112 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50112 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50112 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:50104 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50144 - "GET /available-scan-dates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50142 - "GET /admin/users HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50104 - "GET /available-scan-dates HTTP/1.1" 200 OK
-관리자 통계 조회 오류: 9 validation errors for AdminStatsResponse
-recent_users.0.provider_id
-  Field required [type=missing, input_value={'id': 8, 'email': 'inhan...: '2025-10-11 06:21:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.1.provider_id
-  Field required [type=missing, input_value={'id': 7, 'email': 'emoze...: '2025-09-20 15:21:47'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.2.provider_id
-  Field required [type=missing, input_value={'id': 6, 'email': 'test@...: '2025-09-20 15:14:25'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.3.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.3.provider_id
-  Field required [type=missing, input_value={'id': 1, 'email': 'test1...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.4.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.4.provider_id
-  Field required [type=missing, input_value={'id': 2, 'email': 'test2...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-recent_users.5.name
-  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
-    For further information visit https://errors.pydantic.dev/2.5/v/string_type
-recent_users.5.provider_id
-  Field required [type=missing, input_value={'id': 3, 'email': 'test3...: '2025-09-14 01:35:08'}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.5/v/missing
-INFO:     127.0.0.1:50144 - "GET /admin/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50142 - "GET /admin/users HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'admin_service.py'. Reloading...
+INFO:     127.0.0.1:60438 - "POST /auth/kakao/callback HTTP/1.1" 500 Internal Server Error
+카카오 콜백 요청: {'code': 'test'}
+카카오 토큰 응답 상태: 400
+카카오 토큰 응답 내용: {"error":"invalid_grant","error_description":"authorization code not found for code=test","error_code":"KOE320"}
+INFO:     127.0.0.1:60524 - "POST /auth/kakao/callback HTTP/1.1" 400 Bad Request
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [56628]
-INFO:     Started server process [62794]
+INFO:     Finished server process [93392]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [97974]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [97974]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [98250]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+카카오 콜백 요청: {'code': 'A8_4YMJGpA3DvSMYunMSgxh3HPYAO8EnGWg0K4K-Gk9Hasx_sE07HAAAAAQKFwvXAAABmfzwyu2t1856Xp2T3g', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"qkEwE_ooNlTDNNaImYIxcGU8MkdLvjr3AAAAAQoNG1kAAAGZ_PDS97G7d-HwzTGR","token_type":"bearer","refresh_token":"Ejp6hiKwqHW-DB1lHPkInYj-3V0_VDdiAAAAAgoNG1kAAAGZ_PDS9LG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4ODUyNjUsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4OTI0NjUsImlhdCI6MTc2MDg4NTI2NSwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.UBClzE8eNJJXAB39Urw1aUESDhfh8iCoQpTcAOC-NhtJvYjsSTTKz5wAGagcTpolD4RAUx_Vk6FvKdW8YucOIK8JIE_gREh2YR5TMNqkTAsE5xvyUPEgroEJZb26k1y2H9gF8KhoTjOy5uBTfrz1P0KGp0joz41DnODDnC2mXbQgcD9bZp1ufYzCnUu5VUKGjOIFHz6UV8Vwl-MjcBiQiH8SADCR5oiqkApoj8L1uM2PAF4RhymUCZGMJMuU0c0RbsUM4kCfVSr9zhIsevb-CjRDM8tMGqsdrviR8m5gzt4QF9fDJYdivKhJ_r_jNed5cyczvg7vXFb_AZEPQhROaw","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+기타 오류 발생: 1 validation error for User
+provider_id
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+사용자 생성 오류: 1 validation error for User
+provider_id
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.5/v/string_type
+INFO:     127.0.0.1:60928 - "POST /auth/kakao/callback HTTP/1.1" 500 Internal Server Error
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [98250]
+INFO:     Stopping reloader process [93388]

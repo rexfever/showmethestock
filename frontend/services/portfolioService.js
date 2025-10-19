@@ -111,3 +111,5 @@ export const removeFromPortfolio = async (ticker) => {
 
 
 
+
+

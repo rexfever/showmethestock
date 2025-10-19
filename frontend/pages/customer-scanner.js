@@ -22,6 +22,11 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
   const [recurringStocks, setRecurringStocks] = useState({});
 
+  // 투자 모달 상태
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [investmentLoading, setInvestmentLoading] = useState(false);
+
   // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
   // useEffect(() => {
   //   if (!authLoading && !isAuthenticated()) {
@@ -32,7 +37,56 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
   // 포트폴리오 조회 함수 제거 (스캐너에서는 불필요)
 
-  // 포트폴리오 관련 함수 제거 (스캐너에서는 불필요)
+  // 투자 모달 열기
+  const openInvestmentModal = (stock) => {
+    setSelectedStock(stock);
+    setShowInvestmentModal(true);
+  };
+
+  // 투자 모달 닫기
+  const closeInvestmentModal = () => {
+    setSelectedStock(null);
+    setShowInvestmentModal(false);
+  };
+
+  // 투자 등록
+  const handleInvestmentRegistration = async (stock, entryPrice, quantity, entryDate) => {
+    if (!isAuthenticated() || !user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    setInvestmentLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/portfolio/add', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ticker: stock.ticker,
+          name: stock.name,
+          entry_price: parseFloat(entryPrice),
+          quantity: parseInt(quantity),
+          entry_date: entryDate
+        })
+      });
+
+      if (response.ok) {
+        alert('투자 등록이 완료되었습니다.');
+        closeInvestmentModal();
+      } else {
+        const error = await response.json();
+        alert(`등록 실패: ${error.detail || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      alert(`등록 실패: ${error.message}`);
+    } finally {
+      setInvestmentLoading(false);
+    }
+  };
 
   // 재등장 종목 조회 (종목명 표시용)
   const fetchRecurringStocks = useCallback(async () => {
@@ -55,21 +109,16 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   }, []);
 
   // 최신 스캔 결과 가져오기
+  // 클라이언트에서 추가 데이터 로드 (필요시에만)
   const fetchScanResults = useCallback(async () => {
-    // 모바일에서 네트워크 상태 확인
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      setError('네트워크 연결을 확인해주세요.');
-      return;
-    }
-    
+    // SSR로 이미 데이터가 로드되었으므로 클라이언트에서는 추가 로드 불필요
+    // 필요시에만 새로고침 기능으로 사용
     setLoading(true);
     setError(null);
+    
     try {
       const config = getConfig();
       const base = config.backendUrl;
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
       
       const response = await fetch(`${base}/latest-scan`, {
         method: 'GET',
@@ -79,11 +128,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         },
         mode: 'cors',
         cache: 'no-cache',
-        signal: controller.signal,
       });
-      
-      clearTimeout(timeoutId);
-      
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -96,7 +141,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         const items = data.data.items || data.data.rank || [];
         setScanResults(items);
         setScanFile(data.file || '');
-        setScanDate(data.data.scan_date || '');
+        setScanDate(data.data.as_of || data.data.scan_date || '');
         setError(null);
       } else {
         const errorMsg = data.error || '스캔 결과 조회 실패';
@@ -104,9 +149,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         setScanResults([]);
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
-        setError('요청 시간이 초과되었습니다. 다시 시도해주세요.');
-      } else if (error.message.includes('Failed to fetch')) {
+      if (error.message.includes('Failed to fetch')) {
         setError('네트워크 연결을 확인해주세요.');
       } else {
         setError(`데이터 불러오는 중 오류가 발생했습니다: ${error.message}`);
@@ -136,28 +179,20 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     if (hasSSRData) {
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
+      setScanDate(initialScanDate || '');
       setError(null);
       setLoading(false);
       return;
     }
     
-    // 초기 데이터가 없으면 API 호출
+    // 초기 데이터가 없으면 에러 상태로 설정 (API 호출 제거)
     if (!hasSSRData) {
-      fetchScanResults();
+      setError('스캔 데이터가 없습니다.');
+      setLoading(false);
     }
     
-    // 5분마다 자동 새로고침 (SSR 데이터가 있을 때는 비활성화)
-    const interval = setInterval(() => {
-      if (!hasSSRData) {
-        fetchScanResults();
-      }
-    }, 5 * 60 * 1000);
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
+    // SSR 데이터가 있을 때는 자동 새로고침 비활성화 (성능 최적화)
+    // 필요시에만 수동 새로고침 버튼으로 fetchScanResults() 호출
   }, [hasSSRData, initialData]);
 
   // 필터링 (시장별 필터 제거)
@@ -370,10 +405,10 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     </button>
                   </div>
                   <button 
-                    className="px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600"
-                    onClick={() => router.push(`/stock-analysis?ticker=${item.ticker}`)}
+                    className="px-3 py-1 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600"
+                    onClick={() => openInvestmentModal(item)}
                   >
-                    상세분석
+                    나의투자종목에 등록
                   </button>
                 </div>
               </div>
@@ -384,6 +419,76 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         </div>
 
 
+        {/* 투자 등록 모달 */}
+        {showInvestmentModal && selectedStock && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">투자 등록</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">종목명</label>
+                  <div className="text-sm text-gray-900">{selectedStock.name} ({selectedStock.ticker})</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">매수가</label>
+                  <input
+                    type="number"
+                    id="entryPrice"
+                    defaultValue={selectedStock.current_price || 0}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="매수가를 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">수량</label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    defaultValue="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="수량을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">매수일</label>
+                  <input
+                    type="date"
+                    id="entryDate"
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={closeInvestmentModal}
+                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => {
+                    const entryPrice = document.getElementById('entryPrice').value;
+                    const quantity = document.getElementById('quantity').value;
+                    const entryDate = document.getElementById('entryDate').value;
+                    
+                    if (!entryPrice || !quantity || !entryDate) {
+                      alert('모든 필드를 입력해주세요.');
+                      return;
+                    }
+                    
+                    handleInvestmentRegistration(selectedStock, entryPrice, quantity, entryDate);
+                  }}
+                  disabled={investmentLoading}
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {investmentLoading ? '등록 중...' : '등록'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <BottomNavigation />
       </div>
     </>
@@ -392,7 +497,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
 export async function getServerSideProps() {
   try {
-    // 서버에서 백엔드 API 호출
+    // 서버에서 백엔드 API 호출 (DB 직접 조회)
     const config = getConfig();
     const base = config.backendUrl;
     const response = await fetch(`${base}/latest-scan`);
@@ -410,7 +515,7 @@ export async function getServerSideProps() {
         props: {
           initialData: items,
           initialScanFile: data.file || '',
-          initialScanDate: data.data.scan_date || ''
+          initialScanDate: data.data.as_of || data.data.scan_date || ''
         }
       };
     }

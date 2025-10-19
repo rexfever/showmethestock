@@ -6,301 +6,39 @@
   - Local:        http://localhost:3000
   - Environments: .env.local
 
- ✓ Ready in 1794ms
- ✓ Compiled /_error in 834ms (207 modules)
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ✓ Compiled /customer-scanner in 378ms (279 modules)
- ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- ✓ Compiled /performance-report in 771ms (281 modules)
- ✓ Compiled /login in 200ms (296 modules)
- ✓ Compiled /kakao-callback in 227ms (300 modules)
- ✓ Compiled /_error in 104ms (302 modules)
- ✓ Compiled /stock-analysis in 483ms (306 modules)
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:733:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
- ✓ Compiled / in 685ms (291 modules)
- ✓ Compiled /_error in 142ms (293 modules)
- ✓ Compiled /performance-report in 220ms (287 modules)
- ✓ Compiled in 577ms (283 modules)
- ✓ Compiled /admin in 245ms (287 modules)
-서버에서 스캔 결과 조회 실패: TypeError: fetch failed
-    at node:internal/deps/undici/undici:12344:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async getServerSideProps (webpack-internal:///./pages/customer-scanner.js:732:26) {
-  cause: AggregateError
-      at internalConnectMultiple (node:net:1114:18)
-      at afterConnectMultiple (node:net:1667:5) {
-    code: 'ECONNREFUSED',
-    [errors]: [ [Error], [Error] ]
-  }
-}
- ✓ Compiled in 268ms (285 modules)
- ✓ Compiled in 322ms (285 modules)
- ✓ Compiled / in 355ms (293 modules)
- ✓ Compiled in 245ms (293 modules)
- ✓ Compiled in 286ms (293 modules)
- ✓ Compiled /stock-analysis in 239ms (287 modules)
- ✓ Compiled in 312ms (283 modules)
- ✓ Compiled in 307ms (283 modules)
- ✓ Compiled in 295ms (283 modules)
- ✓ Compiled in 373ms (283 modules)
- ✓ Compiled /_error in 212ms (285 modules)
- ✓ Compiled in 327ms (285 modules)
- ✓ Compiled in 335ms (285 modules)
- ✓ Compiled in 228ms (283 modules)
- ✓ Compiled in 237ms (283 modules)
- ✓ Compiled in 207ms (283 modules)
- ✓ Compiled in 281ms (283 modules)
- ✓ Compiled in 343ms (283 modules)
- ✓ Compiled in 292ms (283 modules)
- ✓ Compiled in 240ms (283 modules)
- ✓ Compiled in 416ms (283 modules)
- ✓ Compiled in 245ms (283 modules)
- ✓ Compiled /_error in 236ms (285 modules)
- ✓ Compiled in 258ms (285 modules)
- ✓ Compiled in 197ms (285 modules)
- ✓ Compiled in 353ms (283 modules)
- ✓ Compiled in 274ms (283 modules)
- ✓ Compiled /more in 342ms (287 modules)
- ✓ Compiled /stock-analysis in 290ms (289 modules)
- ✓ Compiled /portfolio in 199ms (299 modules)
- ✓ Compiled in 275ms (295 modules)
- ✓ Compiled in 398ms (295 modules)
- ✓ Compiled /_error in 193ms (297 modules)
- ✓ Compiled in 263ms (288 modules)
- ✓ Compiled in 264ms (286 modules)
- ✓ Compiled in 171ms (286 modules)
- ✓ Compiled in 304ms (286 modules)
- ✓ Compiled /_error in 100ms (288 modules)
- ✓ Compiled in 532ms (286 modules)
- ✓ Compiled in 207ms (286 modules)
- ✓ Compiled in 59ms (125 modules)
- ✓ Compiled in 258ms (286 modules)
- ✓ Compiled in 224ms (125 modules)
- ✓ Compiled in 327ms (286 modules)
- ✓ Compiled in 246ms (286 modules)
- ✓ Compiled in 743ms (286 modules)
- ✓ Compiled in 1224ms (286 modules)
- ✓ Compiled /_error in 342ms (288 modules)
- ✓ Compiled in 811ms (286 modules)
- ✓ Compiled in 346ms (286 modules)
- ✓ Compiled in 235ms (286 modules)
- ✓ Compiled in 262ms (286 modules)
- ✓ Compiled in 721ms (286 modules)
- ✓ Compiled in 303ms (286 modules)
- ✓ Compiled /_error in 221ms (288 modules)
- ✓ Compiled in 340ms (288 modules)
- ✓ Compiled in 270ms (288 modules)
- ✓ Compiled in 272ms (286 modules)
- ✓ Compiled in 239ms (286 modules)
- ✓ Compiled in 299ms (286 modules)
- ✓ Compiled in 252ms (286 modules)
- ✓ Compiled in 328ms (286 modules)
- ✓ Compiled in 486ms (286 modules)
- ✓ Compiled in 242ms (286 modules)
- ✓ Compiled in 536ms (286 modules)
- ✓ Compiled in 222ms (286 modules)
- ✓ Compiled in 266ms (286 modules)
- ✓ Compiled in 199ms (286 modules)
- ✓ Compiled in 354ms (286 modules)
- ✓ Compiled in 284ms (286 modules)
- ✓ Compiled /stock-analysis in 393ms (290 modules)
- ✓ Compiled /login in 243ms (305 modules)
- ✓ Compiled /kakao-callback in 133ms (309 modules)
- ✓ Compiled /_error in 119ms (311 modules)
- ✓ Compiled in 536ms (302 modules)
- ✓ Compiled in 251ms (302 modules)
- ✓ Compiled in 254ms (302 modules)
- ✓ Compiled in 262ms (302 modules)
- ✓ Compiled /performance-report in 578ms (293 modules)
- ✓ Compiled in 779ms (283 modules)
- ✓ Compiled in 570ms (283 modules)
- ✓ Compiled / in 515ms (287 modules)
- ✓ Compiled /_error in 234ms (289 modules)
- ✓ Compiled /portfolio in 384ms (291 modules)
- ✓ Compiled /login in 293ms (306 modules)
- ✓ Compiled /performance-report in 171ms (308 modules)
- ✓ Compiled / in 375ms (294 modules)
- ✓ Compiled in 84ms (125 modules)
- ✓ Compiled /customer-scanner in 511ms (291 modules)
- ✓ Compiled in 215ms (283 modules)
+ ✓ Ready in 2.8s
+ ○ Compiling /customer-scanner ...
+ ✓ Compiled /customer-scanner in 10.9s (277 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 3.5s (279 modules)
+ ✓ Compiled /performance-report in 323ms (283 modules)
+ ✓ Compiled /login in 287ms (298 modules)
+ ✓ Compiled /kakao-callback in 102ms (302 modules)
+ ✓ Compiled / in 515ms (297 modules)
+ ✓ Compiled /customer-scanner in 126ms (300 modules)
+ ✓ Compiled /kakao-callback in 117ms (304 modules)
+ ✓ Compiled /_error in 111ms (306 modules)
+ ✓ Compiled /stock-analysis in 900ms (300 modules)
+ ✓ Compiled /portfolio in 290ms (295 modules)
+ ✓ Compiled in 1587ms (283 modules)
  ✓ Compiled in 310ms (283 modules)
- ✓ Compiled /stock-analysis in 311ms (287 modules)
- ✓ Compiled /login in 199ms (302 modules)
- ✓ Compiled /kakao-callback in 148ms (306 modules)
- ✓ Compiled /performance-report in 244ms (308 modules)
- ✓ Compiled /_error in 381ms (305 modules)
+ ✓ Compiled /_error in 300ms (285 modules)
+ ✓ Compiled in 477ms (285 modules)
+ ✓ Compiled in 311ms (285 modules)
+ ✓ Compiled in 327ms (283 modules)
+ ✓ Compiled in 293ms (283 modules)
+ ✓ Compiled /_error in 80ms (285 modules)
+ ✓ Compiled in 272ms (285 modules)
+ ✓ Compiled in 167ms (285 modules)
+ ✓ Compiled in 241ms (283 modules)
+ ✓ Compiled /_error in 92ms (285 modules)
+ ✓ Compiled /api/portfolio/add in 121ms (137 modules)
+ ✓ Compiled /portfolio in 199ms (309 modules)
+ ✓ Compiled in 199ms (289 modules)
+ ✓ Compiled in 248ms (289 modules)
+ ✓ Compiled in 354ms (289 modules)
+ ✓ Compiled in 229ms (289 modules)
+ ✓ Compiled in 162ms (289 modules)
+ ✓ Compiled in 229ms (289 modules)
+ ✓ Compiled in 277ms (289 modules)
+ ✓ Compiled /api/portfolio/add in 170ms (139 modules)

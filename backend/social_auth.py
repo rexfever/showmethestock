@@ -98,13 +98,19 @@ class SocialAuthService:
     
     def create_user_from_social(self, social_user_info: Dict[str, Any]) -> UserCreate:
         """소셜 로그인 정보로 사용자 생성"""
-        return UserCreate(
+        print(f"create_user_from_social 입력: {social_user_info}")
+        print(f"provider_id 값: {social_user_info.get('provider_id')}")
+        
+        user_create = UserCreate(
             email=social_user_info["email"],
             name=social_user_info["name"],
             provider=social_user_info["provider"],
             provider_id=social_user_info["provider_id"],
             kakao_account=social_user_info.get("phone_number", "")  # 전화번호 추가
         )
+        
+        print(f"UserCreate 객체 생성 완료: {user_create}")
+        return user_create
 
 # 전역 소셜 인증 서비스 인스턴스
 social_auth_service = SocialAuthService()
