@@ -1534,6 +1534,111 @@ async def get_scan_by_date(date: str):
 
 # 기존 스냅샷 파일 관련 함수들은 제거됨 - DB만 사용
 
+def get_latest_scan_from_db():
+    """DB에서 직접 최신 스캔 결과를 조회하는 함수 (SSR용)"""
+    try:
+        from datetime import datetime
+        
+        # DB에서 가장 최신 날짜의 스캔 결과 조회
+        conn = sqlite3.connect(_db_path())
+        cur = conn.cursor()
+        
+        # 오늘 날짜 확인
+        today = datetime.now().strftime('%Y%m%d')
+        
+        # 오늘 데이터가 있는지 확인
+        cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ?", (today,))
+        today_count = cur.fetchone()[0]
+        
+        if today_count > 0:
+            # 오늘 데이터가 있으면 오늘 데이터 사용
+            latest_date = today
+        else:
+            # 오늘 데이터가 없으면 가장 최신 날짜 사용 (전날 또는 그 이전)
+            cur.execute("SELECT MAX(date) FROM scan_rank")
+            latest_date = cur.fetchone()[0]
+        
+        if not latest_date:
+            return {"ok": False, "error": "스캔 결과가 없습니다."}
+        
+        # 해당 날짜의 스캔 결과 조회
+        cur.execute("""
+            SELECT code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            FROM scan_rank 
+            WHERE date = ?
+            ORDER BY score DESC
+        """, (latest_date,))
+        
+        rows = cur.fetchall()
+        conn.close()
+        
+        if not rows:
+            return {"ok": False, "error": "스캔 결과가 없습니다."}
+        
+        # 데이터 변환
+        items = []
+        for row in rows:
+            code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            
+            # 스캐너에서는 수익률 계산 생략 (성능 최적화)
+            current_return = 0
+            max_return = 0
+            min_return = 0
+            days_elapsed = 0
+            
+            # 실시간 등락률 조회 (키움 API 호출 제거로 성능 최적화)
+            real_time_change_rate = change_rate
+            
+            item = {
+                "ticker": code,
+                "name": name,
+                "score": score,
+                "score_label": score_label,
+                "close_price": close_price,
+                "current_price": close_price,  # 프론트엔드 호환성을 위해 추가
+                "volume": volume,
+                "change_rate": real_time_change_rate,  # 실시간 등락률 사용
+                "market": market,
+                "strategy": strategy,
+                "indicators": json.loads(indicators) if indicators else {},
+                "trend": json.loads(trend) if trend else {},
+                "flags": json.loads(flags) if flags else {},
+                "details": json.loads(details) if details else {},
+                "returns": {
+                    "current_return": current_return,
+                    "max_return": max_return,
+                    "min_return": min_return,
+                    "days_elapsed": days_elapsed
+                },
+                "recurrence": json.loads(recurrence) if recurrence else {}
+            }
+            items.append(item)
+        
+        # 응답 데이터 구성
+        scan_date = latest_date.replace('-', '')
+        is_today = (latest_date == today)
+        data = {
+            "as_of": latest_date,
+            "scan_date": scan_date,
+            "is_latest": True,
+            "is_today": is_today,
+            "is_holiday": not is_today,
+            "universe_count": 100,  # 기본값
+            "matched_count": len(items),
+            "rsi_mode": "tema_dema",
+            "rsi_period": 14,
+            "rsi_threshold": 57.0,
+            "items": items
+        }
+        
+        # enhanced_items 추가 (호환성을 위해)
+        data["enhanced_items"] = items
+        
+        return {"ok": True, "data": data}
+        
+    except Exception as e:
+        return {"ok": False, "error": f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}"}
+
 @app.get("/latest-scan")
 async def get_latest_scan():
     """최신 스캔 결과를 가져옵니다. 휴일이나 오늘 데이터가 없으면 전날 데이터를 보여줍니다."""

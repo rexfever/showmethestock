@@ -1,89 +1,118 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [74549] using WatchFiles
-INFO:     Started server process [74552]
+INFO:     Started reloader process [15853] using WatchFiles
+INFO:     Started server process [15862]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:53528 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53530 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53724 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53724 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [74552]
-INFO:     Started server process [75559]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:53944 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54285 - "GET /reports/available/weekly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54287 - "GET /reports/available/monthly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54289 - "GET /reports/available/monthly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54291 - "GET /reports/available/yearly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54294 - "GET /reports/available/weekly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54296 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54298 - "GET /reports/weekly/2025/8/1 HTTP/1.1" 200 OK
-카카오 콜백 요청: {'code': 'J1bPbxvZqoZOdoKdM-KvOpTpg4lD0zfYhoy7EMrADOWeC4GMlZlcgwAAAAQKFyEtAAABmfgsnrqBPKUF0hG4dQ', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+INFO:     127.0.0.1:51510 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51583 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51585 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51583 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51587 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51585 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51583 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51589 - "GET /reports/available/weekly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51731 - "GET /reports/available/monthly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51733 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51734 - "GET /reports/available/yearly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51736 - "GET /reports/weekly/2025/8/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51738 - "GET /reports/available/weekly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51740 - "GET /reports/available/monthly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51742 - "GET /reports/available/quarterly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51744 - "GET /reports/available/yearly HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51744 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
+카카오 콜백 요청: {'code': '1VCn7SiK8ZBTT1wcfOFu2jfD47L5Raj8V5Ka9tvVUb2gCSgKK48-0AAAAAQKDRTdAAABmfydZV9HueF-5ScOZw', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
 카카오 토큰 응답 상태: 200
-카카오 토큰 응답 내용: {"access_token":"J3VPDNgLBS6PUFm3K35u02wp8x7kBP7JAAAAAQoXEC8AAAGZ-Cyp9bG7d-HwzTGR","token_type":"bearer","refresh_token":"SYoFuK73AkCIDsCb2I7zYLbZ5XbYJODoAAAAAgoXEC8AAAGZ-Cyp8LG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4MDUzMDAsImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4MTI1MDAsImlhdCI6MTc2MDgwNTMwMCwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.ejLzof9Gp990OnDwSRyz1crRafdkRCxjktc0fRSi53Qcfjvbpl1S7pGpKifnoinol6Awt-KFn8ld0_4urBlFm9rg3YhZK9cmqA4h9rpWfEefRnXmn31sjsF6o4t9pQHcmMCPYh4eOCz1dnl3ow5W100GUIfXWh51U1P1vfFe7JnQar6TK8qw33sUSW_dGoE6CZSkc7Vlbdyvmm6GFUIvBZS12_Z2AdEn9av5_0gbLIiBI5N8LGz3gPeg7r0yriPPzmcYg1A5oF1EOVMedTDZ4pItxn5-vBzd5pXIJqout3WOL6yQhGZWPLqo8T1v99Ab69FREsDih5KUnVew4N7Fmw","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 토큰 응답 내용: {"access_token":"ulhZk_utxq6_PUIGKl6_a6PnhR9CM8ycAAAAAQoNIpkAAAGZ_J1rgrG7d-HwzTGR","token_type":"bearer","refresh_token":"07dUt472dgu6kPipBEvUT-5OIsVP_AD9AAAAAgoNIpkAAAGZ_J1rfbG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjA4Nzk3OTksImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjA4ODY5OTksImlhdCI6MTc2MDg3OTc5OSwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.fFcrOd0e10EthX8--BJj3jRO_cC6m5fyvUDrSlA-ZCa6N8iXF2WyT7p-PxCzCG2HS3qVuAxAAeW5Ggj-QLNzoSEyyJEIrnz_-CR9CCym4-iRmP9386Nf5x4N7UTUk_5BDMIhzR_GkEPRExUzymrrep0y6Ez4ShfGUj8VeYEiFkYEblT5I01hc4voBiGBTTOu3v-he4RX0L_yiC3_YFW-XXNBj_Q_rotgnje2VUP041dwmaaT_HFD5euy-TOTKEBRnQTIMJ7Mx8zrTPrmIHmdzBHQtA5TWV63FvgofgzJ-1_xU7Xa7G2zXhnJ5asB2E6R45_Zr93UXkDxcEwSKoK2Ow","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
 카카오 사용자 정보 응답 상태: 200
 카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
 사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
 사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
 기존 사용자 발견: email=emozero@naver.com, provider=kakao
-업데이트된 사용자: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 18, 16, 28, 5)
-사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 18, 16, 28, 5)
+업데이트된 사용자: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 19, 11, 37, 5)
+사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.PREMIUM: 'premium'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=7 created_at=datetime.datetime(2025, 9, 20, 15, 21, 47) last_login=datetime.datetime(2025, 10, 19, 11, 37, 5)
 마지막 로그인 시간 업데이트 완료
-INFO:     127.0.0.1:54298 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54337 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54292 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54401 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54292 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54401 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54466 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51742 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51780 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51845 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51845 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56021 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56039 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56088 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56088 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56088 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56181 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56088 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56183 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56183 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56500 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56568 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56568 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56595 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56663 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56663 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58090 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58432 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58496 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58559 - "GET /latest-scan HTTP/1.1" 200 OK
+📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
+🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
+📊 Fallback 활성화 - 5단계 완화 시도
+📊 목표: 최소 1개, 최대 5개
+🔄 Step 0: 기본 조건
+📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
+📊 Step 0 결과: 0개 종목
+❌ Step 0 목표 미달: 0 < 1
+🔄 Step 1: {'min_signals': 2}
+🔧 프리셋 적용: {'min_signals': 2}
+📊 스캔 완료: 7개 매칭, 93개 필터링, 총 100개 중
+📊 Step 1 결과: 7개 종목
+✅ Step 1에서 목표 달성: 5개 종목 선택
+🎯 최종 선택: Step 1, 5개 종목
+🔍 055550 등락률 조회 중...
+📊 055550 조회 결과: {'current_price': 72700.0, 'change_rate': 2.25, 'volume': 1244136, 'market_cap': 0}
+🔍 082740 등락률 조회 중...
+📊 082740 조회 결과: {'current_price': 47750.0, 'change_rate': 1.06, 'volume': 1285221, 'market_cap': 0}
+🔍 278470 등락률 조회 중...
+📊 278470 조회 결과: {'current_price': 242500.0, 'change_rate': -2.22, 'volume': 488318, 'market_cap': 0}
+🔍 005690 등락률 조회 중...
+📊 005690 조회 결과: {'current_price': 12420.0, 'change_rate': -2.2, 'volume': 978167, 'market_cap': 0}
+🔍 034730 등락률 조회 중...
+📊 034730 조회 결과: {'current_price': 218500.0, 'change_rate': -5.62, 'volume': 994779, 'market_cap': 0}
+🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
+✅ save_snapshot=True, 스냅샷 저장 시작
+💾 데이터베이스 저장 시작: 2025-10-19, 5개 항목
+✅ 데이터베이스 저장 완료: 2025-10-19
+INFO:     127.0.0.1:61427 - "OPTIONS /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61429 - "OPTIONS /portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61427 - "GET /portfolio HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:61429 - "GET /portfolio HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:61449 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61429 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61427 - "OPTIONS /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61431 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61511 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61512 - "OPTIONS /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61431 - "GET /available-scan-dates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61429 - "GET /admin/users HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:61427 - "GET /admin/stats HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:61512 - "GET /admin/users HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:61431 - "GET /admin/stats HTTP/1.1" 401 Unauthorized
 WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [75559]
-INFO:     Started server process [78414]
+INFO:     Finished server process [15862]
+INFO:     Started server process [46491]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:54549 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54683 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54685 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54685 - "GET /portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54683 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54918 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55022 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [78414]
-INFO:     Started server process [81874]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:55683 - "GET /latest-scan HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [81874]
-INFO:     Started server process [83295]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [83295]
-INFO:     Started server process [83406]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [83406]
-INFO:     Stopping reloader process [74549]
+INFO:     127.0.0.1:61531 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61622 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61622 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61702 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61704 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61704 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61944 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62072 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62121 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62392 - "GET /latest-scan HTTP/1.1" 200 OK
