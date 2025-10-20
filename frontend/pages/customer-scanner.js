@@ -506,19 +506,22 @@ export async function getServerSideProps() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
-    
-    if (data.ok && data.data) {
-      // items 또는 rank 필드 처리
-      const items = data.data.items || data.data.rank || [];
-      return {
-        props: {
-          initialData: items,
-          initialScanFile: data.file || '',
-          initialScanDate: data.data.as_of || data.data.scan_date || ''
-        }
-      };
-    }
+      const data = await response.json();
+      
+      if (data.ok && data.data) {
+        // items 또는 rank 필드 처리
+        const items = data.data.items || data.data.rank || [];
+        // 날짜 표시는 스캔 응답의 as_of(YYYY-MM-DD) 우선 사용하되, 표시용으로 YYYYMMDD로 변환
+        const rawAsOf = data.data.as_of || '';
+        const normalizedScanDate = (data.data.scan_date) || (rawAsOf ? rawAsOf.replace(/-/g, '') : '');
+        return {
+          props: {
+            initialData: items,
+            initialScanFile: data.file || '',
+            initialScanDate: normalizedScanDate
+          }
+        };
+      }
   } catch (error) {
   }
   

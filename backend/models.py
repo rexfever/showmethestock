@@ -15,6 +15,7 @@ class IndicatorPayload(BaseModel):
     VOL: int
     VOL_MA5: float
     close: float
+    change_rate: Optional[float] = 0.0
 
 
 class TrendPayload(BaseModel):
