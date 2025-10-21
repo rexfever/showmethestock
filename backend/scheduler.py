@@ -142,10 +142,10 @@ def send_auto_notification(matched_count):
 def setup_scheduler():
     """스케줄러 설정 - KST 기준"""
     # 매일 오후 3시 30분에 스캔 실행 (장 마감 후) - KST 기준
-    schedule.every().day.at("15:30").do(run_scan)
+    schedule.every().day.at("15:36").do(run_scan)
     
     logger.info("자동 스캔 스케줄러가 설정되었습니다.")
-    logger.info("- 매일 오후 3:30 KST (장 마감 후)")
+    logger.info("- 매일 오후 3:36 KST (장 마감 후)")
     logger.info("- 주말과 공휴일은 자동으로 제외됩니다.")
 
 def run_scheduler():

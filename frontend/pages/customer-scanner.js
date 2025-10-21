@@ -185,15 +185,14 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       return;
     }
     
-    // 초기 데이터가 없으면 에러 상태로 설정 (API 호출 제거)
+    // 초기 데이터가 없으면 즉시 API로 최신 스캔을 가져온다
     if (!hasSSRData) {
-      setError('스캔 데이터가 없습니다.');
-      setLoading(false);
+      fetchScanResults();
     }
     
     // SSR 데이터가 있을 때는 자동 새로고침 비활성화 (성능 최적화)
     // 필요시에만 수동 새로고침 버튼으로 fetchScanResults() 호출
-  }, [hasSSRData, initialData]);
+  }, [hasSSRData, initialData, fetchScanResults]);
 
   // 필터링 (시장별 필터 제거)
   const filteredResults = scanResults.filter(item => {

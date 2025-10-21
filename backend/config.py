@@ -33,7 +33,7 @@ class Config:
     ohlcv_count: int = int(os.getenv("OHLCV_COUNT", "220"))
 
     # === Tight preset ===
-    min_signals: int = int(os.getenv("MIN_SIGNALS", "3"))              # 2 -> 3 (신호 최소 3개 충족)
+    min_signals: int = int(os.getenv("MIN_SIGNALS", "3"))              # 4 -> 3 (현실적)
     macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "0.0"))        # -10 -> 0 (음모멘텀 제외)
     rsi_mode: str = os.getenv("RSI_MODE", "tema")              # hybrid -> tema
     rsi_threshold: float = float(os.getenv("RSI_THRESHOLD", "58"))       # 55 -> 58
@@ -44,7 +44,7 @@ class Config:
     ext_from_tema20_max: float = float(os.getenv("EXT_FROM_TEMA20_MAX", "0.015"))  # 2% -> 1.5%
     
     # 거래량·유동성
-    vol_ma5_mult: float = float(os.getenv("VOL_MA5_MULT", "1.8"))        # 1.2 -> 1.8
+    vol_ma5_mult: float = float(os.getenv("VOL_MA5_MULT", "2.0"))        # 2.5 -> 2.0 (현실적)
     vol_ma20_mult: float = float(os.getenv("VOL_MA20_MULT", "1.2"))      # 신규: MA20도 함께 요구
     min_turnover_krw: int = int(os.getenv("MIN_TURNOVER_KRW", "1000000000"))  # 10억 이상
     
@@ -65,7 +65,7 @@ class Config:
     top_k: int = int(os.getenv("TOP_K", "5"))                          # 15 -> 5
     
     # === Auto Fallback 설정 ===
-    fallback_enable: bool = os.getenv("FALLBACK_ENABLE", "true").lower() == "true"
+    fallback_enable: bool = os.getenv("FALLBACK_ENABLE", "true").lower() == "true"  # false -> true (안전한 Fallback 활성화)
     fallback_target_min: int = int(os.getenv("FALLBACK_TARGET_MIN", "1"))  # 최소 확보 개수
     fallback_target_max: int = int(os.getenv("FALLBACK_TARGET_MAX", "5"))  # 최대 반환 개수(=TOP_K와 동일 권장)
     
@@ -135,7 +135,7 @@ class Config:
     trend_above_lookback: int = int(os.getenv("TREND_ABOVE_LOOKBACK", "5"))
     trend_slope_lookback: int = int(os.getenv("TREND_SLOPE_LOOKBACK", "20"))
     # dema 기울기 모드: required|optional|off
-    require_dema_slope: str = os.getenv("REQUIRE_DEMA_SLOPE", "optional").lower()
+    require_dema_slope: str = os.getenv("REQUIRE_DEMA_SLOPE", "required").lower()  # optional -> required (DEMA 슬로프 하락 차단)
 
     # 점수 가중치
     score_w_cross: int = int(os.getenv("SCORE_W_CROSS", "3"))
@@ -174,14 +174,14 @@ class Config:
         return [
             # step 0: current strict (현 설정 그대로 사용)
             {},
-            # step 1: 신호 완화 (RSI 절대값 조건 제거)
-            {"min_signals": 2},
-            # step 2: 거래량 완화
-            {"vol_ma5_mult": 1.6, "vol_ma20_mult": 1.1},
-            # step 3: 갭/이격 범위 완화
-            {"gap_max": 0.02, "ext_from_tema20_max": 0.02},
-            # step 4: ATR 필터 완화/해제
-            {"atr_pct_max": 0.05, "use_atr_filter": False},
+            # step 1: 신호 약간 완화 (하지만 거래량과 추세는 유지)
+            {"min_signals": 3},  # 여전히 엄격
+            # step 2: 거래량 현실적 완화 (하지만 DEMA 슬로프는 유지)
+            {"vol_ma5_mult": 1.8, "vol_ma20_mult": 1.2},  # 현실적
+            # step 3: 갭/이격 범위 현실적 완화 (하지만 DEMA 슬로프는 유지)
+            {"gap_max": 0.02, "ext_from_tema20_max": 0.02},  # 현실적
+            # step 4: 최종 현실적 완화 (하지만 DEMA 슬로프는 절대 완화하지 않음)
+            {"min_signals": 2, "vol_ma5_mult": 1.6},  # DEMA 슬로프 조건 제거하지 않음
         ]
 
 

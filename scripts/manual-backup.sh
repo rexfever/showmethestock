@@ -31,3 +31,7 @@ echo "3. cron 작업 상태 확인: crontab -l"
 
 
 
+
+
+
+

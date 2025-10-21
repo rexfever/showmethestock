@@ -144,15 +144,22 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stoc
     cond_rsi = rsi_momentum
 
     # ---- 거래량: 상승 초입 급증 조건 ----
-    # 거래량 급증: 평균 대비 1.3배 이상 (완화)
-    cond_vol = (cur.VOL_MA5 and cur.volume >= 1.3 * cur.VOL_MA5)
+    # 거래량 급증: 평균 대비 설정값 배수 이상
+    cond_vol = (cur.VOL_MA5 and cur.volume >= config.vol_ma5_mult * cur.VOL_MA5)
 
-    # 상승 초입 추세 필터: 가격 상승 + OBV 상승 + 연속 상승
+    # 상승 초입 추세 필터: 가격 상승 + OBV 상승 + 연속 상승 + DEMA 슬로프 (설정에 따라)
     trend_ok = (
         (df.iloc[-1]["TEMA20_SLOPE20"] > 0)  # 가격 상승 추세
         and (df.iloc[-1]["OBV_SLOPE20"] > 0)  # OBV 상승 (자금 유입)
-        and (above_cnt >= 2)  # 연속 상승 (3일 중 2일 이상)
+        and (above_cnt >= 3)  # 연속 상승 (5일 중 3일 이상으로 강화)
     )
+    
+    # DEMA 슬로프 조건 추가 (설정에 따라)
+    if config.require_dema_slope == "required":
+        trend_ok = trend_ok and (df.iloc[-1]["DEMA10_SLOPE20"] > 0)
+    elif config.require_dema_slope == "optional":
+        # 선택사항이므로 점수에만 반영
+        pass
 
     # ----- 신호 요건 상향 (동적 MIN_SIGNALS + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
     # 기존 cond_gc(교차/정렬)와 trend_ok(TEMA/DEMA/OBV slope 등)는 유지
