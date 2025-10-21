@@ -28,9 +28,10 @@ export default function CustomerScannerMobile({ initialData }) {
       }
       
       const data = await response.json();
-      
-      if (data && data.ok && data.data && data.data.rank) {
-        setScanResults(data.data.rank);
+
+      if (data && data.ok && data.data) {
+        const items = data.data.items || data.data.rank || [];
+        setScanResults(items);
       } else {
         setScanResults([]);
       }

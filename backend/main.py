@@ -181,30 +181,22 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
+        # Ensure table exists before querying
+        create_scan_rank_table(cur)
         
         # 최신 스키마로 테이블 생성
         create_scan_rank_table(cur)
         
         rows = []
         for it in items:
-            # 각 필드를 적절히 처리
+            # 각 필드를 indicators에서 일관되게 사용
             name = getattr(it, 'name', '') or ''
-            close_price = float(getattr(it.indicators, 'close', 0)) if hasattr(it, 'indicators') and hasattr(it.indicators, 'close') else 0.0
-            volume = 0  # 기본값
-            change_rate = 0.0  # 기본값
-            market = ''  # 기본값
-            strategy = ''  # 기본값
-            
-            # 키움 API에서 종목 정보 직접 조회 (등락률 포함)
-            try:
-                quote = api.get_stock_quote(it.ticker)
-                if "error" not in quote:
-                    close_price = quote.get("current_price", close_price)
-                    volume = quote.get("volume", volume)
-                    change_rate = quote.get("change_rate", change_rate)
-            except Exception as e:
-                pass  # 조회 실패 시 기본값 사용
-            
+            close_price = float(getattr(it.indicators, 'close', 0) or 0.0)
+            volume = int(getattr(it.indicators, 'VOL', 0) or 0)
+            change_rate = float(getattr(it.indicators, 'change_rate', 0.0) or 0.0)
+            market = getattr(it, 'market', '') or ''
+            strategy = getattr(it, 'strategy', '') or ''
+
             # JSON 필드들
             indicators_json = json.dumps(it.indicators.__dict__ if hasattr(it.indicators, '__dict__') else {}, ensure_ascii=False)
             trend_json = json.dumps(it.trend.__dict__ if hasattr(it.trend, '__dict__') else {}, ensure_ascii=False)
@@ -292,6 +284,14 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
     else:
         today_as_of = datetime.now().strftime('%Y-%m-%d')
+
+    # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
+    try:
+        _today = datetime.now().strftime('%Y-%m-%d')
+        if today_as_of > _today:
+            today_as_of = _today
+    except Exception:
+        pass
     
     # 시장 상황 분석 (활성화된 경우)
     market_condition = None
@@ -330,6 +330,26 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             recurrence = recurrence_data.get(ticker)
             returns = returns_data.get(ticker) if date else None
             
+            # change_rate 계산(전일 대비) - prev_close가 없으면 OHLCV(2, base=today_as_of)로 보충
+            try:
+                cr = None
+                cc = float(item["indicators"].get("close") or 0.0)
+                pc_val = item["indicators"].get("prev_close")
+                if pc_val is None or float(pc_val or 0.0) <= 0:
+                    try:
+                        df2 = api.get_ohlcv(ticker, 2, today_as_of)
+                        if not df2.empty and len(df2) >= 2:
+                            pc_val = float(df2.iloc[-2]["close"])
+                            # 보조로 prev_close를 indicators에 주입(직렬화용)
+                            item["indicators"]["prev_close"] = pc_val
+                    except Exception:
+                        pc_val = None
+                if pc_val and cc:
+                    pc = float(pc_val)
+                    cr = round(((cc - pc) / pc) * 100, 2) if pc > 0 else None
+            except Exception:
+                cr = None
+
             scan_item = ScanItem(
                 ticker=ticker,
                 name=item["name"],
@@ -347,6 +367,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     VOL=item["indicators"]["VOL"],
                     VOL_MA5=item["indicators"]["VOL_MA5"],
                     close=item["indicators"]["close"],
+                    change_rate=(cr if cr is not None else 0.0),
                 ),
                 trend=TrendPayload(
                     TEMA20_SLOPE20=item["trend"]["TEMA20_SLOPE20"],
@@ -385,37 +406,10 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         enhanced_rank = []
         for it in scan_items:
             try:
-                # 키움 API에서 종목 정보 직접 조회 (등락률 포함)
-                print(f"🔍 {it.ticker} 등락률 조회 중...")
-                quote = api.get_stock_quote(it.ticker)
-                print(f"📊 {it.ticker} 조회 결과: {quote}")
-                if "error" not in quote:
-                    current_price = quote.get("current_price", 0)
-                    volume = quote.get("volume", 0)
-                    change_rate = quote.get("change_rate", 0)
-                    # 데이터베이스 저장용 변수 업데이트
-                    close_price = current_price
-                    volume = volume
-                    change_rate = change_rate
-                else:
-                    # 실패 시 OHLCV 데이터로 계산
-                    df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터 (전일 대비 변동률 계산용)
-                    if not df.empty:
-                        latest = df.iloc[-1]
-                        prev_close = df.iloc[-2]["close"] if len(df) > 1 else latest["open"]
-                        
-                        # 변동률 계산 (전일 종가 대비)
-                        if prev_close != 0:
-                            change_rate = round(((latest["close"] - prev_close) / prev_close) * 100, 2)
-                        else:
-                            change_rate = 0
-                        
-                        current_price = int(latest["close"])
-                        volume = int(latest["volume"])
-                    else:
-                        current_price = 0
-                        volume = 0
-                        change_rate = 0
+                # 저장은 indicators 기반으로 일관 처리
+                current_price = int(getattr(it.indicators, 'close', 0) or 0)
+                volume = int(getattr(it.indicators, 'VOL', 0) or 0)
+                change_rate = float(getattr(it.indicators, 'change_rate', 0.0) or 0.0)
                 
                 enhanced_item = {
                     'ticker': it.ticker,
@@ -1554,8 +1548,8 @@ def get_latest_scan_from_db():
             # 오늘 데이터가 있으면 오늘 데이터 사용
             latest_date = today
         else:
-            # 오늘 데이터가 없으면 가장 최신 날짜 사용 (전날 또는 그 이전)
-            cur.execute("SELECT MAX(date) FROM scan_rank")
+            # 오늘 데이터가 없으면 오늘 이하 범위에서 가장 최신 날짜 사용
+            cur.execute("SELECT MAX(date) FROM scan_rank WHERE date <= ?", (today,))
             latest_date = cur.fetchone()[0]
         
         if not latest_date:
