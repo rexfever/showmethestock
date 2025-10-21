@@ -1,0 +1,4 @@
+Git 계정 설정 테스트 파일
+작성자: rexfever
+이메일: rex.fever.sohn@gmail.com
+시간: 2025-01-10
