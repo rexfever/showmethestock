@@ -16,7 +16,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // mounted 상태 제거 - 불필요한 복잡성
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
   // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
@@ -161,8 +160,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   }, []);
 
   useEffect(() => {
-    // mounted 설정 제거 - 불필요
-    
     // 모바일 감지
     if (typeof window !== 'undefined') {
       const userAgent = navigator.userAgent;
@@ -209,8 +206,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
 
 
-
-  // mounted 체크 제거 - SSR 데이터가 있으므로 바로 렌더링
 
   return (
     <>
