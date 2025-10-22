@@ -356,7 +356,7 @@ class KiwoomAPI:
         })
         return df.reset_index(drop=True)
 
-    def get_stock_quote(self, code: str) -> dict:
+    def get_stock_quote(self, code: str, base_dt: str = None) -> dict:
         """종목의 현재가, 등락률 등 실시간 정보 조회"""
         if self.force_mock:
             return {
@@ -368,7 +368,7 @@ class KiwoomAPI:
         
         try:
             # OHLCV 데이터에서 등락률 계산 (기존 방식 사용)
-            df = self.get_ohlcv(code, 2)  # 최근 2일 데이터
+            df = self.get_ohlcv(code, 2, base_dt)  # base_dt 파라미터 추가
             if not df.empty and len(df) >= 2:
                 latest = df.iloc[-1]
                 prev_close = df.iloc[-2]["close"]

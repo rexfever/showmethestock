@@ -177,7 +177,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
             
             # 키움 API에서 종목 정보 직접 조회 (등락률 포함)
             try:
-                quote = api.get_stock_quote(it.ticker)
+                quote = api.get_stock_quote(it.ticker, as_of)
                 if "error" not in quote:
                     # 키움 API에서 현재가와 등락률 가져오기
                     current_price = quote.get("current_price", 0)
