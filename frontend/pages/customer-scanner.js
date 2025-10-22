@@ -248,12 +248,12 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     const month = parseInt(scanDate.substring(4, 6));
                     const day = parseInt(scanDate.substring(6, 8));
                     const date = new Date(year, month - 1, day);
-                    return date.toLocaleDateString('ko-KR', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric',
-                      weekday: 'short'
-                    });
+                    
+                    // 서버와 클라이언트 일치를 위해 고정 형식 사용
+                    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+                    const weekday = weekdays[date.getDay()];
+                    
+                    return `${year}년 ${month}월 ${day}일 (${weekday})`;
                   })() : `데이터 없음`}
                 </div>
                 <div className="flex items-center space-x-2">
