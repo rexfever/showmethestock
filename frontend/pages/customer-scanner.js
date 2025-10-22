@@ -16,7 +16,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [mounted, setMounted] = useState(false);
+  // mounted 상태 제거 - 불필요한 복잡성
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
   // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
@@ -161,7 +161,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   }, []);
 
   useEffect(() => {
-    setMounted(true);
+    // mounted 설정 제거 - 불필요
     
     // 모바일 감지
     if (typeof window !== 'undefined') {
@@ -247,7 +247,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               {/* 왼쪽: 날짜와 매칭종목 */}
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
-                  {mounted && scanDate ? (() => {
+                  {scanResults.length > 0 ? (() => {
                     // YYYYMMDD 형식을 YYYY년 M월 D일 형식으로 변환
                     const year = scanDate.substring(0, 4);
                     const month = parseInt(scanDate.substring(4, 6));
@@ -259,7 +259,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                       day: 'numeric',
                       weekday: 'short'
                     });
-                  })() : `로딩 중... (scanDate: ${scanDate}, mounted: ${mounted})`}
+                  })() : `데이터 없음`}
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
