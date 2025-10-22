@@ -23,7 +23,7 @@ def _db_path() -> str:
 def _parse_date(date_str: str) -> str:
     """날짜 문자열을 YYYY-MM-DD 형식으로 변환"""
     if not date_str:
-        return datetime.now().strftime("%Y-%m-%d")
+        return datetime.now().strftime("%Y%m%d")
     
     try:
         if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD 형식
@@ -33,7 +33,7 @@ def _parse_date(date_str: str) -> str:
         else:
             raise ValueError("날짜 형식이 올바르지 않습니다.")
     except Exception:
-        return datetime.now().strftime("%Y-%m-%d")
+        return datetime.now().strftime("%Y%m%d")
 
 
 def _get_universe(api: KiwoomAPI, kospi_limit: int, kosdaq_limit: int) -> List[str]:
@@ -181,34 +181,22 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
                 if "error" not in quote:
                     current_price = quote.get("current_price", 0)
                     volume = quote.get("volume", 0)
-                    change_rate = quote.get("change_rate", 0)
+                    change_rate = quote.get("change_rate", None)  # None으로 초기화
+                    
+                    # change_rate가 없으면 데이터 없음으로 처리
+                    if change_rate is None:
+                        change_rate = None  # 데이터 없음
                 else:
-                    # 실패 시 OHLCV 데이터로 계산
-                    df = api.get_ohlcv(it.ticker, 2)  # 최근 2일 데이터
-                    if not df.empty and len(df) >= 2:
-                        latest = df.iloc[-1]
-                        prev_close = df.iloc[-2]["close"]
-                        
-                        # 현재가와 거래량
-                        current_price = float(latest["close"])
-                        volume = int(latest["volume"])
-                        
-                        # 등락률 계산 (전일 종가 대비)
-                        if prev_close > 0:
-                            change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
-                        else:
-                            change_rate = 0.0
-                    else:
-                        # 데이터가 없으면 indicators에서 가져오기
-                        current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
-                        volume = int(it.indicators.VOL if hasattr(it.indicators, 'VOL') else 0)
-                        change_rate = 0.0
+                    # API 실패 시 indicators에서 가져오기
+                    current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
+                    volume = int(it.indicators.VOL if hasattr(it.indicators, 'VOL') else 0)
+                    change_rate = None  # 데이터 없음
             except Exception as e:
                 print(f"⚠️ {it.ticker} 데이터 가져오기 실패: {e}")
                 # 실패 시 indicators에서 가져오기
                 current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
                 volume = int(it.indicators.VOL if hasattr(it.indicators, 'VOL') else 0)
-                change_rate = 0.0
+                change_rate = None  # 데이터 없음
             
             rows.append((
                 as_of, 
