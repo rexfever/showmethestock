@@ -130,9 +130,32 @@ def generate_yearly_reports():
         print(f"연간 보고서 생성 중 오류: {e}")
 
 
+def update_existing_reports():
+    """기존 보고서들의 수익률 업데이트"""
+    try:
+        print("기존 보고서 수익률 업데이트 시작...")
+        
+        # daily_returns_updater 모듈 import
+        from daily_returns_updater import update_current_returns_in_reports, update_statistics_avg_return
+        
+        # 현재 수익률 업데이트
+        updated_files, error_files = update_current_returns_in_reports()
+        print(f"수익률 업데이트 완료: {updated_files}개 파일, 오류: {error_files}개")
+        
+        # 통계 평균 수익률 재계산
+        update_statistics_avg_return()
+        print("통계 평균 수익률 재계산 완료")
+        
+    except Exception as e:
+        print(f"기존 보고서 업데이트 중 오류: {e}")
+
+
 def setup_scheduler():
     """스케줄러 설정"""
     print("보고서 생성 스케줄러 설정 중...")
+    
+    # 기존 보고서 수익률 업데이트: 매일 오후 6시 30분
+    schedule.every().day.at("18:30").do(update_existing_reports)
     
     # 주간 보고서: 매주 금요일 오후 6시
     schedule.every().friday.at("18:00").do(generate_weekly_reports)

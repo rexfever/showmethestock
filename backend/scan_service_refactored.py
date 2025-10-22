@@ -146,7 +146,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
                 name TEXT, 
                 score REAL, 
                 score_label TEXT,
-                close_price REAL,
+                current_price REAL,
                 volume REAL,
                 change_rate REAL,
                 market TEXT,
@@ -179,9 +179,16 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
             try:
                 quote = api.get_stock_quote(it.ticker)
                 if "error" not in quote:
+                    # 키움 API에서 현재가와 등락률 가져오기
                     current_price = quote.get("current_price", 0)
                     volume = quote.get("volume", 0)
-                    change_rate = quote.get("change_rate", None)  # 키움 API에서 제공하는 등락률 사용
+                    change_rate = quote.get("change_rate", None)
+                    
+                    # current_price가 0이면 indicators에서 가져오기
+                    if current_price == 0:
+                        current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
+                        volume = int(it.indicators.VOL if hasattr(it.indicators, 'VOL') else 0)
+                        change_rate = None
                 else:
                     # API 실패 시 indicators에서 가져오기
                     current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
@@ -216,7 +223,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
         print(f"💾 {len(rows)}개 레코드 삽입 시도")
         cur.executemany("""
             INSERT INTO scan_rank(
-                date, code, name, score, score_label, close_price, volume, 
+                date, code, name, score, score_label, current_price, volume, 
                 change_rate, market, strategy, indicators, trend, flags, 
                 details, returns, recurrence
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -235,6 +242,10 @@ def execute_scan(kospi_limit: int = None, kosdaq_limit: int = None,
                 date: str = None, api: KiwoomAPI = None) -> ScanResponse:
     """스캔 실행 메인 함수"""
     print(f"🔍 스캔 API 호출: save_snapshot={save_snapshot}, date={date}")
+    
+    # API 인스턴스 생성
+    if api is None:
+        api = KiwoomAPI()
     
     # 날짜 처리
     today_as_of = _parse_date(date)
@@ -258,8 +269,7 @@ def execute_scan(kospi_limit: int = None, kosdaq_limit: int = None,
         market_condition=market_condition
     )
     
-    items = scan_result.get("items", [])
-    chosen_step = scan_result.get("chosen_step", 0)
+    items, chosen_step = scan_result
     
     # 수익률 데이터 계산 (과거 날짜인 경우)
     returns_data = None

@@ -242,18 +242,15 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               {/* 왼쪽: 날짜와 매칭종목 */}
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
-                  {scanResults.length > 0 ? (() => {
-                    // YYYYMMDD 형식을 YYYY년 M월 D일 형식으로 변환
-                    const year = scanDate.substring(0, 4);
-                    const month = parseInt(scanDate.substring(4, 6));
-                    const day = parseInt(scanDate.substring(6, 8));
-                    const date = new Date(year, month - 1, day);
-                    
-                    // 서버와 클라이언트 일치를 위해 고정 형식 사용
-                    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-                    const weekday = weekdays[date.getDay()];
-                    
-                    return `${year}년 ${month}월 ${day}일 (${weekday})`;
+                  {scanResults.length > 0 && scanDate ? (() => {
+                    // YYYYMMDD를 YYYY년 M월 D일 형식으로 변환
+                    if (scanDate.length === 8) {
+                      const year = scanDate.substring(0, 4);
+                      const month = parseInt(scanDate.substring(4, 6));
+                      const day = parseInt(scanDate.substring(6, 8));
+                      return `${year}년 ${month}월 ${day}일`;
+                    }
+                    return scanDate; // 형식이 맞지 않으면 원본 반환
                   })() : `데이터 없음`}
                 </div>
                 <div className="flex items-center space-x-2">

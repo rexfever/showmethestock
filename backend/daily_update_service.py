@@ -162,7 +162,7 @@ class DailyUpdateService:
                 bottom_performers = cursor.fetchall()
                 
                 return {
-                    'date': datetime.now().strftime('%Y-%m-%d'),
+                    'date': datetime.now().strftime('%Y%m%d'),
                     'source_stats': source_stats,
                     'top_performers': top_performers,
                     'bottom_performers': bottom_performers

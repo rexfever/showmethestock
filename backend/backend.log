@@ -1,478 +1,108 @@
 INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [16313] using WatchFiles
-INFO:     Started server process [16316]
+INFO:     Started reloader process [47192] using WatchFiles
+INFO:     Started server process [47204]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:51364 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51366 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51366 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'scheduler.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [16316]
-INFO:     Started server process [17827]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'scheduler.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [17827]
-INFO:     Started server process [17977]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:54734 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 2개 매칭, 98개 필터링, 총 100개 중
-📊 Step 0 결과: 2개 종목
-✅ Step 0에서 목표 달성: 2개 종목 선택
-🎯 최종 선택: Step 0, 2개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-21, 2개 항목
-✅ 데이터베이스 저장 완료: 2025-10-21
-INFO:     127.0.0.1:57883 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58698 - "GET /latest-scan HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58713 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58713 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58752 - "GET /latest-scan HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 7개 매칭, 93개 필터링, 총 100개 중
-📊 Step 1 결과: 7개 종목
-✅ Step 1에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 1, 5개 종목
-INFO:     127.0.0.1:59117 - "GET /scan?save_snapshot=false HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60411 - "GET /latest-scan HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 7개 매칭, 93개 필터링, 총 100개 중
-📊 Step 0 결과: 7개 종목
-✅ Step 0에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 0, 5개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 5개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:62598 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 7개 매칭, 93개 필터링, 총 100개 중
-📊 Step 0 결과: 7개 종목
-✅ Step 0에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 0, 5개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 5개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:63546 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63912 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63927 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63927 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64101 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64427 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64429 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64446 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64446 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64792 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65109 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65250 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65265 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65265 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
 WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [17977]
-INFO:     Started server process [46393]
+INFO:     Finished server process [47204]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [58588]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [46393]
-INFO:     Started server process [46484]
+INFO:     Finished server process [58588]
+INFO:     Started server process [58671]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 7개 매칭, 93개 필터링, 총 100개 중
-📊 Step 1 결과: 7개 종목
-✅ Step 1에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 1, 5개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 5개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:64480 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49280 - "GET /latest-scan HTTP/1.1" 200 OK
 WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [46484]
-INFO:     Started server process [50377]
+INFO:     Finished server process [58671]
+WARNING:  WatchFiles detected changes in 'services/returns_service.py'. Reloading...
+INFO:     Started server process [58813]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:49781 - "GET /latest-scan HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'services/returns_service.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [50377]
-INFO:     Started server process [51954]
+INFO:     Finished server process [58813]
+INFO:     Started server process [58877]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'services/returns_service.py', 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [51954]
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Started server process [52084]
+INFO:     Finished server process [58877]
+INFO:     Started server process [59737]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 1 결과: 1개 종목
-✅ Step 1에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 1, 1개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:50269 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [52084]
-INFO:     Started server process [54844]
+INFO:     Finished server process [59737]
+INFO:     Started server process [62260]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 1 결과: 1개 종목
-✅ Step 1에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 1, 1개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:51451 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'scanner.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [54844]
-INFO:     Started server process [57489]
+INFO:     Finished server process [62260]
+INFO:     Started server process [62563]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 1 결과: 1개 종목
-✅ Step 1에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 1, 1개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:52645 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53759 - "GET /analyze/000720 HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:53776 - "GET /analyze/000720 HTTP/1.1" 404 Not Found
-WARNING:  WatchFiles detected changes in 'scanner.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [57489]
-INFO:     Started server process [60677]
+INFO:     Finished server process [62563]
+INFO:     Started server process [62666]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 1 결과: 1개 종목
-✅ Step 1에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 1, 1개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:54040 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'scanner.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [60677]
-INFO:     Started server process [63521]
+INFO:     Finished server process [62666]
+WARNING:  WatchFiles detected changes in 'daily_update_service.py'. Reloading...
+INFO:     Started server process [62812]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 2}
-🔧 프리셋 적용: {'min_signals': 2}
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 1 결과: 1개 종목
-✅ Step 1에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 1, 1개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:55897 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'notification_service.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [63521]
-INFO:     Started server process [67968]
+INFO:     Finished server process [62812]
+INFO:     Started server process [62899]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py', 'scanner.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [67968]
-INFO:     Started server process [68201]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [68201]
-INFO:     Started server process [69681]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [69681]
-INFO:     Started server process [69787]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 3}
-🔧 프리셋 적용: {'min_signals': 3}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 1 결과: 0개 종목
-❌ Step 1 목표 미달: 0 < 1
-🔄 Step 2: {'vol_ma5_mult': 2.0, 'vol_ma20_mult': 1.2}
-🔧 프리셋 적용: {'vol_ma5_mult': 2.0, 'vol_ma20_mult': 1.2}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 2 결과: 0개 종목
-❌ Step 2 목표 미달: 0 < 1
-🔄 Step 3: {'gap_max': 0.018, 'ext_from_tema20_max': 0.018}
-🔧 프리셋 적용: {'gap_max': 0.018, 'ext_from_tema20_max': 0.018}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 3 결과: 0개 종목
-❌ Step 3 목표 미달: 0 < 1
-🔄 Step 4: {'min_signals': 2, 'vol_ma5_mult': 1.8, 'require_dema_slope': 'optional'}
-🔧 프리셋 적용: {'min_signals': 2, 'vol_ma5_mult': 1.8, 'require_dema_slope': 'optional'}
-📊 스캔 완료: 6개 매칭, 94개 필터링, 총 100개 중
-📊 Step 4 결과: 6개 종목
-✅ Step 4에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 4, 5개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 5개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:57681 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [69787]
-INFO:     Started server process [75470]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 3}
-🔧 프리셋 적용: {'min_signals': 3}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 1 결과: 0개 종목
-❌ Step 1 목표 미달: 0 < 1
-🔄 Step 2: {'vol_ma5_mult': 2.2, 'vol_ma20_mult': 1.3}
-🔧 프리셋 적용: {'vol_ma5_mult': 2.2, 'vol_ma20_mult': 1.3}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 2 결과: 0개 종목
-❌ Step 2 목표 미달: 0 < 1
-🔄 Step 3: {'gap_max': 0.016, 'ext_from_tema20_max': 0.016}
-🔧 프리셋 적용: {'gap_max': 0.016, 'ext_from_tema20_max': 0.016}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 3 결과: 0개 종목
-❌ Step 3 목표 미달: 0 < 1
-🔄 Step 4: {'min_signals': 3, 'vol_ma5_mult': 2.0, 'require_dema_slope': 'optional'}
-🔧 프리셋 적용: {'min_signals': 3, 'vol_ma5_mult': 2.0, 'require_dema_slope': 'optional'}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 4 결과: 0개 종목
-❌ Step 4 목표 미달: 0 < 1
-⚠️ 모든 단계에서 목표 미달 - 마지막 단계 결과 사용
-❌ 모든 단계에서 0개 결과 - 빈 리스트 반환
-🔍 디버깅: universe=100개, market_condition=MarketCondition(date='2025-10-22', kospi_return=0.002141527001862098, volatility=0.0, market_sentiment='neutral', sector_rotation='mixed', foreign_flow='neutral', volume_trend='low', rsi_threshold=57.0, min_signals=3, macd_osc_min=0.0, vol_ma5_mult=1.8, gap_max=0.018, ext_from_tema20_max=0.018)
-🎯 최종 선택: Step 0, 0개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 0개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:60518 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [75470]
-INFO:     Started server process [81460]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [81460]
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Started server process [83384]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [83384]
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Started server process [83509]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 0 결과: 0개 종목
-❌ Step 0 목표 미달: 0 < 1
-🔄 Step 1: {'min_signals': 3}
-🔧 프리셋 적용: {'min_signals': 3}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 1 결과: 0개 종목
-❌ Step 1 목표 미달: 0 < 1
-🔄 Step 2: {'vol_ma5_mult': 1.8, 'vol_ma20_mult': 1.2}
-🔧 프리셋 적용: {'vol_ma5_mult': 1.8, 'vol_ma20_mult': 1.2}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 2 결과: 0개 종목
-❌ Step 2 목표 미달: 0 < 1
-🔄 Step 3: {'gap_max': 0.02, 'ext_from_tema20_max': 0.02}
-🔧 프리셋 적용: {'gap_max': 0.02, 'ext_from_tema20_max': 0.02}
-📊 스캔 완료: 0개 매칭, 100개 필터링, 총 100개 중
-📊 Step 3 결과: 0개 종목
-❌ Step 3 목표 미달: 0 < 1
-🔄 Step 4: {'min_signals': 2, 'vol_ma5_mult': 1.6, 'require_dema_slope': 'optional'}
-🔧 프리셋 적용: {'min_signals': 2, 'vol_ma5_mult': 1.6, 'require_dema_slope': 'optional'}
-📊 스캔 완료: 6개 매칭, 94개 필터링, 총 100개 중
-📊 Step 4 결과: 6개 종목
-✅ Step 4에서 목표 달성: 5개 종목 선택
-🎯 최종 선택: Step 4, 5개 종목
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 5개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:63903 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [83509]
-INFO:     Started server process [89130]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [89130]
-INFO:     Started server process [90074]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [90074]
-INFO:     Started server process [90151]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
+INFO:     127.0.0.1:52211 - "POST /scan HTTP/1.1" 405 Method Not Allowed
+📊 시장 상황 분석: neutral (KOSPI: 0.01%, RSI 임계값: 57.0)
 🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
 📊 Fallback 활성화 - 5단계 완화 시도
 📊 목표: 최소 1개, 최대 5개
@@ -503,18 +133,18 @@ INFO:     Application startup complete.
 🎯 최종 선택: Step 4, 1개 종목
 🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
 ✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-10-22, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-10-22
-INFO:     127.0.0.1:50569 - "GET /scan?save_snapshot=true HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+💾 데이터베이스 저장 시작: 20251022, 1개 항목
+✅ 데이터베이스 저장 완료: 20251022
+INFO:     127.0.0.1:52229 - "GET /scan?as_of=20251022 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py', 'daily_update_service.py', 'main.py', 'notification_service.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [90151]
-INFO:     Started server process [95846]
+INFO:     Finished server process [62899]
+INFO:     Started server process [69076]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
+📊 시장 상황 분석: neutral (KOSPI: 0.01%, RSI 임계값: 57.0)
 🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
 📊 Fallback 활성화 - 5단계 완화 시도
 📊 목표: 최소 1개, 최대 5개
@@ -543,119 +173,302 @@ INFO:     Application startup complete.
 📊 Step 4 결과: 1개 종목
 ✅ Step 4에서 목표 달성: 1개 종목 선택
 🎯 최종 선택: Step 4, 1개 종목
-💰 수익률 계산 시작: 1개 종목, 날짜: 2025-07-31
-💰 수익률 계산 완료: 1개 결과
-  000720: -13.33%
 🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
 ✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-07-31, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-07-31
-INFO:     127.0.0.1:53411 - "GET /scan?date=2025-07-31&save_snapshot=true HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 0 결과: 1개 종목
-✅ Step 0에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 0, 1개 종목
-💰 수익률 계산 시작: 1개 종목, 날짜: 2025-08-15
-💰 수익률 계산 완료: 1개 결과
-  000720: -8.31%
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-08-15, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-08-15
-INFO:     127.0.0.1:54939 - "GET /scan?date=2025-08-15&save_snapshot=true HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 0 결과: 1개 종목
-✅ Step 0에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 0, 1개 종목
-💰 수익률 계산 시작: 1개 종목, 날짜: 2024-07-31
-💰 수익률 계산 완료: 1개 결과
-  000720: 74.89%
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2024-07-31, 1개 항목
-✅ 데이터베이스 저장 완료: 2024-07-31
-INFO:     127.0.0.1:55303 - "GET /scan?date=2024-07-31&save_snapshot=true HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 0 결과: 1개 종목
-✅ Step 0에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 0, 1개 종목
-💰 수익률 계산 시작: 1개 종목, 날짜: 2025-07-31
-💰 수익률 계산 완료: 1개 결과
-  000720: -13.33%
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-07-31, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-07-31
-INFO:     127.0.0.1:56104 - "GET /scan?date=2025-07-31&save_snapshot=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56426 - "POST /clear-cache HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 0 결과: 1개 종목
-✅ Step 0에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 0, 1개 종목
-💰 수익률 계산 시작: 1개 종목, 날짜: 2025-07-31
-💰 수익률 계산 완료: 1개 결과
-  000720: -13.33%
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-07-31, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-07-31
-INFO:     127.0.0.1:56483 - "GET /scan?date=2025-07-31&save_snapshot=true HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 1개 매칭, 99개 필터링, 총 100개 중
-📊 Step 0 결과: 1개 종목
-✅ Step 0에서 목표 달성: 1개 종목 선택
-🎯 최종 선택: Step 0, 1개 종목
-💰 수익률 계산 시작: 1개 종목, 날짜: 2025-06-15
-💰 수익률 계산 완료: 1개 결과
-  000720: -20.52%
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-06-15, 1개 항목
-✅ 데이터베이스 저장 완료: 2025-06-15
-INFO:     127.0.0.1:56815 - "GET /scan?date=2025-06-15&save_snapshot=true HTTP/1.1" 200 OK
-📊 시장 상황 분석: neutral (KOSPI: 0.00%, RSI 임계값: 57.0)
-🔄 Fallback 로직 시작: universe=100개, fallback_enable=True
-📊 Fallback 활성화 - 5단계 완화 시도
-📊 목표: 최소 1개, 최대 5개
-🔄 Step 0: 기본 조건
-📊 스캔 완료: 3개 매칭, 97개 필터링, 총 100개 중
-📊 Step 0 결과: 3개 종목
-✅ Step 0에서 목표 달성: 3개 종목 선택
-🎯 최종 선택: Step 0, 3개 종목
-💰 수익률 계산 시작: 3개 종목, 날짜: 2025-07-31
-💰 수익률 계산 완료: 3개 결과
-  379800: 8.10%
-  103590: 0.94%
-  006400: 28.86%
-🔍 save_snapshot 조건 확인: True (타입: <class 'bool'>)
-✅ save_snapshot=True, 스냅샷 저장 시작
-💾 데이터베이스 저장 시작: 2025-07-31, 3개 항목
-✅ 데이터베이스 저장 완료: 2025-07-31
-INFO:     127.0.0.1:58282 - "GET /scan?date=20250731&save_snapshot=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61960 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61960 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62000 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+💾 데이터베이스 저장 시작: 20251022, 1개 항목
+❌ 데이터베이스 저장 오류: table scan_rank has no column named score
+INFO:     127.0.0.1:55718 - "GET /scan?as_of=20251022 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59380 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59416 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59507 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59567 - "GET /latest-scan HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69076]
+INFO:     Started server process [5076]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5076]
+INFO:     Started server process [5161]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [5161]
+INFO:     Started server process [8938]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [8938]
+INFO:     Started server process [10059]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [10059]
+INFO:     Started server process [10186]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [10186]
+INFO:     Started server process [10387]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py', 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [10387]
+INFO:     Started server process [10853]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:54074 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54343 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54549 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54940 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54943 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54988 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55570 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55570 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'report_scheduler.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [10853]
+INFO:     Started server process [21313]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'report_scheduler.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [21313]
+INFO:     Started server process [21395]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [21395]
+INFO:     Started server process [24222]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [24222]
+INFO:     Started server process [27487]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27487]
+INFO:     Started server process [28098]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [28098]
+INFO:     Started server process [31717]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [31717]
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [37552]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37552]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [37725]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37725]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [37903]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37903]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [38054]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38054]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [38308]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38308]
+INFO:     Started server process [38423]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38423]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [38672]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38672]
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Started server process [38900]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38900]
+INFO:     Started server process [39036]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py', 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39036]
+INFO:     Started server process [39437]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:63669 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63695 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63711 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63711 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'kiwoom_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39437]
+INFO:     Started server process [55271]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'kiwoom_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [55271]
+INFO:     Started server process [55792]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [55792]
+INFO:     Started server process [56478]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'kiwoom_api.py', 'scan_service_refactored.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56478]
+INFO:     Started server process [60286]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [60286]
+WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+INFO:     Started server process [73360]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [73360]
+INFO:     Started server process [76949]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [76949]
+INFO:     Started server process [80207]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:63481 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63497 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63497 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56471 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56487 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56487 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56527 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
+카카오 콜백 요청: {'code': 'kkH-YLLB564yjzOHEz9yp5-D0OgOGYJXHhmf28OywWFm0Sr-DFY5nAAAAAQKDSKZAAABmgzb383OkqTnJF629A', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"UMnFXkeZov2MBugzgz3AwZ_wUCCFz287AAAAAQoXC2sAAAGaDNvoEbG7d-HwzTGR","token_type":"bearer","refresh_token":"cYVbc0VAagzVoRmBD9kfxunXMe_8PGrSAAAAAgoXC2sAAAGaDNvoDLG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjExNTIzMjksImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjExNTk1MjksImlhdCI6MTc2MTE1MjMyOSwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.BWxWB7wKJ4OoKXcVetCsm-4of0_4S-Pf6NpBLk5jXgy6msKhaMEeJPI0POZ-8D3MLOFp2febDmJ6ip_tafnlmx4FQebi1x0Ld7T2TY66N4qi35hCwXIeBnEuuu16d75ZoNz4hH26j-3ONeeP7jPV4foPw1ksR7CeY4oX0swmhL2VPc9uGw3hSkhc5Re3OnTqo6hhqko21HhJKdsAC5PR6V4d5Qdkh1ONXUSZRug1EHtImVihdLVuhZJEZmmFJhCU0spT1JyW9enjdVJEcM6CeWuQf-DeWRnwSKexc2PQEQSTrUoD6XzLlmxhoIqFP_WcxF_Gp5dBjW5Dz0pVL0boiA","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+create_user_from_social 입력: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+provider_id 값: 4456585023
+UserCreate 객체 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+기존 사용자 발견: email=emozero@naver.com, provider=kakao
+업데이트된 사용자: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=1 created_at=datetime.datetime(2025, 10, 12, 1, 1, 18) last_login=datetime.datetime(2025, 10, 19, 14, 50, 58)
+사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=1 created_at=datetime.datetime(2025, 10, 12, 1, 1, 18) last_login=datetime.datetime(2025, 10, 19, 14, 50, 58)
+마지막 로그인 시간 업데이트 완료
+INFO:     127.0.0.1:56527 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56545 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56527 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56527 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK

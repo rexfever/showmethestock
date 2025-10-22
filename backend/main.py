@@ -30,7 +30,7 @@ def create_scan_rank_table(cur):
             name TEXT,
             score REAL,
             score_label TEXT,
-            close_price REAL,
+            current_price REAL,
             volume INTEGER,
             change_rate REAL,
             market TEXT,
@@ -191,7 +191,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
         for it in items:
             # 각 필드를 indicators에서 일관되게 사용
             name = getattr(it, 'name', '') or ''
-            close_price = float(getattr(it.indicators, 'close', 0) or 0.0)
+            current_price = float(getattr(it.indicators, 'close', 0) or 0.0)
             volume = int(getattr(it.indicators, 'VOL', 0) or 0)
             change_rate = float(getattr(it.indicators, 'change_rate', 0.0) or 0.0)
             market = getattr(it, 'market', '') or ''
@@ -207,14 +207,14 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
             
             rows.append((
                 as_of, it.ticker, name, float(it.score), it.score_label or '', 
-                close_price, volume, change_rate, market, strategy,
+                current_price, volume, change_rate, market, strategy,
                 indicators_json, trend_json, flags_json, details_json, 
                 returns_json, recurrence_json
             ))
         
         cur.executemany("""
             INSERT OR REPLACE INTO scan_rank(
-                date, code, name, score, score_label, close_price, volume, change_rate, 
+                date, code, name, score, score_label, current_price, volume, change_rate, 
                 market, strategy, indicators, trend, flags, details, returns, recurrence
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, rows)
@@ -416,7 +416,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     'name': it.name,
                     'score': it.score,
                     'score_label': it.score_label,
-                    'close_price': int(current_price),  # 종가
+                    'current_price': int(current_price),  # 현재가
                     'volume': int(volume),              # 거래량
                     'change_rate': change_rate,         # 변동률
                 }
@@ -427,7 +427,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     'name': it.name,
                     'score': it.score,
                     'score_label': it.score_label,
-                    'close_price': 0,
+                    'current_price': 0,
                     'volume': 0,
                     'change_rate': 0,
                 }
@@ -626,7 +626,7 @@ def backfill_snapshots():
                     score = float(it.get('score') or 0.0)
                     label = it.get('score_label') or ''
                     try:
-                        cur.execute("INSERT OR IGNORE INTO scan_rank(date, code, score, flags, score_label, close_price) VALUES (?,?,?,?,?,?)",
+                        cur.execute("INSERT OR IGNORE INTO scan_rank(date, code, score, flags, score_label, current_price) VALUES (?,?,?,?,?,?)",
                                     (as_of, code, score, json.dumps({}, ensure_ascii=False), label, 0.0))
                         if cur.rowcount == 1:
                             inserted += 1
@@ -1450,7 +1450,7 @@ async def get_scan_by_date(date: str):
         cur = conn.cursor()
         
         cur.execute("""
-            SELECT code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
             WHERE date = ?
             ORDER BY score DESC
@@ -1465,7 +1465,7 @@ async def get_scan_by_date(date: str):
         # 데이터 변환
         items = []
         for row in rows:
-            code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
             # 수익률 계산 (실시간)
             try:
@@ -1485,7 +1485,7 @@ async def get_scan_by_date(date: str):
                 "name": name,
                 "score": score,
                 "score_label": score_label,
-                "close_price": close_price,
+                "current_price": current_price,
                 "volume": volume,
                 "change_rate": change_rate,
                 "market": market,
@@ -1557,7 +1557,7 @@ def get_latest_scan_from_db():
         
         # 해당 날짜의 스캔 결과 조회
         cur.execute("""
-            SELECT code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
             WHERE date = ?
             ORDER BY score DESC
@@ -1572,7 +1572,7 @@ def get_latest_scan_from_db():
         # 데이터 변환
         items = []
         for row in rows:
-            code, name, score, score_label, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
             # 스캐너에서는 수익률 계산 생략 (성능 최적화)
             current_return = 0
@@ -1588,8 +1588,7 @@ def get_latest_scan_from_db():
                 "name": name,
                 "score": score,
                 "score_label": score_label,
-                "close_price": close_price,
-                "current_price": close_price,  # 프론트엔드 호환성을 위해 추가
+                "current_price": current_price,  # 현재가
                 "volume": volume,
                 "change_rate": real_time_change_rate,  # 실시간 등락률 사용
                 "market": market,
@@ -2444,7 +2443,7 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
     FROM scan_rank 
             WHERE date BETWEEN ? AND ?
             ORDER BY date
@@ -2474,9 +2473,9 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
         positive_count = 0
         
         for row in rows:
-            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
-            if not name or not close_price:
+            if not name or not current_price:
                 continue
                 
             dates.add(date)
@@ -2497,7 +2496,7 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
             stock_data = {
                 "ticker": code,
                 "name": name,
-                "scan_price": close_price,
+                "scan_price": current_price,
                 "scan_date": date,
                 "current_return": current_return,
                 "max_return": max_return,
@@ -2757,7 +2756,7 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
             WHERE date BETWEEN ? AND ?
             ORDER BY date
@@ -2789,9 +2788,9 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         # 유효한 데이터만 필터링
         valid_rows = []
         for row in rows:
-            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
-            if not name or not close_price:
+            if not name or not current_price:
                 continue
                 
             dates.add(date)
@@ -2799,7 +2798,7 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         
         # 데이터 구성 및 수익률 계산
         for row in valid_rows:
-            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
             # 수익률 계산 (임시로 비활성화 - 성능 문제)
             current_return = 0
@@ -2810,7 +2809,7 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
             stock_data = {
                 "ticker": code,
                 "name": name,
-                "scan_price": close_price,
+                "scan_price": current_price,
                 "scan_date": date,
                 "current_return": current_return,
                 "max_return": max_return,
@@ -2917,7 +2916,7 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
         
         cursor.execute("""
-            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
             WHERE date BETWEEN ? AND ?
             ORDER BY date DESC
@@ -2932,7 +2931,7 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
         # 종목별 등장 횟수와 날짜 수집
         stock_data = {}
         for row in rows:
-            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
             if not name or not code:
                 continue
@@ -2942,13 +2941,13 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
                     "name": name,
                     "appearances": 0,
                     "dates": [],
-                    "latest_price": close_price,
+                    "latest_price": current_price,
                     "latest_change_rate": change_rate
                 }
             
             stock_data[code]["appearances"] += 1
             stock_data[code]["dates"].append(date)
-            stock_data[code]["latest_price"] = close_price
+            stock_data[code]["latest_price"] = current_price
             stock_data[code]["latest_change_rate"] = change_rate
         
         # 최소 등장 횟수 이상인 종목만 필터링

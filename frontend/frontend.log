@@ -6,13 +6,9 @@
   - Local:        http://localhost:3000
   - Environments: .env.local
 
- ✓ Ready in 1945ms
- ✓ Compiled / in 1032ms (273 modules)
- ✓ Compiled /customer-scanner in 461ms (281 modules)
- ✓ Compiled in 352ms (277 modules)
- ✓ Compiled in 154ms (277 modules)
- ✓ Compiled /_error in 372ms (279 modules)
- ✓ Compiled in 502ms (277 modules)
- ✓ Compiled in 257ms (277 modules)
- ✓ Compiled in 222ms (277 modules)
- ✓ Compiled in 293ms (277 modules)
+ ✓ Ready in 2.1s
+ ○ Compiling /customer-scanner ...
+ ✓ Compiled /customer-scanner in 8s (277 modules)
+ ✓ Compiled /_error in 131ms (279 modules)
+ ✓ Compiled in 308ms (279 modules)
+[?25h

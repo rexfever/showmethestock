@@ -118,8 +118,11 @@ class KiwoomAPI:
                 # 코드 후보 키
                 for k in ("stk_cd", "mksc_shrn_iscd", "stck_shrn_iscd", "code"):
                     v = obj.get(k)
-                    if isinstance(v, str) and len(v) == 6 and v.isdigit():
-                        found.append(v)
+                    if isinstance(v, str):
+                        # _NX 접미사 제거 후 6자리 숫자 확인
+                        code = v.split('_')[0]
+                        if len(code) == 6 and code.isdigit():
+                            found.append(code)
                 # 딕셔너리 내부 순회
                 for v in obj.values():
                     found.extend(_extract_codes(v))
@@ -138,6 +141,7 @@ class KiwoomAPI:
             # 상태코드가 명시된 경우에만 에러로 간주. 키가 없으면 통과
             rt_cd = data.get("rt_cd")
             return_code = data.get("return_code")
+            # rt_cd가 None이거나 '0'이면 정상, return_code가 0이 아니면 오류
             if (rt_cd is not None and rt_cd not in ("0", 0)) or (return_code is not None and return_code not in (0, "0")):
                 break
             # 출력 후보 전방위 탐색

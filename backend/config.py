@@ -33,7 +33,7 @@ class Config:
     ohlcv_count: int = int(os.getenv("OHLCV_COUNT", "220"))
 
     # === Tight preset ===
-    min_signals: int = int(os.getenv("MIN_SIGNALS", "3"))              # 4 -> 3 (현실적)
+    min_signals: int = int(os.getenv("MIN_SIGNALS", "2"))              # 3 -> 2 (현실적)
     macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "0.0"))        # -10 -> 0 (음모멘텀 제외)
     rsi_mode: str = os.getenv("RSI_MODE", "tema")              # hybrid -> tema
     rsi_threshold: float = float(os.getenv("RSI_THRESHOLD", "58"))       # 55 -> 58
@@ -44,7 +44,7 @@ class Config:
     ext_from_tema20_max: float = float(os.getenv("EXT_FROM_TEMA20_MAX", "0.015"))  # 2% -> 1.5%
     
     # 거래량·유동성
-    vol_ma5_mult: float = float(os.getenv("VOL_MA5_MULT", "2.0"))        # 2.5 -> 2.0 (현실적)
+    vol_ma5_mult: float = float(os.getenv("VOL_MA5_MULT", "1.8"))        # 2.0 -> 1.8 (현실적)
     vol_ma20_mult: float = float(os.getenv("VOL_MA20_MULT", "1.2"))      # 신규: MA20도 함께 요구
     min_turnover_krw: int = int(os.getenv("MIN_TURNOVER_KRW", "1000000000"))  # 10억 이상
     
@@ -175,13 +175,13 @@ class Config:
             # step 0: current strict (현 설정 그대로 사용)
             {},
             # step 1: 신호 약간 완화 (하지만 거래량과 추세는 유지)
-            {"min_signals": 3},  # 여전히 엄격
+            {"min_signals": 2},  # 3 -> 2로 완화
             # step 2: 거래량 현실적 완화 (하지만 DEMA 슬로프는 유지)
-            {"vol_ma5_mult": 1.8, "vol_ma20_mult": 1.2},  # 현실적
+            {"vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1},  # 더 현실적으로 완화
             # step 3: 갭/이격 범위 현실적 완화 (하지만 DEMA 슬로프는 유지)
-            {"gap_max": 0.02, "ext_from_tema20_max": 0.02},  # 현실적
-            # step 4: 최종 현실적 완화 (하지만 DEMA 슬로프는 절대 완화하지 않음)
-            {"min_signals": 2, "vol_ma5_mult": 1.6},  # DEMA 슬로프 조건 제거하지 않음
+            {"gap_max": 0.025, "ext_from_tema20_max": 0.025},  # 더 관대하게 완화
+            # step 4: 최종 현실적 완화 (DEMA 슬로프도 완화하되 안전 조건은 유지)
+            {"min_signals": 1, "vol_ma5_mult": 1.3, "require_dema_slope": "optional"},  # 최종 완화
         ]
 
 

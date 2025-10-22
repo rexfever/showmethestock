@@ -54,7 +54,7 @@ class NotificationService:
     
     def _format_daily_report(self, report: Dict[str, Any]) -> str:
         """일일 리포트 포맷팅"""
-        date = report.get('date', datetime.now().strftime('%Y-%m-%d'))
+        date = report.get('date', datetime.now().strftime('%Y%m%d'))
         source_stats = report.get('source_stats', {})
         top_performers = report.get('top_performers', [])
         bottom_performers = report.get('bottom_performers', [])
