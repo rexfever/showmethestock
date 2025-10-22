@@ -41,7 +41,7 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
     try:
         if current_date is None:
             from datetime import datetime
-            current_date = datetime.now().strftime('%Y-%m-%d')
+            current_date = datetime.now().strftime('%Y%m%d')
         
         # 날짜 형식 처리: YYYY-MM-DD -> YYYYMMDD
         if '-' in scan_date:
@@ -137,7 +137,7 @@ def calculate_returns_batch(tickers: List[str], scan_date: str, current_date: st
     """여러 종목의 수익률을 병렬로 계산"""
     if current_date is None:
         from datetime import datetime
-        current_date = datetime.now().strftime('%Y-%m-%d')
+        current_date = datetime.now().strftime('%Y%m%d')
     
     results = {}
     

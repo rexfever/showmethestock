@@ -141,7 +141,7 @@ os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
 def _save_scan_snapshot(payload: dict) -> str:
     try:
-        as_of = payload.get('as_of') or datetime.now().strftime('%Y-%m-%d')
+        as_of = payload.get('as_of') or datetime.now().strftime('%Y%m%d')
         fname = f"scan-{as_of.replace('-', '')}.json"
         path = os.path.join(SNAPSHOT_DIR, fname)
         with open(path, 'w', encoding='utf-8') as f:
@@ -283,11 +283,11 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         except:
             raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
     else:
-        today_as_of = datetime.now().strftime('%Y-%m-%d')
+        today_as_of = datetime.now().strftime('%Y%m%d')
 
     # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
     try:
-        _today = datetime.now().strftime('%Y-%m-%d')
+        _today = datetime.now().strftime('%Y%m%d')
         if today_as_of > _today:
             today_as_of = _today
     except Exception:
@@ -497,7 +497,7 @@ def universe(apply_scan: bool = False, kospi_limit: int = None, kosdaq_limit: in
                 items.append(UniverseItem(ticker=code, name=code))
 
     return UniverseResponse(
-        as_of=datetime.now().strftime('%Y-%m-%d'),
+        as_of=datetime.now().strftime('%Y%m%d'),
         items=items,
     )
 
@@ -647,7 +647,7 @@ def backfill_snapshots():
 @app.get('/validate_from_snapshot')
 def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 당일 스냅샷은 검증 불가(장중 변동/오류 방지)
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = datetime.now().strftime('%Y%m%d')
     if as_of == today:
         return {
             'error': 'today snapshot not allowed',
@@ -1566,7 +1566,7 @@ def get_latest_scan_from_db():
         cur = conn.cursor()
         
         # 오늘 날짜 확인
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now().strftime('%Y%m%d')
         
         # 오늘 데이터가 있는지 확인
         cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ?", (today,))
