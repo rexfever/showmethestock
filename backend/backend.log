@@ -656,3 +656,6 @@ INFO:     127.0.0.1:56815 - "GET /scan?date=2025-06-15&save_snapshot=true HTTP/1
 💾 데이터베이스 저장 시작: 2025-07-31, 3개 항목
 ✅ 데이터베이스 저장 완료: 2025-07-31
 INFO:     127.0.0.1:58282 - "GET /scan?date=20250731&save_snapshot=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61960 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61960 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62000 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
