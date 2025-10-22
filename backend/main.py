@@ -736,7 +736,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 여기선 리턴 배열 rets로 근사: 누적 곱 대신 최소값 사용(정밀도 낮음)
     mdd = round(min(rets) if rets else 0.0, 2)
     return {
-        'as_of': datetime.now().strftime('%Y-%m-%d'),
+        'as_of': datetime.now().strftime('%Y%m%d'),
         'snapshot_as_of': as_of,
         'top_k': top_k,
         'count': len(results),
@@ -1035,7 +1035,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
 
         for code in universe:
             try:
@@ -1202,7 +1202,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
 
         for code in universe:
             try:
@@ -1353,7 +1353,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
 
         for code in universe:
             try:
@@ -1528,34 +1528,6 @@ async def get_scan_by_date(date: str):
 
 # 기존 스냅샷 파일 관련 함수들은 제거됨 - DB만 사용
 
-def calculate_change_rate_from_db(code: str, scan_date: str, current_price: float) -> float:
-    """DB에서 전일 종가를 조회하여 등락률 계산"""
-    try:
-        conn = sqlite3.connect(_db_path())
-        cur = conn.cursor()
-        
-        # 전일 데이터 조회 (스캔 날짜 이전의 가장 최근 데이터)
-        cur.execute("""
-            SELECT close_price FROM scan_rank 
-            WHERE code = ? AND date < ? 
-            ORDER BY date DESC LIMIT 1
-        """, (code, scan_date))
-        
-        result = cur.fetchone()
-        conn.close()
-        
-        if result and result[0] > 0:
-            prev_close = float(result[0])
-            change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
-            return change_rate
-        else:
-            return 0.0
-            
-    except Exception as e:
-        print(f"등락률 계산 오류 ({code}): {e}")
-        return 0.0
-
-
 def get_latest_scan_from_db():
     """DB에서 직접 최신 스캔 결과를 조회하는 함수 (SSR용)"""
     try:
@@ -1608,8 +1580,8 @@ def get_latest_scan_from_db():
             min_return = 0
             days_elapsed = 0
             
-            # DB에서 전일 종가와 비교하여 등락률 계산
-            real_time_change_rate = calculate_change_rate_from_db(code, latest_date, close_price)
+            # 등락률은 DB에 저장된 값 사용 (키움 API에서 가져온 값)
+            real_time_change_rate = change_rate
             
             item = {
                 "ticker": code,
@@ -2941,8 +2913,8 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
         cursor = conn.cursor()
         
         # 최근 N일간의 데이터 조회
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y%m%d')
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
         
         cursor.execute("""
             SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence

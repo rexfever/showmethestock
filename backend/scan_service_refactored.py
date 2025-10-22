@@ -181,11 +181,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
                 if "error" not in quote:
                     current_price = quote.get("current_price", 0)
                     volume = quote.get("volume", 0)
-                    change_rate = quote.get("change_rate", None)  # None으로 초기화
-                    
-                    # change_rate가 없으면 데이터 없음으로 처리
-                    if change_rate is None:
-                        change_rate = None  # 데이터 없음
+                    change_rate = quote.get("change_rate", None)  # 키움 API에서 제공하는 등락률 사용
                 else:
                     # API 실패 시 indicators에서 가져오기
                     current_price = float(it.indicators.close if hasattr(it.indicators, 'close') else 0)
