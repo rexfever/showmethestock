@@ -538,6 +538,8 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         
         # 키움 API에서 실시간 데이터 가져오기
         quote = api.get_stock_quote(code)
+        print(f"DEBUG: 종목 {code}, quote: {quote}")
+        print(f"DEBUG: 종목 {code}, change_rate: {quote.get('change_rate', 0.0) if quote else 'None'}")
         
         # RSI 상한선 필터링 (과매수 구간 진입 방지)
         cur = df.iloc[-1]
