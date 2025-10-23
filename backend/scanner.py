@@ -568,6 +568,7 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
                 "VOL": cur.volume,
                 "VOL_MA5": cur.VOL_MA5,
                 "close": cur.close,
+                "change_rate": quote.get("change_rate", 0.0),
             },
             "trend": {
                 "TEMA20_SLOPE20": df.iloc[-1]["TEMA20_SLOPE20"],
