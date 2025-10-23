@@ -536,6 +536,9 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         # 종목명을 DataFrame에 추가
         df['name'] = stock_name
         
+        # 키움 API에서 실시간 데이터 가져오기
+        quote = api.get_stock_quote(code)
+        
         # RSI 상한선 필터링 (과매수 구간 진입 방지)
         cur = df.iloc[-1]
         if cur.RSI_TEMA > config.rsi_upper_limit:
