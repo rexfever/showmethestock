@@ -241,7 +241,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
             <div className="flex items-center justify-between">
               {/* 왼쪽: 날짜와 매칭종목 */}
               <div className="flex flex-col space-y-1">
-                <div className="text-sm font-semibold text-gray-800" style={{ fontSize: '0.7em' }}>
+                <div className="text-sm font-semibold text-gray-800" style={{ fontSize: '0.8em' }}>
                   {scanResults.length > 0 && scanDate ? (() => {
                     // YYYYMMDD를 YYYY년 M월 D일 형식으로 변환
                     if (scanDate.length === 8) {
@@ -253,7 +253,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     return scanDate; // 형식이 맞지 않으면 원본 반환
                   })() : `데이터 없음`}
                 </div>
-                <div className="flex items-center space-x-2" style={{ fontSize: '0.7em' }}>
+                <div className="flex items-center space-x-2" style={{ fontSize: '0.8em' }}>
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span className="text-gray-600 font-medium">매칭종목</span>
                   <span className="text-blue-600 font-bold">{scanResults.length}</span>
@@ -315,8 +315,8 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                   </p>
                 </div>
               ) : (
-                sortedResults.map((item) => (
-              <div key={item.ticker} className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+                sortedResults.map((item, index) => (
+              <div key={`${item.ticker}-${index}`} className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
                 {/* 종목명과 가격 */}
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
