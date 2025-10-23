@@ -24,3 +24,4 @@ backup_*/
 *.backup
 *.broken
 *.current
+*.pem
