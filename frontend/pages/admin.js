@@ -26,10 +26,15 @@ export default function AdminDashboard() {
       return;
     }
     
-    // 관리자 권한 확인
-    if (!user?.is_admin) {
+    // 관리자 권한 확인 (사용자 정보가 로드된 후에만 체크)
+    if (user && !user.is_admin) {
       alert('관리자 권한이 필요합니다.');
       router.push('/customer-scanner');
+      return;
+    }
+    
+    // 사용자 정보가 아직 로드되지 않았으면 대기
+    if (!user) {
       return;
     }
     

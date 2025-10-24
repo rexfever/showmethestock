@@ -4,11 +4,13 @@
 
   ▲ Next.js 13.5.11
   - Local:        http://localhost:3000
-  - Environments: .env.local
 
- ✓ Ready in 2.1s
- ○ Compiling /customer-scanner ...
- ✓ Compiled /customer-scanner in 8s (277 modules)
- ✓ Compiled /_error in 131ms (279 modules)
- ✓ Compiled in 308ms (279 modules)
-[?25h
+ ✓ Ready in 1764ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.2s (273 modules)
+ ✓ Compiled /customer-scanner in 197ms (281 modules)
+ ✓ Compiled /performance-report in 106ms (285 modules)
+ ✓ Compiled /login in 119ms (300 modules)
+ ✓ Compiled /_error in 66ms (302 modules)
+   Reload env: .env.local
+ ✓ Compiled in 104ms (291 modules)
