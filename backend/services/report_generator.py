@@ -155,6 +155,15 @@ class ReportGenerator:
             # 수익률 계산
             stocks = self._calculate_returns_for_stocks(scan_data)
             
+            # 중복 종목 제거 (같은 종목이 여러 날짜에 나타날 경우, 가장 좋은 수익률 기준으로 유지)
+            unique_stocks = {}
+            for stock in stocks:
+                ticker = stock["ticker"]
+                if ticker not in unique_stocks or stock["current_return"] > unique_stocks[ticker]["current_return"]:
+                    unique_stocks[ticker] = stock
+            
+            stocks = list(unique_stocks.values())
+            
             # 현재 수익률 기준으로 정렬
             stocks.sort(key=lambda x: x['current_return'], reverse=True)
             
