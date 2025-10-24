@@ -44,12 +44,16 @@ class ReportGenerator:
         conn = sqlite3.connect(self._get_db_path())
         cursor = conn.cursor()
         
+        # 두 날짜 형식 모두 지원
+        compact_start = start_date.replace('-', '')
+        compact_end = end_date.replace('-', '')
+        
         cursor.execute("""
             SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
-            WHERE date BETWEEN ? AND ?
+            WHERE (date BETWEEN ? AND ?) OR (date BETWEEN ? AND ?)
             ORDER BY date
-        """, (start_date, end_date))
+        """, (start_date, end_date, compact_start, compact_end))
         
         rows = cursor.fetchall()
         conn.close()
