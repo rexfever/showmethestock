@@ -125,6 +125,11 @@ class Config:
         "KIWOOM_TR_STOCKINFO_PATH",
         "/api/dostk/stkinfo",
     )
+    kiwoom_tr_quote_id: str = os.getenv("KIWOOM_TR_QUOTE_ID", "ka10001")
+    kiwoom_tr_quote_path: str = os.getenv(
+        "KIWOOM_TR_QUOTE_PATH",
+        "/api/dostk/krinfo",
+    )
 
     # 심볼 프리로드 설정
     preload_symbols: bool = os.getenv("PRELOAD_SYMBOLS", "1").lower() in ("1", "true", "yes")

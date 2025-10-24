@@ -356,8 +356,8 @@ class KiwoomAPI:
         })
         return df.reset_index(drop=True)
 
-    def get_stock_quote(self, code: str, base_dt: str = None) -> dict:
-        """종목의 현재가, 등락률 등 실시간 정보 조회"""
+    def get_stock_quote(self, code: str) -> dict:
+        """종목의 현재가 정보 조회 (키움 REST API 반환값 사용)"""
         if self.force_mock:
             return {
                 "current_price": 50000.0,
@@ -367,32 +367,43 @@ class KiwoomAPI:
             }
         
         try:
-            # OHLCV 데이터에서 등락률 계산 (기존 방식 사용)
-            df = self.get_ohlcv(code, 2, base_dt)  # base_dt 파라미터 추가
-            if not df.empty and len(df) >= 2:
-                latest = df.iloc[-1]
-                prev_close = df.iloc[-2]["close"]
-                
-                current_price = float(latest["close"])
-                volume = int(latest["volume"])
-                
-                # 등락률 계산 (전일 종가 대비)
-                if prev_close > 0:
-                    change_rate = round(((current_price - prev_close) / prev_close) * 100, 2)
-                else:
-                    change_rate = 0.0
-                
-                return {
-                    "current_price": current_price,
-                    "change_rate": change_rate,
-                    "volume": volume,
-                    "market_cap": 0  # 시가총액은 별도 조회 필요
-                }
-            else:
-                return {"error": "OHLCV 데이터 없음"}
+            # 현재가 조회 API 호출 (ka10001 등)
+            api_id = config.kiwoom_tr_quote_id if hasattr(config, 'kiwoom_tr_quote_id') else "ka10001"
+            path = config.kiwoom_tr_quote_path if hasattr(config, 'kiwoom_tr_quote_path') else "/api/dostk/krinfo"
+            
+            payload = {"stk_cd": code}
+            data = self._post(api_id, path, payload)
+            
+            # API 응답에서 필요한 데이터 추출
+            output = data.get("output") or data.get("data") or data.get("stck_prpr") or {}
+            
+            current_price = float(output.get("stck_prpr") or output.get("current_price") or output.get("close") or 0)
+            change_rate = float(output.get("prdy_ctrt") or output.get("change_rate") or 0)
+            volume = int(output.get("acml_vol") or output.get("volume") or 0)
+            market_cap = int(output.get("hts_avls") or output.get("market_cap") or 0)
+            
+            return {
+                "current_price": current_price,
+                "change_rate": change_rate,
+                "volume": volume,
+                "market_cap": market_cap
+            }
                 
         except Exception as e:
             print(f"⚠️ {code} 종목 정보 조회 실패: {e}")
+            # API 실패 시 OHLCV 데이터로 폴백 (등락률 계산 없이)
+            try:
+                df = self.get_ohlcv(code, 1)
+                if not df.empty:
+                    latest = df.iloc[-1]
+                    return {
+                        "current_price": float(latest["close"]),
+                        "change_rate": 0.0,  # 등락률은 계산하지 않음
+                        "volume": int(latest["volume"]),
+                        "market_cap": 0
+                    }
+            except:
+                pass
             return {"error": str(e)}
 
     def get_stock_name(self, code: str) -> str:
