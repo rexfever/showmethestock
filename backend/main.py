@@ -1617,6 +1617,7 @@ def get_latest_scan_from_db():
         
         # 응답 데이터 구성
         scan_date = latest_date
+        today = datetime.now().strftime('%Y-%m-%d')
         is_today = (latest_date == today)
         data = {
             "as_of": latest_date,
