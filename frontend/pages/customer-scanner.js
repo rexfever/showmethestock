@@ -163,9 +163,14 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       
       const data = await response.json();
       
+      console.log('API 응답 데이터:', data);
+      console.log('items 배열:', data.data?.items);
+      console.log('items 개수:', data.data?.items?.length);
+      
       if (data.ok && data.data) {
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
+        console.log('설정할 items:', items);
         setScanResults(items);
         setScanFile(data.file || '');
         setScanDate(data.data.as_of || data.data.scan_date || '');
