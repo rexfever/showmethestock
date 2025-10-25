@@ -141,8 +141,8 @@ os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
 def _save_scan_snapshot(payload: dict) -> str:
     try:
-        as_of = payload.get('as_of') or datetime.now().strftime('%Y%m%d')
-        fname = f"scan-{as_of.replace('-', '')}.json"
+        as_of = payload.get('as_of') or datetime.now().strftime('%Y-%m-%d')
+        fname = f"scan-{as_of}.json"
         path = os.path.join(SNAPSHOT_DIR, fname)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(payload, f, ensure_ascii=False)
@@ -283,11 +283,11 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         except:
             raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
     else:
-        today_as_of = datetime.now().strftime('%Y%m%d')
+        today_as_of = datetime.now().strftime('%Y-%m-%d')
 
     # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
     try:
-        _today = datetime.now().strftime('%Y%m%d')
+        _today = datetime.now().strftime('%Y-%m-%d')
         if today_as_of > _today:
             today_as_of = _today
     except Exception:
@@ -434,21 +434,18 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             enhanced_rank.append(enhanced_item)
         
         print(f"🔍 save_snapshot 조건 확인: {save_snapshot} (타입: {type(save_snapshot)})")
-        if save_snapshot:
-            print(f"✅ save_snapshot=True, 스냅샷 저장 시작")
-            snapshot = {
-                'as_of': resp.as_of,
-                'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-                'universe_count': resp.universe_count,
-                'matched_count': resp.matched_count,
-                'rsi_mode': resp.rsi_mode,
-                'rsi_period': resp.rsi_period,
-                'rsi_threshold': resp.rsi_threshold,
-                'rank': enhanced_rank,
-            }
-            _save_snapshot_db(resp.as_of, resp.items)
-        else:
-            print(f"❌ save_snapshot=False, 스냅샷 저장 건너뜀")
+        print(f"✅ save_snapshot=True, 스냅샷 저장 시작")
+        snapshot = {
+            'as_of': resp.as_of,
+            'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+            'universe_count': resp.universe_count,
+            'matched_count': resp.matched_count,
+            'rsi_mode': resp.rsi_mode,
+            'rsi_period': resp.rsi_period,
+            'rsi_threshold': resp.rsi_threshold,
+            'rank': enhanced_rank,
+        }
+        _save_snapshot_db(resp.as_of, resp.items)
     return resp
 
 
@@ -497,7 +494,7 @@ def universe(apply_scan: bool = False, kospi_limit: int = None, kosdaq_limit: in
                 items.append(UniverseItem(ticker=code, name=code))
 
     return UniverseResponse(
-        as_of=datetime.now().strftime('%Y%m%d'),
+        as_of=datetime.now().strftime('%Y-%m-%d'),
         items=items,
     )
 
@@ -519,18 +516,20 @@ def _debug_stockinfo(market_tp: str = '001'):
 def delete_scan_result(date: str):
     """특정 날짜의 스캔 결과 삭제"""
     try:
-        # 날짜 형식 변환 (YYYY-MM-DD)
+        # 두 날짜 형식 모두 준비
         if len(date) == 8:  # YYYYMMDD 형식
             formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
-        else:
+            compact_date = date
+        else:  # YYYY-MM-DD 형식
             formatted_date = date
+            compact_date = date.replace('-', '')
         
-        # 1. 데이터베이스에서 삭제
+        # 1. 데이터베이스에서 삭제 (두 형식 모두)
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         
         # scan_rank 테이블에서 삭제
-        cur.execute("DELETE FROM scan_rank WHERE date = ?", (formatted_date,))
+        cur.execute("DELETE FROM scan_rank WHERE date = ? OR date = ?", (formatted_date, compact_date))
         deleted_count = cur.rowcount
         
         conn.commit()
@@ -647,7 +646,7 @@ def backfill_snapshots():
 @app.get('/validate_from_snapshot')
 def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 당일 스냅샷은 검증 불가(장중 변동/오류 방지)
-    today = datetime.now().strftime('%Y%m%d')
+    today = datetime.now().strftime('%Y-%m-%d')
     if as_of == today:
         return {
             'error': 'today snapshot not allowed',
@@ -656,13 +655,19 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
             'count': 0,
         }
     """스냅샷(as_of=YYYY-MM-DD) 상위 목록 기준으로 현재 수익률 검증"""
-    # 1) DB 우선
+    # 1) DB 우선 (두 날짜 형식 지원)
     rank = []
     try:
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
+        # YYYY-MM-DD 형식 우선 시도
         for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (as_of, int(top_k))):
             rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
+        # 데이터가 없으면 YYYYMMDD 형식 시도
+        if not rank:
+            compact_date = as_of.replace('-', '')
+            for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (compact_date, int(top_k))):
+                rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
         conn.close()
     except Exception:
         rank = []
@@ -736,7 +741,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 여기선 리턴 배열 rets로 근사: 누적 곱 대신 최소값 사용(정밀도 낮음)
     mdd = round(min(rets) if rets else 0.0, 2)
     return {
-        'as_of': datetime.now().strftime('%Y%m%d'),
+        'as_of': datetime.now().strftime('%Y-%m-%d'),
         'snapshot_as_of': as_of,
         'top_k': top_k,
         'count': len(results),
@@ -1035,7 +1040,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
 
         for code in universe:
             try:
@@ -1202,7 +1207,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
 
         for code in universe:
             try:
@@ -1353,7 +1358,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
 
         for code in universe:
             try:
@@ -1422,8 +1427,8 @@ async def get_available_scan_dates():
         if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 날짜를 YYYYMMDD 형식으로 변환
-        dates = [row[0].replace('-', '') for row in rows]
+        # 날짜를 YYYY-MM-DD 형식 그대로 사용
+        dates = [row[0] for row in rows]
         
         # 날짜 정렬 (최신순)
         sorted_dates = sorted(list(dates), reverse=True)
@@ -1436,25 +1441,26 @@ async def get_available_scan_dates():
 
 @app.get("/scan-by-date/{date}")
 async def get_scan_by_date(date: str):
-    """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)"""
+    """특정 날짜의 스캔 결과를 가져옵니다. (YYYY-MM-DD 형식)"""
     try:
         # 날짜 형식 검증
-        if len(date) != 8 or not date.isdigit():
-            return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."}
+        if len(date) != 10 or date.count('-') != 2:
+            return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식을 사용해주세요."}
         
-        # YYYY-MM-DD 형식으로 변환
-        formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+        # YYYY-MM-DD 형식 그대로 사용
+        formatted_date = date
+        compact_date = date.replace('-', '')
         
-        # DB에서 해당 날짜의 스캔 결과 조회
+        # DB에서 해당 날짜의 스캔 결과 조회 (두 형식 모두 지원)
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         
         cur.execute("""
             SELECT code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
-            WHERE date = ?
+            WHERE date = ? OR date = ?
             ORDER BY score DESC
-        """, (formatted_date,))
+        """, (formatted_date, compact_date))
         
         rows = cur.fetchall()
         conn.close()
@@ -1507,7 +1513,7 @@ async def get_scan_by_date(date: str):
         # 응답 데이터 구성
         data = {
             "as_of": formatted_date,
-            "scan_date": date,
+            "scan_date": formatted_date,
             "is_latest": False,
             "universe_count": 100,  # 기본값
             "matched_count": len(items),
@@ -1537,19 +1543,21 @@ def get_latest_scan_from_db():
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         
-        # 오늘 날짜 확인
-        today = datetime.now().strftime('%Y%m%d')
+        # 오늘 날짜 (두 형식 모두 확인)
+        today_dash = datetime.now().strftime('%Y-%m-%d')
+        today_compact = datetime.now().strftime('%Y%m%d')
         
-        # 오늘 데이터가 있는지 확인
-        cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ?", (today,))
+        # 오늘 데이터가 있는지 확인 (두 형식 모두)
+        cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ? OR date = ?", (today_dash, today_compact))
         today_count = cur.fetchone()[0]
         
         if today_count > 0:
-            # 오늘 데이터가 있으면 오늘 데이터 사용
-            latest_date = today
+            # 오늘 데이터가 있으면 실제 저장된 형식 찾기
+            cur.execute("SELECT date FROM scan_rank WHERE date = ? OR date = ? LIMIT 1", (today_dash, today_compact))
+            latest_date = cur.fetchone()[0]
         else:
-            # 오늘 데이터가 없으면 오늘 이하 범위에서 가장 최신 날짜 사용
-            cur.execute("SELECT MAX(date) FROM scan_rank WHERE date <= ?", (today,))
+            # 오늘 데이터가 없으면 가장 최신 날짜 사용
+            cur.execute("SELECT MAX(date) FROM scan_rank")
             latest_date = cur.fetchone()[0]
         
         if not latest_date:
@@ -1608,7 +1616,8 @@ def get_latest_scan_from_db():
             items.append(item)
         
         # 응답 데이터 구성
-        scan_date = latest_date.replace('-', '')
+        scan_date = latest_date
+        today = datetime.now().strftime('%Y-%m-%d')
         is_today = (latest_date == today)
         data = {
             "as_of": latest_date,
@@ -2912,8 +2921,8 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
         cursor = conn.cursor()
         
         # 최근 N일간의 데이터 조회
-        end_date = datetime.now().strftime('%Y%m%d')
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
         
         cursor.execute("""
             SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence

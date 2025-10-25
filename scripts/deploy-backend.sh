@@ -205,6 +205,12 @@ elif [ "$DEPLOY_ENV" = "server" ]; then
         # 의존성 설치
         pip3 install -r requirements.txt --quiet
         
+        # 기존 프로세스 완전 종료
+        sudo pkill -f 'python.*main.py' || true
+        sudo pkill -f 'uvicorn.*main:app' || true
+        sudo lsof -ti :8010 | xargs -r sudo kill -9 || true
+        sleep 3
+        
         # 백엔드 서비스 재시작
         sudo systemctl restart stock-finder-backend
         

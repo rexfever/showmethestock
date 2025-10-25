@@ -1,0 +1,117 @@
+{
+  "report_type": "weekly",
+  "year": 2025,
+  "month": 8,
+  "week": 5,
+  "start_date": "2025-08-29",
+  "end_date": "2025-08-31",
+  "generated_at": "2025-10-18T23:39:50.275392",
+  "statistics": {
+    "total_stocks": 5,
+    "avg_return": 14.17,
+    "positive_rate": 100.0,
+    "best_stock": {
+      "ticker": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "scan_price": 16160.0,
+      "scan_date": "2025-08-29",
+      "current_return": 28.37,
+      "max_return": 35.18,
+      "min_return": -3.56,
+      "days_elapsed": 50,
+      "volume": 745439,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작 / 상승추세정착"
+    },
+    "worst_stock": {
+      "ticker": "459580",
+      "name": "KODEX CD금리액티브(합성)",
+      "scan_price": 1073470.0,
+      "scan_date": "2025-08-29",
+      "current_return": 0.11,
+      "max_return": 0.11,
+      "min_return": -0.22,
+      "days_elapsed": 50,
+      "volume": 179798,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작 / 상승추세정착"
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "scan_price": 16160.0,
+      "scan_date": "2025-08-29",
+      "current_return": 28.37,
+      "max_return": 35.18,
+      "min_return": -3.56,
+      "days_elapsed": 50,
+      "volume": 745439,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작 / 상승추세정착"
+    },
+    {
+      "ticker": "028260",
+      "name": "삼성물산",
+      "scan_price": 167800.0,
+      "scan_date": "2025-08-29",
+      "current_return": 25.45,
+      "max_return": 29.32,
+      "min_return": -0.83,
+      "days_elapsed": 50,
+      "volume": 186711,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작"
+    },
+    {
+      "ticker": "010140",
+      "name": "삼성중공업",
+      "scan_price": 21300.0,
+      "scan_date": "2025-08-29",
+      "current_return": 5.87,
+      "max_return": 5.87,
+      "min_return": -2.35,
+      "days_elapsed": 50,
+      "volume": 5273743,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작 / 상승추세정착"
+    },
+    {
+      "ticker": "488770",
+      "name": "KODEX 머니마켓액티브",
+      "scan_price": 103665.0,
+      "scan_date": "2025-08-29",
+      "current_return": 0.37,
+      "max_return": 0.37,
+      "min_return": 0.0,
+      "days_elapsed": 50,
+      "volume": 582212,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작 / 상승추세정착"
+    },
+    {
+      "ticker": "459580",
+      "name": "KODEX CD금리액티브(합성)",
+      "scan_price": 1073470.0,
+      "scan_date": "2025-08-29",
+      "current_return": 0.11,
+      "max_return": 0.11,
+      "min_return": -0.22,
+      "days_elapsed": 50,
+      "volume": 179798,
+      "change_rate": 0.0,
+      "market": "",
+      "strategy": "상승시작 / 상승추세정착"
+    }
+  ],
+  "dates": [
+    "2025-08-29"
+  ]
+}

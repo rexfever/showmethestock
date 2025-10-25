@@ -16,11 +16,20 @@ class AdminService:
             conn = sqlite3.connect(self.db_path)
             cur = conn.cursor()
             
-            cur.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,))
+            # 먼저 사용자가 존재하는지 확인
+            cur.execute("SELECT id, is_admin FROM users WHERE id = ?", (user_id,))
             result = cur.fetchone()
             conn.close()
             
-            return result and result[0] == 1
+            if not result:
+                print(f"사용자 ID {user_id}를 찾을 수 없습니다")
+                return False
+            
+            is_admin_value = result[1]
+            print(f"사용자 ID {user_id}의 is_admin 값: {is_admin_value} (타입: {type(is_admin_value)})")
+            
+            # is_admin 값이 1 또는 True인 경우 관리자로 인정
+            return is_admin_value == 1 or is_admin_value is True
         except Exception as e:
             print(f"관리자 권한 확인 오류: {e}")
             return False

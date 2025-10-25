@@ -183,7 +183,7 @@ if [ "$DEPLOY_ENV" = "local" ]; then
     
     # 프론트엔드 서버 시작
     log_info "프론트엔드 서버 시작..."
-    PORT=$PORT npm run dev &
+    PORT=$PORT npm start &
     FRONTEND_PID=$!
     echo $FRONTEND_PID > ../frontend.pid
     
@@ -235,7 +235,12 @@ elif [ "$DEPLOY_ENV" = "server" ]; then
         
         # 빌드
         rm -rf .next
-        npm run build
+        NODE_ENV=production npm run build
+        
+        # 기존 프로세스 완전 종료
+        sudo pkill -f 'next' || true
+        sudo lsof -ti :3000 | xargs -r sudo kill -9 || true
+        sleep 3
         
         # 프론트엔드 서비스 재시작
         sudo systemctl restart stock-finder-frontend

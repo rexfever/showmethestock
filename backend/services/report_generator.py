@@ -44,12 +44,16 @@ class ReportGenerator:
         conn = sqlite3.connect(self._get_db_path())
         cursor = conn.cursor()
         
+        # 두 날짜 형식 모두 지원
+        compact_start = start_date.replace('-', '')
+        compact_end = end_date.replace('-', '')
+        
         cursor.execute("""
-            SELECT date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
-            WHERE date BETWEEN ? AND ?
+            WHERE (date BETWEEN ? AND ?) OR (date BETWEEN ? AND ?)
             ORDER BY date
-        """, (start_date, end_date))
+        """, (start_date, end_date, compact_start, compact_end))
         
         rows = cursor.fetchall()
         conn.close()
@@ -61,9 +65,9 @@ class ReportGenerator:
         processed_stocks = []
         
         for row in stocks_data:
-            date, code, name, close_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
-            if not name or not close_price:
+            if not name or not current_price:
                 continue
             
             # 수익률 계산
@@ -89,7 +93,7 @@ class ReportGenerator:
             stock_data = {
                 "ticker": code,
                 "name": name,
-                "scan_price": close_price,
+                "scan_price": current_price,
                 "scan_date": date,
                 "current_return": current_return,
                 "max_return": max_return,
@@ -116,15 +120,15 @@ class ReportGenerator:
                 "worst_stock": None
             }
         
-        total_return = sum(stock["max_return"] for stock in stocks)
-        positive_count = sum(1 for stock in stocks if stock["max_return"] > 0)
+        total_return = sum(stock["current_return"] for stock in stocks)
+        positive_count = sum(1 for stock in stocks if stock["current_return"] > 0)
         
         total_stocks = len(stocks)
         avg_return = total_return / total_stocks if total_stocks > 0 else 0
         positive_rate = (positive_count / total_stocks * 100) if total_stocks > 0 else 0
         
-        best_stock = max(stocks, key=lambda x: x['max_return']) if stocks else None
-        worst_stock = min(stocks, key=lambda x: x['max_return']) if stocks else None
+        best_stock = max(stocks, key=lambda x: x['current_return']) if stocks else None
+        worst_stock = min(stocks, key=lambda x: x['current_return']) if stocks else None
         
         return {
             "total_stocks": total_stocks,
@@ -155,8 +159,8 @@ class ReportGenerator:
             # 수익률 계산
             stocks = self._calculate_returns_for_stocks(scan_data)
             
-            # 최고 수익률 기준으로 정렬
-            stocks.sort(key=lambda x: x['max_return'], reverse=True)
+            # 현재 수익률 기준으로 정렬
+            stocks.sort(key=lambda x: x['current_return'], reverse=True)
             
             # 통계 계산
             stats = self._calculate_statistics(stocks)
@@ -211,13 +215,13 @@ class ReportGenerator:
             unique_stocks = {}
             for stock in all_stocks:
                 ticker = stock["ticker"]
-                if ticker not in unique_stocks or stock["max_return"] > unique_stocks[ticker]["max_return"]:
+                if ticker not in unique_stocks or stock["current_return"] > unique_stocks[ticker]["current_return"]:
                     unique_stocks[ticker] = stock
             
             all_stocks = list(unique_stocks.values())
             
-            # 최고 수익률 기준으로 정렬
-            all_stocks.sort(key=lambda x: x['max_return'], reverse=True)
+            # 현재 수익률 기준으로 정렬
+            all_stocks.sort(key=lambda x: x['current_return'], reverse=True)
             
             # 통계 계산
             stats = self._calculate_statistics(all_stocks)
@@ -269,13 +273,13 @@ class ReportGenerator:
             unique_stocks = {}
             for stock in all_stocks:
                 ticker = stock["ticker"]
-                if ticker not in unique_stocks or stock["max_return"] > unique_stocks[ticker]["max_return"]:
+                if ticker not in unique_stocks or stock["current_return"] > unique_stocks[ticker]["current_return"]:
                     unique_stocks[ticker] = stock
             
             all_stocks = list(unique_stocks.values())
             
-            # 최고 수익률 기준으로 정렬
-            all_stocks.sort(key=lambda x: x['max_return'], reverse=True)
+            # 현재 수익률 기준으로 정렬
+            all_stocks.sort(key=lambda x: x['current_return'], reverse=True)
             
             # 통계 계산
             stats = self._calculate_statistics(all_stocks)
@@ -324,13 +328,13 @@ class ReportGenerator:
             unique_stocks = {}
             for stock in all_stocks:
                 ticker = stock["ticker"]
-                if ticker not in unique_stocks or stock["max_return"] > unique_stocks[ticker]["max_return"]:
+                if ticker not in unique_stocks or stock["current_return"] > unique_stocks[ticker]["current_return"]:
                     unique_stocks[ticker] = stock
             
             all_stocks = list(unique_stocks.values())
             
-            # 최고 수익률 기준으로 정렬
-            all_stocks.sort(key=lambda x: x['max_return'], reverse=True)
+            # 현재 수익률 기준으로 정렬
+            all_stocks.sort(key=lambda x: x['current_return'], reverse=True)
             
             # 통계 계산
             stats = self._calculate_statistics(all_stocks)
