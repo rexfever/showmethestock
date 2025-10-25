@@ -283,8 +283,49 @@ def _init_positions_table():
         pass
 
 
+def is_trading_day(check_date: str = None):
+    """거래일인지 확인 (주말과 공휴일 제외)"""
+    import pytz
+    import holidays
+    
+    if check_date:
+        # 지정된 날짜 확인
+        try:
+            if len(check_date) == 8 and check_date.isdigit():  # YYYYMMDD 형식
+                date_str = f"{check_date[:4]}-{check_date[4:6]}-{check_date[6:8]}"
+            elif len(check_date) == 10 and check_date.count('-') == 2:  # YYYY-MM-DD 형식
+                date_str = check_date
+            else:
+                return False
+            
+            check_dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except:
+            return False
+    else:
+        # 오늘 날짜 확인
+        kst = pytz.timezone('Asia/Seoul')
+        check_dt = datetime.now(kst).date()
+    
+    # 주말 체크
+    if check_dt.weekday() >= 5:  # 토요일(5), 일요일(6)
+        return False
+    
+    # 한국 공휴일 체크
+    kr_holidays = holidays.SouthKorea()
+    if check_dt in kr_holidays:
+        return False
+    
+    return True
+
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
+    # 거래일 체크
+    if not is_trading_day(date):
+        raise HTTPException(
+            status_code=400, 
+            detail="오늘은 거래일이 아닙니다. 주말이나 공휴일에는 스캔을 실행할 수 없습니다."
+        )
+    
     kp = kospi_limit or config.universe_kospi
     kd = kosdaq_limit or config.universe_kosdaq
     kospi = api.get_top_codes('KOSPI', kp)

@@ -14,10 +14,17 @@ export default function Portfolio() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (authChecked && !authLoading && isAuthenticated()) {
-      loadPortfolio();
+    if (!authChecked || authLoading) {
+      return;
     }
-  }, [authChecked, authLoading, isAuthenticated]);
+    
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
+    
+    loadPortfolio();
+  }, [authChecked, authLoading, isAuthenticated, router]);
 
   const loadPortfolio = async () => {
     try {
@@ -48,24 +55,6 @@ export default function Portfolio() {
     );
   }
 
-  if (!isAuthenticated()) {
-    return (
-      <>
-        <Head>
-          <title>나의투자종목 - Stock Insight</title>
-        </Head>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">로그인이 필요합니다</h2>
-            <p className="text-gray-600 mb-6">나의투자종목을 관리하려면 로그인해주세요.</p>
-            <a href="/login" className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-              로그인하기
-            </a>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
