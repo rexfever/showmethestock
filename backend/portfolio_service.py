@@ -47,29 +47,37 @@ class PortfolioService:
             conn.commit()
     
     def get_current_price(self, ticker: str) -> Optional[float]:
-        """현재가 조회 (데이터베이스에서)"""
+        """현재가 조회 (데이터베이스에서, 없으면 키움 API에서)"""
         try:
             # snapshots.db에서 최신 스캔 결과 조회
             snapshots_db_path = "snapshots.db"
-            if not os.path.exists(snapshots_db_path):
-                return None
+            if os.path.exists(snapshots_db_path):
+                with sqlite3.connect(snapshots_db_path) as conn:
+                    cursor = conn.cursor()
+                    
+                    # 최신 날짜의 해당 종목 현재가 조회
+                    cursor.execute("""
+                        SELECT current_price FROM scan_rank 
+                        WHERE code = ? 
+                        ORDER BY date DESC 
+                        LIMIT 1
+                    """, (ticker,))
+                    
+                    row = cursor.fetchone()
+                    if row and row[0]:
+                        return float(row[0])
             
-            with sqlite3.connect(snapshots_db_path) as conn:
-                cursor = conn.cursor()
-                
-                # 최신 날짜의 해당 종목 현재가 조회
-                cursor.execute("""
-                    SELECT current_price FROM scan_rank 
-                    WHERE code = ? 
-                    ORDER BY date DESC 
-                    LIMIT 1
-                """, (ticker,))
-                
-                row = cursor.fetchone()
-                if row and row[0]:
-                    return float(row[0])
-                
-                return None
+            # 스캔 결과에 없으면 키움 API에서 직접 조회
+            try:
+                from kiwoom_api import KiwoomAPI
+                api = KiwoomAPI()
+                df = api.get_ohlcv(ticker, 1)
+                if not df.empty:
+                    return float(df.iloc[-1]['close'])
+            except Exception as e:
+                print(f"키움 API 조회 오류 ({ticker}): {e}")
+            
+            return None
         except Exception as e:
             print(f"현재가 조회 오류: {e}")
             return None
