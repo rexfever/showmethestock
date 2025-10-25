@@ -29,14 +29,6 @@ export default function Login() {
     }
   }, [router.query]);
 
-  // 자동 카카오 로그인 실행
-  useEffect(() => {
-    const { auto_kakao } = router.query;
-    if (auto_kakao === 'true' && kakaoSDKReady && !isLoggingIn) {
-      handleSocialLogin('kakao');
-    }
-  }, [router.query.auto_kakao, kakaoSDKReady, isLoggingIn, handleSocialLogin]);
-
   // 카카오 SDK 로드 (동기 방식)
   useEffect(() => {
     const loadKakaoSDK = () => {
@@ -152,6 +144,14 @@ export default function Login() {
       setIsLoggingIn(false);
     }
   };
+
+  // 자동 카카오 로그인 실행
+  useEffect(() => {
+    const { auto_kakao } = router.query;
+    if (auto_kakao === 'true' && kakaoSDKReady && !isLoggingIn) {
+      handleSocialLogin('kakao');
+    }
+  }, [router.query.auto_kakao, kakaoSDKReady, isLoggingIn, handleSocialLogin]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
