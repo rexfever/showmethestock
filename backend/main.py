@@ -807,6 +807,7 @@ def kakao_webhook(body: dict):
 
 @app.get('/analyze', response_model=AnalyzeResponse)
 def analyze(name_or_code: str):
+    """기존 분석 기능 (내부용)"""
     code = normalize_code_or_name(name_or_code)
     if not is_code(code):
         code = api.get_code_by_name(code)
@@ -853,7 +854,7 @@ def analyze(name_or_code: str):
 
 @app.get('/analyze-friendly')
 def analyze_friendly(name_or_code: str):
-    """사용자 친화적인 종목 분석 결과 제공"""
+    """사용자 친화적인 종목 분석 결과 제공 (메인 분석 기능)"""
     try:
         # 기본 분석 실행
         analysis_result = analyze(name_or_code)
