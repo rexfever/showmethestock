@@ -27,6 +27,33 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   const [selectedStock, setSelectedStock] = useState(null);
   const [investmentLoading, setInvestmentLoading] = useState(false);
 
+  // 메인트넌스 상태
+  const [maintenanceStatus, setMaintenanceStatus] = useState({
+    is_enabled: false,
+    end_date: null,
+    message: '서비스 점검 중입니다.'
+  });
+
+  // 메인트넌스 상태 확인
+  useEffect(() => {
+    const checkMaintenanceStatus = async () => {
+      try {
+        const config = getConfig();
+        const base = config.backendUrl;
+        const response = await fetch(`${base}/maintenance/status`);
+        const data = await response.json();
+        
+        if (data.is_enabled) {
+          setMaintenanceStatus(data);
+        }
+      } catch (error) {
+        console.error('메인트넌스 상태 확인 실패:', error);
+      }
+    };
+
+    checkMaintenanceStatus();
+  }, []);
+
   // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
   // useEffect(() => {
   //   if (!authLoading && !isAuthenticated()) {
@@ -210,6 +237,55 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
 
 
+
+  // 메인트넌스 모드인 경우 메인트넌스 페이지 렌더링
+  if (maintenanceStatus.is_enabled) {
+    return (
+      <>
+        <Head>
+          <title>스톡인사이트 - 서비스 점검 중</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="format-detection" content="telephone=no" />
+          <meta name="mobile-web-app-capable" content="yes" />
+        </Head>
+
+        <div className="min-h-screen bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 mx-4 max-w-md w-full text-center">
+            {/* 공사 아이콘 */}
+            <div className="text-6xl mb-6">🚧</div>
+            
+            {/* 제목 */}
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">
+              서비스 점검 중
+            </h1>
+            
+            {/* 메시지 */}
+            <div className="text-gray-600 mb-6 space-y-2">
+              <p className="text-lg font-medium">
+                {maintenanceStatus.message}
+              </p>
+              {maintenanceStatus.end_date && (
+                <p className="text-lg font-bold text-red-600">
+                  {maintenanceStatus.end_date}까지
+                </p>
+              )}
+              <p className="text-sm text-gray-500 mt-4">
+                이용에 불편을 드려 죄송합니다.
+              </p>
+            </div>
+            
+            {/* 수동 이동 버튼 */}
+            <button
+              onClick={() => router.push('/')}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200"
+            >
+              메인 페이지로 이동
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // mounted 체크 제거 - SSR 데이터가 있으므로 바로 렌더링
 

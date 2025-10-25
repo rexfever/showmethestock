@@ -35,6 +35,23 @@ class User(BaseModel):
     updated_at: Optional[datetime] = None
 
 
+class MaintenanceSettings(BaseModel):
+    """메인트넌스 설정 모델"""
+    id: Optional[int] = None
+    is_enabled: bool = False
+    end_date: Optional[str] = None
+    message: str = "서비스 점검 중입니다."
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class MaintenanceSettingsRequest(BaseModel):
+    """메인트넌스 설정 요청 모델"""
+    is_enabled: bool
+    end_date: Optional[str] = None
+    message: Optional[str] = None
+
+
 class ScoreFlags(BaseModel):
     cross: bool
     vol_expand: bool

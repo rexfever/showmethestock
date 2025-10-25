@@ -19,6 +19,14 @@ export default function AdminDashboard() {
   const [selectedDate, setSelectedDate] = useState('');
   const [rescanLoading, setRescanLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // 메인트넌스 설정 상태
+  const [maintenanceSettings, setMaintenanceSettings] = useState({
+    is_enabled: false,
+    end_date: '',
+    message: '서비스 점검 중입니다.'
+  });
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
 
   useEffect(() => {
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
@@ -85,13 +93,18 @@ export default function AdminDashboard() {
       const config = getConfig();
       const base = config.backendUrl;
 
-      const [statsResponse, usersResponse] = await Promise.all([
+      const [statsResponse, usersResponse, maintenanceResponse] = await Promise.all([
         fetch(`${base}/admin/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         }),
         fetch(`${base}/admin/users`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${base}/admin/maintenance`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -106,6 +119,15 @@ export default function AdminDashboard() {
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         setUsers(usersData.users);
+      }
+
+      if (maintenanceResponse.ok) {
+        const maintenanceData = await maintenanceResponse.json();
+        setMaintenanceSettings({
+          is_enabled: maintenanceData.is_enabled,
+          end_date: maintenanceData.end_date || '',
+          message: maintenanceData.message || '서비스 점검 중입니다.'
+        });
       }
     } catch (error) {
     } finally {
@@ -126,6 +148,34 @@ export default function AdminDashboard() {
       } else {
       }
     } catch (error) {
+    }
+  };
+
+  const updateMaintenanceSettings = async () => {
+    setMaintenanceLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/admin/maintenance`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(maintenanceSettings)
+      });
+
+      if (response.ok) {
+        alert('메인트넌스 설정이 업데이트되었습니다.');
+      } else {
+        alert('메인트넌스 설정 업데이트에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('메인트넌스 설정 업데이트 실패:', error);
+      alert('메인트넌스 설정 업데이트 중 오류가 발생했습니다.');
+    } finally {
+      setMaintenanceLoading(false);
     }
   };
 
@@ -661,6 +711,86 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 메인트넌스 설정 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">메인트넌스 설정</h2>
+            <p className="text-sm text-gray-600">서비스 점검 모드를 관리합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            {/* 메인트넌스 온오프 스위치 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700">메인트넌스 모드</label>
+                <p className="text-xs text-gray-500">활성화 시 스캐너 페이지가 점검 페이지로 표시됩니다</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={maintenanceSettings.is_enabled}
+                  onChange={(e) => setMaintenanceSettings({
+                    ...maintenanceSettings,
+                    is_enabled: e.target.checked
+                  })}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            {/* 종료 날짜 설정 */}
+            {maintenanceSettings.is_enabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  종료 날짜 (선택사항)
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={maintenanceSettings.end_date}
+                  onChange={(e) => setMaintenanceSettings({
+                    ...maintenanceSettings,
+                    end_date: e.target.value
+                  })}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  설정하지 않으면 수동으로 비활성화해야 합니다
+                </p>
+              </div>
+            )}
+
+            {/* 메시지 설정 */}
+            {maintenanceSettings.is_enabled && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  점검 메시지
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  value={maintenanceSettings.message}
+                  onChange={(e) => setMaintenanceSettings({
+                    ...maintenanceSettings,
+                    message: e.target.value
+                  })}
+                  placeholder="서비스 점검 중입니다."
+                />
+              </div>
+            )}
+
+            {/* 저장 버튼 */}
+            <div className="flex justify-end">
+              <button
+                onClick={updateMaintenanceSettings}
+                disabled={maintenanceLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {maintenanceLoading ? '저장 중...' : '설정 저장'}
+              </button>
             </div>
           </div>
         </div>

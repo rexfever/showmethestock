@@ -16,7 +16,7 @@ from environment import get_environment_info
 from kiwoom_api import KiwoomAPI
 from scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
 from market_analyzer import market_analyzer
-from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest
+from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest, MaintenanceSettingsRequest
 from utils import is_code, normalize_code_or_name
 from kakao import send_alert, format_scan_message, format_scan_alert_message
 
@@ -45,6 +45,28 @@ def create_scan_rank_table(cur):
             PRIMARY KEY(date, code)
         )
     """)
+
+# 공통 함수: maintenance_settings 테이블 생성
+def create_maintenance_settings_table(cur):
+    """maintenance_settings 테이블 생성"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS maintenance_settings(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            is_enabled BOOLEAN DEFAULT 0,
+            end_date TEXT,
+            message TEXT DEFAULT '서비스 점검 중입니다.',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # 기본 설정이 없으면 추가
+    cur.execute("SELECT COUNT(*) FROM maintenance_settings")
+    if cur.fetchone()[0] == 0:
+        cur.execute("""
+            INSERT INTO maintenance_settings (is_enabled, end_date, message)
+            VALUES (0, '', '서비스 점검 중입니다.')
+        """)
 
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
@@ -2378,6 +2400,137 @@ async def get_user_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"사용자 조회 중 오류가 발생했습니다: {str(e)}"
         )
+
+@app.get("/admin/maintenance")
+async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
+    """메인트넌스 설정 조회"""
+    try:
+        conn = sqlite3.connect('snapshots.db')
+        cur = conn.cursor()
+        
+        # 테이블 생성
+        create_maintenance_settings_table(cur)
+        
+        cur.execute("SELECT * FROM maintenance_settings ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        
+        if row:
+            settings = {
+                "id": row[0],
+                "is_enabled": bool(row[1]),
+                "end_date": row[2],
+                "message": row[3],
+                "created_at": row[4],
+                "updated_at": row[5]
+            }
+        else:
+            settings = {
+                "id": None,
+                "is_enabled": False,
+                "end_date": None,
+                "message": "서비스 점검 중입니다.",
+                "created_at": None,
+                "updated_at": None
+            }
+        
+        conn.close()
+        return settings
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"메인트넌스 설정 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/admin/maintenance")
+async def update_maintenance_settings(
+    settings: MaintenanceSettingsRequest,
+    admin_user: User = Depends(get_admin_user)
+):
+    """메인트넌스 설정 업데이트"""
+    try:
+        conn = sqlite3.connect('snapshots.db')
+        cur = conn.cursor()
+        
+        # 테이블 생성
+        create_maintenance_settings_table(cur)
+        
+        # 기존 설정 삭제 후 새로 추가
+        cur.execute("DELETE FROM maintenance_settings")
+        
+        cur.execute("""
+            INSERT INTO maintenance_settings (is_enabled, end_date, message, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            settings.is_enabled,
+            settings.end_date,
+            settings.message or "서비스 점검 중입니다."
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"message": "메인트넌스 설정이 업데이트되었습니다."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"메인트넌스 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/maintenance/status")
+async def get_maintenance_status():
+    """메인트넌스 상태 조회 (공개 API)"""
+    try:
+        conn = sqlite3.connect('snapshots.db')
+        cur = conn.cursor()
+        
+        # 테이블 생성
+        create_maintenance_settings_table(cur)
+        
+        cur.execute("SELECT is_enabled, end_date, message FROM maintenance_settings ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        
+        if row:
+            is_enabled = bool(row[0])
+            end_date = row[1]
+            message = row[2]
+            
+            # 종료 날짜가 설정되어 있고 현재 날짜가 종료 날짜를 지났으면 자동으로 비활성화
+            if is_enabled and end_date:
+                from datetime import datetime
+                try:
+                    end_datetime = datetime.strptime(end_date, "%Y-%m-%d")
+                    if datetime.now() > end_datetime:
+                        is_enabled = False
+                        # 자동으로 비활성화
+                        cur.execute("""
+                            UPDATE maintenance_settings 
+                            SET is_enabled = 0, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = (SELECT id FROM maintenance_settings ORDER BY id DESC LIMIT 1)
+                        """)
+                        conn.commit()
+                except ValueError:
+                    pass  # 날짜 형식이 잘못된 경우 무시
+            
+            return {
+                "is_enabled": is_enabled,
+                "end_date": end_date,
+                "message": message
+            }
+        else:
+            return {
+                "is_enabled": False,
+                "end_date": None,
+                "message": "서비스 점검 중입니다."
+            }
+    except Exception as e:
+        return {
+            "is_enabled": False,
+            "end_date": None,
+            "message": "서비스 점검 중입니다."
+        }
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 @app.put("/admin/users/{user_id}")
 async def update_user(
