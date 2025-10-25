@@ -22,13 +22,16 @@ from kakao import send_alert, format_scan_message, format_scan_alert_message
 
 # 공통 함수: scan_rank 테이블 생성
 def create_scan_rank_table(cur):
-    """scan_rank 테이블을 최신 스키마로 생성"""
+    """scan_rank 테이블을 최신 스키마로 생성 (중복 방지)"""
+    # 기존 테이블 삭제 후 재생성 (스키마 수정을 위해)
+    cur.execute("DROP TABLE IF EXISTS scan_rank")
+    
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS scan_rank(
-            date TEXT,
-            code TEXT,
-            name TEXT,
-            score REAL,
+        CREATE TABLE scan_rank(
+            date TEXT NOT NULL, 
+            code TEXT NOT NULL, 
+            name TEXT, 
+            score REAL, 
             score_label TEXT,
             current_price REAL,
             volume INTEGER,

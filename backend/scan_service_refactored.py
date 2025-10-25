@@ -162,9 +162,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
             )
         """)
         
-        # 기존 데이터 삭제 (같은 날짜)
-        cur.execute("DELETE FROM scan_rank WHERE date = ?", (as_of,))
-        
+        # 중복 방지를 위해 INSERT OR REPLACE 사용 (DELETE 제거)
         rows = []
         for it in items:
             # 모든 필드를 JSON으로 저장
@@ -222,7 +220,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], api: KiwoomAPI):
         
         print(f"💾 {len(rows)}개 레코드 삽입 시도")
         cur.executemany("""
-            INSERT INTO scan_rank(
+            INSERT OR REPLACE INTO scan_rank(
                 date, code, name, score, score_label, current_price, volume, 
                 change_rate, market, strategy, indicators, trend, flags, 
                 details, returns, recurrence
