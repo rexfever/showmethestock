@@ -588,17 +588,24 @@ export async function getServerSideProps() {
     // 서버에서 백엔드 API 호출 (DB 직접 조회)
     const config = getConfig();
     const base = config.backendUrl;
-    const response = await fetch(`${base}/latest-scan`);
+    
+    console.log('SSR: Fetching from', `${base}/latest-scan`);
+    const response = await fetch(`${base}/latest-scan`, {
+      timeout: 10000 // 10초 타임아웃
+    });
     
     if (!response.ok) {
+      console.error('SSR: HTTP error! status:', response.status);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('SSR: Response data:', data.ok, data.data ? 'has data' : 'no data');
     
     if (data.ok && data.data) {
       // items 또는 rank 필드 처리
       const items = data.data.items || data.data.rank || [];
+      console.log('SSR: Returning', items.length, 'items');
       return {
         props: {
           initialData: items,
@@ -606,10 +613,14 @@ export async function getServerSideProps() {
           initialScanDate: data.data.as_of || data.data.scan_date || ''
         }
       };
+    } else {
+      console.log('SSR: Data not ok or no data');
     }
   } catch (error) {
+    console.error('SSR: Error fetching scan data:', error.message);
   }
   
+  console.log('SSR: Returning empty data');
   return {
     props: {
       initialData: [],
