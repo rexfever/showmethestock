@@ -47,7 +47,7 @@ export default function StockAnalysis() {
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/analyze?name_or_code=${encodeURIComponent(tickerInput)}`);
+      const response = await fetch(`${base}/analyze-friendly?name_or_code=${encodeURIComponent(tickerInput)}`);
       const data = await response.json();
       
       if (data.ok) {

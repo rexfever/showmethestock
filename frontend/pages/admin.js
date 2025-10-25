@@ -6,7 +6,7 @@ import getConfig from '../config';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isAuthenticated, user, token } = useAuth();
+  const { isAuthenticated, user, token, loading: authLoading, authChecked } = useAuth();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,20 +21,32 @@ export default function AdminDashboard() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
+    // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
+    if (!authChecked || authLoading) {
+      return;
+    }
+    
     if (!isAuthenticated()) {
       router.push('/login');
       return;
     }
     
-    // 관리자 권한 확인 (사용자 정보가 로드된 후에만 체크)
-    if (user && !user.is_admin) {
-      alert('관리자 권한이 필요합니다.');
-      router.push('/customer-scanner');
+    // 사용자 정보가 로드되지 않았으면 대기
+    if (!user) {
       return;
     }
     
-    // 사용자 정보가 아직 로드되지 않았으면 대기
-    if (!user) {
+    // 강화된 관리자 권한 확인 - 다양한 타입 처리
+    const isAdmin = user && (
+      user.is_admin === true || 
+      user.is_admin === 1 || 
+      user.is_admin === "1" ||
+      user.is_admin === "true"
+    );
+    
+    if (!isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      router.push('/customer-scanner');
       return;
     }
     
@@ -45,7 +57,7 @@ export default function AdminDashboard() {
       fetchAdminData();
       fetchScanDates();
     }
-  }, [isAuthenticated, user, router, router.query.analyze]);
+  }, [authChecked, authLoading, isAuthenticated, user, router, router.query.analyze]);
 
   const performAnalysis = async (ticker) => {
     setAnalysisLoading(true);
@@ -421,6 +433,55 @@ export default function AdminDashboard() {
         </div>
       </div>
     );
+  }
+
+  // 로딩 상태 처리
+  if (!authChecked || authLoading) {
+    return (
+      <>
+        <Head>
+          <title>관리자 대시보드 - Stock Insight</title>
+        </Head>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">인증 확인 중...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!isAuthenticated()) {
+    return null; // useEffect에서 리다이렉트 처리됨
+  }
+
+  if (!user) {
+    return (
+      <>
+        <Head>
+          <title>관리자 대시보드 - Stock Insight</title>
+        </Head>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">사용자 정보 로딩 중...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 관리자 권한 재확인 (추가 안전장치)
+  const isAdmin = user && (
+    user.is_admin === true || 
+    user.is_admin === 1 || 
+    user.is_admin === "1" ||
+    user.is_admin === "true"
+  );
+
+  if (!isAdmin) {
+    return null; // useEffect에서 리다이렉트 처리됨
   }
 
   return (

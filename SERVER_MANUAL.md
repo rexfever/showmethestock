@@ -194,9 +194,279 @@ ssh stock-finder "cd /home/ubuntu/showmethestock && git reset --hard HEAD~1"
 - ⚠️ **스케줄러 실행 시간 고려 (15:36 KST)**
 - ⚠️ **백업 파일 정기 정리**
 
-## 7. 연락처 및 문서
+## 7. 환경 설정 및 의존성 관리
+
+### Python 가상환경 관리
+```bash
+# 가상환경 활성화
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && source venv_new/bin/activate"
+
+# Python 패키지 설치
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && pip install -r requirements.txt"
+
+# Python 버전 확인
+ssh stock-finder "python3 --version"
+```
+
+### Node.js 의존성 관리
+```bash
+# Node.js 패키지 설치
+ssh stock-finder "cd /home/ubuntu/showmethestock/frontend && npm install"
+
+# Node.js 버전 확인
+ssh stock-finder "node --version && npm --version"
+```
+
+## 8. SSL 인증서 관리
+
+### SSL 상태 확인 및 갱신
+```bash
+# SSL 인증서 상태 확인
+ssh stock-finder "sudo certbot certificates"
+
+# SSL 인증서 갱신 테스트
+ssh stock-finder "sudo certbot renew --dry-run"
+
+# SSL 인증서 실제 갱신
+ssh stock-finder "sudo certbot renew"
+```
+
+## 9. 로그 관리 및 모니터링
+
+### 로그 파일 관리
+```bash
+# 로그 파일 크기 확인
+ssh stock-finder "du -h /home/ubuntu/showmethestock/backend/*.log"
+
+# 로그 로테이션 설정 확인
+ssh stock-finder "sudo logrotate -d /etc/logrotate.d/stock-finder"
+
+# 시스템 로그 확인
+ssh stock-finder "sudo tail -f /var/log/syslog"
+```
+
+### 시스템 모니터링
+```bash
+# 디스크 사용량 확인
+ssh stock-finder "df -h"
+
+# 메모리 사용량 확인
+ssh stock-finder "free -h"
+
+# CPU 사용량 확인
+ssh stock-finder "top -bn1 | head -20"
+```
+
+## 10. 보안 및 방화벽
+
+### 보안 상태 확인
+```bash
+# 방화벽 상태 확인
+ssh stock-finder "sudo ufw status"
+
+# SSH 접속 로그 확인
+ssh stock-finder "sudo tail -f /var/log/auth.log"
+
+# 포트 사용 현황 확인
+ssh stock-finder "sudo netstat -tlnp"
+```
+
+## 11. 데이터베이스 고급 관리
+
+### DB 무결성 및 최적화
+```bash
+# DB 무결성 검사
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && sqlite3 snapshots.db 'PRAGMA integrity_check;'"
+
+# DB 최적화 (VACUUM)
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && sqlite3 snapshots.db 'VACUUM;'"
+
+# 테이블 스키마 확인
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && sqlite3 snapshots.db '.schema'"
+
+# 인덱스 상태 확인
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && sqlite3 snapshots.db '.indices'"
+```
+
+## 12. 배포 자동화
+
+### 자동 배포 스크립트
+```bash
+# 백엔드 자동 배포
+ssh stock-finder "cd /home/ubuntu/showmethestock && ./scripts/deploy-backend.sh"
+
+# 프론트엔드 자동 배포
+ssh stock-finder "cd /home/ubuntu/showmethestock && ./scripts/deploy-frontend.sh"
+
+# 전체 시스템 배포
+ssh stock-finder "cd /home/ubuntu/showmethestock && ./scripts/deploy-backend.sh && ./scripts/deploy-frontend.sh"
+```
+
+## 13. 알림 및 모니터링
+
+### 알림 서비스 테스트
+```bash
+# 카카오 알림톡 테스트
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && python -c 'from notification_service import send_kakao_message; send_kakao_message(\"테스트 메시지\")'"
+
+# 이메일 발송 테스트
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && python -c 'from email_service import send_email; send_email(\"test@example.com\", \"테스트\", \"테스트 내용\")'"
+```
+
+## 14. 백업 및 복구 고급
+
+### 전체 시스템 백업
+```bash
+# 전체 프로젝트 백업
+ssh stock-finder "cd /home/ubuntu && tar -czf backup_$(date +%Y%m%d_%H%M%S).tar.gz showmethestock/"
+
+# 특정 날짜 데이터 복구
+ssh stock-finder "cd /home/ubuntu/showmethestock/backend && sqlite3 snapshots.db 'SELECT * FROM scan_rank WHERE date = \"20251023\";'"
+
+# 백업 파일 압축 해제
+ssh stock-finder "cd /home/ubuntu && tar -xzf backup_YYYYMMDD_HHMMSS.tar.gz"
+```
+
+## 15. 트러블슈팅 가이드
+
+### 서비스 문제 해결
+```bash
+# 서비스 시작 실패 시 로그 확인
+ssh stock-finder "sudo journalctl -u stock-finder-backend --no-pager -l"
+ssh stock-finder "sudo journalctl -u stock-finder-frontend --no-pager -l"
+
+# 포트 충돌 해결
+ssh stock-finder "sudo lsof -i :8010 && sudo kill -9 PID"
+ssh stock-finder "sudo lsof -i :3000 && sudo kill -9 PID"
+
+# 권한 문제 해결
+ssh stock-finder "sudo chown -R ubuntu:ubuntu /home/ubuntu/showmethestock/"
+
+# 프로세스 강제 종료
+ssh stock-finder "sudo pkill -f 'python.*main.py'"
+ssh stock-finder "sudo pkill -f 'next'"
+```
+
+## 16. 신규 기능 개발 가이드
+
+### 개발 원칙
+**⚠️ 모든 신규 기능은 반드시 테스트 코드를 작성하고 테스트를 통과한 후 배포**
+
+### 테스트 코드 작성 규칙
+1. **단위 테스트 (Unit Test)**
+   ```bash
+   # 백엔드 테스트
+   cd backend
+   python -m pytest tests/test_new_feature.py -v
+   
+   # 프론트엔드 테스트
+   cd frontend
+   npm test -- --testPathPattern=newFeature.test.js
+   ```
+
+2. **통합 테스트 (Integration Test)**
+   ```bash
+   # API 엔드포인트 테스트
+   python -m pytest tests/integration/test_api_endpoints.py -v
+   
+   # 데이터베이스 연동 테스트
+   python -m pytest tests/integration/test_database.py -v
+   ```
+
+3. **테스트 실행 절차**
+   ```bash
+   # 로컬에서 전체 테스트 실행
+   cd backend && python -m pytest tests/ -v --cov=.
+   cd frontend && npm test -- --coverage
+   
+   # 서버에서 테스트 실행
+   ssh stock-finder "cd /home/ubuntu/showmethestock/backend && python -m pytest tests/ -v"
+   ```
+
+### 신규 기능 배포 절차
+1. **로컬 개발 및 테스트**
+   ```bash
+   # 기능 개발
+   # 테스트 코드 작성
+   python -m pytest tests/test_new_feature.py -v
+   ```
+
+2. **로컬 통합 테스트**
+   ```bash
+   # 전체 테스트 실행
+   python -m pytest tests/ -v
+   npm test
+   ```
+
+3. **서버 배포 전 테스트**
+   ```bash
+   # 서버에서 테스트 실행
+   ssh stock-finder "cd /home/ubuntu/showmethestock/backend && python -m pytest tests/ -v"
+   ```
+
+4. **배포 및 검증**
+   ```bash
+   # 배포
+   git push origin main
+   ssh stock-finder "cd /home/ubuntu/showmethestock && git pull"
+   
+   # 배포 후 테스트
+   curl "https://sohntech.ai.kr/api/new-endpoint"
+   ```
+
+### 테스트 코드 템플릿
+
+#### 백엔드 테스트 예시
+```python
+# tests/test_new_feature.py
+import pytest
+from unittest.mock import patch, MagicMock
+from backend.new_feature import NewFeatureClass
+
+class TestNewFeature:
+    def setup_method(self):
+        self.feature = NewFeatureClass()
+    
+    def test_feature_initialization(self):
+        assert self.feature is not None
+    
+    @patch('backend.new_feature.external_api_call')
+    def test_feature_with_mock(self, mock_api):
+        mock_api.return_value = {"status": "success"}
+        result = self.feature.process()
+        assert result["status"] == "success"
+    
+    def test_feature_error_handling(self):
+        with pytest.raises(ValueError):
+            self.feature.process_invalid_input()
+```
+
+#### 프론트엔드 테스트 예시
+```javascript
+// __tests__/components/NewFeature.test.js
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import NewFeature from '../components/NewFeature';
+
+describe('NewFeature Component', () => {
+  test('renders correctly', () => {
+    render(<NewFeature />);
+    expect(screen.getByText('New Feature')).toBeInTheDocument();
+  });
+  
+  test('handles user interaction', () => {
+    render(<NewFeature />);
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+    expect(screen.getByText('Clicked!')).toBeInTheDocument();
+  });
+});
+```
+
+## 17. 연락처 및 문서
 
 - **서버 관리**: AWS EC2 콘솔
 - **도메인**: sohntech.ai.kr
 - **SSL**: Let's Encrypt (자동 갱신)
 - **모니터링**: 서버 로그 및 API 응답 확인
+- **테스트 커버리지**: 최소 80% 이상 유지
