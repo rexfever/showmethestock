@@ -67,6 +67,10 @@ export default function More() {
                     {user.is_admin ? '🔧 관리자' : 
                      user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
                   </div>
+                  {/* 디버깅 정보 */}
+                  <div className="text-xs text-gray-400 mt-1">
+                    Debug: is_admin={String(user.is_admin)} ({typeof user.is_admin}), tier={user.membership_tier}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-gray-500">포인트</div>
