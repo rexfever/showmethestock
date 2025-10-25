@@ -851,6 +851,43 @@ def analyze(name_or_code: str):
     return AnalyzeResponse(ok=True, item=item)
 
 
+@app.get('/analyze-friendly')
+def analyze_friendly(name_or_code: str):
+    """사용자 친화적인 종목 분석 결과 제공"""
+    try:
+        # 기본 분석 실행
+        analysis_result = analyze(name_or_code)
+        
+        if not analysis_result.ok:
+            return {
+                "ok": False,
+                "error": analysis_result.error,
+                "friendly_analysis": None
+            }
+        
+        # 사용자 친화적 분석 생성
+        from user_friendly_analysis import get_user_friendly_analysis
+        friendly_analysis = get_user_friendly_analysis(analysis_result)
+        
+        return {
+            "ok": True,
+            "ticker": analysis_result.item.ticker,
+            "name": analysis_result.item.name,
+            "score": analysis_result.item.score,
+            "match": analysis_result.item.match,
+            "strategy": analysis_result.item.strategy,
+            "friendly_analysis": friendly_analysis,
+            "error": None
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"분석 중 오류가 발생했습니다: {str(e)}",
+            "friendly_analysis": None
+        }
+
+
 @app.get('/positions', response_model=PositionResponse)
 def get_positions():
     """포지션 목록 조회 (현재가 및 수익률 계산 포함)"""
