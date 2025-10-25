@@ -260,6 +260,8 @@ class TestMaintenanceIntegration(unittest.TestCase):
                 end_datetime = datetime.strptime(maintenance_settings["end_date"], "%Y-%m-%d")
                 if datetime.now() > end_datetime:
                     maintenance_settings["is_enabled"] = False
+            except ValueError:
+                pass
         
         self.assertFalse(maintenance_settings["is_enabled"])
 
