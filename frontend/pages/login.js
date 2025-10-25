@@ -19,15 +19,20 @@ export default function Login() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [kakaoSDKReady, setKakaoSDKReady] = useState(false);
 
-  // URL 파라미터에서 에러 메시지 확인
+  // URL 파라미터에서 에러 메시지 확인 및 자동 카카오 로그인
   useEffect(() => {
-    const { error } = router.query;
+    const { error, auto_kakao } = router.query;
     if (error === 'access_denied') {
       setError('카카오 로그인이 취소되었습니다.');
     } else if (error) {
       setError('로그인 중 오류가 발생했습니다.');
     }
-  }, [router.query]);
+    
+    // auto_kakao 파라미터가 있으면 자동으로 카카오 로그인 실행
+    if (auto_kakao === 'true' && kakaoSDKReady && !isLoggingIn) {
+      handleSocialLogin('kakao');
+    }
+  }, [router.query, kakaoSDKReady, isLoggingIn]);
 
   // 카카오 SDK 로드 (동기 방식)
   useEffect(() => {
