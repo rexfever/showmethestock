@@ -64,7 +64,8 @@ export default function More() {
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">{user.name}님</div>
                   <div className="text-sm text-gray-600">
-                    {user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
+                    {user.is_admin ? '🔧 관리자' : 
+                     user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
                   </div>
                 </div>
                 <div className="text-right">
