@@ -202,13 +202,17 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       setIsMobile(isMobileDevice);
     }
     
+    // SSR 데이터 상태 업데이트
+    const hasData = initialData && initialData.length > 0;
+    setHasSSRData(hasData);
+    
     // 스캐너에서는 포트폴리오 조회 생략 (성능 최적화)
     
     // 재등장 종목 조회
     fetchRecurringStocks();
     
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
-    if (hasSSRData) {
+    if (hasData) {
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
@@ -218,14 +222,14 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
     
     // 초기 데이터가 없으면 에러 상태로 설정 (API 호출 제거)
-    if (!hasSSRData) {
+    if (!hasData) {
       setError('스캔 데이터가 없습니다.');
       setLoading(false);
     }
     
     // SSR 데이터가 있을 때는 자동 새로고침 비활성화 (성능 최적화)
     // 필요시에만 수동 새로고침 버튼으로 fetchScanResults() 호출
-  }, [hasSSRData, initialData]);
+  }, [initialData, initialScanFile, initialScanDate]);
 
   // 필터링 (시장별 필터 제거)
   const filteredResults = scanResults.filter(item => {
