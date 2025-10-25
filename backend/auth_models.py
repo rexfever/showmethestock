@@ -61,6 +61,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+    user_id: Optional[int] = None
 
 class SocialLoginRequest(BaseModel):
     provider: str  # 'kakao', 'naver', 'toss'

@@ -1705,7 +1705,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = auth_service.get_user_by_email(token_data.email)
+    # user_id로 사용자 조회
+    user = auth_service.get_user_by_id(token_data.user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -235,10 +235,10 @@ class AuthService:
         """JWT 토큰 검증"""
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            if email is None:
+            user_id: str = payload.get("sub")
+            if user_id is None:
                 return None
-            token_data = TokenData(email=email)
+            token_data = TokenData(user_id=int(user_id))
             return token_data
         except JWTError:
             return None
