@@ -235,10 +235,22 @@ class AuthService:
         """JWT 토큰 검증"""
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            user_id: str = payload.get("sub")
-            if user_id is None:
+            sub_value = payload.get("sub")
+            if sub_value is None:
                 return None
-            token_data = TokenData(user_id=int(user_id))
+            
+            # sub 값이 숫자(사용자 ID)인지 이메일인지 확인
+            try:
+                user_id = int(sub_value)
+                token_data = TokenData(user_id=user_id)
+            except ValueError:
+                # 이메일인 경우 사용자 조회 후 ID 반환
+                user = self.get_user_by_email(sub_value)
+                if user:
+                    token_data = TokenData(user_id=user.id)
+                else:
+                    return None
+            
             return token_data
         except JWTError:
             return None
