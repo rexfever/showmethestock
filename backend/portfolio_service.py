@@ -47,29 +47,29 @@ class PortfolioService:
             conn.commit()
     
     def get_current_price(self, ticker: str) -> Optional[float]:
-        """현재가 조회 (스캔 결과에서)"""
+        """현재가 조회 (데이터베이스에서)"""
         try:
-            # 최신 스캔 파일에서 현재가 조회
-            snapshots_dir = "snapshots"
-            if not os.path.exists(snapshots_dir):
+            # snapshots.db에서 최신 스캔 결과 조회
+            snapshots_db_path = "snapshots.db"
+            if not os.path.exists(snapshots_db_path):
                 return None
             
-            # 최신 auto-scan 파일 찾기
-            import glob
-            auto_scan_files = glob.glob(os.path.join(snapshots_dir, "auto-scan-*.json"))
-            if not auto_scan_files:
+            with sqlite3.connect(snapshots_db_path) as conn:
+                cursor = conn.cursor()
+                
+                # 최신 날짜의 해당 종목 현재가 조회
+                cursor.execute("""
+                    SELECT current_price FROM scan_rank 
+                    WHERE code = ? 
+                    ORDER BY date DESC 
+                    LIMIT 1
+                """, (ticker,))
+                
+                row = cursor.fetchone()
+                if row and row[0]:
+                    return float(row[0])
+                
                 return None
-            
-            latest_file = max(auto_scan_files, key=os.path.getctime)
-            
-            with open(latest_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            for item in data.get('items', []):
-                if item.get('ticker') == ticker:
-                    return item.get('details', {}).get('close')
-            
-            return None
         except Exception as e:
             print(f"현재가 조회 오류: {e}")
             return None
