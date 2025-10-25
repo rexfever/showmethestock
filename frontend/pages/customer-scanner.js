@@ -325,11 +325,18 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
                   {mounted && scanDate ? (() => {
-                    // YYYYMMDD 형식을 YYYY년 M월 D일 형식으로 변환
-                    const year = scanDate.substring(0, 4);
-                    const month = parseInt(scanDate.substring(4, 6));
-                    const day = parseInt(scanDate.substring(6, 8));
-                    const date = new Date(year, month - 1, day);
+                    // YYYY-MM-DD 형식을 YYYY년 M월 D일 형식으로 변환
+                    let date;
+                    if (scanDate.includes('-')) {
+                      // YYYY-MM-DD 형식
+                      date = new Date(scanDate);
+                    } else {
+                      // YYYYMMDD 형식 (기존 호환성)
+                      const year = scanDate.substring(0, 4);
+                      const month = parseInt(scanDate.substring(4, 6));
+                      const day = parseInt(scanDate.substring(6, 8));
+                      date = new Date(year, month - 1, day);
+                    }
                     return date.toLocaleDateString('ko-KR', { 
                       year: 'numeric', 
                       month: 'long', 
