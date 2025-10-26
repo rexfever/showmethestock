@@ -28,8 +28,9 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df["MACD_LINE"] = macd_line
     df["MACD_SIGNAL"] = signal_line
     # === 새로운 RSI 계산 ===
-    df["RSI_TEMA"] = rsi_tema(close, 14)
-    df["RSI_DEMA"] = rsi_dema(close, 14)
+    # RSI 계산: 표준 EMA 사용 (HTS와 동일)
+    df["RSI_TEMA"] = rsi_standard(close, 14)  # standard RSI
+    df["RSI_DEMA"] = rsi_standard(close, 14)  # 동일 값 사용
     df["OBV"] = obv(close, volume)
     df["VOL_MA5"] = volume.rolling(5).mean()
     return df
