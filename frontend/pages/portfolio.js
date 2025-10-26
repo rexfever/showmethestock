@@ -220,6 +220,61 @@ export default function Portfolio() {
               <p className="text-gray-600">포트폴리오를 불러오는 중...</p>
             </div>
           ) : portfolio.length > 0 ? (
+            <>
+              {/* 포트폴리오 요약 통계 */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 mb-6">
+                <h3 className="text-sm font-medium text-gray-600 mb-3">📊 포트폴리오 요약</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-lg p-3 shadow-sm">
+                    <div className="text-xs text-gray-500 mb-1">총 투자금액</div>
+                    <div className="text-lg font-bold text-gray-800">
+                      {formatCurrency(
+                        portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0)
+                      )}원
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 shadow-sm">
+                    <div className="text-xs text-gray-500 mb-1">평가금액</div>
+                    <div className="text-lg font-bold text-gray-800">
+                      {formatCurrency(
+                        portfolio.reduce((sum, item) => sum + (item.current_price * (item.quantity || 0)), 0)
+                      )}원
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 shadow-sm">
+                    <div className="text-xs text-gray-500 mb-1">총 손익</div>
+                    <div className={`text-lg font-bold ${
+                      portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0) >= 0 
+                        ? 'text-red-600' 
+                        : 'text-blue-600'
+                    }`}>
+                      {formatCurrency(portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0))}원
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 shadow-sm">
+                    <div className="text-xs text-gray-500 mb-1">총 수익률</div>
+                    <div className={`text-lg font-bold ${
+                      (() => {
+                        const totalInvestment = portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
+                        const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
+                        return totalInvestment > 0 ? (totalProfit / totalInvestment * 100) : 0;
+                      })() >= 0 
+                        ? 'text-red-600' 
+                        : 'text-blue-600'
+                    }`}>
+                      {formatPercentage(
+                        (() => {
+                          const totalInvestment = portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
+                          const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
+                          return totalInvestment > 0 ? (totalProfit / totalInvestment * 100) : 0;
+                        })()
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 종목 목록 */}
             <div className="space-y-4">
               {portfolio.map((item) => (
                 <div key={item.id} className="bg-white rounded-lg shadow-sm border p-4">
@@ -289,6 +344,7 @@ export default function Portfolio() {
                 </div>
               ))}
             </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <div className="text-gray-400 text-6xl mb-4">📊</div>
