@@ -234,7 +234,9 @@ export default function Portfolio() {
                           const buyAmount = tradingHistory.reduce((sum, trade) => 
                             trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
                           );
-                          return buyAmount || portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
+                          
+                          // 매매 내역이 없으면 0 반환 (포트폴리오는 매매 내역 기준으로만 계산)
+                          return buyAmount;
                         })()
                       )}원
                     </div>
@@ -265,22 +267,18 @@ export default function Portfolio() {
                         const buyAmount = tradingHistory.reduce((sum, trade) => 
                           trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
                         );
-                        const totalInvestment = buyAmount || portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
                         const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
-                        return totalInvestment > 0 ? (totalProfit / totalInvestment * 100) : 0;
-                      })() >= 0 
-                        ? 'text-red-600' 
-                        : 'text-blue-600'
+                        const totalReturn = buyAmount > 0 ? (totalProfit / buyAmount * 100) : 0;
+                        return totalReturn >= 0 ? 'text-red-600' : 'text-blue-600';
+                      })()
                     }`}>
                       {formatPercentage(
                         (() => {
-                          // 매매 내역 기반 계산
                           const buyAmount = tradingHistory.reduce((sum, trade) => 
                             trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
                           );
-                          const totalInvestment = buyAmount || portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
                           const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
-                          return totalInvestment > 0 ? (totalProfit / totalInvestment * 100) : 0;
+                          return buyAmount > 0 ? (totalProfit / buyAmount * 100) : 0;
                         })()
                       )}
                     </div>
