@@ -86,7 +86,7 @@ export default function Portfolio() {
   const openTradingModal = (stock) => {
     setSelectedStock(stock);
     setTradingForm({
-      trade_type: 'buy',
+      trade_type: stock.trade_type || 'buy',
       quantity: '',
       price: '',
       trade_date: new Date().toISOString().split('T')[0],
