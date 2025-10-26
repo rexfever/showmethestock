@@ -369,7 +369,9 @@ class PortfolioService:
             conn.commit()
             
             # 포트폴리오 업데이트 (평균 단가 계산)
+            print(f"🔄 포트폴리오 업데이트 시작: ticker={request.ticker}, user_id={user_id}")
             self._update_portfolio_from_trading(user_id, request.ticker)
+            print(f"✅ 포트폴리오 업데이트 완료: ticker={request.ticker}")
             
             # 추가된 매매 내역 반환
             with sqlite3.connect(self.db_path) as conn2:
@@ -435,6 +437,7 @@ class PortfolioService:
     
     def _update_portfolio_from_trading(self, user_id: int, ticker: str):
         """매매 내역을 기반으로 포트폴리오 업데이트 (매도 손익 포함)"""
+        print(f"📊 _update_portfolio_from_trading 호출: user_id={user_id}, ticker={ticker}")
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
