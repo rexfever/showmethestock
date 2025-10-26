@@ -131,28 +131,7 @@ def get_detailed_explanations(indicators, flags, score):
                 'impact': '긍정적'
             })
     
-    # RSI 설명
-    rsi_tema = indicators.get('RSI_TEMA', 0)
-    if rsi_tema > 70:
-        explanations.append({
-            'title': '⚠️ 과매수 상태',
-            'description': '현재 주가가 과도하게 상승한 상태입니다. 조정 가능성이 있으니 주의가 필요합니다.',
-            'impact': '부정적'
-        })
-    elif rsi_tema < 30:
-        explanations.append({
-            'title': '💡 과매도 상태',
-            'description': '현재 주가가 과도하게 하락한 상태입니다. 반등 가능성이 있을 수 있습니다.',
-            'impact': '긍정적'
-        })
-    elif 50 < rsi_tema < 70:
-        explanations.append({
-            'title': '📊 적정 수준',
-            'description': '현재 주가 수준이 적정한 범위에 있습니다.',
-            'impact': '중립'
-        })
-    
-    # 점수별 설명
+    # 점수별 설명 (우선 처리)
     if score >= 8:
         explanations.append({
             'title': '🎯 우수한 투자 조건',
@@ -176,6 +155,27 @@ def get_detailed_explanations(indicators, flags, score):
             'title': '❌ 투자 조건 부족',
             'description': '대부분의 기술적 지표가 투자에 부적합한 신호를 보이고 있습니다.',
             'impact': '부정적'
+        })
+    
+    # RSI 설명 (점수별 설명 이후)
+    rsi_tema = indicators.get('RSI_TEMA', 0)
+    if rsi_tema > 70:
+        explanations.append({
+            'title': '⚠️ 과매수 상태',
+            'description': '현재 주가가 과도하게 상승한 상태입니다. 조정 가능성이 있으니 주의가 필요합니다.',
+            'impact': '부정적'
+        })
+    elif rsi_tema < 30:
+        explanations.append({
+            'title': '💡 과매도 상태',
+            'description': '현재 주가가 과도하게 하락한 상태입니다. 반등 가능성이 있을 수 있습니다.',
+            'impact': '긍정적'
+        })
+    elif 50 < rsi_tema < 70:
+        explanations.append({
+            'title': '📊 적정 수준',
+            'description': '현재 주가 수준이 적정한 범위에 있습니다.',
+            'impact': '중립'
         })
     
     return explanations
