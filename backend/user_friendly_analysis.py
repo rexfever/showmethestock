@@ -271,6 +271,6 @@ def get_simple_indicators(indicators):
         },
         'trend': {
             'value': '상승' if indicators.get('TEMA', 0) > indicators.get('DEMA', 0) else '하락',
-            'description': '현재 추세 방향'
+            'description': '현재 추세 방향 (단기 vs 장기 이동평균)'
         }
     }
