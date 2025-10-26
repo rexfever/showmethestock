@@ -9,27 +9,20 @@ import BottomNavigation from '../components/BottomNavigation';
 
 export default function CustomerScanner({ initialData, initialScanFile, initialScanDate }) {
   const router = useRouter();
-  const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
-  // 초기 데이터가 SSR로 전달되지 않아도 상태 유지
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
   const [scanDate, setScanDate] = useState(initialScanDate || '');
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
-  // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
   const [recurringStocks, setRecurringStocks] = useState({});
-
-  // 투자 모달 상태
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedStock, setSelectedStock] = useState(null);
   const [investmentLoading, setInvestmentLoading] = useState(false);
-
-  // 메인트넌스 상태
   const [maintenanceStatus, setMaintenanceStatus] = useState({
     is_enabled: false,
     end_date: null,
@@ -56,29 +49,15 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     checkMaintenanceStatus();
   }, []);
 
-  // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
-  // useEffect(() => {
-  //   if (!authLoading && !isAuthenticated()) {
-  //     // router.push('/login'); // 주석 처리 - 게스트 사용자도 접근 가능
-  //   }
-  // }, [authLoading, isAuthenticated, router]);
-
-
-  // 포트폴리오 조회 함수 제거 (스캐너에서는 불필요)
-
-  // 투자 모달 열기
   const openInvestmentModal = (stock) => {
     setSelectedStock(stock);
     setShowInvestmentModal(true);
   };
 
-  // 투자 모달 닫기
   const closeInvestmentModal = () => {
     setSelectedStock(null);
     setShowInvestmentModal(false);
   };
-
-  // 투자 등록
   const handleInvestmentRegistration = async (stock, entryPrice, quantity, entryDate) => {
     if (!isAuthenticated() || !user) {
       alert('로그인이 필요합니다.');
@@ -117,7 +96,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   };
 
-  // 재등장 종목 조회 (종목명 표시용)
   const fetchRecurringStocks = useCallback(async () => {
     try {
       const config = getConfig();
@@ -137,11 +115,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   }, []);
 
-  // 최신 스캔 결과 가져오기
-  // 클라이언트에서 추가 데이터 로드 (필요시에만)
   const fetchScanResults = useCallback(async () => {
-    // SSR로 이미 데이터가 로드되었으므로 클라이언트에서는 추가 로드 불필요
-    // 필요시에만 새로고침 기능으로 사용
     setLoading(true);
     setError(null);
     
@@ -208,7 +182,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     fetchRecurringStocks();
   }, [fetchRecurringStocks]);
 
-  // SSR 데이터가 있을 때만 상태 업데이트
   useEffect(() => {
     if (initialData && initialData.length > 0) {
       setScanResults(initialData);
@@ -220,7 +193,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   }, [initialData, initialScanFile, initialScanDate]);
   
-  // SSR 데이터가 없을 때 클라이언트 API 자동 호출 (다른 페이지에서 돌아왔을 때)
   useEffect(() => {
     if (!initialData && scanResults.length === 0 && !loading && !error) {
       setLoading(true);
@@ -228,16 +200,10 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   }, [scanResults.length, loading, error, fetchScanResults, initialData]);
 
-  // 필터링 (시장별 필터 제거)
-  const filteredResults = scanResults.filter(item => {
-    if (!item) return false;
-    
-    
-    return true;
-  });
-
-  // 정렬 없이 그대로 사용
+  const filteredResults = scanResults.filter(item => item !== null && item !== undefined);
   const sortedResults = filteredResults;
+
+  if (maintenanceStatus.is_enabled) {
 
 
 
