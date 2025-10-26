@@ -194,6 +194,8 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   }, []);
 
   useEffect(() => {
+    console.log('🔄 useEffect triggered - initialData:', initialData?.length, 'initialScanDate:', initialScanDate);
+    
     setMounted(true);
     
     // 모바일 감지
@@ -205,6 +207,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     
     // SSR 데이터 상태 업데이트
     const hasData = initialData && initialData.length > 0;
+    console.log('📊 hasData:', hasData, 'hasSSRData (before):', hasSSRData);
     setHasSSRData(hasData);
     
     // 스캐너에서는 포트폴리오 조회 생략 (성능 최적화)
@@ -214,6 +217,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     
     // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
     if (hasData) {
+      console.log('✅ Setting scan results from SSR data');
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
@@ -224,13 +228,14 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     
     // 초기 데이터가 없으면 에러 상태로 설정 (API 호출 제거)
     if (!hasData) {
+      console.log('❌ No SSR data - setting error state');
       setError('스캔 데이터가 없습니다.');
       setLoading(false);
     }
     
     // SSR 데이터가 있을 때는 자동 새로고침 비활성화 (성능 최적화)
     // 필요시에만 수동 새로고침 버튼으로 fetchScanResults() 호출
-  }, [initialData, initialScanFile, initialScanDate]);
+  }, [initialData, initialScanFile, initialScanDate, fetchRecurringStocks]);
 
   // 필터링 (시장별 필터 제거)
   const filteredResults = scanResults.filter(item => {
