@@ -433,13 +433,13 @@ class PortfolioService:
             return False
     
     def _update_portfolio_from_trading(self, user_id: int, ticker: str):
-        """매매 내역을 기반으로 포트폴리오 업데이트"""
+        """매매 내역을 기반으로 포트폴리오 업데이트 (매도 손익 포함)"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
             # 해당 종목의 매매 내역 조회
             cursor.execute("""
-                SELECT trade_type, quantity, price FROM trading_history 
+                SELECT trade_type, quantity, price, trade_date FROM trading_history 
                 WHERE user_id = ? AND ticker = ?
                 ORDER BY trade_date ASC, created_at ASC
             """, (user_id, ticker))
@@ -449,35 +449,75 @@ class PortfolioService:
             if not trades:
                 return
             
-            # 평균 단가와 총 수량 계산
+            # FIFO 방식으로 매수/매도 처리
+            buy_queue = []  # (quantity, price, date) 튜플 리스트
             total_quantity = 0
             total_cost = 0
+            realized_profit = 0  # 실현 손익
             
-            for trade_type, quantity, price in trades:
+            for trade_type, quantity, price, trade_date in trades:
                 if trade_type == 'buy':
+                    buy_queue.append((quantity, price, trade_date))
                     total_quantity += quantity
                     total_cost += quantity * price
                 elif trade_type == 'sell':
-                    total_quantity -= quantity
-                    # 매도 시에는 평균 단가를 유지하되 수량만 감소
+                    sell_quantity = quantity
+                    total_quantity -= sell_quantity
+                    
+                    # FIFO 방식으로 매도 처리
+                    while sell_quantity > 0 and buy_queue:
+                        buy_qty, buy_price, buy_date = buy_queue[0]
+                        
+                        if buy_qty <= sell_quantity:
+                            # 전체 매수분 매도
+                            realized_profit += (price - buy_price) * buy_qty
+                            sell_quantity -= buy_qty
+                            buy_queue.pop(0)
+                        else:
+                            # 일부 매수분 매도
+                            realized_profit += (price - buy_price) * sell_quantity
+                            buy_queue[0] = (buy_qty - sell_quantity, buy_price, buy_date)
+                            sell_quantity = 0
             
             # 포트폴리오 업데이트 또는 삭제
             if total_quantity <= 0:
                 # 수량이 0 이하면 포트폴리오에서 제거
                 cursor.execute("DELETE FROM portfolio WHERE user_id = ? AND ticker = ?", (user_id, ticker))
             else:
-                # 평균 단가 계산
-                avg_price = total_cost / total_quantity if total_quantity > 0 else 0
+                # 현재 보유 수량의 평균 단가 계산
+                remaining_cost = sum(qty * price for qty, price, _ in buy_queue)
+                avg_price = remaining_cost / total_quantity if total_quantity > 0 else 0
+                
+                # 종목명과 첫 매수일 조회
+                cursor.execute("""
+                    SELECT name, MIN(trade_date) FROM trading_history 
+                    WHERE user_id = ? AND ticker = ? AND trade_type = 'buy'
+                """, (user_id, ticker))
+                
+                name_row = cursor.fetchone()
+                name = name_row[0] if name_row else ticker
+                first_buy_date = name_row[1] if name_row else trades[0][3]
+                
+                # 현재가 조회
+                current_price = self.get_current_price(ticker)
+                
+                # 손익 계산 (실현 손익 + 미실현 손익)
+                current_value = current_price * total_quantity if current_price else 0
+                unrealized_profit = (current_price - avg_price) * total_quantity if current_price else 0
+                total_profit = realized_profit + unrealized_profit
+                total_profit_pct = (total_profit / remaining_cost * 100) if remaining_cost > 0 else 0
                 
                 # 포트폴리오 업데이트 또는 생성
                 cursor.execute("""
                     INSERT OR REPLACE INTO portfolio (
                         user_id, ticker, name, entry_price, quantity, entry_date, 
-                        total_investment, status, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'holding', CURRENT_TIMESTAMP)
+                        total_investment, current_price, current_value, profit_loss, 
+                        profit_loss_pct, status, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'holding', CURRENT_TIMESTAMP)
                 """, (
-                    user_id, ticker, trades[0][0], avg_price, total_quantity,
-                    trades[0][2], total_cost
+                    user_id, ticker, name, avg_price, total_quantity, first_buy_date,
+                    remaining_cost, current_price, current_value, total_profit,
+                    total_profit_pct
                 ))
     
     def _row_to_trading_history(self, row) -> TradingHistory:

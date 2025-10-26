@@ -310,6 +310,54 @@ export default function Portfolio() {
                 📋 매매 내역
                 <span className="ml-2 text-sm text-gray-500">({tradingHistory.length}건)</span>
               </h3>
+              
+              {/* 매매 내역 요약 */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-sm text-gray-600">총 매수금액</div>
+                    <div className="text-lg font-semibold text-green-600">
+                      {formatCurrency(tradingHistory.reduce((sum, trade) => 
+                        trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                      ))}원
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">총 매도금액</div>
+                    <div className="text-lg font-semibold text-red-600">
+                      {formatCurrency(tradingHistory.reduce((sum, trade) => 
+                        trade.trade_type === 'sell' ? sum + (trade.price * trade.quantity) : sum, 0
+                      ))}원
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">실현손익</div>
+                    <div className={`text-lg font-semibold ${
+                      tradingHistory.reduce((sum, trade) => {
+                        if (trade.trade_type === 'sell') {
+                          // 매도 시 손익 계산 (간단한 예시 - 실제로는 FIFO 방식 필요)
+                          return sum + (trade.price * trade.quantity);
+                        }
+                        return sum;
+                      }, 0) - tradingHistory.reduce((sum, trade) => 
+                        trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                      ) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(
+                        tradingHistory.reduce((sum, trade) => {
+                          if (trade.trade_type === 'sell') {
+                            return sum + (trade.price * trade.quantity);
+                          }
+                          return sum;
+                        }, 0) - tradingHistory.reduce((sum, trade) => 
+                          trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                        )
+                      )}원
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-3">
                 {tradingHistory.map((trade) => (
                   <div key={trade.id} className="bg-white rounded-lg shadow-sm border p-4">
