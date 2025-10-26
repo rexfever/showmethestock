@@ -204,14 +204,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   const sortedResults = filteredResults;
 
   if (maintenanceStatus.is_enabled) {
-
-
-
-
-
-
-  // 메인트넌스 모드인 경우 메인트넌스 페이지 렌더링
-  if (maintenanceStatus.is_enabled) {
     return (
       <>
         <Head>
@@ -259,7 +251,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     );
   }
 
-  // mounted 체크 제거 - SSR 데이터가 있으므로 바로 렌더링
 
   return (
     <>
