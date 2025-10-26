@@ -6,7 +6,7 @@ const config = {
   },
   production: {
     domain: 'https://sohntech.ai.kr',
-    backendUrl: 'https://sohntech.ai.kr/backend'
+    backendUrl: 'https://sohntech.ai.kr/api'
   }
 };
 
