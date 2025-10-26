@@ -23,8 +23,12 @@ def get_user_friendly_analysis(analysis_result):
     item = analysis_result.item
     indicators = item.indicators.__dict__ if item.indicators else {}
     flags = item.flags.__dict__ if item.flags else {}
+    trend = item.trend.__dict__ if item.trend else {}
     score = item.score
     match = item.match
+    
+    # trend 데이터를 indicators에 병합
+    indicators.update(trend)
     
     # 1. 종합 평가
     summary, recommendation, confidence = get_overall_assessment(score, match, flags)
@@ -270,7 +274,7 @@ def get_simple_indicators(indicators):
             'description': '과매수/과매도 지표 (70 이상: 과매수, 30 이하: 과매도)'
         },
         'trend': {
-            'value': '상승' if indicators.get('TEMA', 0) > indicators.get('DEMA', 0) else '하락',
-            'description': '현재 추세 방향 (단기 vs 장기 이동평균)'
+            'value': '상승' if indicators.get('TEMA20_SLOPE20', 0) > 0 else '하락',
+            'description': f'현재 추세 방향 (TEMA20 기울기: {indicators.get("TEMA20_SLOPE20", 0):.2f})'
         }
     }
