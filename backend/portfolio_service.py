@@ -511,12 +511,12 @@ class PortfolioService:
                 cursor.execute("""
                     INSERT OR REPLACE INTO portfolio (
                         user_id, ticker, name, entry_price, quantity, entry_date, 
-                        total_investment, current_price, current_value, profit_loss, 
+                        current_price, total_investment, current_value, profit_loss, 
                         profit_loss_pct, status, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'holding', CURRENT_TIMESTAMP)
                 """, (
                     user_id, ticker, name, avg_price, total_quantity, first_buy_date,
-                    remaining_cost, current_price, current_value, total_profit,
+                    current_price, remaining_cost, current_value, total_profit,
                     total_profit_pct
                 ))
     
