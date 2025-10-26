@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
+import { getConfig } from '../utils/config';
 import { fetchPortfolio } from '../services/portfolioService';
 import { calculateHoldingPeriod, formatDate, formatCurrency, formatPercentage } from '../utils/portfolioUtils';
 import { handleError } from '../utils/errorHandler';
@@ -12,6 +13,19 @@ export default function Portfolio() {
   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // 매매 내역 관련 상태
+  const [tradingHistory, setTradingHistory] = useState([]);
+  const [showTradingModal, setShowTradingModal] = useState(false);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [tradingLoading, setTradingLoading] = useState(false);
+  const [tradingForm, setTradingForm] = useState({
+    trade_type: 'buy',
+    quantity: '',
+    price: '',
+    trade_date: new Date().toISOString().split('T')[0],
+    notes: ''
+  });
 
   useEffect(() => {
     if (!authChecked || authLoading) {
@@ -25,6 +39,7 @@ export default function Portfolio() {
     }
     
     loadPortfolio();
+    loadTradingHistory();
   }, [authChecked, authLoading, isAuthenticated, router]);
 
   const loadPortfolio = async () => {
@@ -37,6 +52,117 @@ export default function Portfolio() {
       setPortfolio([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 매매 내역 관련 함수들
+  const loadTradingHistory = async () => {
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${base}/trading-history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTradingHistory(data.items || []);
+      }
+    } catch (error) {
+      console.error('매매 내역 로드 실패:', error);
+    }
+  };
+
+  const openTradingModal = (stock) => {
+    setSelectedStock(stock);
+    setTradingForm({
+      trade_type: 'buy',
+      quantity: '',
+      price: '',
+      trade_date: new Date().toISOString().split('T')[0],
+      notes: ''
+    });
+    setShowTradingModal(true);
+  };
+
+  const closeTradingModal = () => {
+    setShowTradingModal(false);
+    setSelectedStock(null);
+  };
+
+  const handleTradingSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedStock) return;
+
+    setTradingLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${base}/trading-history`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticker: selectedStock.ticker,
+          name: selectedStock.name,
+          trade_type: tradingForm.trade_type,
+          quantity: parseInt(tradingForm.quantity),
+          price: parseFloat(tradingForm.price),
+          trade_date: tradingForm.trade_date,
+          notes: tradingForm.notes
+        })
+      });
+
+      if (response.ok) {
+        alert('매매 내역이 추가되었습니다.');
+        closeTradingModal();
+        loadPortfolio(); // 포트폴리오 재로드
+        loadTradingHistory(); // 매매 내역 재로드
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || '매매 내역 추가에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('매매 내역 추가 실패:', error);
+      alert('매매 내역 추가 중 오류가 발생했습니다.');
+    } finally {
+      setTradingLoading(false);
+    }
+  };
+
+  const deleteTradingHistory = async (tradingId) => {
+    if (!confirm('이 매매 내역을 삭제하시겠습니까?')) return;
+
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${base}/trading-history/${tradingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert('매매 내역이 삭제되었습니다.');
+        loadPortfolio(); // 포트폴리오 재로드
+        loadTradingHistory(); // 매매 내역 재로드
+      } else {
+        alert('매매 내역 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('매매 내역 삭제 실패:', error);
+      alert('매매 내역 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -127,7 +253,7 @@ export default function Portfolio() {
                   </div>
                   
                   <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                       <div>
                         <span className="text-gray-500">매수일:</span>
                         <span className="ml-2 text-gray-800">{formatDate(item.entry_date)}</span>
@@ -136,6 +262,22 @@ export default function Portfolio() {
                         <span className="text-gray-500">보유기간:</span>
                         <span className="ml-2 text-gray-800 font-medium">{calculateHoldingPeriod(item.entry_date)}</span>
                       </div>
+                    </div>
+                    
+                    {/* 매매 내역 관리 버튼들 */}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => openTradingModal({...item, trade_type: 'buy'})}
+                        className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2 px-3 rounded-md transition-colors"
+                      >
+                        📈 추가매수
+                      </button>
+                      <button
+                        onClick={() => openTradingModal({...item, trade_type: 'sell'})}
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs py-2 px-3 rounded-md transition-colors"
+                      >
+                        📉 매도
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -154,7 +296,183 @@ export default function Portfolio() {
               </a>
             </div>
           )}
+          
+          {/* 매매 내역 섹션 */}
+          {tradingHistory.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                📋 매매 내역
+                <span className="ml-2 text-sm text-gray-500">({tradingHistory.length}건)</span>
+              </h3>
+              <div className="space-y-3">
+                {tradingHistory.map((trade) => (
+                  <div key={trade.id} className="bg-white rounded-lg shadow-sm border p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          trade.trade_type === 'buy' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {trade.trade_type === 'buy' ? '📈 매수' : '📉 매도'}
+                        </span>
+                        <span className="font-semibold text-gray-800">{trade.name}</span>
+                        <span className="text-xs text-gray-500">({trade.ticker})</span>
+                      </div>
+                      <button
+                        onClick={() => deleteTradingHistory(trade.id)}
+                        className="text-gray-400 hover:text-red-500 text-sm"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-500">수량:</span>
+                        <span className="ml-2 text-gray-800">{trade.quantity}주</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">가격:</span>
+                        <span className="ml-2 text-gray-800">{formatCurrency(trade.price)}원</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">거래일:</span>
+                        <span className="ml-2 text-gray-800">{formatDate(trade.trade_date)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">금액:</span>
+                        <span className="ml-2 text-gray-800 font-medium">
+                          {formatCurrency(trade.price * trade.quantity)}원
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {trade.notes && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">메모:</span>
+                        <span className="ml-2 text-xs text-gray-700">{trade.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* 매매 내역 모달 */}
+        {showTradingModal && selectedStock && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-md">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {tradingForm.trade_type === 'buy' ? '📈 추가매수' : '📉 매도'} - {selectedStock.name}
+                  </h3>
+                  <button
+                    onClick={closeTradingModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <form onSubmit={handleTradingSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      거래 유형
+                    </label>
+                    <select
+                      value={tradingForm.trade_type}
+                      onChange={(e) => setTradingForm({...tradingForm, trade_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="buy">매수</option>
+                      <option value="sell">매도</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      수량 (주)
+                    </label>
+                    <input
+                      type="number"
+                      value={tradingForm.quantity}
+                      onChange={(e) => setTradingForm({...tradingForm, quantity: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="수량을 입력하세요"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      가격 (원)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={tradingForm.price}
+                      onChange={(e) => setTradingForm({...tradingForm, price: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="가격을 입력하세요"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      거래일
+                    </label>
+                    <input
+                      type="date"
+                      value={tradingForm.trade_date}
+                      onChange={(e) => setTradingForm({...tradingForm, trade_date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      메모 (선택사항)
+                    </label>
+                    <textarea
+                      value={tradingForm.notes}
+                      onChange={(e) => setTradingForm({...tradingForm, notes: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                      placeholder="메모를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={closeTradingModal}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={tradingLoading}
+                      className={`flex-1 px-4 py-2 rounded-md text-white ${
+                        tradingForm.trade_type === 'buy' 
+                          ? 'bg-green-500 hover:bg-green-600' 
+                          : 'bg-red-500 hover:bg-red-600'
+                      } disabled:opacity-50`}
+                    >
+                      {tradingLoading ? '처리 중...' : '등록'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 하단 네비게이션 */}
         <div className="fixed bottom-0 left-0 right-0 bg-black text-white">
