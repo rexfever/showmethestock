@@ -333,25 +333,70 @@ export default function Portfolio() {
                   <div>
                     <div className="text-sm text-gray-600">실현손익</div>
                     <div className={`text-lg font-semibold ${
-                      tradingHistory.reduce((sum, trade) => {
-                        if (trade.trade_type === 'sell') {
-                          // 매도 시 손익 계산 (간단한 예시 - 실제로는 FIFO 방식 필요)
-                          return sum + (trade.price * trade.quantity);
+                      (() => {
+                        // FIFO 방식으로 실현손익 계산
+                        const buyTrades = tradingHistory.filter(t => t.trade_type === 'buy').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
+                        const sellTrades = tradingHistory.filter(t => t.trade_type === 'sell').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
+                        
+                        let realizedProfit = 0;
+                        let buyIndex = 0;
+                        
+                        for (const sellTrade of sellTrades) {
+                          let remainingSellQty = sellTrade.quantity;
+                          
+                          while (remainingSellQty > 0 && buyIndex < buyTrades.length) {
+                            const buyTrade = buyTrades[buyIndex];
+                            const availableQty = buyTrade.quantity;
+                            
+                            if (availableQty <= remainingSellQty) {
+                              // 전체 매수분 매도
+                              realizedProfit += (sellTrade.price - buyTrade.price) * availableQty;
+                              remainingSellQty -= availableQty;
+                              buyIndex++;
+                            } else {
+                              // 일부 매수분 매도
+                              realizedProfit += (sellTrade.price - buyTrade.price) * remainingSellQty;
+                              buyTrades[buyIndex].quantity -= remainingSellQty;
+                              remainingSellQty = 0;
+                            }
+                          }
                         }
-                        return sum;
-                      }, 0) - tradingHistory.reduce((sum, trade) => 
-                        trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
-                      ) >= 0 ? 'text-green-600' : 'text-red-600'
+                        
+                        return realizedProfit >= 0 ? 'text-green-600' : 'text-red-600';
+                      })()
                     }`}>
                       {formatCurrency(
-                        tradingHistory.reduce((sum, trade) => {
-                          if (trade.trade_type === 'sell') {
-                            return sum + (trade.price * trade.quantity);
+                        (() => {
+                          // FIFO 방식으로 실현손익 계산
+                          const buyTrades = tradingHistory.filter(t => t.trade_type === 'buy').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
+                          const sellTrades = tradingHistory.filter(t => t.trade_type === 'sell').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
+                          
+                          let realizedProfit = 0;
+                          let buyIndex = 0;
+                          
+                          for (const sellTrade of sellTrades) {
+                            let remainingSellQty = sellTrade.quantity;
+                            
+                            while (remainingSellQty > 0 && buyIndex < buyTrades.length) {
+                              const buyTrade = buyTrades[buyIndex];
+                              const availableQty = buyTrade.quantity;
+                              
+                              if (availableQty <= remainingSellQty) {
+                                // 전체 매수분 매도
+                                realizedProfit += (sellTrade.price - buyTrade.price) * availableQty;
+                                remainingSellQty -= availableQty;
+                                buyIndex++;
+                              } else {
+                                // 일부 매수분 매도
+                                realizedProfit += (sellTrade.price - buyTrade.price) * remainingSellQty;
+                                buyTrades[buyIndex].quantity -= remainingSellQty;
+                                remainingSellQty = 0;
+                              }
+                            }
                           }
-                          return sum;
-                        }, 0) - tradingHistory.reduce((sum, trade) => 
-                          trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
-                        )
+                          
+                          return realizedProfit;
+                        })()
                       )}원
                     </div>
                   </div>
