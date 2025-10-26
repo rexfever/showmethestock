@@ -60,11 +60,16 @@ def rsi_dema(close: pd.Series, n: int) -> pd.Series:
     return rsi.fillna(50)
 
 def rsi_tema(close: pd.Series, n: int) -> pd.Series:
+    """RSI using TEMA for smoothing (표준 RSI with TEMA smoothing)"""
     delta = close.diff()
-    u = np.where(delta > 0, delta, 0.0)
-    d = np.where(delta < 0, -delta, 0.0)
-    u_t = tema(pd.Series(u, index=close.index), n)
-    d_t = tema(pd.Series(d, index=close.index), n)
+    u = delta.clip(lower=0)  # gains
+    d = (-delta).clip(lower=0)  # losses
+    
+    # TEMA로 평활화
+    u_t = tema(u, n)
+    d_t = tema(d, n)
+    
+    # RS 및 RSI 계산
     rs = u_t / d_t.replace(0, np.nan)
     rsi = 100 - (100 / (1 + rs))
     return rsi.fillna(50)
