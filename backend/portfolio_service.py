@@ -366,16 +366,17 @@ class PortfolioService:
             ))
             
             trading_id = cursor.lastrowid
+            conn.commit()
             
             # 포트폴리오 업데이트 (평균 단가 계산)
             self._update_portfolio_from_trading(user_id, request.ticker)
             
-            conn.commit()
-            
             # 추가된 매매 내역 반환
-            cursor.execute("SELECT * FROM trading_history WHERE id = ?", (trading_id,))
-            row = cursor.fetchone()
-            return self._row_to_trading_history(row)
+            with sqlite3.connect(self.db_path) as conn2:
+                cursor2 = conn2.cursor()
+                cursor2.execute("SELECT * FROM trading_history WHERE id = ?", (trading_id,))
+                row = cursor2.fetchone()
+                return self._row_to_trading_history(row)
     
     def get_trading_history(self, user_id: int, ticker: Optional[str] = None) -> TradingHistoryResponse:
         """매매 내역 조회"""
@@ -478,6 +479,12 @@ class PortfolioService:
                             realized_profit += (price - buy_price) * sell_quantity
                             buy_queue[0] = (buy_qty - sell_quantity, buy_price, buy_date)
                             sell_quantity = 0
+                
+                # 매도가 매수보다 많으면 포트폴리오에서 제거
+                if total_quantity < 0:
+                    total_quantity = 0
+                    buy_queue = []
+                    break
             
             # 포트폴리오 업데이트 또는 삭제
             if total_quantity <= 0:
