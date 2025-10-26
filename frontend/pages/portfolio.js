@@ -229,7 +229,13 @@ export default function Portfolio() {
                     <div className="text-xs text-gray-500 mb-1">총 투자금액</div>
                     <div className="text-lg font-bold text-gray-800">
                       {formatCurrency(
-                        portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0)
+                        (() => {
+                          // 매매 내역에서 총 투자금액 계산 (매수만)
+                          const buyAmount = tradingHistory.reduce((sum, trade) => 
+                            trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                          );
+                          return buyAmount || portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
+                        })()
                       )}원
                     </div>
                   </div>
@@ -255,7 +261,11 @@ export default function Portfolio() {
                     <div className="text-xs text-gray-500 mb-1">총 수익률</div>
                     <div className={`text-lg font-bold ${
                       (() => {
-                        const totalInvestment = portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
+                        // 매매 내역 기반 계산
+                        const buyAmount = tradingHistory.reduce((sum, trade) => 
+                          trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                        );
+                        const totalInvestment = buyAmount || portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
                         const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
                         return totalInvestment > 0 ? (totalProfit / totalInvestment * 100) : 0;
                       })() >= 0 
@@ -264,7 +274,11 @@ export default function Portfolio() {
                     }`}>
                       {formatPercentage(
                         (() => {
-                          const totalInvestment = portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
+                          // 매매 내역 기반 계산
+                          const buyAmount = tradingHistory.reduce((sum, trade) => 
+                            trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                          );
+                          const totalInvestment = buyAmount || portfolio.reduce((sum, item) => sum + (item.entry_price * (item.quantity || 0)), 0);
                           const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
                           return totalInvestment > 0 ? (totalProfit / totalInvestment * 100) : 0;
                         })()
