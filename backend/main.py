@@ -2221,9 +2221,6 @@ async def get_portfolio_summary(current_user: User = Depends(get_current_user)):
         )
 
 
-        }
-
-
 # ===== 매매 내역 API =====
 
 @app.post("/trading-history", response_model=TradingHistory)
