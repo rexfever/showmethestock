@@ -11,15 +11,19 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
   
+  // 초기 데이터가 SSR로 전달되지 않아도 상태 유지
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
   const [scanDate, setScanDate] = useState(initialScanDate || '');
-
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
+  
+  // 데이터가 이미 로드되었는지 추적
+  const [dataLoadedOnce, setDataLoadedOnce] = useState(false);
   // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
   const [recurringStocks, setRecurringStocks] = useState({});
 
@@ -214,6 +218,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
       setHasSSRData(true);
+      setDataLoadedOnce(true);
       setError(null);
       setLoading(false);
     }
@@ -381,7 +386,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
               <p className="text-gray-500 mt-2">스캔 결과를 불러오는 중...</p>
             </div>
-          ) : error ? (
+          ) : error && scanResults.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-red-500 text-lg mb-2">⚠️</div>
               <p className="text-red-600 font-medium">{error}</p>
