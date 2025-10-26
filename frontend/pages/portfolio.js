@@ -39,8 +39,8 @@ export default function Portfolio() {
     }
     
     if (!isAuthenticated()) {
-      // 카카오 로그인으로 직접 리다이렉트
-      router.push('/login?auto_kakao=true');
+      // 로그인 페이지로 이동 (자동 로그인 없이)
+      router.push('/login');
       return;
     }
     
