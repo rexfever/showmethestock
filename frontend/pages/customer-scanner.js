@@ -1,5 +1,5 @@
 // CACHE BUST: 2025-10-26-20-25-v3
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,9 +21,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
-  
-  // 데이터가 이미 로드되었는지 추적
-  const [dataLoadedOnce, setDataLoadedOnce] = useState(false);
   // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
   const [recurringStocks, setRecurringStocks] = useState({});
 
@@ -218,11 +215,18 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
       setHasSSRData(true);
-      setDataLoadedOnce(true);
       setError(null);
       setLoading(false);
     }
   }, [initialData, initialScanFile, initialScanDate]);
+  
+  // SSR 데이터가 없을 때 클라이언트 API 자동 호출 (다른 페이지에서 돌아왔을 때)
+  useEffect(() => {
+    if (!initialData && scanResults.length === 0 && !loading && !error) {
+      setLoading(true);
+      fetchScanResults();
+    }
+  }, [scanResults.length, loading, error, fetchScanResults, initialData]);
 
   // 필터링 (시장별 필터 제거)
   const filteredResults = scanResults.filter(item => {
