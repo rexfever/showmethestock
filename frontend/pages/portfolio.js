@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
-import { getConfig } from '../utils/config';
 import { fetchPortfolio } from '../services/portfolioService';
 import { calculateHoldingPeriod, formatDate, formatCurrency, formatPercentage } from '../utils/portfolioUtils';
 import { handleError } from '../utils/errorHandler';
 import Header from '../components/Header';
+
+// 백엔드 URL 설정
+const getConfig = () => ({
+  backendUrl: process.env.NODE_ENV === 'production' 
+    ? 'https://sohntech.ai.kr/api' 
+    : 'http://localhost:8000'
+});
 
 export default function Portfolio() {
   const router = useRouter();
