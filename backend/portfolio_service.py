@@ -2,7 +2,7 @@ import sqlite3
 import json
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from models import PortfolioItem, PortfolioResponse, AddToPortfolioRequest, UpdatePortfolioRequest
+from models import PortfolioItem, PortfolioResponse, AddToPortfolioRequest, UpdatePortfolioRequest, TradingHistory, AddTradingRequest, TradingHistoryResponse
 from config import config
 import os
 
@@ -39,10 +39,30 @@ class PortfolioService:
                 )
             """)
             
+            # 매매 내역 테이블 생성
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS trading_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    ticker TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    trade_type TEXT NOT NULL,  -- 'buy' | 'sell'
+                    quantity INTEGER NOT NULL,
+                    price REAL NOT NULL,
+                    trade_date TEXT NOT NULL,
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             # 인덱스 생성
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_user_id ON portfolio(user_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_ticker ON portfolio(ticker)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_status ON portfolio(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trading_history_user_id ON trading_history(user_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trading_history_ticker ON trading_history(ticker)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trading_history_trade_date ON trading_history(trade_date)")
             
             conn.commit()
     
@@ -327,6 +347,156 @@ class PortfolioService:
             status=row[12],
             created_at=row[13],
             updated_at=row[14]
+        )
+
+    # ===== 매매 내역 관리 메서드들 =====
+    
+    def add_trading_history(self, user_id: int, request: AddTradingRequest) -> TradingHistory:
+        """매매 내역 추가"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT INTO trading_history (
+                    user_id, ticker, name, trade_type, quantity, price, trade_date, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user_id, request.ticker, request.name, request.trade_type,
+                request.quantity, request.price, request.trade_date, request.notes
+            ))
+            
+            trading_id = cursor.lastrowid
+            
+            # 포트폴리오 업데이트 (평균 단가 계산)
+            self._update_portfolio_from_trading(user_id, request.ticker)
+            
+            conn.commit()
+            
+            # 추가된 매매 내역 반환
+            cursor.execute("SELECT * FROM trading_history WHERE id = ?", (trading_id,))
+            row = cursor.fetchone()
+            return self._row_to_trading_history(row)
+    
+    def get_trading_history(self, user_id: int, ticker: Optional[str] = None) -> TradingHistoryResponse:
+        """매매 내역 조회"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            query = "SELECT * FROM trading_history WHERE user_id = ?"
+            params = [user_id]
+            
+            if ticker:
+                query += " AND ticker = ?"
+                params.append(ticker)
+            
+            query += " ORDER BY trade_date DESC, created_at DESC"
+            
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            items = [self._row_to_trading_history(row) for row in rows]
+            
+            # 총 매수/매도 금액 계산
+            total_buy_amount = sum(item.price * item.quantity for item in items if item.trade_type == 'buy')
+            total_sell_amount = sum(item.price * item.quantity for item in items if item.trade_type == 'sell')
+            net_amount = total_buy_amount - total_sell_amount
+            
+            return TradingHistoryResponse(
+                items=items,
+                total_buy_amount=total_buy_amount,
+                total_sell_amount=total_sell_amount,
+                net_amount=net_amount
+            )
+    
+    def delete_trading_history(self, user_id: int, trading_id: int) -> bool:
+        """매매 내역 삭제"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 삭제할 매매 내역의 종목 코드 조회
+            cursor.execute("SELECT ticker FROM trading_history WHERE id = ? AND user_id = ?", (trading_id, user_id))
+            row = cursor.fetchone()
+            if not row:
+                return False
+            
+            ticker = row[0]
+            
+            # 매매 내역 삭제
+            cursor.execute("DELETE FROM trading_history WHERE id = ? AND user_id = ?", (trading_id, user_id))
+            
+            if cursor.rowcount > 0:
+                # 포트폴리오 재계산
+                self._update_portfolio_from_trading(user_id, ticker)
+                conn.commit()
+                return True
+            
+            return False
+    
+    def _update_portfolio_from_trading(self, user_id: int, ticker: str):
+        """매매 내역을 기반으로 포트폴리오 업데이트"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 해당 종목의 매매 내역 조회
+            cursor.execute("""
+                SELECT trade_type, quantity, price FROM trading_history 
+                WHERE user_id = ? AND ticker = ?
+                ORDER BY trade_date ASC, created_at ASC
+            """, (user_id, ticker))
+            
+            trades = cursor.fetchall()
+            
+            if not trades:
+                return
+            
+            # 평균 단가와 총 수량 계산
+            total_quantity = 0
+            total_cost = 0
+            
+            for trade_type, quantity, price in trades:
+                if trade_type == 'buy':
+                    total_quantity += quantity
+                    total_cost += quantity * price
+                elif trade_type == 'sell':
+                    total_quantity -= quantity
+                    # 매도 시에는 평균 단가를 유지하되 수량만 감소
+            
+            # 포트폴리오 업데이트 또는 삭제
+            if total_quantity <= 0:
+                # 수량이 0 이하면 포트폴리오에서 제거
+                cursor.execute("DELETE FROM portfolio WHERE user_id = ? AND ticker = ?", (user_id, ticker))
+            else:
+                # 평균 단가 계산
+                avg_price = total_cost / total_quantity if total_quantity > 0 else 0
+                
+                # 포트폴리오 업데이트 또는 생성
+                cursor.execute("""
+                    INSERT OR REPLACE INTO portfolio (
+                        user_id, ticker, name, entry_price, quantity, entry_date, 
+                        total_investment, status, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'holding', CURRENT_TIMESTAMP)
+                """, (
+                    user_id, ticker, trades[0][0], avg_price, total_quantity,
+                    trades[0][2], total_cost
+                ))
+    
+    def _row_to_trading_history(self, row) -> TradingHistory:
+        """데이터베이스 행을 TradingHistory로 변환"""
+        if not row:
+            return None
+        
+        return TradingHistory(
+            id=row[0],
+            user_id=row[1],
+            ticker=row[2],
+            name=row[3],
+            trade_type=row[4],
+            quantity=row[5],
+            price=row[6],
+            trade_date=row[7],
+            notes=row[8],
+            created_at=row[9],
+            updated_at=row[10]
         )
 
 

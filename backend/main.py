@@ -16,7 +16,7 @@ from environment import get_environment_info
 from kiwoom_api import KiwoomAPI
 from scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
 from market_analyzer import market_analyzer
-from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest, MaintenanceSettingsRequest
+from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest, MaintenanceSettingsRequest, TradingHistory, AddTradingRequest, TradingHistoryResponse
 from utils import is_code, normalize_code_or_name
 from kakao import send_alert, format_scan_message, format_scan_alert_message
 
@@ -2218,6 +2218,65 @@ async def get_portfolio_summary(current_user: User = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"포트폴리오 요약 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+        }
+
+
+# ===== 매매 내역 API =====
+
+@app.post("/trading-history", response_model=TradingHistory)
+async def add_trading_history(
+    request: AddTradingRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """매매 내역 추가"""
+    try:
+        trading_history = portfolio_service.add_trading_history(current_user.id, request)
+        return trading_history
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"매매 내역 추가 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.get("/trading-history", response_model=TradingHistoryResponse)
+async def get_trading_history(
+    ticker: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """매매 내역 조회"""
+    try:
+        trading_history = portfolio_service.get_trading_history(current_user.id, ticker)
+        return trading_history
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"매매 내역 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@app.delete("/trading-history/{trading_id}")
+async def delete_trading_history(
+    trading_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """매매 내역 삭제"""
+    try:
+        success = portfolio_service.delete_trading_history(current_user.id, trading_id)
+        if success:
+            return {"message": "매매 내역이 삭제되었습니다."}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="해당 매매 내역을 찾을 수 없습니다."
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"매매 내역 삭제 중 오류가 발생했습니다: {str(e)}"
         )
 
 

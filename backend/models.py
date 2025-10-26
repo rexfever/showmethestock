@@ -212,6 +212,40 @@ class AddToPortfolioRequest(BaseModel):
     entry_date: Optional[str] = None
 
 
+class AddTradingRequest(BaseModel):
+    """매매 내역 추가 요청 모델"""
+    ticker: str
+    name: str
+    trade_type: str  # 'buy' | 'sell'
+    quantity: int
+    price: float
+    trade_date: str
+    notes: Optional[str] = None
+
+
+class TradingHistory(BaseModel):
+    """매매 내역 모델"""
+    id: Optional[int] = None
+    user_id: int
+    ticker: str
+    name: str
+    trade_type: str  # 'buy' | 'sell'
+    quantity: int
+    price: float
+    trade_date: str
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class TradingHistoryResponse(BaseModel):
+    """매매 내역 응답 모델"""
+    items: List[TradingHistory]
+    total_buy_amount: float
+    total_sell_amount: float
+    net_amount: float
+
+
 class UpdatePortfolioRequest(BaseModel):
     """포트폴리오 업데이트 요청"""
     entry_price: Optional[float] = None
