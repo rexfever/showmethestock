@@ -1,5 +1,5 @@
 // CACHE BUST: 2025-10-26-20-25-v3
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
@@ -194,8 +194,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   }, []);
 
   useEffect(() => {
-    console.log('🔄 useEffect triggered - initialData:', initialData?.length, 'initialScanDate:', initialScanDate);
-    
     setMounted(true);
     
     // 모바일 감지
@@ -205,37 +203,21 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       setIsMobile(isMobileDevice);
     }
     
-    // SSR 데이터 상태 업데이트
-    const hasData = initialData && initialData.length > 0;
-    console.log('📊 hasData:', hasData, 'hasSSRData (before):', hasSSRData);
-    setHasSSRData(hasData);
-    
-    // 스캐너에서는 포트폴리오 조회 생략 (성능 최적화)
-    
     // 재등장 종목 조회
     fetchRecurringStocks();
-    
-    // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
-    if (hasData) {
-      console.log('✅ Setting scan results from SSR data');
+  }, [fetchRecurringStocks]);
+
+  // SSR 데이터가 있을 때만 상태 업데이트
+  useEffect(() => {
+    if (initialData && initialData.length > 0) {
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
+      setHasSSRData(true);
       setError(null);
       setLoading(false);
-      return;
     }
-    
-    // 초기 데이터가 없으면 에러 상태로 설정 (API 호출 제거)
-    if (!hasData) {
-      console.log('❌ No SSR data - setting error state');
-      setError('스캔 데이터가 없습니다.');
-      setLoading(false);
-    }
-    
-    // SSR 데이터가 있을 때는 자동 새로고침 비활성화 (성능 최적화)
-    // 필요시에만 수동 새로고침 버튼으로 fetchScanResults() 호출
-  }, [initialData, initialScanFile, initialScanDate, fetchRecurringStocks]);
+  }, [initialData, initialScanFile, initialScanDate]);
 
   // 필터링 (시장별 필터 제거)
   const filteredResults = scanResults.filter(item => {
