@@ -341,6 +341,42 @@ export default function Portfolio() {
                       </button>
                     </div>
                   </div>
+
+                  {/* 종목별 매매 내역 표시 */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">📋 매매 내역</h4>
+                    {(() => {
+                      const itemHistory = tradingHistory.filter(t => t.ticker === item.ticker);
+                      if (itemHistory.length === 0) {
+                        return (
+                          <p className="text-xs text-gray-400 text-center py-2">매매 내역이 없습니다</p>
+                        );
+                      }
+                      
+                      return (
+                        <div className="space-y-2">
+                          {itemHistory.map((trade) => (
+                            <div key={trade.id} className="bg-gray-50 rounded p-2 text-xs">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  trade.trade_type === 'buy' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {trade.trade_type === 'buy' ? '📈 매수' : '📉 매도'}
+                                </span>
+                                <span className="text-gray-500">{formatDate(trade.trade_date)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-700">
+                                <span>{trade.quantity}주 × {formatCurrency(trade.price)}원</span>
+                                <span className="font-medium">{formatCurrency(trade.price * trade.quantity)}원</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               ))}
             </div>
@@ -358,162 +394,9 @@ export default function Portfolio() {
               </a>
             </div>
           )}
+
           
-          {/* 매매 내역 섹션 */}
-          {tradingHistory.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                📋 매매 내역
-                <span className="ml-2 text-sm text-gray-500">({tradingHistory.length}건)</span>
-              </h3>
-              
-              {/* 매매 내역 요약 */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-sm text-gray-600">총 매수금액</div>
-                    <div className="text-lg font-semibold text-green-600">
-                      {formatCurrency(tradingHistory.reduce((sum, trade) => 
-                        trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
-                      ))}원
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">총 매도금액</div>
-                    <div className="text-lg font-semibold text-red-600">
-                      {formatCurrency(tradingHistory.reduce((sum, trade) => 
-                        trade.trade_type === 'sell' ? sum + (trade.price * trade.quantity) : sum, 0
-                      ))}원
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">실현손익</div>
-                    <div className={`text-lg font-semibold ${
-                      (() => {
-                        // FIFO 방식으로 실현손익 계산
-                        const buyTrades = tradingHistory.filter(t => t.trade_type === 'buy').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
-                        const sellTrades = tradingHistory.filter(t => t.trade_type === 'sell').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
-                        
-                        let realizedProfit = 0;
-                        let buyIndex = 0;
-                        
-                        for (const sellTrade of sellTrades) {
-                          let remainingSellQty = sellTrade.quantity;
-                          
-                          while (remainingSellQty > 0 && buyIndex < buyTrades.length) {
-                            const buyTrade = buyTrades[buyIndex];
-                            const availableQty = buyTrade.quantity;
-                            
-                            if (availableQty <= remainingSellQty) {
-                              // 전체 매수분 매도
-                              realizedProfit += (sellTrade.price - buyTrade.price) * availableQty;
-                              remainingSellQty -= availableQty;
-                              buyIndex++;
-                            } else {
-                              // 일부 매수분 매도
-                              realizedProfit += (sellTrade.price - buyTrade.price) * remainingSellQty;
-                              buyTrades[buyIndex].quantity -= remainingSellQty;
-                              remainingSellQty = 0;
-                            }
-                          }
-                        }
-                        
-                        return realizedProfit >= 0 ? 'text-green-600' : 'text-red-600';
-                      })()
-                    }`}>
-                      {formatCurrency(
-                        (() => {
-                          // FIFO 방식으로 실현손익 계산
-                          const buyTrades = tradingHistory.filter(t => t.trade_type === 'buy').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
-                          const sellTrades = tradingHistory.filter(t => t.trade_type === 'sell').sort((a, b) => new Date(a.trade_date) - new Date(b.trade_date));
-                          
-                          let realizedProfit = 0;
-                          let buyIndex = 0;
-                          
-                          for (const sellTrade of sellTrades) {
-                            let remainingSellQty = sellTrade.quantity;
-                            
-                            while (remainingSellQty > 0 && buyIndex < buyTrades.length) {
-                              const buyTrade = buyTrades[buyIndex];
-                              const availableQty = buyTrade.quantity;
-                              
-                              if (availableQty <= remainingSellQty) {
-                                // 전체 매수분 매도
-                                realizedProfit += (sellTrade.price - buyTrade.price) * availableQty;
-                                remainingSellQty -= availableQty;
-                                buyIndex++;
-                              } else {
-                                // 일부 매수분 매도
-                                realizedProfit += (sellTrade.price - buyTrade.price) * remainingSellQty;
-                                buyTrades[buyIndex].quantity -= remainingSellQty;
-                                remainingSellQty = 0;
-                              }
-                            }
-                          }
-                          
-                          return realizedProfit;
-                        })()
-                      )}원
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {tradingHistory.map((trade) => (
-                  <div key={trade.id} className="bg-white rounded-lg shadow-sm border p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          trade.trade_type === 'buy' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {trade.trade_type === 'buy' ? '📈 매수' : '📉 매도'}
-                        </span>
-                        <span className="font-semibold text-gray-800">{trade.name}</span>
-                        <span className="text-xs text-gray-500">({trade.ticker})</span>
-                      </div>
-                      <button
-                        onClick={() => deleteTradingHistory(trade.id)}
-                        className="text-gray-400 hover:text-red-500 text-sm"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-500">수량:</span>
-                        <span className="ml-2 text-gray-800">{trade.quantity}주</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">가격:</span>
-                        <span className="ml-2 text-gray-800">{formatCurrency(trade.price)}원</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">거래일:</span>
-                        <span className="ml-2 text-gray-800">{formatDate(trade.trade_date)}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">금액:</span>
-                        <span className="ml-2 text-gray-800 font-medium">
-                          {formatCurrency(trade.price * trade.quantity)}원
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {trade.notes && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <span className="text-xs text-gray-500">메모:</span>
-                        <span className="ml-2 text-xs text-gray-700">{trade.notes}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* 매매 내역은 각 종목 하위에 표시됨 */}
         </div>
 
         {/* 매매 내역 모달 */}
