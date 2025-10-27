@@ -105,21 +105,26 @@ export default function More() {
               <div className="bg-blue-50 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-xl">🔍</span>
-                  <h4 className="font-semibold text-gray-800">선별 기준</h4>
+                  <h4 className="font-semibold text-gray-800">어떤 종목을 찾나요?</h4>
                 </div>
-                <p className="text-sm text-gray-600">상승 신호, 과매도 탈출, 거래량 급증 등</p>
-                <p className="text-xs text-gray-500 mt-1">AI가 여러 조건을 종합해서 선별</p>
-                <p className="text-xs text-blue-600 mt-1 font-medium">※ 여러 조건 만족 = 강력한 신호 (우선 검토)</p>
+                <p className="text-sm text-gray-600 font-medium">📈 상승 초입 단계의 종목들</p>
+                <p className="text-xs text-gray-500 mt-1">• 하락이 끝나고 막 오르기 시작하는 종목</p>
+                <p className="text-xs text-gray-500">• 거래량이 늘어나며 관심받기 시작하는 종목</p>
+                <p className="text-xs text-blue-600 mt-2 font-medium">💡 상승 초기에 발견해서 수익 기회 제공</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-xl">📈</span>
-                  <h4 className="font-semibold text-gray-800">투자 방법</h4>
+                  <span className="text-xl">💰</span>
+                  <h4 className="font-semibold text-gray-800">어떻게 투자하나요?</h4>
                 </div>
-                <p className="text-sm text-gray-600">3~10일 정도 보유 단기 투자, 3~5% 수익 실현</p>
-                <p className="text-sm text-gray-600 mt-1">-3~5% 손실 시 즉시 매도(손절)</p>
-                <p className="text-xs text-red-500 mt-2 font-medium">※ 실제 매매는 증권사에서 진행하세요</p>
-                <p className="text-xs text-gray-500 mt-1">※ 투자는 개인의 책임이며, 투자 결정은 신중히 하시기 바랍니다.</p>
+                <p className="text-sm text-gray-600 font-medium">🎯 단기 스윙 투자 (1주일 내외)</p>
+                <p className="text-xs text-gray-500 mt-1">• 상승 초입에서 매수 → 상승 후 매도</p>
+                <p className="text-xs text-gray-500">• 목표: 5~10% 수익, 손절: -5% 이하</p>
+                <p className="text-xs text-gray-500">• 욕심내지 말고 적당한 수익에서 매도</p>
+                <div className="mt-2 p-2 bg-green-100 rounded">
+                  <p className="text-xs text-green-700 font-medium">💡 핵심: 상승 파도를 타고 적당히 내리기</p>
+                </div>
+                <p className="text-xs text-red-500 mt-2 font-medium">⚠️ 투자는 본인 책임, 신중한 판단 필요</p>
               </div>
             </div>
           </div>
