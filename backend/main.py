@@ -80,6 +80,7 @@ from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, Ema
 from auth_service import auth_service
 from social_auth import social_auth_service
 from subscription_service import subscription_service
+from parameter_store import parameter_store
 from payment_service import kakao_pay_service
 from subscription_plans import get_all_plans, get_plan
 from admin_service import admin_service
@@ -2462,6 +2463,58 @@ def get_admin_user(current_user: User = Depends(get_current_user)):
             detail="관리자 권한이 필요합니다"
         )
     return current_user
+
+@app.get("/admin/kiwoom-keys")
+async def get_kiwoom_keys(admin_user: User = Depends(get_admin_user)):
+    """키움 API 키 상태 조회 (관리자 전용)"""
+    try:
+        credentials = parameter_store.get_kiwoom_credentials()
+        return {
+            "ok": True,
+            "data": {
+                "api_key_exists": bool(credentials['api_key']),
+                "api_secret_exists": bool(credentials['api_secret']),
+                "account_no_exists": bool(credentials['account_no']),
+                "api_key_preview": credentials['api_key'][:8] + "..." if credentials['api_key'] else None
+            }
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.post("/admin/kiwoom-keys")
+async def set_kiwoom_keys(request: dict, admin_user: User = Depends(get_admin_user)):
+    """키움 API 키 등록/수정 (관리자 전용)"""
+    try:
+        api_key = request.get('api_key')
+        api_secret = request.get('api_secret')
+        account_no = request.get('account_no')
+        
+        if not api_key or not api_secret:
+            return {"ok": False, "error": "API Key와 API Secret은 필수입니다"}
+        
+        success = parameter_store.set_kiwoom_credentials(api_key, api_secret, account_no)
+        
+        if success:
+            return {"ok": True, "message": "키움 API 키가 성공적으로 저장되었습니다"}
+        else:
+            return {"ok": False, "error": "키 저장에 실패했습니다"}
+            
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.delete("/admin/kiwoom-keys")
+async def delete_kiwoom_keys(admin_user: User = Depends(get_admin_user)):
+    """키움 API 키 삭제 (관리자 전용)"""
+    try:
+        success = parameter_store.delete_kiwoom_credentials()
+        
+        if success:
+            return {"ok": True, "message": "키움 API 키가 성공적으로 삭제되었습니다"}
+        else:
+            return {"ok": False, "error": "키 삭제에 실패했습니다"}
+            
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 @app.get("/admin/stats")
 async def get_admin_stats(admin_user: User = Depends(get_admin_user)):
