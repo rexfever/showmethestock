@@ -23,11 +23,8 @@ from kakao import send_alert, format_scan_message, format_scan_alert_message
 # 공통 함수: scan_rank 테이블 생성
 def create_scan_rank_table(cur):
     """scan_rank 테이블을 최신 스키마로 생성 (중복 방지)"""
-    # 기존 테이블 삭제 후 재생성 (스키마 수정을 위해)
-    cur.execute("DROP TABLE IF EXISTS scan_rank")
-    
     cur.execute("""
-        CREATE TABLE scan_rank(
+        CREATE TABLE IF NOT EXISTS scan_rank(
             date TEXT NOT NULL, 
             code TEXT NOT NULL, 
             name TEXT, 
@@ -206,10 +203,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
-        # Ensure table exists before querying
-        create_scan_rank_table(cur)
-        
-        # 최신 스키마로 테이블 생성
+        # 테이블 생성 (없으면)
         create_scan_rank_table(cur)
         
         rows = []
@@ -373,16 +367,35 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     # Fallback 로직 적용 (시장 상황 포함)
     items, chosen_step = execute_scan_with_fallback(universe, date, market_condition)
     
-    # 수익률 계산 (병렬 처리)
+    # 수익률 계산 (병렬 처리) - 실시간/과거 스캔 모두 계산
     returns_data = {}
-    if date:  # 과거 스캔인 경우에만 수익률 계산
-        tickers = [item["ticker"] for item in items]
-        print(f"💰 수익률 계산 시작: {len(tickers)}개 종목, 날짜: {today_as_of}")
+    tickers = [item["ticker"] for item in items]
+    print(f"💰 수익률 계산 시작: {len(tickers)}개 종목, 날짜: {today_as_of}")
+    
+    if date:  # 과거 스캔인 경우
         returns_data = calculate_returns_batch(tickers, today_as_of)
-        print(f"💰 수익률 계산 완료: {len(returns_data)}개 결과")
-        for ticker, ret in returns_data.items():
-            if ret:
-                print(f"  {ticker}: {ret.get('current_return', 0):.2f}%")
+    else:  # 실시간 스캔인 경우 - 당일 등락률 표시
+        for ticker in tickers:
+            try:
+                # 키움 API에서 가져온 change_rate를 returns 형태로 변환
+                item_data = next((item for item in items if item["ticker"] == ticker), None)
+                if item_data and "change_rate" in item_data["indicators"]:
+                    change_rate = item_data["indicators"]["change_rate"]
+                    current_price = item_data["indicators"]["close"]
+                    returns_data[ticker] = {
+                        'current_return': change_rate,
+                        'max_return': change_rate,  # 당일 최대 등락률은 현재와 동일
+                        'min_return': change_rate,  # 당일 최소 등락률은 현재와 동일
+                        'current_price': current_price,
+                        'days_elapsed': 0
+                    }
+            except Exception as e:
+                print(f"당일 등락률 처리 오류 ({ticker}): {e}")
+    
+    print(f"💰 수익률 계산 완료: {len(returns_data)}개 결과")
+    for ticker, ret in returns_data.items():
+        if ret:
+            print(f"  {ticker}: {ret.get('current_return', 0):.2f}%")
     
     # 재등장 이력 조회 (배치 처리)
     tickers = [item["ticker"] for item in items]
@@ -394,27 +407,10 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         try:
             ticker = item["ticker"]
             recurrence = recurrence_data.get(ticker)
-            returns = returns_data.get(ticker) if date else None
+            returns = returns_data.get(ticker)
             
-            # change_rate 계산(전일 대비) - prev_close가 없으면 OHLCV(2, base=today_as_of)로 보충
-            try:
-                cr = None
-                cc = float(item["indicators"].get("close") or 0.0)
-                pc_val = item["indicators"].get("prev_close")
-                if pc_val is None or float(pc_val or 0.0) <= 0:
-                    try:
-                        df2 = api.get_ohlcv(ticker, 2, today_as_of)
-                        if not df2.empty and len(df2) >= 2:
-                            pc_val = float(df2.iloc[-2]["close"])
-                            # 보조로 prev_close를 indicators에 주입(직렬화용)
-                            item["indicators"]["prev_close"] = pc_val
-                    except Exception:
-                        pc_val = None
-                if pc_val and cc:
-                    pc = float(pc_val)
-                    cr = round(((cc - pc) / pc) * 100, 2) if pc > 0 else None
-            except Exception:
-                cr = None
+            # 키움 API에서 가져온 등락률 사용
+            cr = item["indicators"].get("change_rate", 0.0)
 
             scan_item = ScanItem(
                 ticker=ticker,
@@ -433,7 +429,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     VOL=item["indicators"]["VOL"],
                     VOL_MA5=item["indicators"]["VOL_MA5"],
                     close=item["indicators"]["close"],
-                    change_rate=(cr if cr is not None else 0.0),
+                    change_rate=cr,
                 ),
                 trend=TrendPayload(
                     TEMA20_SLOPE20=item["trend"]["TEMA20_SLOPE20"],
@@ -511,7 +507,12 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             'rsi_threshold': resp.rsi_threshold,
             'rank': enhanced_rank,
         }
-        _save_snapshot_db(resp.as_of, resp.items)
+        try:
+            _save_snapshot_db(resp.as_of, resp.items)
+            print(f"✅ DB 저장 성공: {resp.as_of}")
+        except Exception as e:
+            print(f"❌ DB 저장 실패: {e}")
+            # 실패해도 API 응답은 반환
     return resp
 
 
@@ -975,36 +976,47 @@ def get_positions():
             # 현재 수익률과 최대 수익률 계산 (오픈 포지션만)
             if status == 'open':
                 try:
-                    # 진입일부터 현재까지의 데이터 조회
-                    from datetime import datetime, timedelta
-                    entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
-                    days_diff = (datetime.now() - entry_dt).days
-                    lookback_days = min(days_diff + 10, 100)  # 여유분 포함
-                    
-                    df = api.get_ohlcv(ticker, lookback_days)
-                    if not df.empty and len(df) > 1:
-                        # 진입일 이후 데이터만 필터링
-                        df['date'] = pd.to_datetime(df.index)
-                        entry_date_dt = pd.to_datetime(entry_date)
-                        df = df[df['date'] >= entry_date_dt]
+                    # returns_service 활용하여 수익률 계산
+                    returns_data = calculate_returns(ticker, entry_date)
+                    if returns_data:
+                        current_return_pct = returns_data['current_return']
+                        max_return_pct = returns_data['max_return']
+                    else:
+                        # 대체 로직: 직접 계산
+                        from datetime import datetime
+                        entry_date_formatted = entry_date.replace('-', '')
                         
-                        if len(df) > 0:
-                            # 진입가 (첫 번째 종가)
-                            entry_price = float(df.iloc[0].close)
-                            # 현재가 (마지막 종가)
-                            current_price = float(df.iloc[-1].close)
-                            # 현재 수익률
-                            current_return_pct = (current_price / entry_price - 1.0) * 100.0
-                            # 기간내 최대 수익률
-                            max_price = float(df['close'].max())
-                            max_return_pct = (max_price / entry_price - 1.0) * 100.0
+                        # 진입일 데이터 조회
+                        df_entry = api.get_ohlcv(ticker, 1, entry_date_formatted)
+                        if df_entry.empty:
+                            # 진입일 데이터가 없으면 다음 거래일 사용
+                            df_entry = api.get_ohlcv(ticker, 5)
+                            if not df_entry.empty:
+                                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                                df_entry['date_dt'] = pd.to_datetime(df_entry['date'], format='%Y%m%d')
+                                df_entry = df_entry[df_entry['date_dt'] >= entry_dt]
+                        
+                        # 현재 데이터 조회
+                        df_current = api.get_ohlcv(ticker, 1)
+                        
+                        if not df_entry.empty and not df_current.empty:
+                            entry_price = float(df_entry.iloc[-1]['close'])
+                            current_price = float(df_current.iloc[-1]['close'])
+                            current_return_pct = ((current_price - entry_price) / entry_price) * 100
+                            
+                            # 최대 수익률 계산
+                            days_diff = (datetime.now() - datetime.strptime(entry_date, '%Y-%m-%d')).days
+                            df_period = api.get_ohlcv(ticker, min(days_diff + 5, 50))
+                            if not df_period.empty:
+                                max_price = float(df_period['close'].max())
+                                max_return_pct = ((max_price - entry_price) / entry_price) * 100
+                            else:
+                                max_return_pct = current_return_pct
                         else:
                             current_return_pct = None
                             max_return_pct = None
-                    else:
-                        current_return_pct = None
-                        max_return_pct = None
-                except Exception:
+                except Exception as e:
+                    print(f"수익률 계산 오류 ({ticker}): {e}")
                     current_return_pct = None
                     max_return_pct = None
             else:
