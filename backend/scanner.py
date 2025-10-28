@@ -538,10 +538,20 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         # 종목명을 DataFrame에 추가
         df['name'] = stock_name
         
-        # 키움 API에서 실시간 데이터 가져오기
-        quote = api.get_stock_quote(code)
-        print(f"DEBUG: 종목 {code}, quote: {quote}")
-        print(f"DEBUG: 종목 {code}, change_rate: {quote.get('change_rate', 0.0) if quote else 'None'}")
+        # OHLCV 데이터로 등락률 계산 (유효한 전일 데이터 찾기)
+        change_rate = 0.0
+        if len(df) >= 2:
+            current_close = float(df.iloc[-1]["close"])
+            # 유효한 전일 종가 찾기 (최대 5일 전까지)
+            prev_close = 0
+            for i in range(2, min(6, len(df) + 1)):
+                candidate_close = float(df.iloc[-i]["close"])
+                if candidate_close > 0:
+                    prev_close = candidate_close
+                    break
+            
+            if prev_close > 0:
+                change_rate = round(((current_close - prev_close) / prev_close) * 100, 2)
         
         # RSI 상한선 필터링 (과매수 구간 진입 방지)
         cur = df.iloc[-1]
@@ -575,7 +585,7 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
                 "VOL": cur.volume,
                 "VOL_MA5": cur.VOL_MA5,
                 "close": cur.close,
-                "change_rate": quote.get("change_rate", 0.0),
+                "change_rate": change_rate,
             },
             "trend": {
                 "TEMA20_SLOPE20": df.iloc[-1]["TEMA20_SLOPE20"],
