@@ -1544,13 +1544,25 @@ async def get_available_scan_dates():
         if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 날짜를 YYYY-MM-DD 형식 그대로 사용
-        dates = [row[0] for row in rows]
+        # 날짜 형식을 YYYY-MM-DD로 통일
+        normalized_dates = []
+        for row in rows:
+            date_str = row[0]
+            try:
+                if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD -> YYYY-MM-DD
+                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD 유지
+                    formatted_date = date_str
+                else:
+                    continue  # 잘못된 형식은 제외
+                normalized_dates.append(formatted_date)
+            except:
+                continue
         
-        # 날짜 정렬 (최신순)
-        sorted_dates = sorted(list(dates), reverse=True)
+        # 중복 제거 및 정렬 (최신순)
+        unique_dates = sorted(list(set(normalized_dates)), reverse=True)
         
-        return {"ok": True, "dates": sorted_dates}
+        return {"ok": True, "dates": unique_dates}
         
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -1660,31 +1672,42 @@ def get_latest_scan_from_db():
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         
-        # 오늘 날짜 (두 형식 모두 확인)
-        today_dash = datetime.now().strftime('%Y-%m-%d')
-        today_compact = datetime.now().strftime('%Y%m%d')
+        # 모든 날짜를 가져와서 datetime으로 변환하여 최신 찾기
+        cur.execute("SELECT DISTINCT date FROM scan_rank WHERE score >= 1 AND score <= 10")
+        all_dates = cur.fetchall()
         
-        # 오늘 데이터가 있는지 확인 (두 형식 모두)
-        cur.execute("SELECT COUNT(*) FROM scan_rank WHERE date = ? OR date = ?", (today_dash, today_compact))
-        today_count = cur.fetchone()[0]
+        if not all_dates:
+            return {"ok": False, "error": "올바른 스캔 결과가 없습니다."}
         
-        if today_count > 0:
-            # 오늘 데이터가 있으면 실제 저장된 형식 찾기
-            cur.execute("SELECT date FROM scan_rank WHERE date = ? OR date = ? LIMIT 1", (today_dash, today_compact))
-            latest_date = cur.fetchone()[0]
-        else:
-            # 오늘 데이터가 없으면 가장 최신 날짜 사용
-            cur.execute("SELECT MAX(date) FROM scan_rank")
-            latest_date = cur.fetchone()[0]
+        # 날짜를 datetime으로 변환하여 정렬
+        parsed_dates = []
+        for (date_str,) in all_dates:
+            try:
+                if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD
+                    dt = datetime.strptime(date_str, '%Y%m%d')
+                elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD
+                    dt = datetime.strptime(date_str, '%Y-%m-%d')
+                else:
+                    continue
+                parsed_dates.append((dt, date_str))
+            except:
+                continue
+        
+        if not parsed_dates:
+            return {"ok": False, "error": "유효한 날짜 데이터가 없습니다."}
+        
+        # 최신 날짜 찾기
+        parsed_dates.sort(reverse=True)
+        latest_date = parsed_dates[0][1]
         
         if not latest_date:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 해당 날짜의 스캔 결과 조회
+        # 해당 날짜의 스캔 결과 조회 (올바른 점수 범위만)
         cur.execute("""
-            SELECT code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT date, code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
             FROM scan_rank 
-            WHERE date = ?
+            WHERE date = ? AND score >= 1 AND score <= 10
             ORDER BY score DESC
         """, (latest_date,))
         
@@ -1697,7 +1720,7 @@ def get_latest_scan_from_db():
         # 데이터 변환
         items = []
         for row in rows:
-            code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            date, code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
             # 스캐너에서는 수익률 계산 생략 (성능 최적화)
             current_return = 0
