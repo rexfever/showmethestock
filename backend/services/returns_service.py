@@ -43,11 +43,8 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
             from datetime import datetime
             current_date = datetime.now().strftime('%Y%m%d')
         
-        # 날짜 형식 처리: YYYY-MM-DD -> YYYYMMDD
-        if '-' in scan_date:
-            scan_date_formatted = scan_date.replace('-', '')
-        else:
-            scan_date_formatted = scan_date
+        # 날짜 형식 처리: 이미 YYYYMMDD 형식
+        scan_date_formatted = scan_date
             
         # 스캔 날짜 데이터 가져오기
         df_scan = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 1, scan_date_formatted))
@@ -59,7 +56,7 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
         scan_price = float(df_scan.iloc[-1]['close'])
         
         # 현재 날짜 데이터 가져오기
-        current_date_formatted = current_date.replace('-', '')
+        current_date_formatted = current_date
         df_current = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 1, current_date_formatted))
         
         if df_current.empty:

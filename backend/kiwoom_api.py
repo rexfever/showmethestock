@@ -371,16 +371,19 @@ class KiwoomAPI:
             api_id = config.kiwoom_tr_quote_id if hasattr(config, 'kiwoom_tr_quote_id') else "ka10001"
             path = config.kiwoom_tr_quote_path if hasattr(config, 'kiwoom_tr_quote_path') else "/api/dostk/krinfo"
             
-            payload = {"stk_cd": code}
+            payload = {
+                "FID_COND_MRKT_DIV_CODE": "J",
+                "FID_INPUT_ISCD": code
+            }
             data = self._post(api_id, path, payload)
             
             # API 응답에서 필요한 데이터 추출
-            output = data.get("output") or data.get("data") or data.get("stck_prpr") or {}
+            output = data.get("output") or {}
             
-            current_price = float(output.get("stck_prpr") or output.get("current_price") or output.get("close") or 0)
-            change_rate = float(output.get("prdy_ctrt") or output.get("change_rate") or 0)
-            volume = int(output.get("acml_vol") or output.get("volume") or 0)
-            market_cap = int(output.get("hts_avls") or output.get("market_cap") or 0)
+            current_price = float(output.get("stck_prpr") or 0)
+            change_rate = float(output.get("prdy_ctrt") or 0)
+            volume = int(output.get("acml_vol") or 0)
+            market_cap = int(output.get("hts_avls") or 0)
             
             return {
                 "current_price": current_price,

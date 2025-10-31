@@ -46,8 +46,8 @@ class ReportGenerator:
         cursor = conn.cursor()
         
         # 두 날짜 형식 모두 지원
-        compact_start = start_date.replace('-', '')
-        compact_end = end_date.replace('-', '')
+        compact_start = start_date
+        compact_end = end_date
         
         cursor.execute("""
             SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence

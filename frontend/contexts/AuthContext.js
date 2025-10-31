@@ -68,24 +68,16 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
-        // 사용자 정보를 localStorage에도 저장
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', authToken);
+      } else if (response.status === 401) {
+        console.warn('토큰이 만료되었습니다.');
+        await logout();
       } else {
-        // 토큰이 유효하지 않으면 모든 저장소에서 제거
-        Cookies.remove('auth_token');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
+        console.error('사용자 정보 가져오기 실패:', response.status);
       }
     } catch (error) {
-      console.error('사용자 정보 가져오기 실패:', error);
-      Cookies.remove('auth_token');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
+      console.error('네트워크 오류:', error);
     }
   };
 

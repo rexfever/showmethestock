@@ -68,15 +68,30 @@ def create_maintenance_settings_table(cur):
             VALUES (0, '', '서비스 점검 중입니다.')
         """)
 
+def create_popup_notice_table(cur):
+    """popup_notice 테이블 생성"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS popup_notice(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            is_enabled BOOLEAN DEFAULT 0,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
 from services.report_generator import report_generator
 from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
-from services.auth_service import process_kakao_callback
+
 from new_recurrence_api import router as recurrence_router
 
 # 인증 관련 import
-from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, EmailLoginRequest, EmailVerificationRequest, PasswordResetRequest, PasswordResetConfirmRequest, PaymentRequest, PaymentResponse, AdminUserUpdateRequest, AdminUserDeleteRequest, AdminStatsResponse
+from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, EmailLoginRequest, EmailVerificationRequest, PasswordResetRequest, PasswordResetConfirmRequest, PaymentRequest, PaymentResponse, AdminUserUpdateRequest, AdminUserDeleteRequest, AdminStatsResponse, MaintenanceSettingsRequest, PopupNoticeRequest
 from auth_service import auth_service
 from social_auth import social_auth_service
 from subscription_service import subscription_service
@@ -164,7 +179,7 @@ os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
 def _save_scan_snapshot(payload: dict) -> str:
     try:
-        as_of = payload.get('as_of') or datetime.now().strftime('%Y-%m-%d')
+        as_of = payload.get('as_of') or datetime.now().strftime('%Y%m%d')
         fname = f"scan-{as_of}.json"
         path = os.path.join(SNAPSHOT_DIR, fname)
         with open(path, 'w', encoding='utf-8') as f:
@@ -249,7 +264,7 @@ def _log_send(to: str, matched_count: int):
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS send_logs(ts TEXT, to_no TEXT, matched_count INTEGER)")
-        cur.execute("INSERT INTO send_logs(ts,to_no,matched_count) VALUES (?,?,?)", (datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), to, int(matched_count)))
+        cur.execute("INSERT INTO send_logs(ts,to_no,matched_count) VALUES (?,?,?)", (datetime.now().strftime('%Y%m%d%H%M%S'), to, int(matched_count)))
         conn.commit(); conn.close()
     except Exception:
         pass
@@ -296,7 +311,7 @@ def is_trading_day(check_date: str = None):
             else:
                 return False
             
-            check_dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+            check_dt = datetime.strptime(date_str, '%Y%m%d').date()
         except:
             return False
     else:
@@ -344,11 +359,11 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         except:
             raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
     else:
-        today_as_of = datetime.now().strftime('%Y-%m-%d')
+        today_as_of = datetime.now().strftime('%Y%m%d')
 
     # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
     try:
-        _today = datetime.now().strftime('%Y-%m-%d')
+        _today = datetime.now().strftime('%Y%m%d')
         if today_as_of > _today:
             today_as_of = _today
     except Exception:
@@ -500,7 +515,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         print(f"✅ save_snapshot=True, 스냅샷 저장 시작")
         snapshot = {
             'as_of': resp.as_of,
-            'created_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+            'created_at': datetime.now().strftime('%Y%m%d%H%M%S'),
             'universe_count': resp.universe_count,
             'matched_count': resp.matched_count,
             'rsi_mode': resp.rsi_mode,
@@ -562,7 +577,7 @@ def universe(apply_scan: bool = False, kospi_limit: int = None, kosdaq_limit: in
                 items.append(UniverseItem(ticker=code, name=code))
 
     return UniverseResponse(
-        as_of=datetime.now().strftime('%Y-%m-%d'),
+        as_of=datetime.now().strftime('%Y%m%d'),
         items=items,
     )
 
@@ -590,7 +605,7 @@ def delete_scan_result(date: str):
             compact_date = date
         else:  # YYYY-MM-DD 형식
             formatted_date = date
-            compact_date = date.replace('-', '')
+            compact_date = date
         
         # 1. 데이터베이스에서 삭제 (두 형식 모두)
         conn = sqlite3.connect(_db_path())
@@ -714,7 +729,7 @@ def backfill_snapshots():
 @app.get('/validate_from_snapshot')
 def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 당일 스냅샷은 검증 불가(장중 변동/오류 방지)
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = datetime.now().strftime('%Y%m%d')
     if as_of == today:
         return {
             'error': 'today snapshot not allowed',
@@ -733,7 +748,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
             rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
         # 데이터가 없으면 YYYYMMDD 형식 시도
         if not rank:
-            compact_date = as_of.replace('-', '')
+            compact_date = as_of
             for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (compact_date, int(top_k))):
                 rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
         conn.close()
@@ -741,7 +756,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
         rank = []
     # 2) JSON 스냅샷 보조
     if not rank:
-        fname = f"scan-{as_of.replace('-', '')}.json"
+        fname = f"scan-{as_of}.json"
         path = os.path.join(SNAPSHOT_DIR, fname)
         if not os.path.exists(path):
             return {'error': 'snapshot not found', 'as_of': as_of, 'items': []}
@@ -752,7 +767,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
             rank.sort(key=lambda x: x.get('score', 0), reverse=True)
         except Exception as e:
             return {'error': str(e), 'as_of': as_of, 'items': []}
-    base_dt = as_of.replace('-', '')
+    base_dt = as_of
     results = []
     rets = []
     max_rets = []
@@ -809,7 +824,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 여기선 리턴 배열 rets로 근사: 누적 곱 대신 최소값 사용(정밀도 낮음)
     mdd = round(min(rets) if rets else 0.0, 2)
     return {
-        'as_of': datetime.now().strftime('%Y-%m-%d'),
+        'as_of': datetime.now().strftime('%Y%m%d'),
         'snapshot_as_of': as_of,
         'top_k': top_k,
         'count': len(results),
@@ -985,7 +1000,7 @@ def get_positions():
                     else:
                         # 대체 로직: 직접 계산
                         from datetime import datetime
-                        entry_date_formatted = entry_date.replace('-', '')
+                        entry_date_formatted = entry_date
                         
                         # 진입일 데이터 조회
                         df_entry = api.get_ohlcv(ticker, 1, entry_date_formatted)
@@ -993,7 +1008,7 @@ def get_positions():
                             # 진입일 데이터가 없으면 다음 거래일 사용
                             df_entry = api.get_ohlcv(ticker, 5)
                             if not df_entry.empty:
-                                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                                entry_dt = datetime.strptime(date_str, '%Y%m%d')
                                 df_entry['date_dt'] = pd.to_datetime(df_entry['date'], format='%Y%m%d')
                                 df_entry = df_entry[df_entry['date_dt'] >= entry_dt]
                         
@@ -1006,7 +1021,7 @@ def get_positions():
                             current_return_pct = ((current_price - entry_price) / entry_price) * 100
                             
                             # 최대 수익률 계산
-                            days_diff = (datetime.now() - datetime.strptime(entry_date, '%Y-%m-%d')).days
+                            days_diff = (datetime.now() - datetime.strptime(date_str, '%Y%m%d')).days
                             df_period = api.get_ohlcv(ticker, min(days_diff + 5, 50))
                             if not df_period.empty:
                                 max_price = float(df_period['close'].max())
@@ -1096,7 +1111,7 @@ def get_scan_positions():
             try:
                 # 진입일부터 현재까지의 데이터 조회
                 from datetime import datetime, timedelta
-                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
+                entry_dt = datetime.strptime(date_str, '%Y%m%d')
                 days_diff = (datetime.now() - entry_dt).days
                 lookback_days = min(days_diff + 10, 100)  # 여유분 포함
                 
@@ -1157,7 +1172,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
         universe = [*kospi, *kosdaq]
 
         added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
+        entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
 
         for code in universe:
             try:
@@ -1243,142 +1258,6 @@ def update_position(position_id: int, request: UpdatePositionRequest):
         return {"ok": False, "error": str(e)}
 
 
-@app.get('/scan_positions')
-def get_scan_positions():
-    """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
-    _init_positions_table()
-    try:
-        conn = sqlite3.connect(_db_path())
-        cur = conn.cursor()
-        
-        # 오픈 포지션만 조회
-        rows = cur.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY created_at DESC").fetchall()
-        conn.close()
-        
-        items = []
-        for row in rows:
-            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
-            
-            # 현재 수익률과 최대 수익률 계산
-            try:
-                # 진입일부터 현재까지의 데이터 조회
-                from datetime import datetime, timedelta
-                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
-                days_diff = (datetime.now() - entry_dt).days
-                lookback_days = min(days_diff + 10, 100)  # 여유분 포함
-                
-                df = api.get_ohlcv(ticker, lookback_days)
-                if not df.empty and len(df) > 1:
-                    # 진입일 이후 데이터만 필터링
-                    df['date'] = pd.to_datetime(df.index)
-                    entry_date_dt = pd.to_datetime(entry_date)
-                    df = df[df['date'] >= entry_date_dt]
-                    
-                    if len(df) > 0:
-                        # 진입가 (첫 번째 종가)
-                        entry_price = float(df.iloc[0].close)
-                        # 현재가 (마지막 종가)
-                        current_price = float(df.iloc[-1].close)
-                        # 현재 수익률
-                        current_return_pct = (current_price / entry_price - 1.0) * 100.0
-                        # 기간내 최대 수익률
-                        max_price = float(df['close'].max())
-                        max_return_pct = (max_price / entry_price - 1.0) * 100.0
-                    else:
-                        current_return_pct = None
-                        max_return_pct = None
-                else:
-                    current_return_pct = None
-                    max_return_pct = None
-            except Exception:
-                current_return_pct = None
-                max_return_pct = None
-            
-            items.append({
-                'ticker': ticker,
-                'name': name,
-                'entry_date': entry_date,
-                'quantity': quantity,
-                'score': score,
-                'strategy': strategy,
-                'current_return_pct': current_return_pct,
-                'max_return_pct': max_return_pct,
-                'position_id': id_
-            })
-        
-        return {'items': items, 'count': len(items)}
-    except Exception as e:
-        return {'items': [], 'count': 0, 'error': str(e)}
-
-
-@app.post('/auto_add_positions')
-def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, entry_date: str = None):
-    """스캔 결과에서 조건을 만족하는 종목들을 자동으로 포지션에 추가"""
-    _init_positions_table()
-    try:
-        # 최신 스캔 결과 조회
-        kp = config.universe_kospi
-        kd = config.universe_kosdaq
-        kospi = api.get_top_codes('KOSPI', kp)
-        kosdaq = api.get_top_codes('KOSDAQ', kd)
-        universe = [*kospi, *kosdaq]
-
-        added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
-
-        for code in universe:
-            try:
-                df = api.get_ohlcv(code, config.ohlcv_count)
-                if df.empty or len(df) < 21:
-                    continue
-                df = compute_indicators(df)
-                matched, sig_true, sig_total = match_stats(df)
-                score, flags = score_conditions(df)
-                
-                # 조건 확인: 점수가 임계값 이상이고 매치된 경우
-                if matched and score >= score_threshold:
-                    # 이미 포지션이 있는지 확인
-                    conn = sqlite3.connect(_db_path())
-                    cur = conn.cursor()
-                    existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
-                    
-                    if not existing:  # 기존 포지션이 없으면 추가
-                        name = api.get_stock_name(code)
-                        current_price = float(df.iloc[-1].close)
-                        
-                        cur.execute("""
-                            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
-                            VALUES (?, ?, ?, ?, ?, ?, 'open')
-                        """, (code, name, entry_dt, default_quantity, score, flags.get('label', '')))
-                        conn.commit()
-                        
-                        added_positions.append({
-                            'ticker': code,
-                            'name': name,
-                            'entry_price': current_price,
-                            'quantity': default_quantity,
-                            'score': score
-                        })
-                    
-                    conn.close()
-            except Exception:
-                continue
-
-        return {
-            'ok': True,
-            'added_count': len(added_positions),
-            'positions': added_positions,
-            'criteria': {
-                'score_threshold': score_threshold,
-                'default_quantity': default_quantity,
-                'entry_date': entry_dt
-            }
-        }
-    except Exception as e:
-        return {'ok': False, 'error': str(e)}
-
-
-@app.delete('/positions/{position_id}', response_model=dict)
 def delete_position(position_id: int):
     """포지션 삭제"""
     _init_positions_table()
@@ -1394,142 +1273,6 @@ def delete_position(position_id: int):
         return {"ok": False, "error": str(e)}
 
 
-@app.get('/scan_positions')
-def get_scan_positions():
-    """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
-    _init_positions_table()
-    try:
-        conn = sqlite3.connect(_db_path())
-        cur = conn.cursor()
-        
-        # 오픈 포지션만 조회
-        rows = cur.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY created_at DESC").fetchall()
-        conn.close()
-        
-        items = []
-        for row in rows:
-            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
-            
-            # 현재 수익률과 최대 수익률 계산
-            try:
-                # 진입일부터 현재까지의 데이터 조회
-                from datetime import datetime, timedelta
-                entry_dt = datetime.strptime(entry_date, '%Y-%m-%d')
-                days_diff = (datetime.now() - entry_dt).days
-                lookback_days = min(days_diff + 10, 100)  # 여유분 포함
-                
-                df = api.get_ohlcv(ticker, lookback_days)
-                if not df.empty and len(df) > 1:
-                    # 진입일 이후 데이터만 필터링
-                    df['date'] = pd.to_datetime(df.index)
-                    entry_date_dt = pd.to_datetime(entry_date)
-                    df = df[df['date'] >= entry_date_dt]
-                    
-                    if len(df) > 0:
-                        # 진입가 (첫 번째 종가)
-                        entry_price = float(df.iloc[0].close)
-                        # 현재가 (마지막 종가)
-                        current_price = float(df.iloc[-1].close)
-                        # 현재 수익률
-                        current_return_pct = (current_price / entry_price - 1.0) * 100.0
-                        # 기간내 최대 수익률
-                        max_price = float(df['close'].max())
-                        max_return_pct = (max_price / entry_price - 1.0) * 100.0
-                    else:
-                        current_return_pct = None
-                        max_return_pct = None
-                else:
-                    current_return_pct = None
-                    max_return_pct = None
-            except Exception:
-                current_return_pct = None
-                max_return_pct = None
-            
-            items.append({
-                'ticker': ticker,
-                'name': name,
-                'entry_date': entry_date,
-                'quantity': quantity,
-                'score': score,
-                'strategy': strategy,
-                'current_return_pct': current_return_pct,
-                'max_return_pct': max_return_pct,
-                'position_id': id_
-            })
-        
-        return {'items': items, 'count': len(items)}
-    except Exception as e:
-        return {'items': [], 'count': 0, 'error': str(e)}
-
-
-@app.post('/auto_add_positions')
-def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, entry_date: str = None):
-    """스캔 결과에서 조건을 만족하는 종목들을 자동으로 포지션에 추가"""
-    _init_positions_table()
-    try:
-        # 최신 스캔 결과 조회
-        kp = config.universe_kospi
-        kd = config.universe_kosdaq
-        kospi = api.get_top_codes('KOSPI', kp)
-        kosdaq = api.get_top_codes('KOSDAQ', kd)
-        universe = [*kospi, *kosdaq]
-
-        added_positions = []
-        entry_dt = entry_date or datetime.now().strftime('%Y-%m-%d')
-
-        for code in universe:
-            try:
-                df = api.get_ohlcv(code, config.ohlcv_count)
-                if df.empty or len(df) < 21:
-                    continue
-                df = compute_indicators(df)
-                matched, sig_true, sig_total = match_stats(df)
-                score, flags = score_conditions(df)
-                
-                # 조건 확인: 점수가 임계값 이상이고 매치된 경우
-                if matched and score >= score_threshold:
-                    # 이미 포지션이 있는지 확인
-                    conn = sqlite3.connect(_db_path())
-                    cur = conn.cursor()
-                    existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
-                    
-                    if not existing:  # 기존 포지션이 없으면 추가
-                        name = api.get_stock_name(code)
-                        current_price = float(df.iloc[-1].close)
-                        
-                        cur.execute("""
-                            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
-                            VALUES (?, ?, ?, ?, ?, ?, 'open')
-                        """, (code, name, entry_dt, default_quantity, score, flags.get('label', '')))
-                        conn.commit()
-                        
-                        added_positions.append({
-                            'ticker': code,
-                            'name': name,
-                            'entry_price': current_price,
-                            'quantity': default_quantity,
-                            'score': score
-                        })
-                    
-                    conn.close()
-            except Exception:
-                continue
-
-        return {
-            'ok': True,
-            'added_count': len(added_positions),
-            'positions': added_positions,
-            'criteria': {
-                'score_threshold': score_threshold,
-                'default_quantity': default_quantity,
-                'entry_date': entry_dt
-            }
-        }
-    except Exception as e:
-        return {'ok': False, 'error': str(e)}
-
-
-@app.get("/available-scan-dates")
 async def get_available_scan_dates():
     """사용 가능한 스캔 날짜 목록을 가져옵니다."""
     try:
@@ -1544,15 +1287,15 @@ async def get_available_scan_dates():
         if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 날짜 형식을 YYYY-MM-DD로 통일
+        # 날짜 형식을 YYYYMMDD로 통일
         normalized_dates = []
         for row in rows:
             date_str = row[0]
             try:
-                if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD -> YYYY-MM-DD
-                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-                elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD 유지
+                if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD 유지
                     formatted_date = date_str
+                elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD -> YYYYMMDD
+                    formatted_date = date_str.replace('-', '')
                 else:
                     continue  # 잘못된 형식은 제외
                 normalized_dates.append(formatted_date)
@@ -1578,7 +1321,7 @@ async def get_scan_by_date(date: str):
         
         # YYYY-MM-DD 형식 그대로 사용
         formatted_date = date
-        compact_date = date.replace('-', '')
+        compact_date = date
         
         # DB에서 해당 날짜의 스캔 결과 조회 (두 형식 모두 지원)
         conn = sqlite3.connect(_db_path())
@@ -1686,7 +1429,7 @@ def get_latest_scan_from_db():
                 if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD
                     dt = datetime.strptime(date_str, '%Y%m%d')
                 elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD
-                    dt = datetime.strptime(date_str, '%Y-%m-%d')
+                    dt = datetime.strptime(date_str, '%Y%m%d')
                 else:
                     continue
                 parsed_dates.append((dt, date_str))
@@ -1757,7 +1500,7 @@ def get_latest_scan_from_db():
         
         # 응답 데이터 구성
         scan_date = latest_date
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now().strftime('%Y%m%d')
         is_today = (latest_date == today)
         data = {
             "as_of": latest_date,
@@ -2673,6 +2416,143 @@ async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
             detail=f"메인트넌스 설정 조회 중 오류가 발생했습니다: {str(e)}"
         )
 
+@app.get("/admin/popup-notice")
+async def get_popup_notice(admin_user: User = Depends(get_admin_user)):
+    """팝업 공지 설정 조회"""
+    try:
+        conn = sqlite3.connect('snapshots.db')
+        cur = conn.cursor()
+        
+        create_popup_notice_table(cur)
+        
+        cur.execute("SELECT * FROM popup_notice ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        
+        if row:
+            notice = {
+                "id": row[0],
+                "is_enabled": bool(row[1]),
+                "title": row[2],
+                "message": row[3],
+                "start_date": row[4],
+                "end_date": row[5],
+                "created_at": row[6],
+                "updated_at": row[7]
+            }
+        else:
+            notice = {
+                "id": None,
+                "is_enabled": False,
+                "title": "",
+                "message": "",
+                "start_date": "",
+                "end_date": "",
+                "created_at": None,
+                "updated_at": None
+            }
+        
+        conn.close()
+        return notice
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"팝업 공지 설정 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/admin/popup-notice")
+async def update_popup_notice(
+    notice: PopupNoticeRequest,
+    admin_user: User = Depends(get_admin_user)
+):
+    """팝업 공지 설정 업데이트"""
+    try:
+        conn = sqlite3.connect('snapshots.db')
+        cur = conn.cursor()
+        
+        create_popup_notice_table(cur)
+        
+        cur.execute("DELETE FROM popup_notice")
+        
+        cur.execute("""
+            INSERT INTO popup_notice (is_enabled, title, message, start_date, end_date, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            notice.is_enabled,
+            notice.title,
+            notice.message,
+            notice.start_date,
+            notice.end_date
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"message": "팝업 공지 설정이 업데이트되었습니다."}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"팝업 공지 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/popup-notice/status")
+async def get_popup_notice_status():
+    """팝업 공지 상태 조회 (공개 API)"""
+    try:
+        conn = sqlite3.connect('snapshots.db')
+        cur = conn.cursor()
+        
+        create_popup_notice_table(cur)
+        
+        cur.execute("SELECT is_enabled, title, message, start_date, end_date FROM popup_notice ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        
+        if row:
+            is_enabled = bool(row[0])
+            title = row[1]
+            message = row[2]
+            start_date = row[3]
+            end_date = row[4]
+            
+            # 날짜 범위 확인
+            if is_enabled and start_date and end_date:
+                from datetime import datetime
+                try:
+                    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                    now = datetime.now()
+                    
+                    if now < start_dt or now > end_dt:
+                        is_enabled = False
+                except ValueError:
+                    is_enabled = False
+            
+            return {
+                "is_enabled": is_enabled,
+                "title": title,
+                "message": message,
+                "start_date": start_date,
+                "end_date": end_date
+            }
+        else:
+            return {
+                "is_enabled": False,
+                "title": "",
+                "message": "",
+                "start_date": "",
+                "end_date": ""
+            }
+    except Exception as e:
+        return {
+            "is_enabled": False,
+            "title": "",
+            "message": "",
+            "start_date": "",
+            "end_date": ""
+        }
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
 @app.post("/admin/maintenance")
 async def update_maintenance_settings(
     settings: MaintenanceSettingsRequest,
@@ -2730,7 +2610,7 @@ async def get_maintenance_status():
             if is_enabled and end_date:
                 from datetime import datetime
                 try:
-                    end_datetime = datetime.strptime(end_date, "%Y-%m-%d")
+                    end_datetime = datetime.strptime(end_date, "%Y%m%d")
                     if datetime.now() > end_datetime:
                         is_enabled = False
                         # 자동으로 비활성화
@@ -3345,8 +3225,8 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
         cursor = conn.cursor()
         
         # 최근 N일간의 데이터 조회
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y%m%d')
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
         
         cursor.execute("""
             SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence

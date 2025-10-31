@@ -125,10 +125,10 @@ class Config:
         "KIWOOM_TR_STOCKINFO_PATH",
         "/api/dostk/stkinfo",
     )
-    kiwoom_tr_quote_id: str = os.getenv("KIWOOM_TR_QUOTE_ID", "ka10001")
+    kiwoom_tr_quote_id: str = os.getenv("KIWOOM_TR_QUOTE_ID", "FHKST01010100")
     kiwoom_tr_quote_path: str = os.getenv(
         "KIWOOM_TR_QUOTE_PATH",
-        "/api/dostk/krinfo",
+        "/uapi/domestic-stock/v1/quotations/inquire-price",
     )
 
     # 심볼 프리로드 설정
