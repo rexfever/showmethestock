@@ -78,13 +78,14 @@ class PortfolioService:
                     # 최신 날짜의 해당 종목 현재가 조회
                     cursor.execute("""
                         SELECT current_price FROM scan_rank 
-                        WHERE code = ? 
+                        WHERE code = ? AND current_price > 0
                         ORDER BY date DESC 
                         LIMIT 1
                     """, (ticker,))
                     
                     row = cursor.fetchone()
-                    if row and row[0]:
+                    if row and row[0] and row[0] > 0:
+                        print(f"💰 현재가 조회 성공 ({ticker}): {row[0]}원")
                         return float(row[0])
             
             # 스캔 결과에 없으면 키움 API에서 직접 조회
@@ -93,10 +94,13 @@ class PortfolioService:
                 api = KiwoomAPI()
                 df = api.get_ohlcv(ticker, 1)
                 if not df.empty:
-                    return float(df.iloc[-1]['close'])
+                    price = float(df.iloc[-1]['close'])
+                    print(f"💰 키움 API 현재가 조회 성공 ({ticker}): {price}원")
+                    return price
             except Exception as e:
                 print(f"키움 API 조회 오류 ({ticker}): {e}")
             
+            print(f"⚠️ 현재가 조회 실패 ({ticker})")
             return None
         except Exception as e:
             print(f"현재가 조회 오류: {e}")
@@ -121,7 +125,7 @@ class PortfolioService:
                 if current_price:
                     current_value = current_price * request.quantity
                     profit_loss = current_value - total_investment
-                    profit_loss_pct = (profit_loss / total_investment) * 100
+                    profit_loss_pct = (profit_loss / total_investment) * 100 if total_investment > 0 else 0
             
             # 상태 결정
             status = "watching"
@@ -271,11 +275,23 @@ class PortfolioService:
             
             items = [self._row_to_portfolio_item(row) for row in rows]
             
-            # 총계 계산
+            # 총계 계산 (매매 내역 기반)
+            with sqlite3.connect(self.db_path) as conn2:
+                cursor2 = conn2.cursor()
+                cursor2.execute("""
+                    SELECT SUM(CASE WHEN trade_type = 'buy' THEN price * quantity ELSE 0 END) as total_buy,
+                           SUM(CASE WHEN trade_type = 'sell' THEN price * quantity ELSE 0 END) as total_sell
+                    FROM trading_history WHERE user_id = ?
+                """, (user_id,))
+                
+                trade_summary = cursor2.fetchone()
+                total_buy_amount = trade_summary[0] or 0
+                total_sell_amount = trade_summary[1] or 0
+            
             total_investment = sum(item.total_investment or 0 for item in items)
             total_current_value = sum(item.current_value or 0 for item in items)
-            total_profit_loss = total_current_value - total_investment
-            total_profit_loss_pct = (total_profit_loss / total_investment * 100) if total_investment > 0 else 0
+            total_profit_loss = sum(item.profit_loss or 0 for item in items)
+            total_profit_loss_pct = (total_profit_loss / total_buy_amount * 100) if total_buy_amount > 0 else 0
             
             return PortfolioResponse(
                 items=items,
@@ -304,25 +320,8 @@ class PortfolioService:
                         WHERE user_id = ? AND ticker = ?
                     """, (current_price, user_id, ticker))
                     
-                    # 손익 재계산
-                    cursor.execute("""
-                        SELECT entry_price, quantity FROM portfolio 
-                        WHERE user_id = ? AND ticker = ?
-                    """, (user_id, ticker))
-                    
-                    row = cursor.fetchone()
-                    if row and row[0] and row[1]:  # entry_price와 quantity가 있는 경우
-                        entry_price, quantity = row
-                        total_investment = entry_price * quantity
-                        current_value = current_price * quantity
-                        profit_loss = current_value - total_investment
-                        profit_loss_pct = (profit_loss / total_investment) * 100
-                        
-                        cursor.execute("""
-                            UPDATE portfolio 
-                            SET current_value = ?, profit_loss = ?, profit_loss_pct = ?
-                            WHERE user_id = ? AND ticker = ?
-                        """, (current_value, profit_loss, profit_loss_pct, user_id, ticker))
+                    # 매매 내역 기반으로 손익 재계산
+                    self._update_portfolio_from_trading(user_id, ticker)
             
             conn.commit()
     
@@ -436,7 +435,7 @@ class PortfolioService:
             return False
     
     def _update_portfolio_from_trading(self, user_id: int, ticker: str):
-        """매매 내역을 기반으로 포트폴리오 업데이트 (매도 손익 포함)"""
+        """매매 내역을 기반으로 포트폴리오 업데이트 (단순화된 계산)"""
         print(f"📊 _update_portfolio_from_trading 호출: user_id={user_id}, ticker={ticker}")
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -453,50 +452,30 @@ class PortfolioService:
             if not trades:
                 return
             
-            # FIFO 방식으로 매수/매도 처리
-            buy_queue = []  # (quantity, price, date) 튜플 리스트
-            total_quantity = 0
-            total_cost = 0
-            realized_profit = 0  # 실현 손익
+            # 단순 계산: 총 매수량 - 총 매도량
+            total_buy_qty = 0
+            total_buy_amount = 0
+            total_sell_qty = 0
+            total_sell_amount = 0
             
             for trade_type, quantity, price, trade_date in trades:
                 if trade_type == 'buy':
-                    buy_queue.append((quantity, price, trade_date))
-                    total_quantity += quantity
-                    total_cost += quantity * price
+                    total_buy_qty += quantity
+                    total_buy_amount += quantity * price
                 elif trade_type == 'sell':
-                    sell_quantity = quantity
-                    total_quantity -= sell_quantity
-                    
-                    # FIFO 방식으로 매도 처리
-                    while sell_quantity > 0 and buy_queue:
-                        buy_qty, buy_price, buy_date = buy_queue[0]
-                        
-                        if buy_qty <= sell_quantity:
-                            # 전체 매수분 매도
-                            realized_profit += (price - buy_price) * buy_qty
-                            sell_quantity -= buy_qty
-                            buy_queue.pop(0)
-                        else:
-                            # 일부 매수분 매도
-                            realized_profit += (price - buy_price) * sell_quantity
-                            buy_queue[0] = (buy_qty - sell_quantity, buy_price, buy_date)
-                            sell_quantity = 0
-                
-                # 매도가 매수보다 많으면 포트폴리오에서 제거
-                if total_quantity < 0:
-                    total_quantity = 0
-                    buy_queue = []
-                    break
+                    total_sell_qty += quantity
+                    total_sell_amount += quantity * price
+            
+            # 현재 보유 수량
+            current_quantity = total_buy_qty - total_sell_qty
             
             # 포트폴리오 업데이트 또는 삭제
-            if total_quantity <= 0:
+            if current_quantity <= 0:
                 # 수량이 0 이하면 포트폴리오에서 제거
                 cursor.execute("DELETE FROM portfolio WHERE user_id = ? AND ticker = ?", (user_id, ticker))
             else:
-                # 현재 보유 수량의 평균 단가 계산
-                remaining_cost = sum(qty * price for qty, price, _ in buy_queue)
-                avg_price = remaining_cost / total_quantity if total_quantity > 0 else 0
+                # 평균 매수가 계산
+                avg_buy_price = total_buy_amount / total_buy_qty if total_buy_qty > 0 else 0
                 
                 # 종목명과 첫 매수일 조회
                 cursor.execute("""
@@ -510,12 +489,16 @@ class PortfolioService:
                 
                 # 현재가 조회
                 current_price = self.get_current_price(ticker)
+                if not current_price:
+                    current_price = avg_buy_price  # 현재가를 못 가져오면 평균 매수가 사용
                 
-                # 손익 계산 (실현 손익 + 미실현 손익)
-                current_value = current_price * total_quantity if current_price else 0
-                unrealized_profit = (current_price - avg_price) * total_quantity if current_price else 0
+                # 손익 계산
+                total_investment = avg_buy_price * current_quantity
+                current_value = current_price * current_quantity
+                realized_profit = total_sell_amount - (avg_buy_price * total_sell_qty)  # 매도 실현 손익
+                unrealized_profit = (current_price - avg_buy_price) * current_quantity  # 미실현 손익
                 total_profit = realized_profit + unrealized_profit
-                total_profit_pct = (total_profit / remaining_cost * 100) if remaining_cost > 0 else 0
+                total_profit_pct = (total_profit / total_buy_amount * 100) if total_buy_amount > 0 else 0
                 
                 # 포트폴리오 업데이트 또는 생성
                 cursor.execute("""
@@ -525,8 +508,8 @@ class PortfolioService:
                         profit_loss_pct, status, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'holding', CURRENT_TIMESTAMP)
                 """, (
-                    user_id, ticker, name, avg_price, total_quantity, first_buy_date,
-                    current_price, remaining_cost, current_value, total_profit,
+                    user_id, ticker, name, avg_buy_price, current_quantity, first_buy_date,
+                    current_price, total_investment, current_value, total_profit,
                     total_profit_pct
                 ))
     
