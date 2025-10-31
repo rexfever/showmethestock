@@ -94,16 +94,15 @@ class EnvironmentDetector:
             return "127.0.0.1"
     
     def get_environment_info(self) -> Dict[str, Any]:
-        """환경 정보 반환"""
+        """환경 정보 반환 (보안상 민감한 정보 제외)"""
         return {
             "environment": self.environment,
             "is_local": self.is_local,
             "is_server": self.is_server,
-            "hostname": socket.gethostname(),
-            "local_ip": self._get_local_ip(),
+            "hostname": "***" if self.is_server else socket.gethostname(),
+            "local_ip": "***" if self.is_server else self._get_local_ip(),
             "working_directory": os.getcwd(),
             "user": os.getenv("USER", "unknown"),
-            "python_path": os.getenv("PYTHONPATH", ""),
         }
     
     def get_config_overrides(self) -> Dict[str, Any]:
