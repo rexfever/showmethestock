@@ -380,8 +380,9 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         except Exception as e:
             print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
     
-    # Fallback 로직 적용 (시장 상황 포함)
+    # 스캔 실행 (현재 상태 분석 기반)
     items, chosen_step = execute_scan_with_fallback(universe, date, market_condition)
+    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (현재 상태 기반 분석)")
     
     # 수익률 계산 (병렬 처리) - 실시간/과거 스캔 모두 계산
     returns_data = {}
@@ -468,7 +469,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         as_of=today_as_of,
         universe_count=len(universe),
         matched_count=len(scan_items),
-        rsi_mode="tema_dema",  # 새로운 RSI 모드
+        rsi_mode="current_status",  # 현재 상태 분석 모드
         rsi_period=14,  # 고정값
         rsi_threshold=market_condition.rsi_threshold if market_condition else config.rsi_setup_min,  # 시장 상황 기반 RSI 임계값
         items=scan_items,
@@ -866,18 +867,18 @@ def send_scan_result(to: str, top_n: int = 5):
 
 @app.post('/kakao_webhook')
 def kakao_webhook(body: dict):
-    """카카오 오픈빌더 Webhook: 사용자가 종목명/코드를 말하면 분석 요약을 반환"""
+    """카카오 오픈빌더 Webhook: 사용자가 종목명/코드를 말하면 현재 상태 분석을 반환"""
     utterance = (body.get('utterance') or body.get('userRequest', {}).get('utterance') or '').strip()
     if not utterance:
         text = "분석할 종목명을 입력해 주세요. 예) 삼성전자"
     else:
-        # analyze 호출
-        res = analyze(utterance)
-        if not res.ok:
-            text = f"분석 실패: {res.error}"
+        # analyze_friendly 호출
+        res = analyze_friendly(utterance)
+        if not res["ok"]:
+            text = f"분석 실패: {res['error']}"
         else:
-            it = res.item
-            text = f"{it.name}({it.ticker}) 분석: 점수 {int(it.score)} ({it.score_label or '-'})\n전략: {it.strategy}"
+            analysis = res["analysis"]
+            text = f"{res['name']}({res['ticker']})\n현재가: {res['current_price']:,.0f}원\n{analysis['summary']}\n상태: {analysis['current_status']}"
     # 카카오 응답 포맷(간단 텍스트)
     return {
         "version": "2.0",
@@ -890,7 +891,7 @@ def kakao_webhook(body: dict):
 
 @app.get('/analyze', response_model=AnalyzeResponse)
 def analyze(name_or_code: str):
-    """기존 분석 기능 (내부용)"""
+    """종목의 기술적 지표를 분석하여 현재 상태 제공 (내부용)"""
     code = normalize_code_or_name(name_or_code)
     if not is_code(code):
         code = api.get_code_by_name(code)
@@ -900,14 +901,21 @@ def analyze(name_or_code: str):
     df = api.get_ohlcv(code, config.ohlcv_count)
     if df.empty or len(df) < 21:
         return AnalyzeResponse(ok=False, item=None, error='데이터 부족')
+    
     df = compute_indicators(df)
-    matched, sig_true, sig_total = match_stats(df)
-    score, flags = score_conditions(df)
+    
+    # 현재가 및 변동률 계산
     cur = df.iloc[-1]
+    prev = df.iloc[-2] if len(df) > 1 else cur
+    change_rate = ((cur.close - prev.close) / prev.close * 100) if prev.close > 0 else 0.0
+    
+    # 기술적 지표 기반 현재 상태 분석 (스캔 조건 매칭 대신)
+    score, flags = score_conditions(df)  # 기존 함수 활용하되 해석 방식 변경
+    
     item = ScanItem(
         ticker=code,
         name=api.get_stock_name(code),
-        match=flags.get("match", bool(matched)),
+        match=True,  # 항상 True (현재 상태 분석이므로)
         score=float(score),
         indicators=IndicatorPayload(
             TEMA=float(cur.TEMA20),
@@ -921,6 +929,7 @@ def analyze(name_or_code: str):
             VOL=int(cur.volume),
             VOL_MA5=float(cur.VOL_MA5) if pd.notna(cur.VOL_MA5) else 0.0,
             close=float(cur.close),
+            change_rate=change_rate,
         ),
         trend=TrendPayload(
             TEMA20_SLOPE20=float(df.iloc[-1].get("TEMA20_SLOPE20", 0.0)) if "TEMA20_SLOPE20" in df.columns else 0.0,
@@ -929,15 +938,56 @@ def analyze(name_or_code: str):
             DEMA10_SLOPE20=float(df.iloc[-1].get("DEMA10_SLOPE20", 0.0)) if "DEMA10_SLOPE20" in df.columns else 0.0,
         ),
         flags=_as_score_flags(flags),
-        score_label=str(flags.get("label")) if isinstance(flags, dict) else None,
-        strategy=strategy_text(df),
+        score_label=f"현재 상태: {get_status_label(cur, flags)}",
+        strategy=get_current_status_description(df, flags),
     )
     return AnalyzeResponse(ok=True, item=item)
+
+def get_status_label(cur, flags):
+    """현재 상태 라벨 생성"""
+    rsi = cur.RSI_TEMA
+    if rsi > 70:
+        return "과매수 구간"
+    elif rsi < 30:
+        return "과매도 구간"
+    elif flags.get('cross'):
+        return "상승 신호"
+    elif cur.MACD_OSC > 0:
+        return "상승 추세"
+    else:
+        return "관찰 필요"
+
+def get_current_status_description(df, flags):
+    """현재 상태 설명 생성"""
+    cur = df.iloc[-1]
+    descriptions = []
+    
+    # RSI 상태
+    rsi = cur.RSI_TEMA
+    if rsi > 70:
+        descriptions.append("과매수 상태로 조정 가능성")
+    elif rsi < 30:
+        descriptions.append("과매도 상태로 반등 가능성")
+    
+    # MACD 상태
+    if cur.MACD_OSC > 0:
+        descriptions.append("상승 모멘텀 유지")
+    else:
+        descriptions.append("하락 모멘텀 지속")
+    
+    # 거래량 상태
+    vol_ratio = cur.volume / cur.VOL_MA5 if cur.VOL_MA5 > 0 else 1
+    if vol_ratio > 2:
+        descriptions.append("거래량 급증")
+    elif vol_ratio < 0.5:
+        descriptions.append("거래량 감소")
+    
+    return ", ".join(descriptions) if descriptions else "일반적인 상태"
 
 
 @app.get('/analyze-friendly')
 def analyze_friendly(name_or_code: str):
-    """사용자 친화적인 종목 분석 결과 제공 (메인 분석 기능)"""
+    """종목의 현재 상태를 분석하여 사용자 친화적으로 제공 (메인 분석 기능)"""
     try:
         # 기본 분석 실행
         analysis_result = analyze(name_or_code)
@@ -946,21 +996,20 @@ def analyze_friendly(name_or_code: str):
             return {
                 "ok": False,
                 "error": analysis_result.error,
-                "friendly_analysis": None
+                "analysis": None
             }
         
-        # 사용자 친화적 분석 생성
+        # 현재 상태 분석 생성
         from user_friendly_analysis import get_user_friendly_analysis
-        friendly_analysis = get_user_friendly_analysis(analysis_result)
+        current_analysis = get_user_friendly_analysis(analysis_result)
         
         return {
             "ok": True,
             "ticker": analysis_result.item.ticker,
             "name": analysis_result.item.name,
-            "score": analysis_result.item.score,
-            "match": analysis_result.item.match,
-            "strategy": analysis_result.item.strategy,
-            "friendly_analysis": friendly_analysis,
+            "current_price": float(analysis_result.item.indicators.close),
+            "change_rate": getattr(analysis_result.item.indicators, 'change_rate', 0.0),
+            "analysis": current_analysis,
             "error": None
         }
         
@@ -968,7 +1017,7 @@ def analyze_friendly(name_or_code: str):
         return {
             "ok": False,
             "error": f"분석 중 오류가 발생했습니다: {str(e)}",
-            "friendly_analysis": None
+            "analysis": None
         }
 
 
@@ -1389,7 +1438,7 @@ async def get_scan_by_date(date: str):
             "is_latest": False,
             "universe_count": 100,  # 기본값
             "matched_count": len(items),
-            "rsi_mode": "tema_dema",
+            "rsi_mode": "current_status",
             "rsi_period": 14,
             "rsi_threshold": 57.0,
             "items": items
@@ -1510,7 +1559,7 @@ def get_latest_scan_from_db():
             "is_holiday": not is_today,
             "universe_count": 100,  # 기본값
             "matched_count": len(items),
-            "rsi_mode": "tema_dema",
+            "rsi_mode": "current_status",
             "rsi_period": 14,
             "rsi_threshold": 57.0,
             "items": items
