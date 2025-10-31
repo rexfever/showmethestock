@@ -319,7 +319,13 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               
               {/* 오른쪽: 버튼 */}
               <button
-                onClick={() => router.push('/performance-report')}
+                onClick={() => {
+                  if (!isAuthenticated()) {
+                    router.push('/login');
+                    return;
+                  }
+                  router.push('/performance-report');
+                }}
                 className="relative bg-gradient-to-br from-yellow-500 via-yellow-600 to-yellow-700 hover:from-yellow-600 hover:via-yellow-700 hover:to-yellow-800 text-white px-5 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 active:scale-95 overflow-hidden group"
               >
                 {/* 배경 애니메이션 효과 */}
