@@ -155,3 +155,15 @@ class AdminStatsResponse(BaseModel):
     active_subscriptions: int
     total_revenue: int
     recent_users: List[User]
+
+class MaintenanceSettingsRequest(BaseModel):
+    is_enabled: bool
+    end_date: Optional[str] = None
+    message: Optional[str] = None
+
+class PopupNoticeRequest(BaseModel):
+    is_enabled: bool
+    title: str
+    message: str
+    start_date: str
+    end_date: str

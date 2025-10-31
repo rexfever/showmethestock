@@ -172,3 +172,6 @@ class KakaoPayService:
 
 # 전역 인스턴스
 kakao_pay_service = KakaoPayService()
+
+# 네이버페이 서비스 import
+from naver_pay_service import naver_pay_service

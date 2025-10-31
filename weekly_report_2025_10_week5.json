@@ -1,0 +1,80 @@
+{
+  "period": "2025년 10월 5주차 (10/27-10/30)",
+  "generated_at": "2025-10-30 19:02:16",
+  "summary": {
+    "total_trading_days": 4,
+    "latest_scan_date": "2025-10-30",
+    "latest_matched_count": 3,
+    "avg_score": 6.0,
+    "score_range": "6.0 (일정)"
+  },
+  "latest_scan_results": [
+    {
+      "ticker": "005935",
+      "name": "삼성전자우",
+      "score": 6.0,
+      "price": 79900,
+      "change_rate": 2.83,
+      "returns": {
+        "current_return": 0,
+        "max_return": 0,
+        "min_return": 0,
+        "days_elapsed": 0
+      }
+    },
+    {
+      "ticker": "085660",
+      "name": "차바이오텍",
+      "score": 6.0,
+      "price": 12510,
+      "change_rate": 0.16,
+      "returns": {
+        "current_return": 0,
+        "max_return": 0,
+        "min_return": 0,
+        "days_elapsed": 0
+      }
+    },
+    {
+      "ticker": "388720",
+      "name": "유일로보틱스",
+      "score": 6.0,
+      "price": 81600,
+      "change_rate": 0.87,
+      "returns": {
+        "current_return": 0,
+        "max_return": 0,
+        "min_return": 0,
+        "days_elapsed": 0
+      }
+    }
+  ],
+  "weekly_highlights": [
+    "10월 마지막 주 스캔 결과: 3개 종목 선별",
+    "모든 선별 종목이 6.0점으로 동일한 점수 기록",
+    "삼성전자우가 2.83% 상승으로 가장 높은 등락률 기록",
+    "바이오/로보틱스 섹터 종목들이 포함됨"
+  ],
+  "sector_analysis": {
+    "반도체": [
+      "삼성전자우"
+    ],
+    "바이오": [
+      "차바이오텍"
+    ],
+    "로보틱스": [
+      "유일로보틱스"
+    ]
+  },
+  "performance_metrics": {
+    "selection_consistency": "높음 (모든 종목 동일 점수)",
+    "sector_diversity": "우수 (3개 섹터)",
+    "market_coverage": "대형주 + 중소형주 혼합"
+  },
+  "insights": [
+    "이번 주는 안정적인 선별 기준으로 3개 우량 종목이 선택됨",
+    "반도체, 바이오, 로보틱스 등 성장 섹터에 집중",
+    "모든 종목이 6.0점으로 일관된 품질 유지",
+    "당일 스캔이므로 수익률은 0% (기준점)"
+  ]
+}

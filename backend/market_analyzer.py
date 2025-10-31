@@ -46,7 +46,7 @@ class MarketAnalyzer:
     def analyze_market_condition(self, date: str = None) -> MarketCondition:
         """시장 상황 분석"""
         if date is None:
-            date = datetime.now().strftime('%Y-%m-%d')
+            date = datetime.now().strftime('%Y%m%d')
         
         # 캐시 확인
         cache_key = f"market_analysis_{date}"

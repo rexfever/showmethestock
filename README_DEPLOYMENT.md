@@ -74,6 +74,13 @@
 
 ## 🛠️ 관리 명령어
 
+### ⚠️ 데이터베이스 관리 규칙
+**🚨 중요: 데이터베이스는 절대 초기화하지 않습니다**
+- `snapshots.db`, `portfolio.db`, `email_verifications.db`, `news_data.db` 파일 삭제 금지
+- 테이블 DROP, TRUNCATE, 전체 DELETE 금지
+- 데이터 복구가 어려우므로 백업 없이 DB 조작 금지
+- 문제 발생 시 백업에서 복원 후 문의
+
 ### 서비스 관리
 ```bash
 # 서비스 상태 확인

@@ -27,6 +27,16 @@ export default function AdminDashboard() {
     message: '서비스 점검 중입니다.'
   });
   const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+  
+  // 팝업 공지 설정 상태
+  const [popupNotice, setPopupNotice] = useState({
+    is_enabled: false,
+    title: '',
+    message: '',
+    start_date: '',
+    end_date: ''
+  });
+  const [popupLoading, setPopupLoading] = useState(false);
 
   useEffect(() => {
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
@@ -93,7 +103,7 @@ export default function AdminDashboard() {
       const config = getConfig();
       const base = config.backendUrl;
 
-      const [statsResponse, usersResponse, maintenanceResponse] = await Promise.all([
+      const [statsResponse, usersResponse, maintenanceResponse, popupResponse] = await Promise.all([
         fetch(`${base}/admin/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -108,12 +118,21 @@ export default function AdminDashboard() {
           headers: {
             'Authorization': `Bearer ${token}`
           }
+        }),
+        fetch(`${base}/admin/popup-notice`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         })
       ]);
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData);
+      } else if (statsResponse.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
+        return;
       }
 
       if (usersResponse.ok) {
@@ -129,7 +148,19 @@ export default function AdminDashboard() {
           message: maintenanceData.message || '서비스 점검 중입니다.'
         });
       }
+
+      if (popupResponse.ok) {
+        const popupData = await popupResponse.json();
+        setPopupNotice({
+          is_enabled: popupData.is_enabled,
+          title: popupData.title || '',
+          message: popupData.message || '',
+          start_date: popupData.start_date || '',
+          end_date: popupData.end_date || ''
+        });
+      }
     } catch (error) {
+      console.error('관리자 데이터 로딩 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -168,6 +199,9 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         alert('메인트넌스 설정이 업데이트되었습니다.');
+      } else if (response.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
       } else {
         alert('메인트넌스 설정 업데이트에 실패했습니다.');
       }
@@ -176,6 +210,37 @@ export default function AdminDashboard() {
       alert('메인트넌스 설정 업데이트 중 오류가 발생했습니다.');
     } finally {
       setMaintenanceLoading(false);
+    }
+  };
+
+  const updatePopupNotice = async () => {
+    setPopupLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/admin/popup-notice`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(popupNotice)
+      });
+
+      if (response.ok) {
+        alert('팝업 공지 설정이 업데이트되었습니다.');
+      } else if (response.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
+      } else {
+        alert('팝업 공지 설정 업데이트에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('팝업 공지 설정 업데이트 실패:', error);
+      alert('팝업 공지 설정 업데이트 중 오류가 발생했습니다.');
+    } finally {
+      setPopupLoading(false);
     }
   };
 
@@ -711,6 +776,111 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 팝업 공지 설정 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">팝업 공지 설정</h2>
+            <p className="text-sm text-gray-600">사용자에게 표시될 팝업 공지를 관리합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700">팝업 공지 활성화</label>
+                <p className="text-xs text-gray-500">활성화 시 사용자에게 팝업 공지가 표시됩니다</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={popupNotice.is_enabled}
+                  onChange={(e) => setPopupNotice({
+                    ...popupNotice,
+                    is_enabled: e.target.checked
+                  })}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            {popupNotice.is_enabled && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    공지 제목
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={popupNotice.title}
+                    onChange={(e) => setPopupNotice({
+                      ...popupNotice,
+                      title: e.target.value
+                    })}
+                    placeholder="공지 제목을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    공지 내용
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    value={popupNotice.message}
+                    onChange={(e) => setPopupNotice({
+                      ...popupNotice,
+                      message: e.target.value
+                    })}
+                    placeholder="공지 내용을 입력하세요"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      시작 날짜
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={popupNotice.start_date}
+                      onChange={(e) => setPopupNotice({
+                        ...popupNotice,
+                        start_date: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      종료 날짜
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={popupNotice.end_date}
+                      onChange={(e) => setPopupNotice({
+                        ...popupNotice,
+                        end_date: e.target.value
+                      })}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                onClick={updatePopupNotice}
+                disabled={popupLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {popupLoading ? '저장 중...' : '설정 저장'}
+              </button>
             </div>
           </div>
         </div>

@@ -67,7 +67,7 @@ class DailyUpdateService:
                         
                         # 보유일수 계산
                         if entry_date:
-                            entry_dt = datetime.strptime(entry_date, "%Y-%m-%d")
+                            entry_dt = datetime.strptime(entry_date, "%Y%m%d")
                             new_holding_days = (datetime.now() - entry_dt).days
                         else:
                             new_holding_days = holding_days

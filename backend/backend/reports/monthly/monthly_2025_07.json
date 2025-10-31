@@ -2,10 +2,10 @@
   "report_type": "monthly",
   "year": 2025,
   "month": 7,
-  "generated_at": "2025-10-18T23:42:47.632214",
+  "generated_at": "2025-10-24T19:56:52.423205",
   "statistics": {
     "total_stocks": 5,
-    "avg_return": 58.39,
+    "avg_return": 51.6,
     "positive_rate": 100.0,
     "best_stock": {
       "ticker": "082740",
@@ -132,5 +132,54 @@
     "2025-07-29",
     "2025-07-30",
     "2025-07-31"
-  ]
+  ],
+  "repeat_analysis": {
+    "total_repeat_stocks": 35,
+    "top_frequent_stocks": [
+      {
+        "ticker": "028260",
+        "name": "삼성물산",
+        "scan_count": 24
+      },
+      {
+        "ticker": "082740",
+        "name": "한화엔진",
+        "scan_count": 23
+      },
+      {
+        "ticker": "001440",
+        "name": "대한전선",
+        "scan_count": 23
+      },
+      {
+        "ticker": "336260",
+        "name": "두산퓨얼셀",
+        "scan_count": 23
+      },
+      {
+        "ticker": "298040",
+        "name": "효성중공업",
+        "scan_count": 23
+      }
+    ],
+    "top_strategies": [
+      {
+        "strategy": "상승시작 / 상승추세정착",
+        "count": 57
+      },
+      {
+        "strategy": "상승추세정착",
+        "count": 18
+      },
+      {
+        "strategy": "상승시작 / 관심증가 / 상승추세정착",
+        "count": 14
+      }
+    ],
+    "insights": {
+      "high_momentum_stocks": 9,
+      "consistent_pattern_stocks": 20,
+      "market_interest_level": "높음"
+    }
+  }
 }

@@ -7,6 +7,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import calendar
+from collections import Counter, defaultdict
 from services.returns_service import calculate_returns
 
 
@@ -45,8 +46,8 @@ class ReportGenerator:
         cursor = conn.cursor()
         
         # 두 날짜 형식 모두 지원
-        compact_start = start_date.replace('-', '')
-        compact_end = end_date.replace('-', '')
+        compact_start = start_date
+        compact_end = end_date
         
         cursor.execute("""
             SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
@@ -108,6 +109,66 @@ class ReportGenerator:
             processed_stocks.append(stock_data)
         
         return processed_stocks
+    
+    def _analyze_repeat_scans(self, start_date: str, end_date: str) -> Dict:
+        """반복 스캔 종목 분석"""
+        conn = sqlite3.connect(self._get_db_path())
+        cursor = conn.cursor()
+        
+        # 기간 내 스캔 데이터 조회
+        cursor.execute("""
+            SELECT date, code, name, strategy 
+            FROM scan_rank 
+            WHERE date BETWEEN ? AND ?
+            ORDER BY date DESC
+        """, (start_date, end_date))
+        
+        data = cursor.fetchall()
+        conn.close()
+        
+        if not data:
+            return {"repeat_analysis": None}
+        
+        # 종목별 스캔 횟수 계산
+        stock_counts = Counter()
+        stock_info = {}
+        strategy_patterns = Counter()
+        
+        for date, code, name, strategy in data:
+            stock_counts[code] += 1
+            stock_info[code] = name
+            if strategy:
+                strategy_patterns[strategy] += 1
+        
+        # 반복 스캔 종목 (2회 이상)
+        frequent_stocks = [(code, count, stock_info[code]) 
+                          for code, count in stock_counts.items() if count >= 2]
+        frequent_stocks.sort(key=lambda x: x[1], reverse=True)
+        
+        # 상위 5개 반복 종목
+        top_frequent = frequent_stocks[:5]
+        
+        # 주요 전략 패턴 (상위 3개)
+        top_strategies = strategy_patterns.most_common(3)
+        
+        return {
+            "repeat_analysis": {
+                "total_repeat_stocks": len(frequent_stocks),
+                "top_frequent_stocks": [
+                    {"ticker": code, "name": name, "scan_count": count}
+                    for code, count, name in top_frequent
+                ],
+                "top_strategies": [
+                    {"strategy": strategy, "count": count}
+                    for strategy, count in top_strategies if strategy
+                ],
+                "insights": {
+                    "high_momentum_stocks": len([s for s in frequent_stocks if s[1] >= 5]),
+                    "consistent_pattern_stocks": len([s for s in frequent_stocks if s[1] >= 3]),
+                    "market_interest_level": "높음" if len(frequent_stocks) >= 10 else "보통" if len(frequent_stocks) >= 5 else "낮음"
+                }
+            }
+        }
     
     def _calculate_statistics(self, stocks: List[Dict]) -> Dict:
         """통계 계산"""
@@ -226,6 +287,12 @@ class ReportGenerator:
             # 통계 계산
             stats = self._calculate_statistics(all_stocks)
             
+            # 반복 스캔 분석 추가
+            start_date = f"{year}-{month:02d}-01"
+            last_day = calendar.monthrange(year, month)[1]
+            end_date = f"{year}-{month:02d}-{last_day:02d}"
+            repeat_analysis = self._analyze_repeat_scans(start_date, end_date)
+            
             # 보고서 데이터 구성
             report_data = {
                 "report_type": "monthly",
@@ -234,7 +301,8 @@ class ReportGenerator:
                 "generated_at": datetime.now().isoformat(),
                 "statistics": stats,
                 "stocks": all_stocks,
-                "dates": sorted(list(all_dates))
+                "dates": sorted(list(all_dates)),
+                **repeat_analysis
             }
             
             # 파일 저장
@@ -284,6 +352,14 @@ class ReportGenerator:
             # 통계 계산
             stats = self._calculate_statistics(all_stocks)
             
+            # 반복 스캔 분석 추가
+            start_month = (quarter - 1) * 3 + 1
+            end_month = quarter * 3
+            start_date = f"{year}-{start_month:02d}-01"
+            last_day = calendar.monthrange(year, end_month)[1]
+            end_date = f"{year}-{end_month:02d}-{last_day:02d}"
+            repeat_analysis = self._analyze_repeat_scans(start_date, end_date)
+            
             # 보고서 데이터 구성
             report_data = {
                 "report_type": "quarterly",
@@ -292,7 +368,8 @@ class ReportGenerator:
                 "generated_at": datetime.now().isoformat(),
                 "statistics": stats,
                 "stocks": all_stocks,
-                "dates": sorted(list(all_dates))
+                "dates": sorted(list(all_dates)),
+                **repeat_analysis
             }
             
             # 파일 저장

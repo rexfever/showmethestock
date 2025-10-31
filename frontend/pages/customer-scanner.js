@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import getConfig from '../config';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
+import PopupNotice from '../components/PopupNotice';
 
 export default function CustomerScanner({ initialData, initialScanFile, initialScanDate }) {
   const router = useRouter();
@@ -262,7 +263,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       </Head>
 
       <div className="min-h-screen bg-gray-50">
-
+        <PopupNotice />
         <Header title="스톡인사이트" />
 
         {/* 정보 배너 */}

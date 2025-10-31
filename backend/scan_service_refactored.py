@@ -21,15 +21,15 @@ def _db_path() -> str:
 
 
 def _parse_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 변환"""
+    """날짜 문자열을 YYYYMMDD 형식으로 변환"""
     if not date_str:
         return datetime.now().strftime("%Y%m%d")
     
     try:
         if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD 형식
-            return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-        elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD 형식
             return date_str
+        elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD 형식
+            return date_str.replace('-', '')
         else:
             raise ValueError("날짜 형식이 올바르지 않습니다.")
     except Exception:

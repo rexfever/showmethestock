@@ -102,7 +102,7 @@ export default function StockAnalysis() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">종목 분석</h2>
-              <p className="text-sm opacity-90">개별 종목의 상세한 기술적 분석을 제공합니다</p>
+              <p className="text-sm opacity-90">개별 종목의 현재 상태를 객관적으로 분석합니다</p>
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
@@ -191,82 +191,85 @@ export default function StockAnalysis() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-gray-900">
-                    {analysisResult.friendly_analysis?.simple_indicators?.current_price?.value}
+                    {analysisResult.current_price?.toLocaleString()}원
                   </div>
-                  <div className="text-sm text-gray-500">
-                    거래량: {analysisResult.friendly_analysis?.simple_indicators?.volume?.value}
+                  <div className={`text-lg font-semibold ${
+                    analysisResult.change_rate > 0 ? 'text-red-600' :
+                    analysisResult.change_rate < 0 ? 'text-blue-600' :
+                    'text-gray-600'
+                  }`}>
+                    {analysisResult.change_rate > 0 ? '+' : ''}{analysisResult.change_rate?.toFixed(2)}%
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 종합 평가 */}
+            {/* 현재 상태 분석 */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-center">
-                <div className={`inline-flex items-center px-6 py-3 rounded-full text-lg font-bold mb-4 ${
-                  analysisResult.friendly_analysis?.recommendation === '강력 추천' ? 'bg-green-100 text-green-800' :
-                  analysisResult.friendly_analysis?.recommendation === '추천' ? 'bg-blue-100 text-blue-800' :
-                  analysisResult.friendly_analysis?.recommendation === '관심' ? 'bg-yellow-100 text-yellow-800' :
-                  analysisResult.friendly_analysis?.recommendation === '신중' ? 'bg-orange-100 text-orange-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {analysisResult.friendly_analysis?.recommendation}
+                <div className="inline-flex items-center px-6 py-3 rounded-full text-lg font-bold mb-4 bg-blue-100 text-blue-800">
+                  현재 상태 분석
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {analysisResult.friendly_analysis?.summary}
+                  {analysisResult.analysis?.summary}
                 </h3>
-                <p className="text-gray-600">
-                  신뢰도: {analysisResult.friendly_analysis?.confidence}
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-700 mb-2">현재 상태</h4>
+                    <p className="text-gray-600">{analysisResult.analysis?.current_status}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-700 mb-2">시장 포지션</h4>
+                    <p className="text-gray-600">{analysisResult.analysis?.market_position}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 상세 설명 */}
-            {analysisResult.friendly_analysis?.explanations && analysisResult.friendly_analysis.explanations.length > 0 && (
+            {/* 기술적 지표 상태 */}
+            {analysisResult.analysis?.technical_status && analysisResult.analysis.technical_status.length > 0 && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 분석 상세</h3>
-                <div className="space-y-4">
-                  {analysisResult.friendly_analysis.explanations.map((explanation, index) => (
-                    <div key={index} className={`p-4 rounded-lg border-l-4 ${
-                      explanation.impact === '긍정적' ? 'bg-green-50 border-green-400' :
-                      explanation.impact === '부정적' ? 'bg-red-50 border-red-400' :
-                      'bg-gray-50 border-gray-400'
-                    }`}>
-                      <h4 className="font-semibold text-gray-900 mb-2">
-                        {explanation.title}
-                      </h4>
-                      <p className="text-gray-700">
-                        {explanation.description}
-                      </p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 기술적 지표 상태</h3>
+                <div className="space-y-3">
+                  {analysisResult.analysis.technical_status.map((status, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <p className="text-gray-700">{status}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* 투자 조언 */}
-            {analysisResult.friendly_analysis?.investment_advice && analysisResult.friendly_analysis.investment_advice.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">💡 투자 조언</h3>
-                <div className="space-y-3">
-                  {analysisResult.friendly_analysis.investment_advice.map((advice, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 text-sm font-bold">{index + 1}</span>
-                      </div>
-                      <p className="text-gray-700">{advice}</p>
-                    </div>
-                  ))}
+            {/* 현재가 및 변동률 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 가격 정보</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {analysisResult.current_price?.toLocaleString()}원
+                  </div>
+                  <div className="text-sm text-gray-600">현재가</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className={`text-2xl font-bold mb-1 ${
+                    analysisResult.change_rate > 0 ? 'text-red-600' :
+                    analysisResult.change_rate < 0 ? 'text-blue-600' :
+                    'text-gray-900'
+                  }`}>
+                    {analysisResult.change_rate > 0 ? '+' : ''}{analysisResult.change_rate?.toFixed(2)}%
+                  </div>
+                  <div className="text-sm text-gray-600">등락률</div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* 주의사항 */}
-            {analysisResult.friendly_analysis?.warnings && analysisResult.friendly_analysis.warnings.length > 0 && (
+            {analysisResult.analysis?.warnings && analysisResult.analysis.warnings.length > 0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-yellow-800 mb-4">⚠️ 주의사항</h3>
                 <div className="space-y-2">
-                  {analysisResult.friendly_analysis.warnings.map((warning, index) => (
+                  {analysisResult.analysis.warnings.map((warning, index) => (
                     <p key={index} className="text-yellow-700 text-sm">
                       {warning}
                     </p>
@@ -276,11 +279,11 @@ export default function StockAnalysis() {
             )}
 
             {/* 간단한 지표 */}
-            {analysisResult.friendly_analysis?.simple_indicators && (
+            {analysisResult.analysis?.simple_indicators && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 주요 지표</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(analysisResult.friendly_analysis.simple_indicators).map(([key, indicator]) => (
+                  {Object.entries(analysisResult.analysis.simple_indicators).map(([key, indicator]) => (
                     <div key={key} className="text-center p-3 bg-gray-50 rounded-lg">
                       <div className="text-lg font-bold text-gray-900 mb-1">
                         {indicator.value}
@@ -328,7 +331,8 @@ export default function StockAnalysis() {
             <div className="text-blue-800 space-y-2">
               <p>• <strong>종목 코드</strong>: 6자리 숫자 (예: 005930)</p>
               <p>• <strong>종목명</strong>: 회사명 (예: 삼성전자, SK하이닉스)</p>
-              <p>• <strong>분석 결과</strong>: 기술적 지표와 매칭 여부를 확인할 수 있습니다</p>
+              <p>• <strong>분석 결과</strong>: 종목의 현재 상태와 기술적 지표를 확인할 수 있습니다</p>
+              <p>• <strong>현재 상태 분석</strong>: 스캔 조건 매칭보다는 현재 상황을 객관적으로 분석합니다</p>
             </div>
           </div>
         )}

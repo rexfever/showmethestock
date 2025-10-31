@@ -26,12 +26,12 @@ export default function Header({ title = "스톡인사이트" }) {
           ) : (
             <span className="text-sm text-gray-400">로딩 중...</span>
           )}
-          <button 
+          {/* <button 
             onClick={() => router.push('/subscription')}
             className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 text-xs font-semibold rounded-full shadow-sm hover:shadow-md transition-all duration-200"
           >
             👑 프리미어
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

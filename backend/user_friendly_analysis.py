@@ -5,6 +5,7 @@
 def get_user_friendly_analysis(analysis_result):
     """
     기술적 분석 결과를 일반인이 이해하기 쉬운 언어로 변환
+    현재 상태 분석에 중점을 둠 (스캔 조건 매칭보다는 현재 상황 설명)
     
     Args:
         analysis_result: /analyze API의 응답 데이터 (AnalyzeResponse 객체)
@@ -15,8 +16,8 @@ def get_user_friendly_analysis(analysis_result):
     if not analysis_result or not analysis_result.ok or not analysis_result.item:
         return {
             'summary': '분석할 수 없습니다.',
-            'recommendation': '분석 실패',
-            'confidence': '낮음',
+            'current_status': '데이터 부족',
+            'market_position': '알 수 없음',
             'explanation': '종목 데이터를 가져올 수 없어 분석이 불가능합니다.'
         }
     
@@ -25,206 +26,126 @@ def get_user_friendly_analysis(analysis_result):
     flags = item.flags.__dict__ if item.flags else {}
     trend = item.trend.__dict__ if item.trend else {}
     score = item.score
-    match = item.match
     
     # trend 데이터를 indicators에 병합
     indicators.update(trend)
     
-    # 1. 종합 평가
-    summary, recommendation, confidence = get_overall_assessment(score, match, flags)
+    # 1. 현재 상태 분석
+    current_status = analyze_current_status(indicators, flags)
     
-    # 2. 상세 설명
-    explanations = get_detailed_explanations(indicators, flags, score)
+    # 2. 시장 포지션 분석
+    market_position = analyze_market_position(indicators, flags)
     
-    # 3. 투자 조언
-    investment_advice = get_investment_advice(score, match, indicators, flags)
+    # 3. 기술적 지표 상태
+    technical_status = analyze_technical_indicators(indicators, flags)
     
-    # 4. 주의사항
+    # 4. 종합 요약
+    summary = generate_summary(current_status, market_position, technical_status)
+    
+    # 5. 주의사항
     warnings = get_warnings(indicators, flags)
     
     return {
         'summary': summary,
-        'recommendation': recommendation,
-        'confidence': confidence,
-        'explanations': explanations,
-        'investment_advice': investment_advice,
+        'current_status': current_status,
+        'market_position': market_position,
+        'technical_status': technical_status,
         'warnings': warnings,
         'simple_indicators': get_simple_indicators(indicators)
     }
 
 
-def get_overall_assessment(score, match, flags):
-    """종합 평가 및 추천도"""
+def analyze_current_status(indicators, flags):
+    """현재 상태 분석"""
+    rsi_tema = indicators.get('RSI_TEMA', 50)
+    macd_osc = indicators.get('MACD_OSC', 0)
+    vol_ratio = indicators.get('VOL', 0) / indicators.get('VOL_MA5', 1) if indicators.get('VOL_MA5', 0) > 0 else 1
     
-    # 점수 기반 평가
-    if score >= 8:
-        summary = "매우 좋은 투자 기회"
-        recommendation = "강력 추천"
-        confidence = "높음"
-    elif score >= 6:
-        summary = "좋은 투자 기회"
-        recommendation = "추천"
-        confidence = "보통"
-    elif score >= 4:
-        summary = "관심 종목"
-        recommendation = "관심"
-        confidence = "낮음"
-    elif score >= 2:
-        summary = "신중한 검토 필요"
-        recommendation = "신중"
-        confidence = "낮음"
-    else:
-        summary = "투자 부적합"
-        recommendation = "비추천"
-        confidence = "매우 낮음"
+    status_parts = []
     
-    # 매칭 여부에 따른 조정
-    if not match:
-        if "유동성부족" in str(flags.get('label', '')):
-            summary = "거래량이 너무 적어 투자 부적합"
-            recommendation = "비추천"
-        elif "저가종목" in str(flags.get('label', '')):
-            summary = "가격이 너무 낮아 위험"
-            recommendation = "비추천"
-        elif "과열" in str(flags.get('label', '')):
-            summary = "현재 과열 상태로 조정 가능성 높음"
-            recommendation = "신중"
-        else:
-            summary = "현재 투자 조건 미충족"
-            recommendation = "관심"
-    
-    return summary, recommendation, confidence
-
-
-def get_detailed_explanations(indicators, flags, score):
-    """상세 설명"""
-    explanations = []
-    
-    # 골든크로스 설명
-    if flags.get('cross'):
-        explanations.append({
-            'title': '📈 상승 신호 포착',
-            'description': '단기 이동평균선이 장기 이동평균선을 위로 뚫고 올라갔습니다. 이는 주가 상승의 신호로 해석됩니다.',
-            'impact': '긍정적'
-        })
-    
-    # 거래량 설명
-    if flags.get('vol_expand'):
-        explanations.append({
-            'title': '📊 거래량 급증',
-            'description': '평소보다 거래량이 크게 늘어났습니다. 많은 투자자들이 이 종목에 관심을 보이고 있다는 의미입니다.',
-            'impact': '긍정적'
-        })
-    
-    # MACD 설명
-    if flags.get('macd_ok'):
-        if flags.get('macd_golden_cross'):
-            explanations.append({
-                'title': '⚡ 모멘텀 전환',
-                'description': '주가의 상승 모멘텀이 강해지고 있습니다. 단기적으로 상승 가능성이 높아 보입니다.',
-                'impact': '긍정적'
-            })
-        else:
-            explanations.append({
-                'title': '📈 상승 추세 지속',
-                'description': '현재 상승 추세가 유지되고 있습니다.',
-                'impact': '긍정적'
-            })
-    
-    # 점수별 설명 (우선 처리)
-    if score >= 8:
-        explanations.append({
-            'title': '🎯 우수한 투자 조건',
-            'description': '여러 기술적 지표가 모두 좋은 신호를 보이고 있습니다.',
-            'impact': '긍정적'
-        })
-    elif score >= 6:
-        explanations.append({
-            'title': '✅ 양호한 투자 조건',
-            'description': '대부분의 기술적 지표가 긍정적인 신호를 보이고 있습니다.',
-            'impact': '긍정적'
-        })
-    elif score >= 4:
-        explanations.append({
-            'title': '🤔 보통 수준',
-            'description': '일부 지표는 좋지만 전체적으로는 보통 수준입니다.',
-            'impact': '중립'
-        })
-    else:
-        explanations.append({
-            'title': '❌ 투자 조건 부족',
-            'description': '대부분의 기술적 지표가 투자에 부적합한 신호를 보이고 있습니다.',
-            'impact': '부정적'
-        })
-    
-    # RSI 설명 (점수별 설명 이후)
-    rsi_tema = indicators.get('RSI_TEMA', 0)
+    # RSI 기반 상태
     if rsi_tema > 70:
-        explanations.append({
-            'title': '⚠️ 과매수 상태',
-            'description': '현재 주가가 과도하게 상승한 상태입니다. 조정 가능성이 있으니 주의가 필요합니다.',
-            'impact': '부정적'
-        })
+        status_parts.append("과매수 구간")
     elif rsi_tema < 30:
-        explanations.append({
-            'title': '💡 과매도 상태',
-            'description': '현재 주가가 과도하게 하락한 상태입니다. 반등 가능성이 있을 수 있습니다.',
-            'impact': '긍정적'
-        })
-    elif 50 < rsi_tema < 70:
-        explanations.append({
-            'title': '📊 적정 수준',
-            'description': '현재 주가 수준이 적정한 범위에 있습니다.',
-            'impact': '중립'
-        })
-    
-    return explanations
-
-
-def get_investment_advice(score, match, indicators, flags):
-    """투자 조언"""
-    advice = []
-    
-    if score >= 8 and match:
-        advice.extend([
-            "💪 강력한 매수 신호가 나타났습니다",
-            "📈 단기적으로 상승 가능성이 높습니다",
-            "💰 적절한 타이밍에 진입을 고려해보세요",
-            "⏰ 단기 투자보다는 중기 관점에서 접근하세요"
-        ])
-    elif score >= 6 and match:
-        advice.extend([
-            "👍 매수 신호가 나타났습니다",
-            "📊 관심을 가지고 지켜볼 만합니다",
-            "💡 소량으로 시작해보는 것을 추천합니다",
-            "📅 1-2주 정도 관찰 후 결정하세요"
-        ])
-    elif score >= 4:
-        advice.extend([
-            "🤔 신중한 관찰이 필요합니다",
-            "📉 추가 하락 가능성도 고려하세요",
-            "⏳ 더 나은 기회를 기다리는 것도 좋습니다",
-            "📊 다른 종목과 비교해보세요"
-        ])
+        status_parts.append("과매도 구간")
+    elif rsi_tema > 50:
+        status_parts.append("상승 모멘텀")
     else:
-        advice.extend([
-            "❌ 현재는 투자하지 않는 것이 좋습니다",
-            "📉 하락 위험이 높습니다",
-            "⏰ 더 나은 기회를 기다리세요",
-            "🔍 다른 종목을 찾아보세요"
-        ])
+        status_parts.append("하락 모멘텀")
     
-    # 특별한 상황별 조언
-    if flags.get('label') == '과열':
-        advice.append("🔥 현재 과열 상태이므로 조정 후 진입을 고려하세요")
+    # MACD 기반 상태
+    if macd_osc > 0:
+        status_parts.append("상승 추세")
+    else:
+        status_parts.append("하락 추세")
     
-    if indicators.get('RSI_TEMA', 0) > 75:
-        advice.append("⚠️ RSI가 매우 높아 조정 가능성이 큽니다")
+    # 거래량 상태
+    if vol_ratio > 2:
+        status_parts.append("거래량 급증")
+    elif vol_ratio > 1.5:
+        status_parts.append("거래량 증가")
+    elif vol_ratio < 0.5:
+        status_parts.append("거래량 감소")
     
-    if indicators.get('VOL', 0) > indicators.get('VOL_MA5', 0) * 3:
-        advice.append("📊 거래량이 급증했으니 주가 변동이 클 수 있습니다")
+    return ", ".join(status_parts)
+
+def analyze_market_position(indicators, flags):
+    """시장 포지션 분석"""
+    tema20_slope = indicators.get('TEMA20_SLOPE20', 0)
+    dema10_slope = indicators.get('DEMA10_SLOPE20', 0)
+    above_cnt5 = indicators.get('ABOVE_CNT5', 0)
     
-    return advice
+    if tema20_slope > 0.5 and dema10_slope > 0.5:
+        return "강한 상승 추세"
+    elif tema20_slope > 0 and dema10_slope > 0:
+        return "상승 추세"
+    elif tema20_slope < -0.5 and dema10_slope < -0.5:
+        return "강한 하락 추세"
+    elif tema20_slope < 0 and dema10_slope < 0:
+        return "하락 추세"
+    elif above_cnt5 >= 3:
+        return "횡보 상승"
+    elif above_cnt5 <= 2:
+        return "횡보 하락"
+    else:
+        return "횡보 구간"
+
+def analyze_technical_indicators(indicators, flags):
+    """기술적 지표 상태 분석"""
+    status = []
+    
+    # 골든크로스/데드크로스
+    if flags.get('cross'):
+        status.append("골든크로스 발생")
+    
+    # MACD 상태
+    if flags.get('macd_golden_cross'):
+        status.append("MACD 골든크로스")
+    elif flags.get('macd_ok'):
+        status.append("MACD 상승 신호")
+    
+    # 거래량 상태
+    if flags.get('vol_expand'):
+        status.append("거래량 확장")
+    
+    # RSI 상태
+    rsi_tema = indicators.get('RSI_TEMA', 50)
+    if rsi_tema > 70:
+        status.append("RSI 과매수")
+    elif rsi_tema < 30:
+        status.append("RSI 과매도")
+    
+    return status if status else ["특별한 신호 없음"]
+
+def generate_summary(current_status, market_position, technical_status):
+    """종합 요약 생성"""
+    return f"현재 {current_status} 상태이며, {market_position}를 보이고 있습니다."
+
+
+# 기존 함수는 제거하고 새로운 분석 함수들로 대체됨
+
+
+# 투자 조언 함수는 제거 - 현재 상태 분석에 집중
 
 
 def get_warnings(indicators, flags):
