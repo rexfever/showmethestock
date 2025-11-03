@@ -99,14 +99,51 @@ class SocialAuthService:
     def create_user_from_social(self, social_user_info: Dict[str, Any]) -> UserCreate:
         """소셜 로그인 정보로 사용자 생성"""
         print(f"create_user_from_social 입력: {social_user_info}")
-        print(f"provider_id 값: {social_user_info.get('provider_id')}")
+        
+        # 필수 필드 검증
+        provider_id = social_user_info.get('provider_id')
+        
+        # provider_id 유효성 검사
+        if provider_id is None or provider_id == "None" or provider_id == "" or (isinstance(provider_id, str) and provider_id.strip() == ""):
+            raise ValueError(f"provider_id가 유효하지 않습니다: {provider_id}")
+        
+        # False, 0 등도 유효하지 않은 값으로 처리
+        if provider_id is False or provider_id == 0:
+            raise ValueError(f"provider_id가 유효하지 않습니다: {provider_id}")
+        
+        # provider_id를 문자열로 변환
+        provider_id = str(provider_id)
+        
+        email = social_user_info.get('email') or ''
+        name = social_user_info.get('name') or ''
+        provider = social_user_info.get('provider') or ''
+        
+        # None 값들을 빈 문자열로 변환
+        if email is None:
+            email = ''
+        if name is None:
+            name = ''
+        if provider is None:
+            provider = ''
+        
+        # provider를 문자열로 변환
+        provider = str(provider)
+        
+        if not provider:
+            raise ValueError("provider가 누락되었습니다")
+        
+        print(f"provider_id 값: {provider_id}")
+        
+        phone_number = social_user_info.get("phone_number") or ""
+        if phone_number is None:
+            phone_number = ""
         
         user_create = UserCreate(
-            email=social_user_info["email"],
-            name=social_user_info["name"],
-            provider=social_user_info["provider"],
-            provider_id=social_user_info["provider_id"],
-            kakao_account=social_user_info.get("phone_number", "")  # 전화번호 추가
+            email=email,
+            name=name,
+            provider=provider,
+            provider_id=provider_id,
+            kakao_account=phone_number
         )
         
         print(f"UserCreate 객체 생성 완료: {user_create}")

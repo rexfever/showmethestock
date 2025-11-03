@@ -1884,10 +1884,18 @@ async def kakao_callback(request: dict):
             kakao_account = user_data.get("kakao_account", {})
             profile = kakao_account.get("profile", {})
             
+            # 사용자 ID 검증
+            kakao_user_id = user_data.get("id")
+            if not kakao_user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="카카오 사용자 ID를 받을 수 없습니다"
+                )
+            
             # 사용자 정보 구성
             social_user_info = {
                 "provider": "kakao",
-                "provider_id": str(user_data.get("id")),
+                "provider_id": str(kakao_user_id),
                 "email": kakao_account.get("email", ""),
                 "name": profile.get("nickname", ""),
                 "profile_image": profile.get("profile_image_url", ""),
@@ -1909,9 +1917,18 @@ async def kakao_callback(request: dict):
                 # 마지막 로그인 시간 업데이트
                 auth_service.update_last_login(user.id)
                 print("마지막 로그인 시간 업데이트 완료")
+            except ValueError as e:
+                print(f"사용자 정보 검증 오류: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"카카오 사용자 정보가 유효하지 않습니다: {str(e)}"
+                )
             except Exception as e:
                 print(f"사용자 생성 오류: {e}")
-                raise
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"사용자 생성 중 오류가 발생했습니다: {str(e)}"
+                )
             
             # JWT 토큰 생성
             access_token_expires = timedelta(minutes=30)
@@ -1928,6 +1945,7 @@ async def kakao_callback(request: dict):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"카카오 로그인 처리 중 예상치 못한 오류: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"카카오 로그인 처리 중 오류가 발생했습니다: {str(e)}"
