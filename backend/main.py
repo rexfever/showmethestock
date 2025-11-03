@@ -18,6 +18,9 @@ from scanner import compute_indicators, match_condition, match_stats, strategy_t
 from market_analyzer import market_analyzer
 from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest, MaintenanceSettingsRequest, TradingHistory, AddTradingRequest, TradingHistoryResponse
 from utils import is_code, normalize_code_or_name
+from date_helper import normalize_date, get_kst_now
+from db_manager import db_manager
+from security_utils import sanitize_file_path, escape_html
 from kakao import send_alert, format_scan_message, format_scan_alert_message
 
 # 공통 함수: scan_rank 테이블 생성
@@ -181,10 +184,12 @@ def _save_scan_snapshot(payload: dict) -> str:
     try:
         as_of = payload.get('as_of') or datetime.now().strftime('%Y%m%d')
         fname = f"scan-{as_of}.json"
-        path = os.path.join(SNAPSHOT_DIR, fname)
-        with open(path, 'w', encoding='utf-8') as f:
+        safe_path = sanitize_file_path(fname, SNAPSHOT_DIR)
+        if not safe_path:
+            return ''
+        with open(safe_path, 'w', encoding='utf-8') as f:
             json.dump(payload, f, ensure_ascii=False)
-        return path
+        return safe_path
     except Exception:
         return ''
 
@@ -217,10 +222,9 @@ def _db_path() -> str:
 def _save_snapshot_db(as_of: str, items: List[ScanItem]):
     try:
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
-        conn = sqlite3.connect(_db_path())
-        cur = conn.cursor()
-        # 테이블 생성 (없으면)
-        create_scan_rank_table(cur)
+        with db_manager.get_cursor() as cur:
+            # 테이블 생성 (없으면)
+            create_scan_rank_table(cur)
         
         rows = []
         for it in items:
@@ -311,11 +315,12 @@ def is_trading_day(check_date: str = None):
             else:
                 return False
             
-            check_dt = datetime.strptime(date_str, '%Y%m%d').date()
-        except:
+            check_dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except Exception as e:
+            print(f"거래일 체크 오류: {check_date}, {e}")
             return False
     else:
-        # 오늘 날짜 확인
+        # 오늘 날짜 확인 (KST 통일)
         kst = pytz.timezone('Asia/Seoul')
         check_dt = datetime.now(kst).date()
     
@@ -345,21 +350,12 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     kosdaq = api.get_top_codes('KOSDAQ', kd)
     universe: List[str] = [*kospi, *kosdaq]
 
-    # 날짜 처리
-    if date:
-        try:
-            # 날짜 형식 확인 및 변환
-            if len(date) == 8 and date.isdigit():  # YYYYMMDD 형식
-                scan_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
-            elif len(date) == 10 and date.count('-') == 2:  # YYYY-MM-DD 형식
-                scan_date = date
-            else:
-                raise ValueError("날짜 형식이 올바르지 않습니다.")
-            today_as_of = scan_date
-        except:
-            raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
-    else:
-        today_as_of = datetime.now().strftime('%Y%m%d')
+    # 날짜 처리 (통일된 형식 사용)
+    try:
+        today_as_of = normalize_date(date)
+    except Exception as e:
+        print(f"날짜 파싱 오류: {e}")
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
 
     # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
     try:
@@ -619,10 +615,11 @@ def delete_scan_result(date: str):
         conn.commit()
         conn.close()
         
-        # 2. JSON 스냅샷 파일 삭제
-        snapshot_file = os.path.join(SNAPSHOT_DIR, f"scan-{formatted_date}.json")
+        # 2. JSON 스냅샷 파일 삭제 (경로 검증)
+        safe_filename = f"scan-{formatted_date}.json"
+        snapshot_file = sanitize_file_path(safe_filename, SNAPSHOT_DIR)
         file_deleted = False
-        if os.path.exists(snapshot_file):
+        if snapshot_file and os.path.exists(snapshot_file):
             os.remove(snapshot_file)
             file_deleted = True
         
@@ -647,9 +644,11 @@ def list_snapshots():
         for fn in os.listdir(SNAPSHOT_DIR):
             if not fn.startswith('scan-') or not fn.endswith('.json'):
                 continue
-            path = os.path.join(SNAPSHOT_DIR, fn)
+            safe_path = sanitize_file_path(fn, SNAPSHOT_DIR)
+            if not safe_path:
+                continue
             try:
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(safe_path, 'r', encoding='utf-8') as f:
                     meta = json.load(f)
                 files.append({
                     'file': fn,
@@ -694,9 +693,11 @@ def backfill_snapshots():
         for fn in os.listdir(SNAPSHOT_DIR):
             if not fn.startswith('scan-') or not fn.endswith('.json'):
                 continue
-            path = os.path.join(SNAPSHOT_DIR, fn)
+            safe_path = sanitize_file_path(fn, SNAPSHOT_DIR)
+            if not safe_path:
+                continue
             try:
-                with open(path, 'r', encoding='utf-8') as f:
+                with open(safe_path, 'r', encoding='utf-8') as f:
                     snap = json.load(f)
                 as_of = snap.get('as_of')
                 rank = snap.get('rank', [])
@@ -758,11 +759,11 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 2) JSON 스냅샷 보조
     if not rank:
         fname = f"scan-{as_of}.json"
-        path = os.path.join(SNAPSHOT_DIR, fname)
-        if not os.path.exists(path):
+        safe_path = sanitize_file_path(fname, SNAPSHOT_DIR)
+        if not safe_path or not os.path.exists(safe_path):
             return {'error': 'snapshot not found', 'as_of': as_of, 'items': []}
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(safe_path, 'r', encoding='utf-8') as f:
                 snap = json.load(f)
             rank = snap.get('rank', [])
             rank.sort(key=lambda x: x.get('score', 0), reverse=True)

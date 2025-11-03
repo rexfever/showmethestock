@@ -17,15 +17,15 @@ def get_recurring_stocks(days: int = 7, min_appearances: int = 2) -> Dict[str, A
     conn = sqlite3.connect('snapshots.db')
     cur = conn.cursor()
     
-    # 최근 N일간의 스캔 결과 조회
+    # 최근 N일간의 스캔 결과 조회 (파라미터화된 쿼리)
     query = """
     SELECT code, name, date, score, score_label, close_price
     FROM scan_rank 
-    WHERE date >= date('now', '-{} days')
+    WHERE date >= date('now', '-' || ? || ' days')
     ORDER BY date DESC, score DESC
-    """.format(days)
+    """
     
-    cur.execute(query)
+    cur.execute(query, (days,))
     results = cur.fetchall()
     conn.close()
     

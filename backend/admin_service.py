@@ -131,7 +131,19 @@ class AdminService:
                 return False
             
             values.append(user_id)
-            query = f"UPDATE users SET {', '.join(set_clauses)} WHERE id = ?"
+            # 안전한 쿼리 구성 - 미리 정의된 필드만 허용
+            allowed_fields = {
+                "membership_tier": "membership_tier = ?",
+                "subscription_status": "subscription_status = ?", 
+                "subscription_expires_at": "subscription_expires_at = ?",
+                "is_admin": "is_admin = ?"
+            }
+            
+            valid_clauses = [allowed_fields[field] for field in updates.keys() if field in allowed_fields]
+            if not valid_clauses:
+                return False
+                
+            query = f"UPDATE users SET {', '.join(valid_clauses)} WHERE id = ?"
             
             cur.execute(query, values)
             conn.commit()

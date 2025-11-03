@@ -381,7 +381,7 @@ class KiwoomAPI:
             output = data.get("output") or {}
             
             current_price = float(output.get("stck_prpr") or 0)
-            change_rate = float(output.get("prdy_ctrt") or 0)
+            change_rate = round(float(output.get("prdy_ctrt") or 0), 2)
             volume = int(output.get("acml_vol") or 0)
             market_cap = int(output.get("hts_avls") or 0)
             

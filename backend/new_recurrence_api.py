@@ -23,15 +23,15 @@ async def get_recurring_stocks(
     conn = sqlite3.connect('snapshots.db')
     cur = conn.cursor()
     
-    # 최근 N일간의 스캔 결과 조회
+    # 최근 N일간의 스캔 결과 조회 (파라미터화된 쿼리)
     query = """
     SELECT code, name, date, score, score_label, close_price
     FROM scan_rank 
-    WHERE date >= date('now', '-{} days')
+    WHERE date >= date('now', '-' || ? || ' days')
     ORDER BY date DESC, score DESC
-    """.format(days)
+    """
     
-    cur.execute(query)
+    cur.execute(query, (days,))
     results = cur.fetchall()
     conn.close()
     
@@ -95,15 +95,15 @@ async def get_scan_with_recurring(
     
     latest_scan = cur.fetchall()
     
-    # 재등장 종목 조회
+    # 재등장 종목 조회 (파라미터화된 쿼리)
     recurring_query = """
     SELECT code, name, date, score, score_label, close_price
     FROM scan_rank 
-    WHERE date >= date('now', '-{} days')
+    WHERE date >= date('now', '-' || ? || ' days')
     ORDER BY date DESC, score DESC
-    """.format(days)
+    """
     
-    cur.execute(recurring_query)
+    cur.execute(recurring_query, (days,))
     results = cur.fetchall()
     conn.close()
     
