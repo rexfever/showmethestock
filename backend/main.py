@@ -337,8 +337,15 @@ def is_trading_day(check_date: str = None):
 
 @app.get('/scan', response_model=ScanResponse)
 def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool = True, sort_by: str = 'score', date: str = None):
-    # 거래일 체크
-    if not is_trading_day(date):
+    # 날짜 처리 (통일된 형식 사용) - date가 없으면 현재 날짜를 YYYYMMDD 형식으로 명시
+    try:
+        today_as_of = normalize_date(date)  # date가 None이면 현재 날짜를 YYYYMMDD로 반환
+    except Exception as e:
+        print(f"날짜 파싱 오류: {e}")
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
+
+    # 거래일 체크 (정규화된 날짜로 확인)
+    if not is_trading_day(today_as_of):
         raise HTTPException(
             status_code=400, 
             detail="오늘은 거래일이 아닙니다. 주말이나 공휴일에는 스캔을 실행할 수 없습니다."
@@ -350,16 +357,9 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     kosdaq = api.get_top_codes('KOSDAQ', kd)
     universe: List[str] = [*kospi, *kosdaq]
 
-    # 날짜 처리 (통일된 형식 사용)
-    try:
-        today_as_of = normalize_date(date)
-    except Exception as e:
-        print(f"날짜 파싱 오류: {e}")
-        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
-
     # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
     try:
-        _today = datetime.now().strftime('%Y%m%d')
+        _today = get_kst_now().strftime('%Y%m%d')
         if today_as_of > _today:
             today_as_of = _today
     except Exception:
@@ -376,18 +376,21 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         except Exception as e:
             print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
     
-    # 스캔 실행 (현재 상태 분석 기반)
-    items, chosen_step = execute_scan_with_fallback(universe, date, market_condition)
-    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (현재 상태 기반 분석)")
+    # 스캔 실행 (정규화된 날짜 YYYYMMDD 형식 사용)
+    print(f"📅 스캔 날짜: {today_as_of} (YYYYMMDD 형식)")
+    items, chosen_step = execute_scan_with_fallback(universe, today_as_of, market_condition)
+    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of})")
     
-    # 수익률 계산 (병렬 처리) - 실시간/과거 스캔 모두 계산
+    # 수익률 계산 (병렬 처리) - 모든 스캔에 대해 날짜 명시
     returns_data = {}
     tickers = [item["ticker"] for item in items]
     print(f"💰 수익률 계산 시작: {len(tickers)}개 종목, 날짜: {today_as_of}")
     
-    if date:  # 과거 스캔인 경우
+    # 현재 날짜와 비교하여 과거 스캔인지 확인
+    _today = get_kst_now().strftime('%Y%m%d')
+    if today_as_of < _today:  # 과거 스캔인 경우
         returns_data = calculate_returns_batch(tickers, today_as_of)
-    else:  # 실시간 스캔인 경우 - 당일 등락률 표시
+    else:  # 당일 스캔인 경우 - 당일 등락률 표시
         for ticker in tickers:
             try:
                 # 키움 API에서 가져온 change_rate를 returns 형태로 변환
