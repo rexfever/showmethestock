@@ -25,6 +25,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedStock, setSelectedStock] = useState(null);
   const [investmentLoading, setInvestmentLoading] = useState(false);
+  const [marketGuide, setMarketGuide] = useState(null);
   const [maintenanceStatus, setMaintenanceStatus] = useState({
     is_enabled: false,
     end_date: null,
@@ -184,7 +185,12 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         const items = data.data.items || data.data.rank || [];
         const scanDate = data.data.as_of || data.data.scan_date || '';
         
-        // market_guide를 첫 번째 아이템에 추가 (실제 데이터)
+        // market_guide를 별도 state로 관리
+        if (data.data.market_guide) {
+          setMarketGuide(data.data.market_guide);
+        }
+        
+        // market_guide를 첫 번째 아이템에 추가 (호환성)
         if (items.length > 0 && data.data.market_guide) {
           items[0].market_guide = data.data.market_guide;
         }
@@ -192,8 +198,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         console.log('API 응답 전체:', data);
         console.log('설정할 items:', items);
         console.log('설정할 scanDate:', scanDate);
-        console.log('data.data.as_of:', data.data.as_of);
-        console.log('data.data.scan_date:', data.data.scan_date);
+        console.log('market_guide:', data.data.market_guide);
         setScanResults(items);
         setScanFile(data.file || '');
         setScanDate(scanDate);
@@ -202,6 +207,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         const errorMsg = data.error || '스캔 결과 조회 실패';
         setError(errorMsg);
         setScanResults([]);
+        setMarketGuide(null);
       }
     } catch (error) {
       if (error.message.includes('Failed to fetch')) {
@@ -234,6 +240,10 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
+      // SSR 데이터에서 market_guide 추출
+      if (initialData[0] && initialData[0].market_guide) {
+        setMarketGuide(initialData[0].market_guide);
+      }
       setHasSSRData(true);
       setError(null);
       setLoading(false);
@@ -444,11 +454,18 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">
-          {/* Market Guide 섹션 (관리자만) */}
-          {user && user.is_admin && scanResults.length > 0 && (scanResults[0].market_guide || (scanResults[0].ticker === 'NORESULT')) && (
-            <MarketGuide marketGuide={scanResults[0].market_guide || {
+          {/* Market Guide 섹션 - 항상 표시 */}
+          {marketGuide && (
+            <MarketGuide marketGuide={marketGuide} />
+          )}
+          {/* NORESULT인 경우 가이드 표시 */}
+          {!marketGuide && scanResults.length > 0 && scanResults[0].ticker === 'NORESULT' && (
+            <MarketGuide marketGuide={{
               market_condition: '급락',
-              guide_message: '😔 장이 좋지 않아 추천 종목이 없습니다. 투자에도 휴식이 필요합니다.'
+              guide_message: '😔 장이 좋지 않아 추천 종목이 없습니다. 투자에도 휴식이 필요합니다.',
+              investment_strategy: '전면 관망, 투자 휴식',
+              risk_level: '매우 높음',
+              timing_advice: '시장 회복 신호까지 대기'
             }} />
           )}
           {loading ? (
