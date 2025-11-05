@@ -17,13 +17,25 @@ export const getAuthToken = () => {
 
 /**
  * 보유기간을 계산하는 함수
- * @param {string} entryDate - 매수일 (YYYY-MM-DD 형식)
+ * @param {string} entryDate - 매수일 (YYYYMMDD 형식)
  * @returns {string} 보유기간 문자열
  */
 export const calculateHoldingPeriod = (entryDate) => {
   if (!entryDate) return '-';
   
-  const entry = new Date(entryDate);
+  // YYYYMMDD 형식을 Date 객체로 변환
+  let entry;
+  if (entryDate.length === 8 && /^\d{8}$/.test(entryDate)) {
+    // YYYYMMDD 형식
+    const year = entryDate.substring(0, 4);
+    const month = entryDate.substring(4, 6);
+    const day = entryDate.substring(6, 8);
+    entry = new Date(`${year}-${month}-${day}`);
+  } else {
+    // 기존 형식 지원 (호환성)
+    entry = new Date(entryDate);
+  }
+  
   const today = new Date();
   const diffTime = Math.abs(today - entry);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

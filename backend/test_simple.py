@@ -18,7 +18,7 @@ def is_trading_day(check_date: str = None):
             else:
                 return False
             
-            check_dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+            check_dt = datetime.strptime(date_str, '%Y%m%d').date()
         except:
             return False
     else:
@@ -43,7 +43,7 @@ def test_trading_day():
     
     # 오늘 날짜 테스트
     today = datetime.now().strftime('%Y%m%d')
-    today_dash = datetime.now().strftime('%Y-%m-%d')
+    today_dash = datetime.now().strftime('%Y%m%d')
     
     print(f"오늘 날짜: {today} ({today_dash})")
     print(f"오늘 거래일 여부 (YYYYMMDD): {is_trading_day(today)}")
@@ -56,8 +56,8 @@ def test_trading_day():
         "20250111",  # 토요일
         "20250112",  # 일요일
         "20250113",  # 월요일
-        "2025-01-11",  # 토요일
-        "2025-01-12",  # 일요일
+        "20250111",  # 토요일
+        "20250112",  # 일요일
         "2025-01-13",  # 월요일
     ]
     

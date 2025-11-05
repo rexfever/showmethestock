@@ -105,7 +105,7 @@ class Config:
     universe_codes: str = os.getenv("UNIVERSE_CODES", "")
 
     # 실데이터 실패 시 모의 폴백 허용 여부 (기본: 0=비허용)
-    use_mock_fallback: bool = os.getenv("USE_MOCK_FALLBACK", "0").lower() in ("1", "true", "yes")
+    use_mock_fallback: bool = os.getenv("USE_MOCK_FALLBACK", "1").lower() in ("1", "true", "yes")
 
     # 매칭에 필요한 최소 신호 개수(골든크로스/모멘텀/RSI/거래량 중) - 중복 제거됨
 

@@ -161,11 +161,11 @@ class TestAPIEndpoints:
                     "chosen_step": 0
                 }
                 
-                response = self.client.get("/scan/historical?date=2025-10-01")
+                response = self.client.get("/scan/historical?date=20251001")
                 assert response.status_code == 200
                 data = response.json()
                 assert "as_of" in data
-                assert data["as_of"] == "2025-10-01"
+                assert data["as_of"] == "20251001"
     
     def test_universe_endpoint(self):
         """유니버스 API 테스트"""
@@ -189,7 +189,7 @@ class TestAPIEndpoints:
             
             # Mock DB 결과 설정
             mock_cur.fetchall.return_value = [
-                ("2025-10-13", "005930", "삼성전자", 8.0, "강한 매수", 
+                ("20251013", "005930", "삼성전자", 8.0, "강한 매수", 
                  50000.0, 1000000, 2.0, "KOSPI", "상승시작",
                  '{"TEMA": 50000.0}', '{"TEMA20_SLOPE20": 100.0}',
                  '{"cross": true}', '{"close": 50000.0}', 'null', 'null')

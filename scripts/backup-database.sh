@@ -52,6 +52,29 @@ else
     echo "⚠️  news_data.db 파일이 없습니다"
 fi
 
+# 설정 파일들 백업
+echo "📦 설정 파일들 백업 중..."
+if [ -f ".env" ]; then
+    cp .env "$BACKUP_DIR/env_$DATE.txt"
+    echo "✅ .env 백업 완료"
+else
+    echo "⚠️  .env 파일이 없습니다"
+fi
+
+if [ -f "config.py" ]; then
+    cp config.py "$BACKUP_DIR/config_$DATE.py"
+    echo "✅ config.py 백업 완료"
+else
+    echo "⚠️  config.py 파일이 없습니다"
+fi
+
+if [ -f "main.py" ]; then
+    cp main.py "$BACKUP_DIR/main_$DATE.py"
+    echo "✅ main.py 백업 완료"
+else
+    echo "⚠️  main.py 파일이 없습니다"
+fi
+
 # 스캔 결과 JSON 파일들 백업
 echo "📦 스캔 결과 JSON 파일들 백업 중..."
 if [ -d "snapshots" ]; then
@@ -65,12 +88,14 @@ fi
 echo "🧹 오래된 백업 파일 정리 중..."
 find "$BACKUP_DIR" -name "*.db" -mtime +30 -delete
 find "$BACKUP_DIR" -name "*.tar.gz" -mtime +30 -delete
+find "$BACKUP_DIR" -name "*.txt" -mtime +30 -delete
+find "$BACKUP_DIR" -name "*.py" -mtime +30 -delete
 echo "✅ 30일 이상 된 백업 파일 삭제 완료"
 
 # 백업 파일 목록 출력
 echo ""
 echo "📋 현재 백업 파일 목록:"
-ls -la "$BACKUP_DIR" | grep -E "\.(db|tar\.gz)$" | tail -10
+ls -la "$BACKUP_DIR" | grep -E "\.(db|tar\.gz|txt|py)$" | tail -15
 
 echo ""
 echo "✅ 데이터베이스 백업 완료!"

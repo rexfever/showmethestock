@@ -1,6 +1,7 @@
 import time
 from typing import Dict, List, Tuple
 import pandas as pd
+import concurrent.futures
 
 from config import config
 from indicators import (
@@ -611,18 +612,35 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
         print(f"🔧 프리셋 적용: {preset_overrides}")
         apply_preset_to_runtime(preset_overrides)
 
-    # 2) 기존 스캔 로직 그대로 실행 (하드 컷 로직은 기존대로 유지)
+    # 2) 병렬 처리로 스캔 실행 (하드 컷 로직은 기존대로 유지)
     items = []
     matched_count = 0
     filtered_count = 0
     
-    for code in universe_codes:
-        res = scan_one_symbol(code, base_date, market_condition)
-        if res is None:
-            filtered_count += 1
-            continue
-        items.append(res)
-        matched_count += 1
+    # 병렬 처리로 성능 개선 (최대 10개 워커)
+    max_workers = min(10, len(universe_codes))
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # 각 종목 스캔을 병렬로 실행
+        future_to_code = {
+            executor.submit(scan_one_symbol, code, base_date, market_condition): code
+            for code in universe_codes
+        }
+        
+        # 완료된 작업부터 결과 수집
+        for future in concurrent.futures.as_completed(future_to_code):
+            code = future_to_code[future]
+            try:
+                res = future.result()
+                if res is None:
+                    filtered_count += 1
+                else:
+                    items.append(res)
+                    matched_count += 1
+            except Exception as e:
+                # 개별 종목 오류는 무시하고 계속 진행
+                filtered_count += 1
+                pass
 
     # 3) 정렬 및 상위 N개 자르기
     items.sort(key=lambda x: x["score"], reverse=True)

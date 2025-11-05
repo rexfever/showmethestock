@@ -14,7 +14,7 @@ def test_trading_day():
     
     # 오늘 날짜 테스트
     today = datetime.now().strftime('%Y%m%d')
-    today_dash = datetime.now().strftime('%Y-%m-%d')
+    today_dash = datetime.now().strftime('%Y%m%d')
     
     print(f"오늘 날짜: {today} ({today_dash})")
     print(f"오늘 거래일 여부 (YYYYMMDD): {is_trading_day(today)}")

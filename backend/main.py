@@ -315,7 +315,7 @@ def is_trading_day(check_date: str = None):
             else:
                 return False
             
-            check_dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+            check_dt = datetime.strptime(date_str, '%Y%m%d').date()
         except Exception as e:
             print(f"거래일 체크 오류: {check_date}, {e}")
             return False
@@ -342,7 +342,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         today_as_of = normalize_date(date)  # date가 None이면 현재 날짜를 YYYYMMDD로 반환
     except Exception as e:
         print(f"날짜 파싱 오류: {e}")
-        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYY-MM-DD 또는 YYYYMMDD 형식으로 입력해주세요.")
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다. YYYYMMDD 형식으로 입력해주세요.")
 
     # 거래일 체크 (정규화된 날짜로 확인)
     if not is_trading_day(today_as_of):
@@ -1366,15 +1366,15 @@ async def get_available_scan_dates():
 
 @app.get("/scan-by-date/{date}")
 async def get_scan_by_date(date: str):
-    """특정 날짜의 스캔 결과를 가져옵니다. (YYYY-MM-DD 형식)"""
+    """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)"""
     try:
-        # 날짜 형식 검증
-        if len(date) != 10 or date.count('-') != 2:
-            return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식을 사용해주세요."}
+        # 날짜 형식 검증 및 정규화
+        try:
+            formatted_date = normalize_date(date)
+        except ValueError:
+            return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."}
         
-        # YYYY-MM-DD 형식 그대로 사용
-        formatted_date = date
-        compact_date = date
+        compact_date = formatted_date
         
         # DB에서 해당 날짜의 스캔 결과 조회 (두 형식 모두 지원)
         conn = sqlite3.connect(_db_path())
@@ -1468,8 +1468,8 @@ def get_latest_scan_from_db():
         conn = sqlite3.connect(_db_path())
         cur = conn.cursor()
         
-        # 모든 날짜를 가져와서 datetime으로 변환하여 최신 찾기
-        cur.execute("SELECT DISTINCT date FROM scan_rank WHERE score >= 1 AND score <= 10")
+        # 모든 날짜를 가져와서 datetime으로 변환하여 최신 찾기 (NORESULT 포함)
+        cur.execute("SELECT DISTINCT date FROM scan_rank WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'")
         all_dates = cur.fetchall()
         
         if not all_dates:
@@ -1481,11 +1481,7 @@ def get_latest_scan_from_db():
             try:
                 if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD
                     dt = datetime.strptime(date_str, '%Y%m%d')
-                elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD
-                    dt = datetime.strptime(date_str, '%Y%m%d')
-                else:
-                    continue
-                parsed_dates.append((dt, date_str))
+                    parsed_dates.append((dt, date_str))
             except:
                 continue
         
@@ -1499,12 +1495,12 @@ def get_latest_scan_from_db():
         if not latest_date:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 해당 날짜의 스캔 결과 조회 (올바른 점수 범위만)
+        # 해당 날짜의 스캔 결과 조회 (NORESULT 포함)
         cur.execute("""
-            SELECT date, code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+            SELECT date, code, name, score, score_label, close_price as current_price, volume, change_rate, '' as market, '' as strategy, '' as indicators, '' as trend, flags, '' as details, '' as returns, '' as recurrence
             FROM scan_rank 
-            WHERE date = ? AND score >= 1 AND score <= 10
-            ORDER BY score DESC
+            WHERE date = ? AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+            ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
         """, (latest_date,))
         
         rows = cur.fetchall()
@@ -2588,8 +2584,8 @@ async def get_popup_notice_status():
             if is_enabled and start_date and end_date:
                 from datetime import datetime
                 try:
-                    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-                    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                    start_dt = datetime.strptime(start_date, "%Y%m%d")
+                    end_dt = datetime.strptime(end_date, "%Y%m%d")
                     now = datetime.now()
                     
                     if now < start_dt or now > end_dt:
@@ -2806,19 +2802,19 @@ async def clear_returns_cache():
 async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
     """분기별 추천 종목 성과 분석"""
     try:
-        # 분기별 날짜 범위 계산
+        # 분기별 날짜 범위 계산 (YYYYMMDD 형식)
         if quarter == 1:
-            start_date = f"{year}-01-01"
-            end_date = f"{year}-03-31"
+            start_date = f"{year}0101"
+            end_date = f"{year}0331"
         elif quarter == 2:
-            start_date = f"{year}-04-01"
-            end_date = f"{year}-06-30"
+            start_date = f"{year}0401"
+            end_date = f"{year}0630"
         elif quarter == 3:
-            start_date = f"{year}-07-01"
-            end_date = f"{year}-09-30"
+            start_date = f"{year}0701"
+            end_date = f"{year}0930"
         elif quarter == 4:
-            start_date = f"{year}-10-01"
-            end_date = f"{year}-12-31"
+            start_date = f"{year}1001"
+            end_date = f"{year}1231"
         else:
             raise HTTPException(status_code=400, detail="잘못된 분기입니다")
         
@@ -3128,12 +3124,12 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         import calendar
         last_day = calendar.monthrange(year, month)[1]
         
-        # 주차별 날짜 범위 계산
+        # 주차별 날짜 범위 계산 (YYYYMMDD 형식)
         week_start = (week - 1) * 7 + 1
         week_end = min(week_start + 6, last_day)
         
-        start_date = f"{year}-{month:02d}-{week_start:02d}"
-        end_date = f"{year}-{month:02d}-{week_end:02d}"
+        start_date = f"{year}{month:02d}{week_start:02d}"
+        end_date = f"{year}{month:02d}{week_end:02d}"
         
         # 데이터베이스에서 해당 기간의 스캔 데이터 조회
         conn = sqlite3.connect('snapshots.db')

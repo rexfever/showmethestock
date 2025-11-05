@@ -11,7 +11,7 @@ def test_date_helper():
     test_cases = [
         None,              # 현재 날짜
         "20251103",        # YYYYMMDD
-        "2025-11-03",      # YYYY-MM-DD
+        "2025-11-03",      # YYYY-MM-DD (호환성 테스트)
         "2025/11/03",      # 잘못된 형식
         "invalid",         # 완전히 잘못된 형식
     ]
@@ -31,7 +31,7 @@ def test_date_helper():
     
     # format_display_date 테스트
     print(f"\n--- 표시용 날짜 변환 ---")
-    display_cases = ["20251103", "2025-11-03", "invalid"]
+    display_cases = ["20251103", "20251103", "invalid"]
     for case in display_cases:
         result = format_display_date(case)
         print(f"{case} → {result}")

@@ -24,7 +24,9 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
         return recurrence_data
     
     try:
-        conn_hist = sqlite3.connect(_db_path())
+        conn_hist = sqlite3.connect(_db_path(), timeout=30.0)
+        conn_hist.execute("PRAGMA journal_mode=WAL")
+        conn_hist.execute("PRAGMA synchronous=NORMAL")
         cur_hist = conn_hist.cursor()
         cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
         
@@ -78,9 +80,30 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
 def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
     """스캔 스냅샷 저장"""
     try:
-        conn_hist = sqlite3.connect(_db_path())
+        conn_hist = sqlite3.connect(_db_path(), timeout=30.0)
+        conn_hist.execute("PRAGMA journal_mode=WAL")
+        conn_hist.execute("PRAGMA synchronous=NORMAL")
+        conn_hist.execute("PRAGMA cache_size=10000")
+        conn_hist.execute("PRAGMA temp_store=memory")
         cur_hist = conn_hist.cursor()
         cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, name TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, volume REAL, change_rate REAL, PRIMARY KEY(date, code))")
+        # 기존 테이블에 컬럼이 없으면 추가
+        try:
+            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN name TEXT")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN close_price REAL")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN volume REAL")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN change_rate REAL")
+        except sqlite3.OperationalError:
+            pass
         
         # 스냅샷에는 핵심 메타/랭킹만 저장(용량 절약)
         enhanced_rank = []
@@ -106,10 +129,26 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
             except Exception:
                 continue
         
-        # 기존 스냅샷 삭제 후 새로 저장
+        # 기존 스냅샷 삭제
         cur_hist.execute("DELETE FROM scan_rank WHERE date=?", (today_as_of,))
-        cur_hist.executemany("INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            [(r["date"], r["code"], r["name"], r["score"], r["flags"], r["score_label"], r["close_price"], r["volume"], r["change_rate"]) for r in enhanced_rank])
+        
+        # 스캔 결과가 0개인 경우 NORESULT 레코드 추가
+        if not scan_items:
+            print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of}")
+            cur_hist.execute(
+                "INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}), "추천종목 없음", 0.0, 0.0, 0.0)
+            )
+        elif enhanced_rank:
+            cur_hist.executemany("INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                [(r["date"], r["code"], r["name"], r["score"], r["flags"], r["score_label"], r["close_price"], r["volume"], r["change_rate"]) for r in enhanced_rank])
+        else:
+            # enhanced_rank도 비어있으면 NORESULT 저장
+            print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of}")
+            cur_hist.execute(
+                "INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}), "추천종목 없음", 0.0, 0.0, 0.0)
+            )
         conn_hist.commit()
         conn_hist.close()
     except Exception as e:

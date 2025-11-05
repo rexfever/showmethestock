@@ -7,6 +7,17 @@ import getConfig from '../config';
 export default function AdminDashboard() {
   const router = useRouter();
   const { isAuthenticated, user, token, loading: authLoading, authChecked } = useAuth();
+  
+  // 날짜 형식 변환 함수
+  const convertToYYYYMMDD = (dateStr) => {
+    if (!dateStr) return '';
+    return dateStr.replace(/-/g, '');
+  };
+  
+  const convertToYYYYMMDD_Display = (dateStr) => {
+    if (!dateStr || dateStr.length !== 8) return '';
+    return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+  };
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +155,7 @@ export default function AdminDashboard() {
         const maintenanceData = await maintenanceResponse.json();
         setMaintenanceSettings({
           is_enabled: maintenanceData.is_enabled,
-          end_date: maintenanceData.end_date || '',
+          end_date: convertToYYYYMMDD_Display(maintenanceData.end_date) || '',
           message: maintenanceData.message || '서비스 점검 중입니다.'
         });
       }
@@ -155,8 +166,8 @@ export default function AdminDashboard() {
           is_enabled: popupData.is_enabled,
           title: popupData.title || '',
           message: popupData.message || '',
-          start_date: popupData.start_date || '',
-          end_date: popupData.end_date || ''
+          start_date: convertToYYYYMMDD_Display(popupData.start_date) || '',
+          end_date: convertToYYYYMMDD_Display(popupData.end_date) || ''
         });
       }
     } catch (error) {
@@ -194,7 +205,10 @@ export default function AdminDashboard() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(maintenanceSettings)
+        body: JSON.stringify({
+          ...maintenanceSettings,
+          end_date: convertToYYYYMMDD(maintenanceSettings.end_date)
+        })
       });
 
       if (response.ok) {
@@ -225,7 +239,11 @@ export default function AdminDashboard() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(popupNotice)
+        body: JSON.stringify({
+          ...popupNotice,
+          start_date: convertToYYYYMMDD(popupNotice.start_date),
+          end_date: convertToYYYYMMDD(popupNotice.end_date)
+        })
       });
 
       if (response.ok) {
@@ -259,7 +277,7 @@ export default function AdminDashboard() {
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/scan?date=${selectedDate}&save_snapshot=true`);
+      const response = await fetch(`${base}/scan?date=${convertToYYYYMMDD(selectedDate)}&save_snapshot=true`);
       const data = await response.json();
       
       if (data.ok) {
@@ -290,7 +308,7 @@ export default function AdminDashboard() {
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/scan/${selectedDate}`, {
+      const response = await fetch(`${base}/scan/${convertToYYYYMMDD(selectedDate)}`, {
         method: 'DELETE'
       });
       const data = await response.json();

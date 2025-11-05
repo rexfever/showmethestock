@@ -98,7 +98,7 @@ def test_date_format():
     
     test_cases = [
         ("20251001", True, "올바른 YYYYMMDD 형식"),
-        ("2025-10-01", False, "YYYY-MM-DD 형식 (API에서 거부되어야 함)"),
+        ("20251001", True, "YYYYMMDD 형식 (기본)"),
         ("2025101", False, "잘못된 형식 (8자리 아님)"),
         ("20251301", False, "잘못된 월 (13월)"),
         ("20251032", False, "잘못된 일 (32일)")

@@ -306,15 +306,15 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     
                     try {
                       let date;
-                      if (scanDate.includes('-')) {
-                        // YYYY-MM-DD 형식
-                        date = new Date(scanDate);
-                      } else if (scanDate.length === 8) {
-                        // YYYYMMDD 형식
+                      if (scanDate.length === 8 && /^\d{8}$/.test(scanDate)) {
+                        // YYYYMMDD 형식 (기본)
                         const year = scanDate.substring(0, 4);
                         const month = parseInt(scanDate.substring(4, 6));
                         const day = parseInt(scanDate.substring(6, 8));
                         date = new Date(year, month - 1, day);
+                      } else if (scanDate.includes('-')) {
+                        // YYYY-MM-DD 형식 (호환성)
+                        date = new Date(scanDate);
                       } else {
                         return `잘못된 날짜 형식: ${scanDate}`;
                       }
