@@ -1590,16 +1590,28 @@ def get_latest_scan_from_db():
             items.append(item)
         
         # 시장 가이드 생성
+        # 해당 날짜의 시장 상황을 다시 분석하여 정확한 가이드 생성
+        market_condition = None
+        if config.market_analysis_enable:
+            try:
+                market_analyzer.clear_cache()
+                market_condition = market_analyzer.analyze_market_condition(latest_date)
+                print(f"📊 시장 상황 재분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+            except Exception as e:
+                print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+        
         # NORESULT만 있는 경우 matched_count는 0으로 처리
         actual_matched_count = len([item for item in items if item.get('ticker') != 'NORESULT'])
         scan_result_dict = {
             'matched_count': actual_matched_count,
-            'rsi_threshold': 57.0,  # 기본값, 실제로는 DB에서 가져와야 함
+            'rsi_threshold': market_condition.rsi_threshold if market_condition else 57.0,
             'items': [{
                 'ticker': item.get('ticker', ''),
                 'indicators': {'change_rate': item.get('change_rate', 0)},
                 'flags': {'vol_expand': False}
-            } for item in items]
+            } for item in items],
+            # 시장 상황 정보 전달 (market_guide.py에서 사용)
+            'market_sentiment': market_condition.market_sentiment if market_condition else None
         }
         market_guide = get_market_guide(scan_result_dict)
         

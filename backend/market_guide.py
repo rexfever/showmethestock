@@ -8,6 +8,10 @@ def get_market_guide(scan_result):
     
     Args:
         scan_result: 스캔 결과 딕셔너리
+            - matched_count: 매칭된 종목 수
+            - rsi_threshold: RSI 임계값
+            - items: 종목 리스트
+            - market_sentiment: 시장 심리 ('crash', 'bear', 'neutral', 'bull' 등, 선택적)
         
     Returns:
         dict: 가이드 메시지와 투자 전략
@@ -15,6 +19,7 @@ def get_market_guide(scan_result):
     matched_count = scan_result.get('matched_count', 0)
     rsi_threshold = scan_result.get('rsi_threshold', 58)
     items = scan_result.get('items', [])
+    market_sentiment = scan_result.get('market_sentiment')  # market_analyzer에서 분석한 시장 심리
     
     # 추천 종목들의 평균 등락률 계산
     total_change_rate = 0
@@ -32,9 +37,21 @@ def get_market_guide(scan_result):
     declining_ratio = declining_count / len(items) if items else 0
     
     # 시장 상황 판단
-    market_condition = _analyze_market_condition(
-        matched_count, rsi_threshold, avg_change_rate, declining_ratio
-    )
+    # market_sentiment가 제공되면 우선 사용, 없으면 점수 기반 판단
+    if market_sentiment:
+        # market_analyzer의 sentiment를 market_guide의 condition으로 변환
+        sentiment_to_condition = {
+            'crash': '급락',
+            'bear': '약세',
+            'neutral': '중립',
+            'bull': '강세'
+        }
+        market_condition = sentiment_to_condition.get(market_sentiment, '중립')
+    else:
+        # 기존 점수 기반 판단
+        market_condition = _analyze_market_condition(
+            matched_count, rsi_threshold, avg_change_rate, declining_ratio
+        )
     
     # 가이드 메시지 생성
     guide = _generate_guide_message(market_condition, matched_count, items)
