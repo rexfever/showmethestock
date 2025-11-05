@@ -159,6 +159,11 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
     """Fallback 로직을 적용한 스캔 실행"""
     chosen_step = None
     
+    # 급락장 감지 시 추천하지 않음
+    if market_condition and market_condition.market_sentiment == 'crash':
+        print(f"🔴 급락장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 추천 종목 없음 반환")
+        return [], None
+    
     print(f"🔄 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={config.fallback_enable}")
     
     if not config.fallback_enable:

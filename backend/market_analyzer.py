@@ -126,7 +126,9 @@ class MarketAnalyzer:
         """시장 심리 판단"""
         if kospi_return > 0.02:  # +2% 이상
             return 'bull'
-        elif kospi_return < -0.02:  # -2% 이하
+        elif kospi_return < -0.03:  # -3% 이상 (급락장)
+            return 'crash'
+        elif kospi_return < -0.02:  # -2% 이하 (약세장)
             return 'bear'
         else:
             return 'neutral'
@@ -176,6 +178,18 @@ class MarketAnalyzer:
                 'vol_ma5_mult': 1.5,    # 1.8 -> 1.5
                 'gap_max': 0.02,        # 1.5% -> 2%
                 'ext_from_tema20_max': 0.02
+            })
+            
+        elif market_sentiment == 'crash':
+            # 급락장: 추천하지 않음 (빈 리스트 반환을 위한 설정)
+            # 실제로는 execute_scan_with_fallback에서 빈 리스트 반환
+            base_conditions.update({
+                'rsi_threshold': 40.0,   # 낮은 RSI 허용 (하지만 추천 안 함)
+                'min_signals': 999,      # 거의 불가능한 조건 (추천 안 함)
+                'macd_osc_min': 999.0,   # 거의 불가능한 조건
+                'vol_ma5_mult': 999.0,   # 거의 불가능한 조건
+                'gap_max': 0.001,        # 거의 불가능한 조건
+                'ext_from_tema20_max': 0.001
             })
             
         elif market_sentiment == 'bear':
@@ -263,6 +277,15 @@ class MarketAnalyzer:
                 'gap_max': 0.01,
                 'ext_from_tema20_max': 0.01,
                 'description': '약세장: 엄격한 조건으로 리스크 관리'
+            },
+            'crash': {
+                'rsi_threshold': 40.0,
+                'min_signals': 999,  # 추천하지 않음
+                'macd_osc_min': 999.0,
+                'vol_ma5_mult': 999.0,
+                'gap_max': 0.001,
+                'ext_from_tema20_max': 0.001,
+                'description': '급락장: 추천하지 않음 (안전 우선)'
             }
         }
         

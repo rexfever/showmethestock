@@ -669,9 +669,19 @@ export async function getServerSideProps() {
     const base = config.backendUrl;
     
     console.log('SSR: Fetching from', `${base}/latest-scan`);
+    
+    // Next.js 서버 측 fetch는 timeout 옵션을 지원하지 않으므로 제거
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+    
     const response = await fetch(`${base}/latest-scan`, {
-      timeout: 10000 // 10초 타임아웃
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       console.error('SSR: HTTP error! status:', response.status);
@@ -701,6 +711,7 @@ export async function getServerSideProps() {
     }
   } catch (error) {
     console.error('SSR: Error fetching scan data:', error.message);
+    // 에러 발생 시에도 빈 데이터로 반환하여 페이지는 정상 렌더링되도록 함
   }
   
   console.log('SSR: Returning empty data');
