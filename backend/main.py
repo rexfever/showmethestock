@@ -92,6 +92,7 @@ from services.report_generator import report_generator
 from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
 
 from new_recurrence_api import router as recurrence_router
+from market_guide import get_market_guide, get_detailed_stock_advice
 
 # 인증 관련 import
 from auth_models import User, Token, SocialLoginRequest, EmailSignupRequest, EmailLoginRequest, EmailVerificationRequest, PasswordResetRequest, PasswordResetConfirmRequest, PaymentRequest, PaymentResponse, AdminUserUpdateRequest, AdminUserDeleteRequest, AdminStatsResponse, MaintenanceSettingsRequest, PopupNoticeRequest
@@ -464,6 +465,18 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             print(f"ScanItem 생성 오류 ({item.get('ticker', 'unknown')}): {e}")
             continue
 
+    # 시장 가이드 생성
+    scan_result_dict = {
+        'matched_count': len(scan_items),
+        'rsi_threshold': market_condition.rsi_threshold if market_condition else config.rsi_setup_min,
+        'items': [{
+            'ticker': item.ticker,
+            'indicators': {'change_rate': item.indicators.change_rate},
+            'flags': {'vol_expand': item.flags.vol_expand if item.flags else False}
+        } for item in scan_items]
+    }
+    market_guide = get_market_guide(scan_result_dict)
+    
     resp = ScanResponse(
         as_of=today_as_of,
         universe_count=len(universe),
@@ -477,6 +490,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         score_level_strong=config.score_level_strong,
         score_level_watch=config.score_level_watch,
         require_dema_slope=getattr(config, 'require_dema_slope', 'required'),
+        market_guide=market_guide,
     )
     if save_snapshot:
         # 스냅샷에는 핵심 메타/랭킹만 저장(용량 절약)
@@ -3034,7 +3048,9 @@ async def get_available_reports(report_type: str):
                 "error": "잘못된 보고서 유형입니다."
             }
         
-        report_dir = f"backend/reports/{report_type}"
+        # 절대 경로 사용 (main.py는 backend/main.py이므로)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        report_dir = os.path.join(base_dir, "backend", "reports", report_type)
         if not os.path.exists(report_dir):
             return {
                 "ok": True,
@@ -3347,6 +3363,83 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
     except Exception as e:
         return {"ok": False, "error": f"재등장 종목 조회 중 오류가 발생했습니다: {str(e)}"}
 
+
+@app.get('/test-market-scenarios')
+def get_test_market_scenarios():
+    """테스트용 시장 상황별 스캔 결과 시나리오"""
+    scenarios = {
+        "bull": {
+            "name": "강세장",
+            "as_of": "20250101",
+            "matched_count": 15,
+            "rsi_threshold": 65,
+            "items": [
+                {"ticker": "005930", "name": "삼성전자", "score": 9.2, "indicators": {"change_rate": 3.5}},
+                {"ticker": "000660", "name": "SK하이닉스", "score": 8.8, "indicators": {"change_rate": 2.8}},
+                {"ticker": "035420", "name": "NAVER", "score": 8.5, "indicators": {"change_rate": 4.1}}
+            ]
+        },
+        "bear": {
+            "name": "약세장",
+            "as_of": "20250102", 
+            "matched_count": 2,
+            "rsi_threshold": 45,
+            "items": [
+                {"ticker": "084110", "name": "휴온스글로벌", "score": 6.5, "indicators": {"change_rate": -2.1}},
+                {"ticker": "096530", "name": "씨젠", "score": 6.0, "indicators": {"change_rate": -1.8}}
+            ]
+        },
+        "neutral": {
+            "name": "중립장",
+            "as_of": "20250103",
+            "matched_count": 5,
+            "rsi_threshold": 55,
+            "items": [
+                {"ticker": "005930", "name": "삼성전자", "score": 7.2, "indicators": {"change_rate": 0.8}},
+                {"ticker": "051910", "name": "LG화학", "score": 6.8, "indicators": {"change_rate": -0.5}},
+                {"ticker": "035720", "name": "카카오", "score": 6.5, "indicators": {"change_rate": 1.2}}
+            ]
+        },
+        "noresult": {
+            "name": "추천종목 없음",
+            "as_of": "20250104",
+            "matched_count": 0,
+            "rsi_threshold": 40,
+            "items": [{"ticker": "NORESULT", "name": "추천 종목 없음", "score": 0, "indicators": {"change_rate": 0}}]
+        }
+    }
+    return {"scenarios": scenarios}
+
+@app.get('/test-scan/{scenario}')
+def get_test_scan_result(scenario: str):
+    """테스트용 스캔 결과 반환"""
+    scenarios = get_test_market_scenarios()["scenarios"]
+    
+    if scenario not in scenarios:
+        raise HTTPException(status_code=404, detail="시나리오를 찾을 수 없습니다")
+    
+    scenario_data = scenarios[scenario]
+    
+    # 시장 가이드 생성
+    market_guide = get_market_guide(scenario_data)
+    
+    # items에 market_guide 추가
+    items_with_guide = scenario_data["items"].copy()
+    if items_with_guide:
+        items_with_guide[0]["market_guide"] = market_guide
+    
+    # ScanResponse 형태로 반환
+    return {
+        "as_of": scenario_data["as_of"],
+        "universe_count": 200,
+        "matched_count": scenario_data["matched_count"],
+        "rsi_mode": "test_mode",
+        "rsi_period": 14,
+        "rsi_threshold": scenario_data["rsi_threshold"],
+        "items": items_with_guide,
+        "market_guide": market_guide,
+        "test_scenario": scenario_data["name"]
+    }
 
 # 라우터 포함
 app.include_router(recurrence_router)
