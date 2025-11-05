@@ -148,17 +148,19 @@ def _generate_guide_message(condition, matched_count, items):
     
     base_guide = guides.get(condition, guides["중립"])
     
-    # 추천 종목이 없는 경우 특별 메시지
-    if matched_count == 0:
-        base_guide["message"] = "😔 추천 종목이 없습니다. 시장 상황이 좋지 않으니 휴식을 권장합니다."
-        base_guide["strategy"] = "전면 관망, 투자 휴식"
-        base_guide["timing"] = "시장 회복 신호까지 대기"
-    
-    # NORESULT인 경우
-    elif len(items) == 1 and items[0].get('ticker') == 'NORESULT':
-        base_guide["message"] = "☕ 장이 좋지 않아 추천 종목이 없습니다. 투자에도 휴식이 필요합니다."
-        base_guide["strategy"] = "현금 보유, 다음 기회 대기"
-        base_guide["timing"] = "시장 개선 시까지 관망"
+    # 추천 종목이 없는 경우 또는 NORESULT인 경우 통합 처리
+    if matched_count == 0 or (len(items) == 1 and items[0].get('ticker') == 'NORESULT'):
+        # 급락장인 경우 더 강한 메시지
+        if condition == "급락":
+            base_guide["message"] = "🔴 급락장입니다. 매수는 피하고 현금 보유를 권장합니다."
+            base_guide["strategy"] = "전면 관망, 바닥 확인 후 점진적 진입"
+            base_guide["risk_level"] = "매우 높음"
+            base_guide["timing"] = "2-3일 후 시장 안정화 확인 후 매수 검토"
+        else:
+            # 일반적인 추천 종목 없음
+            base_guide["message"] = "😔 추천 종목이 없습니다. 시장 상황이 좋지 않으니 휴식을 권장합니다."
+            base_guide["strategy"] = "전면 관망, 투자 휴식"
+            base_guide["timing"] = "시장 회복 신호까지 대기"
     
     return base_guide
 
