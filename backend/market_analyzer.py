@@ -64,12 +64,16 @@ class MarketAnalyzer:
             universe_return = self._get_universe_return(date)
             
             # KOSPI와 유니버스 평균 중 더 낮은 수익률 사용 (급락장 판단)
-            if universe_return is not None and universe_return < kospi_return:
-                # 유니버스 평균이 더 낮으면 유니버스 기준 사용
-                effective_return = universe_return
-                logger.info(f"유니버스 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+            # 급락장 판단을 위해 두 값 중 더 낮은 값을 사용
+            if universe_return is not None:
+                # 유니버스와 KOSPI 중 더 낮은 값 사용
+                effective_return = min(kospi_return, universe_return)
+                if universe_return < kospi_return:
+                    logger.info(f"유니버스 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+                else:
+                    logger.info(f"KOSPI 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
             else:
-                # 일반적으로는 KOSPI 기준 사용
+                # 유니버스 데이터가 없으면 KOSPI 기준 사용
                 effective_return = kospi_return
             
             # 시장 상황 판단
