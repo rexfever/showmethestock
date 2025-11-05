@@ -118,39 +118,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   }, []);
 
-  const loadTestScenario = useCallback(async (scenario) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/test-scan/${scenario}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data) {
-        const items = data.items || [];
-        // market_guide를 첫 번째 아이템에 추가
-        if (items.length > 0 && data.market_guide) {
-          items[0].market_guide = data.market_guide;
-        }
-        setScanResults(items);
-        setScanFile(`test-${scenario}`);
-        setScanDate(data.as_of || '');
-        setError(null);
-      }
-    } catch (error) {
-      setError(`테스트 시나리오 로드 실패: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const fetchScanResults = useCallback(async () => {
     setLoading(true);
@@ -426,31 +393,6 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
           </div>
         </div>
 
-        {/* 테스트 시나리오 선택 (관리자만) */}
-        {user && user.is_admin && (
-          <div className="mx-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 className="text-sm font-bold text-yellow-800 mb-2">🧪 테스트 시나리오</h3>
-            <div className="flex flex-wrap gap-2">
-              {['bull', 'bear', 'neutral', 'noresult'].map(scenario => (
-                <button
-                  key={scenario}
-                  onClick={() => loadTestScenario(scenario)}
-                  className="px-3 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 rounded text-xs font-medium"
-                >
-                  {scenario === 'bull' ? '강세장' :
-                   scenario === 'bear' ? '약세장' :
-                   scenario === 'neutral' ? '중립장' : '추천없음'}
-                </button>
-              ))}
-              <button
-                onClick={() => fetchScanResults()}
-                className="px-3 py-1 bg-blue-200 hover:bg-blue-300 text-blue-800 rounded text-xs font-medium"
-              >
-                실제 데이터
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">
