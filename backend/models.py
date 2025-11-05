@@ -101,6 +101,8 @@ class ScanResponse(BaseModel):
     score_level_strong: Optional[int] = None
     score_level_watch: Optional[int] = None
     require_dema_slope: Optional[str] = None
+    # market guide
+    market_guide: Optional[dict] = None
 
 
 class AnalyzeResponse(BaseModel):

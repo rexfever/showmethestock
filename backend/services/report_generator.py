@@ -4,17 +4,36 @@
 import os
 import json
 import sqlite3
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import calendar
 from collections import Counter, defaultdict
 from services.returns_service import calculate_returns
+import concurrent.futures
+
+logger = logging.getLogger(__name__)
 
 
 class ReportGenerator:
     def __init__(self):
-        self.reports_dir = "backend/reports"
-        self.db_path = "snapshots.db"
+        # 절대 경로 사용 - 프로젝트 루트 찾기
+        current_file = os.path.abspath(__file__)
+        # backend/services/report_generator.py -> backend/services -> backend -> 프로젝트 루트
+        current = current_file
+        # backend 디렉토리를 찾을 때까지 상위로 이동
+        while current != os.path.dirname(current):
+            if os.path.basename(current) == "backend":
+                # backend를 찾았으면 그 상위가 프로젝트 루트
+                project_root = os.path.dirname(current)
+                break
+            current = os.path.dirname(current)
+        else:
+            # backend를 찾지 못한 경우 (fallback)
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+        
+        self.reports_dir = os.path.join(project_root, "backend", "reports")
+        self.db_path = os.path.join(project_root, "backend", "snapshots.db")
         
     def _get_db_path(self):
         """데이터베이스 경로 반환"""
@@ -22,91 +41,126 @@ class ReportGenerator:
     
     def _save_report(self, report_type: str, filename: str, data: Dict):
         """보고서 파일 저장"""
-        report_dir = os.path.join(self.reports_dir, report_type)
-        os.makedirs(report_dir, exist_ok=True)
-        
-        filepath = os.path.join(report_dir, filename)
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        
-        print(f"보고서 저장 완료: {filepath}")
+        try:
+            report_dir = os.path.join(self.reports_dir, report_type)
+            os.makedirs(report_dir, exist_ok=True)
+            
+            filepath = os.path.join(report_dir, filename)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"보고서 저장 완료: {filepath}")
+        except Exception as e:
+            logger.error(f"보고서 저장 오류 ({filename}): {e}", exc_info=True)
+            raise
     
     def _load_report(self, report_type: str, filename: str) -> Optional[Dict]:
         """보고서 파일 로드"""
-        filepath = os.path.join(self.reports_dir, report_type, filename)
-        if not os.path.exists(filepath):
+        try:
+            filepath = os.path.join(self.reports_dir, report_type, filename)
+            if not os.path.exists(filepath):
+                logger.debug(f"보고서 파일 없음: {filepath}")
+                return None
+            
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"보고서 로드 오류 ({filename}): {e}", exc_info=True)
             return None
-        
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
     
     def _get_scan_data(self, start_date: str, end_date: str) -> List[Dict]:
         """지정 기간의 스캔 데이터 조회"""
         conn = sqlite3.connect(self._get_db_path())
         cursor = conn.cursor()
         
-        # 두 날짜 형식 모두 지원
-        compact_start = start_date
-        compact_end = end_date
+        # 날짜 형식 통일: YYYY-MM-DD → YYYYMMDD
+        start_compact = start_date.replace('-', '') if '-' in start_date else start_date
+        end_compact = end_date.replace('-', '') if '-' in end_date else end_date
         
-        cursor.execute("""
-            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-            FROM scan_rank 
-            WHERE (date BETWEEN ? AND ?) OR (date BETWEEN ? AND ?)
-            ORDER BY date
-        """, (start_date, end_date, compact_start, compact_end))
-        
-        rows = cursor.fetchall()
-        conn.close()
+        try:
+            cursor.execute("""
+                SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+                FROM scan_rank 
+                WHERE date >= ? AND date <= ? AND code != 'NORESULT'
+                ORDER BY date
+            """, (start_compact, end_compact))
+            
+            rows = cursor.fetchall()
+        except sqlite3.Error as e:
+            logger.error(f"스캔 데이터 조회 오류: {e}")
+            rows = []
+        finally:
+            conn.close()
         
         return rows
     
-    def _calculate_returns_for_stocks(self, stocks_data: List) -> List[Dict]:
-        """종목별 수익률 계산"""
-        processed_stocks = []
-        
-        for row in stocks_data:
+    def _process_single_stock_return(self, row: tuple) -> Optional[Dict]:
+        """단일 종목 수익률 계산 (병렬 처리용)"""
+        try:
             date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
             
-            if not name or not current_price:
-                continue
+            # 데이터 검증
+            if not name or not code or code == 'NORESULT':
+                return None
+            
+            # 가격이 0이어도 수익률 계산은 시도 (과거 데이터로 계산 가능)
+            # 가격이 없으면 수익률 계산 시 scan_date 기준으로 가격을 조회
+            if not current_price or current_price <= 0:
+                logger.warning(f"가격 정보 없음: {code} {name} - 수익률 계산 시도 (과거 데이터 사용)")
+                # 가격은 None으로 설정하고 수익률 계산에서 처리
             
             # 수익률 계산
-            try:
-                returns_info = calculate_returns(code, date)
-                if returns_info:
-                    current_return = returns_info.get('current_return', 0)
-                    max_return = returns_info.get('max_return', 0)
-                    min_return = returns_info.get('min_return', 0)
-                    days_elapsed = returns_info.get('days_elapsed', 0)
-                else:
-                    current_return = 0
-                    max_return = 0
-                    min_return = 0
-                    days_elapsed = 0
-            except Exception as e:
-                print(f"수익률 계산 오류 ({code}): {e}")
-                current_return = 0
-                max_return = 0
-                min_return = 0
-                days_elapsed = 0
+            returns_info = calculate_returns(code, date)
+            if not returns_info:
+                logger.warning(f"수익률 계산 실패: {code} {name} (날짜: {date})")
+                return None
             
-            stock_data = {
+            # 가격이 없으면 수익률 계산 결과에서 가격 추출 시도
+            scan_price = current_price if current_price and current_price > 0 else returns_info.get('scan_price', 0)
+            
+            return {
                 "ticker": code,
                 "name": name,
-                "scan_price": current_price,
+                "scan_price": scan_price,
                 "scan_date": date,
-                "current_return": current_return,
-                "max_return": max_return,
-                "min_return": min_return,
-                "days_elapsed": days_elapsed,
-                "volume": volume,
-                "change_rate": change_rate,
-                "market": market,
-                "strategy": strategy
+                "current_return": returns_info.get('current_return', 0),
+                "max_return": returns_info.get('max_return', 0),
+                "min_return": returns_info.get('min_return', 0),
+                "days_elapsed": returns_info.get('days_elapsed', 0),
+                "volume": volume or 0,
+                "change_rate": change_rate or 0,
+                "market": market or "",
+                "strategy": strategy or ""
+            }
+        except Exception as e:
+            logger.error(f"종목 처리 오류 ({row[1] if len(row) > 1 else 'unknown'}): {e}", exc_info=True)
+            return None
+    
+    def _calculate_returns_for_stocks(self, stocks_data: List) -> List[Dict]:
+        """종목별 수익률 계산 (병렬 처리)"""
+        processed_stocks = []
+        
+        if not stocks_data:
+            return processed_stocks
+        
+        # 병렬 처리로 성능 개선
+        max_workers = min(5, len(stocks_data))
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(self._process_single_stock_return, row): row 
+                for row in stocks_data
             }
             
-            processed_stocks.append(stock_data)
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    result = future.result()
+                    if result:
+                        processed_stocks.append(result)
+                except Exception as e:
+                    row = futures[future]
+                    code = row[1] if len(row) > 1 else 'unknown'
+                    logger.error(f"수익률 계산 오류 ({code}): {e}")
         
         return processed_stocks
     
@@ -115,16 +169,24 @@ class ReportGenerator:
         conn = sqlite3.connect(self._get_db_path())
         cursor = conn.cursor()
         
-        # 기간 내 스캔 데이터 조회
-        cursor.execute("""
-            SELECT date, code, name, strategy 
-            FROM scan_rank 
-            WHERE date BETWEEN ? AND ?
-            ORDER BY date DESC
-        """, (start_date, end_date))
+        # 날짜 형식 통일: YYYY-MM-DD → YYYYMMDD
+        start_compact = start_date.replace('-', '') if '-' in start_date else start_date
+        end_compact = end_date.replace('-', '') if '-' in end_date else end_date
         
-        data = cursor.fetchall()
-        conn.close()
+        try:
+            cursor.execute("""
+                SELECT date, code, name, strategy 
+                FROM scan_rank 
+                WHERE date >= ? AND date <= ? AND code != 'NORESULT'
+                ORDER BY date DESC
+            """, (start_compact, end_compact))
+            
+            data = cursor.fetchall()
+        except sqlite3.Error as e:
+            logger.error(f"반복 스캔 분석 오류: {e}")
+            data = []
+        finally:
+            conn.close()
         
         if not data:
             return {"repeat_analysis": None}
@@ -210,15 +272,23 @@ class ReportGenerator:
             start_date = f"{year}-{month:02d}-{week_start:02d}"
             end_date = f"{year}-{month:02d}-{week_end:02d}"
             
+            logger.info(f"주간 보고서 생성 시작: {year}년 {month}월 {week}주차 ({start_date} ~ {end_date})")
+            
             # 스캔 데이터 조회
             scan_data = self._get_scan_data(start_date, end_date)
             
             if not scan_data:
-                print(f"주간 보고서 생성 실패: {year}년 {month}월 {week}주차 데이터 없음")
+                logger.warning(f"주간 보고서 생성 실패: {year}년 {month}월 {week}주차 데이터 없음")
                 return False
             
-            # 수익률 계산
+            logger.info(f"스캔 데이터 조회: {len(scan_data)}건")
+            
+            # 수익률 계산 (병렬 처리)
             stocks = self._calculate_returns_for_stocks(scan_data)
+            
+            if not stocks:
+                logger.warning(f"처리된 종목 없음: {year}년 {month}월 {week}주차")
+                return False
             
             # 현재 수익률 기준으로 정렬
             stocks.sort(key=lambda x: x['current_return'], reverse=True)
@@ -237,22 +307,25 @@ class ReportGenerator:
                 "generated_at": datetime.now().isoformat(),
                 "statistics": stats,
                 "stocks": stocks,
-                "dates": list(set(row[0] for row in scan_data))
+                "dates": sorted(list(set(row[0] for row in scan_data)))
             }
             
             # 파일 저장
             filename = f"weekly_{year}_{month:02d}_week{week}.json"
             self._save_report("weekly", filename, report_data)
             
+            logger.info(f"주간 보고서 생성 완료: {year}년 {month}월 {week}주차 ({len(stocks)}개 종목)")
             return True
             
         except Exception as e:
-            print(f"주간 보고서 생성 오류: {e}")
+            logger.error(f"주간 보고서 생성 오류 ({year}/{month}/{week}): {e}", exc_info=True)
             return False
     
     def generate_monthly_report(self, year: int, month: int) -> bool:
         """월간 보고서 생성"""
         try:
+            logger.info(f"월간 보고서 생성 시작: {year}년 {month}월")
+            
             # 해당 월의 주간 보고서들을 합치기
             last_day = calendar.monthrange(year, month)[1]
             weeks_in_month = (last_day - 1) // 7 + 1
@@ -268,8 +341,19 @@ class ReportGenerator:
                     all_stocks.extend(weekly_data["stocks"])
                     all_dates.update(weekly_data["dates"])
             
+            # 주간 보고서가 없으면 DB에서 직접 생성 시도
             if not all_stocks:
-                print(f"월간 보고서 생성 실패: {year}년 {month}월 주간 보고서 없음")
+                logger.info(f"주간 보고서 없음, DB에서 직접 생성 시도: {year}년 {month}월")
+                start_date = f"{year}-{month:02d}-01"
+                end_date = f"{year}-{month:02d}-{last_day:02d}"
+                scan_data = self._get_scan_data(start_date, end_date)
+                
+                if scan_data:
+                    all_stocks = self._calculate_returns_for_stocks(scan_data)
+                    all_dates = set(row[0] for row in scan_data)
+            
+            if not all_stocks:
+                logger.warning(f"월간 보고서 생성 실패: {year}년 {month}월 데이터 없음")
                 return False
             
             # 중복 종목 제거 (같은 종목이 여러 주차에 나타날 경우, 최고 수익률 기준으로 유지)
@@ -309,10 +393,11 @@ class ReportGenerator:
             filename = f"monthly_{year}_{month:02d}.json"
             self._save_report("monthly", filename, report_data)
             
+            logger.info(f"월간 보고서 생성 완료: {year}년 {month}월 ({len(all_stocks)}개 종목)")
             return True
             
         except Exception as e:
-            print(f"월간 보고서 생성 오류: {e}")
+            logger.error(f"월간 보고서 생성 오류 ({year}/{month}): {e}", exc_info=True)
             return False
     
     def generate_quarterly_report(self, year: int, quarter: int) -> bool:
@@ -379,7 +464,7 @@ class ReportGenerator:
             return True
             
         except Exception as e:
-            print(f"분기 보고서 생성 오류: {e}")
+            logger.error(f"분기 보고서 생성 오류 ({year}/{quarter}): {e}", exc_info=True)
             return False
     
     def generate_yearly_report(self, year: int) -> bool:
@@ -433,7 +518,7 @@ class ReportGenerator:
             return True
             
         except Exception as e:
-            print(f"연간 보고서 생성 오류: {e}")
+            logger.error(f"연간 보고서 생성 오류 ({year}): {e}", exc_info=True)
             return False
 
 
