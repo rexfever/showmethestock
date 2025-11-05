@@ -50,6 +50,28 @@ def create_scan_rank_table(cur):
         )
     """)
 
+# 공통 함수: market_conditions 테이블 생성
+def create_market_conditions_table(cur):
+    """market_conditions 테이블 생성 (시장 상황 분석 결과 저장)"""
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS market_conditions(
+            date TEXT NOT NULL PRIMARY KEY,
+            market_sentiment TEXT NOT NULL,
+            kospi_return REAL,
+            volatility REAL,
+            rsi_threshold REAL,
+            sector_rotation TEXT,
+            foreign_flow TEXT,
+            volume_trend TEXT,
+            min_signals INTEGER,
+            macd_osc_min REAL,
+            vol_ma5_mult REAL,
+            gap_max REAL,
+            ext_from_tema20_max REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
 # 공통 함수: maintenance_settings 테이블 생성
 def create_maintenance_settings_table(cur):
     """maintenance_settings 테이블 생성"""
@@ -221,9 +243,39 @@ def _as_score_flags(f: dict):
 def _db_path() -> str:
     return os.path.join(os.path.dirname(__file__), 'snapshots.db')
 
-def _save_snapshot_db(as_of: str, items: List[ScanItem]):
+def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
     try:
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
+        
+        # 시장 상황 저장 (market_condition이 제공된 경우)
+        if market_condition:
+            try:
+                with db_manager.get_cursor() as cur:
+                    create_market_conditions_table(cur)
+                    cur.execute("""
+                        INSERT OR REPLACE INTO market_conditions(
+                            date, market_sentiment, kospi_return, volatility, rsi_threshold,
+                            sector_rotation, foreign_flow, volume_trend,
+                            min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        as_of,
+                        market_condition.market_sentiment,
+                        market_condition.kospi_return,
+                        market_condition.volatility,
+                        market_condition.rsi_threshold,
+                        market_condition.sector_rotation,
+                        market_condition.foreign_flow,
+                        market_condition.volume_trend,
+                        market_condition.min_signals,
+                        market_condition.macd_osc_min,
+                        market_condition.vol_ma5_mult,
+                        market_condition.gap_max,
+                        market_condition.ext_from_tema20_max
+                    ))
+                print(f"✅ 시장 상황 저장 완료: {as_of} ({market_condition.market_sentiment})")
+            except Exception as e:
+                print(f"⚠️ 시장 상황 저장 실패: {e}")
         
         # 스캔 결과가 0개인 경우 NORESULT 레코드 추가
         if not items:
@@ -566,7 +618,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             'rank': enhanced_rank,
         }
         try:
-            _save_snapshot_db(resp.as_of, resp.items)
+            _save_snapshot_db(resp.as_of, resp.items, market_condition)
             print(f"✅ DB 저장 성공: {resp.as_of}")
         except Exception as e:
             print(f"❌ DB 저장 실패: {e}")
@@ -1590,15 +1642,56 @@ def get_latest_scan_from_db():
             items.append(item)
         
         # 시장 가이드 생성
-        # 해당 날짜의 시장 상황을 분석하여 정확한 가이드 생성 (캐시 활용)
+        # DB에서 시장 상황 조회 (스캔 시 저장된 데이터 사용)
         market_condition = None
-        if config.market_analysis_enable:
-            try:
-                # 캐시를 활용하므로 clear_cache() 호출하지 않음 (5분 TTL)
-                market_condition = market_analyzer.analyze_market_condition(latest_date)
-                print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
-            except Exception as e:
-                print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+        try:
+            conn_mc = sqlite3.connect(_db_path())
+            cur_mc = conn_mc.cursor()
+            create_market_conditions_table(cur_mc)
+            cur_mc.execute("""
+                SELECT market_sentiment, kospi_return, volatility, rsi_threshold,
+                       sector_rotation, foreign_flow, volume_trend,
+                       min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
+                FROM market_conditions WHERE date = ?
+            """, (latest_date,))
+            row_mc = cur_mc.fetchone()
+            conn_mc.close()
+            
+            if row_mc:
+                # DB에서 읽은 데이터로 MarketCondition 객체 생성
+                from market_analyzer import MarketCondition
+                market_condition = MarketCondition(
+                    date=latest_date,
+                    market_sentiment=row_mc[0],
+                    kospi_return=row_mc[1],
+                    volatility=row_mc[2],
+                    rsi_threshold=row_mc[3],
+                    sector_rotation=row_mc[4],
+                    foreign_flow=row_mc[5],
+                    volume_trend=row_mc[6],
+                    min_signals=row_mc[7],
+                    macd_osc_min=row_mc[8],
+                    vol_ma5_mult=row_mc[9],
+                    gap_max=row_mc[10],
+                    ext_from_tema20_max=row_mc[11]
+                )
+                print(f"📊 시장 상황 조회 (DB): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+            else:
+                # DB에 없으면 동적 분석 (fallback)
+                if config.market_analysis_enable:
+                    try:
+                        market_condition = market_analyzer.analyze_market_condition(latest_date)
+                        print(f"📊 시장 상황 분석 (Fallback): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+                    except Exception as e:
+                        print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+        except Exception as e:
+            print(f"⚠️ 시장 상황 DB 조회 실패: {e}")
+            # Fallback: 동적 분석
+            if config.market_analysis_enable:
+                try:
+                    market_condition = market_analyzer.analyze_market_condition(latest_date)
+                except Exception as e2:
+                    print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e2}")
         
         # NORESULT만 있는 경우 matched_count는 0으로 처리
         actual_matched_count = len([item for item in items if item.get('ticker') != 'NORESULT'])
