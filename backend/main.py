@@ -401,7 +401,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             # 캐시 클리어 후 새로 분석
             market_analyzer.clear_cache()
             market_condition = market_analyzer.analyze_market_condition(today_as_of)
-            print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (KOSPI: {market_condition.kospi_return:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+            print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
         except Exception as e:
             print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
     

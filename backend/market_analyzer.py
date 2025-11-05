@@ -97,7 +97,7 @@ class MarketAnalyzer:
             # 캐시에 저장
             self._cache[cache_key] = (condition, datetime.now())
             self.last_analysis = condition
-            logger.info(f"시장 상황 분석 완료: {market_sentiment}, RSI 임계값: {condition.rsi_threshold}")
+            logger.info(f"시장 상황 분석 완료: {market_sentiment} (유효 수익률: {effective_return*100:.2f}%), RSI 임계값: {condition.rsi_threshold}")
             
             return condition
             
