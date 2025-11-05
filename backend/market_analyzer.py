@@ -57,24 +57,29 @@ class MarketAnalyzer:
                 return cached_data
             
         try:
-            # KOSPI 데이터 가져오기 (실제로는 API 호출)
-            kospi_return, volatility = self._get_kospi_data(date)
+            # KOSPI 데이터 가져오기 (실제로는 API 호출) - 종가와 저가 기준 수익률 모두 반환
+            kospi_return, volatility, kospi_low_return = self._get_kospi_data(date)
             
             # 유니버스 전체 종목 분석 (급락장 판단용)
             universe_return = self._get_universe_return(date)
             
-            # KOSPI와 유니버스 평균 중 더 낮은 수익률 사용 (급락장 판단)
-            # 급락장 판단을 위해 두 값 중 더 낮은 값을 사용
+            # 급락장 판단을 위해 가장 낮은 수익률 사용
+            # 후보: KOSPI 종가, KOSPI 저가, 유니버스 평균
+            candidates = [kospi_return]
+            if kospi_low_return is not None:
+                candidates.append(kospi_low_return)
             if universe_return is not None:
-                # 유니버스와 KOSPI 중 더 낮은 값 사용
-                effective_return = min(kospi_return, universe_return)
-                if universe_return < kospi_return:
-                    logger.info(f"유니버스 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
-                else:
-                    logger.info(f"KOSPI 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
-            else:
-                # 유니버스 데이터가 없으면 KOSPI 기준 사용
-                effective_return = kospi_return
+                candidates.append(universe_return)
+            
+            # 가장 낮은 값 사용
+            effective_return = min(candidates)
+            
+            # 로그 출력
+            if kospi_low_return is not None and kospi_low_return < kospi_return:
+                logger.info(f"저가 기준 사용: 종가 {kospi_return*100:.2f}%, 저가 {kospi_low_return*100:.2f}%")
+            if universe_return is not None and universe_return < kospi_return:
+                logger.info(f"유니버스 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+            logger.info(f"최종 effective_return: {effective_return*100:.2f}%")
             
             # 시장 상황 판단
             market_sentiment = self._determine_market_sentiment(effective_return, volatility)
@@ -110,8 +115,8 @@ class MarketAnalyzer:
             # 기본값 반환
             return self._get_default_condition(date)
     
-    def _get_kospi_data(self, date: str) -> Tuple[float, float]:
-        """KOSPI 지수 데이터 가져오기"""
+    def _get_kospi_data(self, date: str) -> Tuple[float, float, Optional[float]]:
+        """KOSPI 지수 데이터 가져오기 - 종가, 변동성, 저가 기준 수익률 반환"""
         try:
             from kiwoom_api import api
             
@@ -119,7 +124,7 @@ class MarketAnalyzer:
             df = api.get_ohlcv("069500", 2, date)
             if df.empty or len(df) < 2:
                 # 데이터가 없으면 기본값 반환
-                return 0.0, 0.02
+                return 0.0, 0.02, None
             
             # 전일 종가
             prev_close = df.iloc[-2]['close']
@@ -130,32 +135,20 @@ class MarketAnalyzer:
             # 종가 기준 수익률
             close_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
             
-            # 저가 기준 수익률 (급락장 판단용) - 저가가 유효한 경우만
-            if current_low > 0:
-                low_return = (current_low / prev_close - 1) if prev_close > 0 else 0.0
-                
-                # 종가와 저가 중 더 낮은 수익률 사용 (급락장 판단을 위해)
-                # 단, 종가가 -2% 이상이면 저가 기준 사용
-                if close_return > -0.02 and low_return < -0.03:
-                    # 종가는 -2% 이상이지만 저가가 -3% 이하인 경우 → 저가 기준 사용
-                    kospi_return = low_return
-                    logger.info(f"저가 기준 사용: 종가 {close_return*100:.2f}%, 저가 {low_return*100:.2f}%")
-                else:
-                    # 일반적으로는 종가 기준 사용
-                    kospi_return = close_return
-            else:
-                # 저가 데이터가 없으면 종가 기준만 사용
-                kospi_return = close_return
+            # 저가 기준 수익률 (급락장 판단용)
+            low_return = None
+            if current_low > 0 and prev_close > 0:
+                low_return = (current_low / prev_close - 1)
             
             # 변동성 계산 (간단한 ATR 기반)
             volatility = (current_high - current_low) / current_close if current_close > 0 else 0.02
             
-            return kospi_return, volatility
+            return close_return, volatility, low_return
             
         except Exception as e:
             logger.warning(f"KOSPI 데이터 가져오기 실패: {e}")
             # 실패 시 기본값 반환
-            return 0.0, 0.02
+            return 0.0, 0.02, None
     
     def _get_universe_return(self, date: str) -> Optional[float]:
         """유니버스 전체 종목의 평균 등락률 계산"""
