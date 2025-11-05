@@ -45,6 +45,7 @@ def create_scan_rank_table(cur):
             returns TEXT,
             recurrence TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            close_price REAL,
             PRIMARY KEY(date, code)
         )
     """)
@@ -235,13 +236,13 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
                 cur.execute("""
                     INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
-                        market, strategy, indicators, trend, flags, details, returns, recurrence
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        market, strategy, indicators, trend, flags, details, returns, recurrence, close_price
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, (
                     as_of, "NORESULT", "추천종목 없음", 0.0, "추천종목 없음",
                     0.0, 0, 0.0, "", "", 
                     json.dumps({}), json.dumps({}), json.dumps({"no_result": True}), 
-                    json.dumps({}), json.dumps({}), json.dumps({})
+                    json.dumps({}), json.dumps({}), json.dumps({}), 0.0
                 ))
             print(f"✅ NORESULT 저장 완료: {as_of}")
             return
@@ -251,6 +252,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
             # 각 필드를 indicators에서 일관되게 사용
             name = getattr(it, 'name', '') or ''
             current_price = float(getattr(it.indicators, 'close', 0) or 0.0)
+            close_price = current_price  # 종가는 현재가와 동일
             volume = int(getattr(it.indicators, 'VOL', 0) or 0)
             change_rate = float(getattr(it.indicators, 'change_rate', 0.0) or 0.0)
             market = getattr(it, 'market', '') or ''
@@ -268,7 +270,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
                 as_of, it.ticker, name, float(it.score), it.score_label or '', 
                 current_price, volume, change_rate, market, strategy,
                 indicators_json, trend_json, flags_json, details_json, 
-                returns_json, recurrence_json
+                returns_json, recurrence_json, close_price
             ))
         
         if rows:
@@ -280,8 +282,8 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
                 cur.executemany("""
                     INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
-                        market, strategy, indicators, trend, flags, details, returns, recurrence
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        market, strategy, indicators, trend, flags, details, returns, recurrence, close_price
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, rows)
         
         print(f"✅ 데이터베이스 저장 완료: {as_of}")
