@@ -1590,13 +1590,13 @@ def get_latest_scan_from_db():
             items.append(item)
         
         # 시장 가이드 생성
-        # 해당 날짜의 시장 상황을 다시 분석하여 정확한 가이드 생성
+        # 해당 날짜의 시장 상황을 분석하여 정확한 가이드 생성 (캐시 활용)
         market_condition = None
         if config.market_analysis_enable:
             try:
-                market_analyzer.clear_cache()
+                # 캐시를 활용하므로 clear_cache() 호출하지 않음 (5분 TTL)
                 market_condition = market_analyzer.analyze_market_condition(latest_date)
-                print(f"📊 시장 상황 재분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+                print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
             except Exception as e:
                 print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
         
