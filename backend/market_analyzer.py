@@ -166,9 +166,10 @@ class MarketAnalyzer:
             if not universe:
                 return None
             
-            # 샘플링 (전체 조회 시 시간이 오래 걸리므로 최대 50개만)
+            # 샘플링 (전체 조회 시 시간이 오래 걸리므로 최대 100개 사용)
+            # 급락장 판단 정확도를 위해 샘플 크기 증가
             import random
-            sample_size = min(50, len(universe))
+            sample_size = min(100, len(universe))
             sampled_universe = random.sample(universe, sample_size) if len(universe) > sample_size else universe
             
             returns = []
@@ -192,7 +193,38 @@ class MarketAnalyzer:
             
             # 평균 등락률 계산
             avg_return = sum(returns) / len(returns)
-            logger.info(f"유니버스 분석: {len(returns)}개 종목, 평균 등락률 {avg_return*100:.2f}%")
+            
+            # 추가: 여러 번 샘플링해서 더 안정적인 평균 계산 (시간이 허용되는 경우)
+            # 첫 번째 샘플의 평균이 -2.5% 이하인 경우, 추가 샘플링으로 확인
+            if avg_return < -0.025 and len(universe) > sample_size:
+                # 추가 샘플링 (최대 3번 더)
+                additional_samples = []
+                for i in range(3):
+                    additional_sampled = random.sample(universe, min(50, len(universe)))
+                    additional_returns = []
+                    for code in additional_sampled:
+                        try:
+                            df = api.get_ohlcv(code, 2, date)
+                            if df.empty or len(df) < 2:
+                                continue
+                            prev_close = df.iloc[-2]['close']
+                            current_close = df.iloc[-1]['close']
+                            if prev_close > 0:
+                                additional_returns.append((current_close / prev_close - 1))
+                        except:
+                            continue
+                    if additional_returns:
+                        additional_samples.append(sum(additional_returns) / len(additional_returns))
+                
+                # 모든 샘플의 평균 사용
+                if additional_samples:
+                    all_returns = [avg_return] + additional_samples
+                    avg_return = sum(all_returns) / len(all_returns)
+                    logger.info(f"유니버스 분석 (다중 샘플링): {len(returns)}개 + 추가 샘플, 평균 등락률 {avg_return*100:.2f}%")
+                else:
+                    logger.info(f"유니버스 분석: {len(returns)}개 종목, 평균 등락률 {avg_return*100:.2f}%")
+            else:
+                logger.info(f"유니버스 분석: {len(returns)}개 종목, 평균 등락률 {avg_return*100:.2f}%")
             
             return avg_return
             
