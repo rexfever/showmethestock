@@ -315,7 +315,7 @@ def is_trading_day(check_date: str = None):
             else:
                 return False
             
-            check_dt = datetime.strptime(date_str, '%Y%m%d').date()
+            check_dt = datetime.strptime(date_str, '%Y-%m-%d').date()
         except Exception as e:
             print(f"거래일 체크 오류: {check_date}, {e}")
             return False
