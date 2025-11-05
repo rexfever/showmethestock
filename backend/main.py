@@ -1590,8 +1590,10 @@ def get_latest_scan_from_db():
             items.append(item)
         
         # 시장 가이드 생성
+        # NORESULT만 있는 경우 matched_count는 0으로 처리
+        actual_matched_count = len([item for item in items if item.get('ticker') != 'NORESULT'])
         scan_result_dict = {
-            'matched_count': len(items),
+            'matched_count': actual_matched_count,
             'rsi_threshold': 57.0,  # 기본값, 실제로는 DB에서 가져와야 함
             'items': [{
                 'ticker': item.get('ticker', ''),
