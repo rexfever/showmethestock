@@ -712,10 +712,15 @@ export async function getServerSideProps() {
       // items 또는 rank 필드 처리
       const items = data.data.items || data.data.rank || [];
       const scanDate = data.data.as_of || data.data.scan_date || '';
+      
+      // market_guide를 첫 번째 아이템에 추가
+      if (items.length > 0 && data.data.market_guide) {
+        items[0].market_guide = data.data.market_guide;
+      }
+      
       console.log('SSR: Returning', items.length, 'items');
       console.log('SSR: scanDate:', scanDate);
-      console.log('SSR: data.data.as_of:', data.data.as_of);
-      console.log('SSR: data.data.scan_date:', data.data.scan_date);
+      console.log('SSR: market_guide:', data.data.market_guide);
       return {
         props: {
           initialData: items,
