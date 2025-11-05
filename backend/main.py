@@ -223,25 +223,24 @@ def _db_path() -> str:
 def _save_snapshot_db(as_of: str, items: List[ScanItem]):
     try:
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
-        with db_manager.get_cursor() as cur:
-            # 테이블 생성 (없으면)
-            create_scan_rank_table(cur)
         
         # 스캔 결과가 0개인 경우 NORESULT 레코드 추가
         if not items:
             print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {as_of}")
-            cur.execute("""
-                INSERT OR REPLACE INTO scan_rank(
-                    date, code, name, score, score_label, current_price, volume, change_rate, 
-                    market, strategy, indicators, trend, flags, details, returns, recurrence
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """, (
-                as_of, "NORESULT", "추천종목 없음", 0.0, "추천종목 없음",
-                0.0, 0, 0.0, "", "", 
-                json.dumps({}), json.dumps({}), json.dumps({"no_result": True}), 
-                json.dumps({}), json.dumps({}), json.dumps({})
-            ))
-            db_manager.commit()
+            with db_manager.get_cursor() as cur:
+                # 테이블 생성 (없으면)
+                create_scan_rank_table(cur)
+                cur.execute("""
+                    INSERT OR REPLACE INTO scan_rank(
+                        date, code, name, score, score_label, current_price, volume, change_rate, 
+                        market, strategy, indicators, trend, flags, details, returns, recurrence
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, (
+                    as_of, "NORESULT", "추천종목 없음", 0.0, "추천종목 없음",
+                    0.0, 0, 0.0, "", "", 
+                    json.dumps({}), json.dumps({}), json.dumps({"no_result": True}), 
+                    json.dumps({}), json.dumps({}), json.dumps({})
+                ))
             print(f"✅ NORESULT 저장 완료: {as_of}")
             return
         
@@ -271,17 +270,21 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
             ))
         
         if rows:
-            cur.executemany("""
-                INSERT OR REPLACE INTO scan_rank(
-                    date, code, name, score, score_label, current_price, volume, change_rate, 
-                    market, strategy, indicators, trend, flags, details, returns, recurrence
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """, rows)
+            with db_manager.get_cursor() as cur:
+                # 테이블 생성 (없으면)
+                create_scan_rank_table(cur)
+                cur.executemany("""
+                    INSERT OR REPLACE INTO scan_rank(
+                        date, code, name, score, score_label, current_price, volume, change_rate, 
+                        market, strategy, indicators, trend, flags, details, returns, recurrence
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, rows)
         
-        db_manager.commit()
         print(f"✅ 데이터베이스 저장 완료: {as_of}")
     except Exception as e:
         print(f"❌ 데이터베이스 저장 오류: {e}")
+        import traceback
+        traceback.print_exc()
 
 def _log_send(to: str, matched_count: int):
     try:
