@@ -26,7 +26,7 @@ const MarketGuide = ({ marketGuide }) => {
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border p-4 ${getConditionColor(marketGuide.market_condition)}`}>
+    <div className={`bg-white rounded-lg shadow-sm border p-4 mb-4 ${getConditionColor(marketGuide.market_condition)}`}>
       <span className="text-sm">
         {getConditionIcon(marketGuide.market_condition)} {marketGuide.guide_message}
       </span>
