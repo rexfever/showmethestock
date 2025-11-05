@@ -105,15 +105,34 @@ class MarketAnalyzer:
                 # 데이터가 없으면 기본값 반환
                 return 0.0, 0.02
             
-            # 전일 대비 수익률 계산
+            # 전일 종가
             prev_close = df.iloc[-2]['close']
             current_close = df.iloc[-1]['close']
-            kospi_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
+            current_high = df.iloc[-1]['high']
+            current_low = df.iloc[-1]['low']
+            
+            # 종가 기준 수익률
+            close_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
+            
+            # 저가 기준 수익률 (급락장 판단용) - 저가가 유효한 경우만
+            if current_low > 0:
+                low_return = (current_low / prev_close - 1) if prev_close > 0 else 0.0
+                
+                # 종가와 저가 중 더 낮은 수익률 사용 (급락장 판단을 위해)
+                # 단, 종가가 -2% 이상이면 저가 기준 사용
+                if close_return > -0.02 and low_return < -0.03:
+                    # 종가는 -2% 이상이지만 저가가 -3% 이하인 경우 → 저가 기준 사용
+                    kospi_return = low_return
+                    logger.info(f"저가 기준 사용: 종가 {close_return*100:.2f}%, 저가 {low_return*100:.2f}%")
+                else:
+                    # 일반적으로는 종가 기준 사용
+                    kospi_return = close_return
+            else:
+                # 저가 데이터가 없으면 종가 기준만 사용
+                kospi_return = close_return
             
             # 변동성 계산 (간단한 ATR 기반)
-            high = df.iloc[-1]['high']
-            low = df.iloc[-1]['low']
-            volatility = (high - low) / current_close if current_close > 0 else 0.02
+            volatility = (current_high - current_low) / current_close if current_close > 0 else 0.02
             
             return kospi_return, volatility
             
