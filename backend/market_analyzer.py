@@ -157,11 +157,13 @@ class MarketAnalyzer:
         """유니버스 전체 종목의 평균 등락률 계산"""
         try:
             from kiwoom_api import api
-            import config as cfg
+            import config
             
             # 유니버스 종목 가져오기
-            kospi = api.get_top_codes('KOSPI', cfg.universe_kospi)
-            kosdaq = api.get_top_codes('KOSDAQ', cfg.universe_kosdaq)
+            universe_kospi = getattr(config, 'universe_kospi', 100)
+            universe_kosdaq = getattr(config, 'universe_kosdaq', 100)
+            kospi = api.get_top_codes('KOSPI', universe_kospi)
+            kosdaq = api.get_top_codes('KOSDAQ', universe_kosdaq)
             universe = [*kospi, *kosdaq]
             
             if not universe:
