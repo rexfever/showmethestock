@@ -230,8 +230,10 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
             with db_manager.get_cursor() as cur:
                 # 테이블 생성 (없으면)
                 create_scan_rank_table(cur)
+                # 기존 데이터 삭제 (같은 날짜)
+                cur.execute("DELETE FROM scan_rank WHERE date = ?", (as_of,))
                 cur.execute("""
-                    INSERT OR REPLACE INTO scan_rank(
+                    INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
                         market, strategy, indicators, trend, flags, details, returns, recurrence
                     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -273,8 +275,10 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem]):
             with db_manager.get_cursor() as cur:
                 # 테이블 생성 (없으면)
                 create_scan_rank_table(cur)
+                # 기존 데이터 삭제 (같은 날짜)
+                cur.execute("DELETE FROM scan_rank WHERE date = ?", (as_of,))
                 cur.executemany("""
-                    INSERT OR REPLACE INTO scan_rank(
+                    INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
                         market, strategy, indicators, trend, flags, details, returns, recurrence
                     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
