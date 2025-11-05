@@ -1589,6 +1589,18 @@ def get_latest_scan_from_db():
             }
             items.append(item)
         
+        # 시장 가이드 생성
+        scan_result_dict = {
+            'matched_count': len(items),
+            'rsi_threshold': 57.0,  # 기본값, 실제로는 DB에서 가져와야 함
+            'items': [{
+                'ticker': item.get('ticker', ''),
+                'indicators': {'change_rate': item.get('change_rate', 0)},
+                'flags': {'vol_expand': False}
+            } for item in items]
+        }
+        market_guide = get_market_guide(scan_result_dict)
+        
         # 응답 데이터 구성
         scan_date = latest_date
         today = datetime.now().strftime('%Y%m%d')
@@ -1604,7 +1616,8 @@ def get_latest_scan_from_db():
             "rsi_mode": "current_status",
             "rsi_period": 14,
             "rsi_threshold": 57.0,
-            "items": items
+            "items": items,
+            "market_guide": market_guide
         }
         
         # enhanced_items 추가 (호환성을 위해)
