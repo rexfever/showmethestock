@@ -60,8 +60,20 @@ class MarketAnalyzer:
             # KOSPI 데이터 가져오기 (실제로는 API 호출)
             kospi_return, volatility = self._get_kospi_data(date)
             
+            # 유니버스 전체 종목 분석 (급락장 판단용)
+            universe_return = self._get_universe_return(date)
+            
+            # KOSPI와 유니버스 평균 중 더 낮은 수익률 사용 (급락장 판단)
+            if universe_return is not None and universe_return < kospi_return:
+                # 유니버스 평균이 더 낮으면 유니버스 기준 사용
+                effective_return = universe_return
+                logger.info(f"유니버스 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+            else:
+                # 일반적으로는 KOSPI 기준 사용
+                effective_return = kospi_return
+            
             # 시장 상황 판단
-            market_sentiment = self._determine_market_sentiment(kospi_return, volatility)
+            market_sentiment = self._determine_market_sentiment(effective_return, volatility)
             sector_rotation = self._analyze_sector_rotation(date)
             foreign_flow = self._analyze_foreign_flow(date)
             volume_trend = self._analyze_volume_trend(date)
@@ -73,7 +85,7 @@ class MarketAnalyzer:
             
             condition = MarketCondition(
                 date=date,
-                kospi_return=kospi_return,
+                kospi_return=effective_return,  # 유효 수익률 사용 (KOSPI 또는 유니버스 평균)
                 volatility=volatility,
                 market_sentiment=market_sentiment,
                 sector_rotation=sector_rotation,
@@ -140,6 +152,54 @@ class MarketAnalyzer:
             logger.warning(f"KOSPI 데이터 가져오기 실패: {e}")
             # 실패 시 기본값 반환
             return 0.0, 0.02
+    
+    def _get_universe_return(self, date: str) -> Optional[float]:
+        """유니버스 전체 종목의 평균 등락률 계산"""
+        try:
+            from kiwoom_api import api
+            import config as cfg
+            
+            # 유니버스 종목 가져오기
+            kospi = api.get_top_codes('KOSPI', cfg.universe_kospi)
+            kosdaq = api.get_top_codes('KOSDAQ', cfg.universe_kosdaq)
+            universe = [*kospi, *kosdaq]
+            
+            if not universe:
+                return None
+            
+            # 샘플링 (전체 조회 시 시간이 오래 걸리므로 최대 50개만)
+            import random
+            sample_size = min(50, len(universe))
+            sampled_universe = random.sample(universe, sample_size) if len(universe) > sample_size else universe
+            
+            returns = []
+            for code in sampled_universe:
+                try:
+                    df = api.get_ohlcv(code, 2, date)
+                    if df.empty or len(df) < 2:
+                        continue
+                    
+                    prev_close = df.iloc[-2]['close']
+                    current_close = df.iloc[-1]['close']
+                    
+                    if prev_close > 0:
+                        stock_return = (current_close / prev_close - 1)
+                        returns.append(stock_return)
+                except Exception:
+                    continue
+            
+            if not returns:
+                return None
+            
+            # 평균 등락률 계산
+            avg_return = sum(returns) / len(returns)
+            logger.info(f"유니버스 분석: {len(returns)}개 종목, 평균 등락률 {avg_return*100:.2f}%")
+            
+            return avg_return
+            
+        except Exception as e:
+            logger.warning(f"유니버스 평균 등락률 계산 실패: {e}")
+            return None
     
     def _determine_market_sentiment(self, kospi_return: float, volatility: float) -> str:
         """시장 심리 판단"""
