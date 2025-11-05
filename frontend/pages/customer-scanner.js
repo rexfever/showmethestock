@@ -147,10 +147,15 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       if (data.ok && data.data) {
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
+        const scanDate = data.data.as_of || data.data.scan_date || '';
+        console.log('API 응답 전체:', data);
         console.log('설정할 items:', items);
+        console.log('설정할 scanDate:', scanDate);
+        console.log('data.data.as_of:', data.data.as_of);
+        console.log('data.data.scan_date:', data.data.scan_date);
         setScanResults(items);
         setScanFile(data.file || '');
-        setScanDate(data.data.as_of || data.data.scan_date || '');
+        setScanDate(scanDate);
         setError(null);
       } else {
         const errorMsg = data.error || '스캔 결과 조회 실패';
@@ -288,31 +293,54 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               {/* 왼쪽: 날짜와 매칭종목 */}
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
-                  {mounted && scanDate ? (() => {
-                    // YYYY-MM-DD 형식을 YYYY년 M월 D일 형식으로 변환
-                    let date;
-                    if (scanDate.includes('-')) {
-                      // YYYY-MM-DD 형식
-                      date = new Date(scanDate);
-                    } else {
-                      // YYYYMMDD 형식 (기존 호환성)
-                      const year = scanDate.substring(0, 4);
-                      const month = parseInt(scanDate.substring(4, 6));
-                      const day = parseInt(scanDate.substring(6, 8));
-                      date = new Date(year, month - 1, day);
+                  {(() => {
+                    console.log('날짜 렌더링 - mounted:', mounted, 'scanDate:', scanDate);
+                    
+                    if (!mounted) {
+                      return '로딩 중...';
                     }
-                    return date.toLocaleDateString('ko-KR', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric',
-                      weekday: 'short'
-                    });
-                  })() : `로딩 중... (scanDate: ${scanDate}, mounted: ${mounted})`}
+                    
+                    if (!scanDate || scanDate === '') {
+                      return '날짜 정보 없음';
+                    }
+                    
+                    try {
+                      let date;
+                      if (scanDate.includes('-')) {
+                        // YYYY-MM-DD 형식
+                        date = new Date(scanDate);
+                      } else if (scanDate.length === 8) {
+                        // YYYYMMDD 형식
+                        const year = scanDate.substring(0, 4);
+                        const month = parseInt(scanDate.substring(4, 6));
+                        const day = parseInt(scanDate.substring(6, 8));
+                        date = new Date(year, month - 1, day);
+                      } else {
+                        return `잘못된 날짜 형식: ${scanDate}`;
+                      }
+                      
+                      if (isNaN(date.getTime())) {
+                        return `유효하지 않은 날짜: ${scanDate}`;
+                      }
+                      
+                      return date.toLocaleDateString('ko-KR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        weekday: 'short'
+                      });
+                    } catch (error) {
+                      console.error('날짜 파싱 오류:', error, 'scanDate:', scanDate);
+                      return `날짜 파싱 오류: ${scanDate}`;
+                    }
+                  })()}
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span className="text-gray-600 font-medium">매칭종목</span>
-                  <span className="text-blue-600 font-bold text-lg">{scanResults.length}</span>
+                  <span className="text-blue-600 font-bold text-lg">
+                    {scanResults.length > 0 && scanResults[0].ticker === 'NORESULT' ? 0 : scanResults.length}
+                  </span>
                   <span className="text-gray-500 text-sm">개</span>
                 </div>
               </div>
@@ -378,8 +406,18 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     다른 날짜를 선택하거나 최신 스캔을 확인해보세요.
                   </p>
                 </div>
+              ) : sortedResults.length === 1 && sortedResults[0].ticker === 'NORESULT' ? (
+                <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
+                  <div className="text-6xl mb-4">😔</div>
+                  <p className="text-lg text-gray-700 mb-2">
+                    장이 좋지 않아 추천된 종목이 없어요.
+                  </p>
+                  <p className="text-md text-gray-600">
+                    ☕ 투자에도 휴식이 필요합니다.
+                  </p>
+                </div>
               ) : (
-                sortedResults.map((item) => (
+                sortedResults.filter(item => item.ticker !== 'NORESULT').map((item) => (
               <div key={item.ticker} className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
                 {/* 종목명과 가격 */}
                 <div className="flex items-start justify-between">
@@ -572,12 +610,16 @@ export async function getServerSideProps() {
     if (data.ok && data.data) {
       // items 또는 rank 필드 처리
       const items = data.data.items || data.data.rank || [];
+      const scanDate = data.data.as_of || data.data.scan_date || '';
       console.log('SSR: Returning', items.length, 'items');
+      console.log('SSR: scanDate:', scanDate);
+      console.log('SSR: data.data.as_of:', data.data.as_of);
+      console.log('SSR: data.data.scan_date:', data.data.scan_date);
       return {
         props: {
           initialData: items,
           initialScanFile: data.file || '',
-          initialScanDate: data.data.as_of || data.data.scan_date || ''
+          initialScanDate: scanDate
         }
       };
     } else {
@@ -591,6 +633,7 @@ export async function getServerSideProps() {
   return {
     props: {
       initialData: [],
+      initialScanFile: '',
       initialScanDate: ''
     }
   };
