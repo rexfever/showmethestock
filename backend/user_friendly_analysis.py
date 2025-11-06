@@ -56,14 +56,14 @@ def get_user_friendly_analysis(analysis_result):
 
 
 def analyze_current_status(indicators, flags):
-    """현재 상태 분석"""
+    """현재 상태 분석 - 단기 모멘텀 중심"""
     rsi_tema = indicators.get('RSI_TEMA', 50)
     macd_osc = indicators.get('MACD_OSC', 0)
     vol_ratio = indicators.get('VOL', 0) / indicators.get('VOL_MA5', 1) if indicators.get('VOL_MA5', 0) > 0 else 1
     
     status_parts = []
     
-    # RSI 기반 상태
+    # RSI 기반 단기 모멘텀
     if rsi_tema > 70:
         status_parts.append("과매수 구간")
     elif rsi_tema < 30:
@@ -73,11 +73,11 @@ def analyze_current_status(indicators, flags):
     else:
         status_parts.append("하락 모멘텀")
     
-    # MACD 기반 상태
+    # MACD 기반 단기 추세
     if macd_osc > 0:
-        status_parts.append("상승 추세")
+        status_parts.append("단기 상승세")
     else:
-        status_parts.append("하락 추세")
+        status_parts.append("단기 하락세")
     
     # 거래량 상태
     if vol_ratio > 2:
@@ -90,25 +90,28 @@ def analyze_current_status(indicators, flags):
     return ", ".join(status_parts)
 
 def analyze_market_position(indicators, flags):
-    """시장 포지션 분석"""
+    """시장 포지션 분석 - 중장기 추세 중심"""
     tema20_slope = indicators.get('TEMA20_SLOPE20', 0)
     dema10_slope = indicators.get('DEMA10_SLOPE20', 0)
     above_cnt5 = indicators.get('ABOVE_CNT5', 0)
     
-    if tema20_slope > 0.5 and dema10_slope > 0.5:
+    # 중장기 추세 분석 (TEMA20 기준)
+    if tema20_slope > 0.5:
         return "강한 상승 추세"
-    elif tema20_slope > 0 and dema10_slope > 0:
+    elif tema20_slope > 0:
         return "상승 추세"
-    elif tema20_slope < -0.5 and dema10_slope < -0.5:
+    elif tema20_slope < -0.5:
         return "강한 하락 추세"
-    elif tema20_slope < 0 and dema10_slope < 0:
+    elif tema20_slope < 0:
         return "하락 추세"
-    elif above_cnt5 >= 3:
-        return "횡보 상승"
-    elif above_cnt5 <= 2:
-        return "횡보 하락"
     else:
-        return "횡보 구간"
+        # 횡보 구간에서는 단기 지표 참고
+        if above_cnt5 >= 3:
+            return "횡보 상승"
+        elif above_cnt5 <= 2:
+            return "횡보 하락"
+        else:
+            return "횡보 구간"
 
 def analyze_technical_indicators(indicators, flags):
     """기술적 지표 상태 분석"""
@@ -139,7 +142,8 @@ def analyze_technical_indicators(indicators, flags):
 
 def generate_summary(current_status, market_position, technical_status):
     """종합 요약 생성"""
-    return f"현재 {current_status} 상태이며, {market_position}를 보이고 있습니다."
+    # 단기와 중장기 상태를 구분하여 설명
+    return f"단기적으로는 {current_status} 상태이고, 중장기적으로는 {market_position}를 보이고 있습니다."
 
 
 # 기존 함수는 제거하고 새로운 분석 함수들로 대체됨
