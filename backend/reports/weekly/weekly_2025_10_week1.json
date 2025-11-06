@@ -1,0 +1,110 @@
+{
+  "report_type": "weekly",
+  "year": 2025,
+  "month": 10,
+  "week": 1,
+  "start_date": "2025-10-01",
+  "end_date": "2025-10-07",
+  "generated_at": "2025-11-06T13:17:31.138222",
+  "statistics": {
+    "total_stocks": 3,
+    "avg_return": 27.78,
+    "positive_rate": 100.0,
+    "best_stock": {
+      "ticker": "161580",
+      "name": "필옵틱스",
+      "scan_price": 38200.0,
+      "scan_date": "20251001",
+      "current_return": 37.96,
+      "max_return": 50.0,
+      "min_return": -2.62,
+      "days_elapsed": 36,
+      "volume": 580640,
+      "change_rate": "상승시작 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 38400.604101021294, \"DEMA\": 37984.64541599323, \"MACD_OSC\": 277.7317393651715, \"MACD_LINE\": 1492.7146978998862, \"MACD_SIGNAL\": 1214.9829585347147, \"RSI_TEMA\": 65.92552313458397, \"RSI_DEMA\": 66.21902235635521, \"OBV\": 93258226.0, \"VOL\": 580640, \"VOL_MA5\": 393351.2, \"close\": 38200.0, \"change_rate\": 1.87}",
+      "strategy": "{\"TEMA20_SLOPE20\": 517.2765705997632, \"OBV_SLOPE20\": 214974.4766917266, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 478.99237731408147}",
+      "recommendation_dates": [
+        "20251001"
+      ],
+      "recommendation_count": 1
+    },
+    "worst_stock": {
+      "ticker": "000100",
+      "name": "유한양행",
+      "scan_price": 119800.0,
+      "scan_date": "20251001",
+      "current_return": -3.76,
+      "max_return": 0.75,
+      "min_return": -4.76,
+      "days_elapsed": 36,
+      "volume": 279034,
+      "change_rate": "상승추세정착",
+      "market": "{\"TEMA\": 118916.49657200933, \"DEMA\": 118654.74023429655, \"MACD_OSC\": -227.62078911502567, \"MACD_LINE\": 573.8358204577526, \"MACD_SIGNAL\": 801.4566095727782, \"RSI_TEMA\": 62.610156307718526, \"RSI_DEMA\": 57.864501989598395, \"OBV\": 346353.0, \"VOL\": 279034, \"VOL_MA5\": 334364.6, \"close\": 119800.0, \"change_rate\": 1.18}",
+      "strategy": "{\"TEMA20_SLOPE20\": 119.33042311905847, \"OBV_SLOPE20\": 21001.284962406033, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 38.13905288726451}",
+      "recommendation_dates": [
+        "20251001"
+      ],
+      "recommendation_count": 1
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "161580",
+      "name": "필옵틱스",
+      "scan_price": 38200.0,
+      "scan_date": "20251001",
+      "current_return": 37.96,
+      "max_return": 50.0,
+      "min_return": -2.62,
+      "days_elapsed": 36,
+      "volume": 580640,
+      "change_rate": "상승시작 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 38400.604101021294, \"DEMA\": 37984.64541599323, \"MACD_OSC\": 277.7317393651715, \"MACD_LINE\": 1492.7146978998862, \"MACD_SIGNAL\": 1214.9829585347147, \"RSI_TEMA\": 65.92552313458397, \"RSI_DEMA\": 66.21902235635521, \"OBV\": 93258226.0, \"VOL\": 580640, \"VOL_MA5\": 393351.2, \"close\": 38200.0, \"change_rate\": 1.87}",
+      "strategy": "{\"TEMA20_SLOPE20\": 517.2765705997632, \"OBV_SLOPE20\": 214974.4766917266, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 478.99237731408147}",
+      "recommendation_dates": [
+        "20251001"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "098460",
+      "name": "고영",
+      "scan_price": 15500.0,
+      "scan_date": "20251001",
+      "current_return": 32.58,
+      "max_return": 32.58,
+      "min_return": 0.0,
+      "days_elapsed": 36,
+      "volume": 1458466,
+      "change_rate": "관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 15191.993051188681, \"DEMA\": 15055.690151814804, \"MACD_OSC\": -68.13465558331225, \"MACD_LINE\": 46.789745760363076, \"MACD_SIGNAL\": 114.92440134367533, \"RSI_TEMA\": 67.69938053729481, \"RSI_DEMA\": 63.118326950241986, \"OBV\": 130540677.0, \"VOL\": 1458466, \"VOL_MA5\": 648545.4, \"close\": 15500.0, \"change_rate\": -9.78}",
+      "strategy": "{\"TEMA20_SLOPE20\": 48.30217521914832, \"OBV_SLOPE20\": 542813.1774436076, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 32.3374774507499}",
+      "recommendation_dates": [
+        "20251001"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "000100",
+      "name": "유한양행",
+      "scan_price": 119800.0,
+      "scan_date": "20251001",
+      "current_return": -3.76,
+      "max_return": 0.75,
+      "min_return": -4.76,
+      "days_elapsed": 36,
+      "volume": 279034,
+      "change_rate": "상승추세정착",
+      "market": "{\"TEMA\": 118916.49657200933, \"DEMA\": 118654.74023429655, \"MACD_OSC\": -227.62078911502567, \"MACD_LINE\": 573.8358204577526, \"MACD_SIGNAL\": 801.4566095727782, \"RSI_TEMA\": 62.610156307718526, \"RSI_DEMA\": 57.864501989598395, \"OBV\": 346353.0, \"VOL\": 279034, \"VOL_MA5\": 334364.6, \"close\": 119800.0, \"change_rate\": 1.18}",
+      "strategy": "{\"TEMA20_SLOPE20\": 119.33042311905847, \"OBV_SLOPE20\": 21001.284962406033, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 38.13905288726451}",
+      "recommendation_dates": [
+        "20251001"
+      ],
+      "recommendation_count": 1
+    }
+  ],
+  "dates": [
+    "20251001",
+    "20251002"
+  ]
+}
