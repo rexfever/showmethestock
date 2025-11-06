@@ -1,10 +1,13 @@
 import sqlite3
 import json
+import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from models import PortfolioItem, PortfolioResponse, AddToPortfolioRequest, UpdatePortfolioRequest, TradingHistory, AddTradingRequest, TradingHistoryResponse
 from config import config
 import os
+
+logger = logging.getLogger(__name__)
 
 
 class PortfolioService:

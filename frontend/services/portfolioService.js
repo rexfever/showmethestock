@@ -3,6 +3,7 @@
  */
 import getConfig from '../config';
 import { getAuthToken } from '../utils/portfolioUtils';
+import { generateCSRFToken, sanitizeInput, validatePortfolioInput } from '../utils/security';
 
 /**
  * 포트폴리오 목록을 가져오는 함수
@@ -47,21 +48,34 @@ export const addToPortfolio = async (investmentData) => {
   if (!token) {
     throw new Error('인증 토큰이 없습니다.');
   }
+  
+  // 입력 검증
+  const validationErrors = validatePortfolioInput(investmentData);
+  if (validationErrors.length > 0) {
+    throw new Error(validationErrors.join(', '));
+  }
+  
+  // 입력 데이터 정제
+  const sanitizedData = {
+    ticker: sanitizeInput(investmentData.ticker),
+    name: sanitizeInput(investmentData.name),
+    entry_price: parseFloat(investmentData.entry_price),
+    quantity: parseInt(investmentData.quantity),
+    entry_date: investmentData.entry_date,
+    status: 'holding'
+  };
+  
+  // CSRF 토큰 생성
+  const csrfToken = generateCSRFToken();
 
   const response = await fetch(`${base}/portfolio/add`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken
     },
-    body: JSON.stringify({
-      ticker: investmentData.ticker,
-      name: investmentData.name,
-      entry_price: parseFloat(investmentData.entry_price),
-      quantity: parseInt(investmentData.quantity),
-      entry_date: investmentData.entry_date,
-      status: 'holding'
-    })
+    body: JSON.stringify(sanitizedData)
   });
 
   if (!response.ok) {
@@ -88,11 +102,20 @@ export const removeFromPortfolio = async (ticker) => {
   if (!token) {
     throw new Error('인증 토큰이 없습니다.');
   }
+  
+  // 입력 검증
+  if (!ticker || typeof ticker !== 'string') {
+    throw new Error('유효한 종목 코드가 필요합니다');
+  }
+  
+  const sanitizedTicker = sanitizeInput(ticker);
+  const csrfToken = generateCSRFToken();
 
-  const response = await fetch(`${base}/portfolio/${ticker}`, {
+  const response = await fetch(`${base}/portfolio/${sanitizedTicker}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
+      'X-CSRF-Token': csrfToken
     },
   });
 

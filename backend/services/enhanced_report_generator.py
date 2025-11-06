@@ -88,10 +88,12 @@ class EnhancedReportGenerator:
         sector_data = {}
         
         for stock in stocks:
-            market = stock.get('market', '기타')
-            if market not in sector_data:
-                sector_data[market] = []
-            sector_data[market].append(stock['current_return'])
+            # 종목명에서 섹터 추정 또는 기본 분류 사용
+            sector = self._get_sector_from_stock(stock)
+            
+            if sector not in sector_data:
+                sector_data[sector] = []
+            sector_data[sector].append(stock['current_return'])
         
         sector_analysis = {}
         for sector, returns in sector_data.items():
@@ -102,6 +104,35 @@ class EnhancedReportGenerator:
             }
         
         return sector_analysis
+    
+    def _get_sector_from_stock(self, stock: Dict) -> str:
+        """종목에서 섹터 정보 추출"""
+        name = stock.get('name', '')
+        ticker = stock.get('ticker', '')
+        
+        # 종목명 기반 섹터 분류
+        if any(keyword in name for keyword in ['바이오', '제약', '의료', '헬스']):
+            return '바이오/제약'
+        elif any(keyword in name for keyword in ['반도체', '전자', '디스플레이', 'IT']):
+            return 'IT/전자'
+        elif any(keyword in name for keyword in ['화학', '케미칼', '소재']):
+            return '화학/소재'
+        elif any(keyword in name for keyword in ['자동차', '모터', '부품']):
+            return '자동차'
+        elif any(keyword in name for keyword in ['건설', '건축', '토목']):
+            return '건설'
+        elif any(keyword in name for keyword in ['금융', '은행', '증권', '보험']):
+            return '금융'
+        elif any(keyword in name for keyword in ['통신', '네트워크', '인터넷']):
+            return '통신/인터넷'
+        elif any(keyword in name for keyword in ['에너지', '전력', '가스']):
+            return '에너지'
+        elif any(keyword in name for keyword in ['식품', '음료', '농업']):
+            return '식품/농업'
+        elif any(keyword in name for keyword in ['유통', '백화점', '마트']):
+            return '유통/소비재'
+        else:
+            return '기타'
     
     def generate_insights(self, metrics: Dict, sector_analysis: Dict) -> List[str]:
         """AI 기반 인사이트 생성"""
@@ -180,6 +211,15 @@ class EnhancedReportGenerator:
             enhanced_report['ai_insights'] = insights
             enhanced_report['report_version'] = '2.0'
             enhanced_report['enhanced_at'] = datetime.now().isoformat()
+            
+            # 보고서 파일에 저장
+            try:
+                filepath = os.path.join(self.reports_dir, report_type, filename)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(enhanced_report, f, ensure_ascii=False, indent=2)
+                logger.info(f"향상된 보고서 저장 완료: {filename}")
+            except Exception as save_error:
+                logger.warning(f"보고서 저장 실패: {save_error}")
             
             return enhanced_report
             

@@ -1,14 +1,35 @@
+import { validateCSRFToken, sanitizeInput, validatePortfolioInput } from '../../../utils/security';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   try {
+    // CSRF 토큰 검증
+    const csrfToken = req.headers['x-csrf-token'];
+    if (!validateCSRFToken(csrfToken)) {
+      return res.status(403).json({ message: 'CSRF token validation failed' });
+    }
+    
+    // 입력 검증
+    const validationErrors = validatePortfolioInput(req.body);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ message: validationErrors.join(', ') });
+    }
+    
     const token = req.headers.authorization?.replace('Bearer ', '');
     
     if (!token) {
       return res.status(401).json({ message: '토큰이 필요합니다' });
     }
+    
+    // 입력 데이터 정제
+    const sanitizedBody = {
+      ...req.body,
+      ticker: sanitizeInput(req.body.ticker),
+      name: sanitizeInput(req.body.name)
+    };
 
     const response = await fetch('http://localhost:8010/portfolio/add', {
       method: 'POST',
@@ -16,7 +37,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(sanitizedBody)
     });
 
     const data = await response.json();

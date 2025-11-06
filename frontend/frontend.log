@@ -6,7 +6,9 @@
   - Local:        http://localhost:3000
   - Environments: .env.local
 
- ✓ Ready in 1747ms
- ○ Compiling / ...
- ✓ Compiled / in 4.9s (273 modules)
- ✓ Compiled /customer-scanner in 239ms (281 modules)
+ ✓ Ready in 1720ms
+ ✓ Compiled /performance-report in 433ms (277 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /performance-report in 194ms (290 modules)
+ ✓ Compiled /_error in 183ms (292 modules)
+ ✓ Compiled / in 114ms (288 modules)
