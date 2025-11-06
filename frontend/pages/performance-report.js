@@ -468,11 +468,51 @@ export default function PerformanceReport() {
                       <div>
                         <p className="text-purple-100 text-sm">분석 기간</p>
                         <p className="text-2xl font-bold">{reportData.dates.length}일</p>
+                        {reportData.report_version && (
+                          <p className="text-xs text-purple-200 mt-1">v{reportData.report_version}</p>
+                        )}
                       </div>
                       <div className="text-3xl opacity-80">📅</div>
                     </div>
                   </div>
                 </div>
+
+                {/* 섹터별 성과 분석 */}
+                {reportData.sector_analysis && Object.keys(reportData.sector_analysis).length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                      <span className="text-xl mr-2">🏢</span>
+                      섹터별 성과 분석
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {Object.entries(reportData.sector_analysis).map(([sector, data], index) => (
+                        <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-gray-800 mb-2 truncate">
+                            {sector || '기타 섹터'}
+                          </h4>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">종목 수</span>
+                              <span className="font-medium">{data.count}개</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">평균 수익률</span>
+                              <span className={`font-medium ${
+                                data.avg_return >= 0 ? 'text-red-600' : 'text-blue-600'
+                              }`}>
+                                {data.avg_return >= 0 ? '+' : ''}{data.avg_return}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">승률</span>
+                              <span className="font-medium text-green-600">{data.win_rate}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 상세 분석 섹션 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -561,36 +601,114 @@ export default function PerformanceReport() {
                   </div>
                 </div>
 
+                {/* 향상된 성과 지표 */}
+                {reportData.enhanced_metrics && (
+                  <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                      <span className="text-xl mr-2">📊</span>
+                      향상된 성과 지표
+                      <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">v2.0</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-800 mb-3">리스크 지표</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-blue-700">샤프 비율</span>
+                            <span className="text-sm font-bold text-blue-900">{reportData.enhanced_metrics.risk_metrics.sharpe_ratio}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-blue-700">최대 낙폭</span>
+                            <span className="text-sm font-bold text-red-600">{reportData.enhanced_metrics.risk_metrics.max_drawdown}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-blue-700">변동성 조정 수익률</span>
+                            <span className="text-sm font-bold text-blue-900">{reportData.enhanced_metrics.risk_metrics.volatility_adjusted_return}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-green-800 mb-3">성과 지표</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-green-700">승률</span>
+                            <span className="text-sm font-bold text-green-900">{reportData.enhanced_metrics.performance_metrics.win_rate}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-green-700">평균 수익</span>
+                            <span className="text-sm font-bold text-green-900">{reportData.enhanced_metrics.performance_metrics.avg_win}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-green-700">손익비</span>
+                            <span className="text-sm font-bold text-green-900">{reportData.enhanced_metrics.performance_metrics.profit_loss_ratio}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-800 mb-3">기본 통계</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-purple-700">중간값</span>
+                            <span className="text-sm font-bold text-purple-900">{reportData.enhanced_metrics.basic_stats.median_return}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-purple-700">표준편차</span>
+                            <span className="text-sm font-bold text-purple-900">{reportData.enhanced_metrics.basic_stats.std_return}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-purple-700">총 종목수</span>
+                            <span className="text-sm font-bold text-purple-900">{reportData.enhanced_metrics.basic_stats.total_stocks}개</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* AI 인사이트 */}
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                    <span className="text-xl mr-2">💡</span>
+                    <span className="text-xl mr-2">🤖</span>
                     AI 분석 인사이트
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-800 mb-2">성과 분석</h4>
-                      <ul className="text-sm text-blue-700 space-y-1">
-                        {reportData.statistics.avg_return > 10 && (
-                          <li>• 평균 수익률 10% 초과로 우수한 성과</li>
-                        )}
-                        {reportData.statistics.positive_rate > 70 && (
-                          <li>• 70% 이상의 높은 승률 달성</li>
-                        )}
-                        {reportData.statistics.positive_rate < 50 && (
-                          <li>• 승률 개선을 위한 전략 점검 필요</li>
-                        )}
+                  {reportData.ai_insights && reportData.ai_insights.length > 0 ? (
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-orange-800 mb-3">AI 추천 사항</h4>
+                      <ul className="space-y-2">
+                        {reportData.ai_insights.map((insight, index) => (
+                          <li key={index} className="text-sm text-orange-700 flex items-start">
+                            <span className="mr-2">•</span>
+                            <span>{insight}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-green-800 mb-2">투자 가이드</h4>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 상위 20% 종목 우선 검토 추천</li>
-                        <li>• 리스크 관리를 위한 분산 투자</li>
-                        <li>• 정기적인 수익 실현 및 손절 관리</li>
-                      </ul>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-800 mb-2">성과 분석</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          {reportData.statistics.avg_return > 10 && (
+                            <li>• 평균 수익률 10% 초과로 우수한 성과</li>
+                          )}
+                          {reportData.statistics.positive_rate > 70 && (
+                            <li>• 70% 이상의 높은 승률 달성</li>
+                          )}
+                          {reportData.statistics.positive_rate < 50 && (
+                            <li>• 승률 개선을 위한 전략 점검 필요</li>
+                          )}
+                        </ul>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-green-800 mb-2">투자 가이드</h4>
+                        <ul className="text-sm text-green-700 space-y-1">
+                          <li>• 상위 20% 종목 우선 검토 추천</li>
+                          <li>• 리스크 관리를 위한 분산 투자</li>
+                          <li>• 정기적인 수익 실현 및 손절 관리</li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* 종목 리스트 */}

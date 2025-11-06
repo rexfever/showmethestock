@@ -111,8 +111,11 @@ def create_popup_notice_table(cur):
 
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
-from services.report_generator import report_generator
+from services.enhanced_report_generator import EnhancedReportGenerator
 from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
+
+# 향상된 보고서 생성기 인스턴스
+report_generator = EnhancedReportGenerator()
 
 from new_recurrence_api import router as recurrence_router
 from market_guide import get_market_guide, get_detailed_stock_advice
@@ -3085,12 +3088,11 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
 
 @app.get("/reports/weekly/{year}/{month}/{week}")
 async def get_weekly_report(year: int, month: int, week: int):
-    """주간 보고서 조회"""
+    """주간 보고서 조회 (향상된 버전)"""
     try:
-        filename = f"weekly_{year}_{month:02d}_week{week}.json"
-        report_data = report_generator._load_report("weekly", filename)
+        enhanced_report = report_generator.generate_enhanced_report("weekly", year, month, week)
         
-        if not report_data:
+        if "error" in enhanced_report:
             return {
                 "ok": False,
                 "error": f"{year}년 {month}월 {week}주차 보고서가 없습니다."
@@ -3098,7 +3100,7 @@ async def get_weekly_report(year: int, month: int, week: int):
         
         return {
             "ok": True,
-            "data": report_data
+            "data": enhanced_report
         }
         
     except Exception as e:
@@ -3110,12 +3112,11 @@ async def get_weekly_report(year: int, month: int, week: int):
 
 @app.get("/reports/monthly/{year}/{month}")
 async def get_monthly_report(year: int, month: int):
-    """월간 보고서 조회"""
+    """월간 보고서 조회 (향상된 버전)"""
     try:
-        filename = f"monthly_{year}_{month:02d}.json"
-        report_data = report_generator._load_report("monthly", filename)
+        enhanced_report = report_generator.generate_enhanced_report("monthly", year, month)
         
-        if not report_data:
+        if "error" in enhanced_report:
             return {
                 "ok": False,
                 "error": f"{year}년 {month}월 보고서가 없습니다."
@@ -3123,7 +3124,7 @@ async def get_monthly_report(year: int, month: int):
         
         return {
             "ok": True,
-            "data": report_data
+            "data": enhanced_report
         }
         
     except Exception as e:

@@ -199,5 +199,57 @@
     "20251024",
     "20251027",
     "20251028"
-  ]
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": -1.23,
+      "median_return": -0.78,
+      "std_return": 4.03,
+      "total_stocks": 8
+    },
+    "risk_metrics": {
+      "sharpe_ratio": -1.049,
+      "max_drawdown": -7.53,
+      "volatility_adjusted_return": -0.305
+    },
+    "performance_metrics": {
+      "win_rate": 50.0,
+      "avg_win": 2.34,
+      "avg_loss": 4.8,
+      "profit_loss_ratio": 0.49
+    }
+  },
+  "sector_analysis": {
+    "": {
+      "count": 4,
+      "avg_return": 0.36,
+      "win_rate": 75.0
+    },
+    "{\"TEMA\": 11165.22222019264, \"DEMA\": 11089.873639804739, \"MACD_OSC\": 2.9369982383421984, \"MACD_LINE\": 314.3748729740146, \"MACD_SIGNAL\": 311.4378747356724, \"RSI_TEMA\": 65.60719570450387, \"RSI_DEMA\": 62.8608136209411, \"OBV\": 119114009.0, \"VOL\": 132047, \"VOL_MA5\": 101544.0, \"close\": 11190.0, \"change_rate\": 0.0}": {
+      "count": 1,
+      "avg_return": -1.97,
+      "win_rate": 0.0
+    },
+    "{\"TEMA\": 170037.45994167763, \"DEMA\": 171670.73476074295, \"MACD_OSC\": 2419.5043642497194, \"MACD_LINE\": 7128.014869857492, \"MACD_SIGNAL\": 4708.510505607773, \"RSI_TEMA\": 69.15426266864353, \"RSI_DEMA\": 70.19676989264408, \"OBV\": 3951982.0, \"VOL\": 347117, \"VOL_MA5\": 481094.0, \"close\": 172000.0, \"change_rate\": 2.26}": {
+      "count": 1,
+      "avg_return": 0.41,
+      "win_rate": 100.0
+    },
+    "{\"TEMA\": 24032.133199719392, \"DEMA\": 23780.53714848592, \"MACD_OSC\": 350.73049233745996, \"MACD_LINE\": 2260.003503080745, \"MACD_SIGNAL\": 1909.2730107432849, \"RSI_TEMA\": 66.28224178592075, \"RSI_DEMA\": 68.42936373154262, \"OBV\": 65902102.0, \"VOL\": 2769731, \"VOL_MA5\": 3651438.8, \"close\": 23800.0, \"change_rate\": 0.0}": {
+      "count": 1,
+      "avg_return": -4.2,
+      "win_rate": 0.0
+    },
+    "{\"TEMA\": 48057.22821829952, \"DEMA\": 48355.802162146814, \"MACD_OSC\": 106.05452341814203, \"MACD_LINE\": 1401.047921538222, \"MACD_SIGNAL\": 1294.99339812008, \"RSI_TEMA\": 67.19496546201475, \"RSI_DEMA\": 63.476244153508155, \"OBV\": 60778639.0, \"VOL\": 1725258, \"VOL_MA5\": 1940906.6, \"close\": 48600.0, \"change_rate\": 0.0}": {
+      "count": 1,
+      "avg_return": -5.5,
+      "win_rate": 0.0
+    }
+  },
+  "ai_insights": [
+    "⚠️ 평균 수익률이 기대치를 하회하고 있어 전략 점검이 필요합니다.",
+    "⚡ 변동성 대비 수익률이 낮아 리스크 관리가 필요합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T13:41:08.947371"
 }

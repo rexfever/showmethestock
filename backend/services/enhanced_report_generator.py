@@ -1,17 +1,35 @@
 """
 향상된 성과 보고서 생성 서비스
 """
-import numpy as np
-from typing import Dict, List
-from datetime import datetime, timedelta
+import os
+import json
 import sqlite3
 import logging
+import numpy as np
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+import calendar
+from collections import Counter, defaultdict
+from services.returns_service import calculate_returns
+import concurrent.futures
 
 logger = logging.getLogger(__name__)
 
 class EnhancedReportGenerator:
-    def __init__(self, db_path: str):
-        self.db_path = db_path
+    def __init__(self):
+        # 절대 경로 사용 - 프로젝트 루트 찾기
+        current_file = os.path.abspath(__file__)
+        current = current_file
+        while current != os.path.dirname(current):
+            if os.path.basename(current) == "backend":
+                project_root = os.path.dirname(current)
+                break
+            current = os.path.dirname(current)
+        else:
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+        
+        self.reports_dir = os.path.join(project_root, "backend", "reports")
+        self.db_path = os.path.join(project_root, "backend", "snapshots.db")
     
     def calculate_enhanced_metrics(self, stocks: List[Dict]) -> Dict:
         """향상된 성과 지표 계산"""
@@ -113,3 +131,58 @@ class EnhancedReportGenerator:
             insights.append("⚡ 변동성 대비 수익률이 낮아 리스크 관리가 필요합니다.")
         
         return insights
+    
+    def _load_report(self, report_type: str, filename: str) -> Optional[Dict]:
+        """보고서 파일 로드"""
+        try:
+            filepath = os.path.join(self.reports_dir, report_type, filename)
+            if not os.path.exists(filepath):
+                return None
+            
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"보고서 로드 오류 ({filename}): {e}")
+            return None
+    
+    def generate_enhanced_report(self, report_type: str, year: int, month: int = None, week: int = None, quarter: int = None) -> Dict:
+        """향상된 보고서 생성"""
+        try:
+            # 기존 보고서 데이터 로드
+            if report_type == "weekly" and month and week:
+                filename = f"weekly_{year}_{month:02d}_week{week}.json"
+            elif report_type == "monthly" and month:
+                filename = f"monthly_{year}_{month:02d}.json"
+            elif report_type == "quarterly" and quarter:
+                filename = f"quarterly_{year}_Q{quarter}.json"
+            elif report_type == "yearly":
+                filename = f"yearly_{year}.json"
+            else:
+                return {"error": "잘못된 보고서 유형입니다"}
+            
+            base_report = self._load_report(report_type, filename)
+            if not base_report:
+                return {"error": "보고서를 찾을 수 없습니다"}
+            
+            stocks = base_report.get('stocks', [])
+            if not stocks:
+                return base_report
+            
+            # 향상된 지표 계산
+            enhanced_metrics = self.calculate_enhanced_metrics(stocks)
+            sector_analysis = self.analyze_sector_performance(stocks)
+            insights = self.generate_insights(enhanced_metrics, sector_analysis)
+            
+            # 기존 보고서에 향상된 데이터 추가
+            enhanced_report = base_report.copy()
+            enhanced_report['enhanced_metrics'] = enhanced_metrics
+            enhanced_report['sector_analysis'] = sector_analysis
+            enhanced_report['ai_insights'] = insights
+            enhanced_report['report_version'] = '2.0'
+            enhanced_report['enhanced_at'] = datetime.now().isoformat()
+            
+            return enhanced_report
+            
+        except Exception as e:
+            logger.error(f"향상된 보고서 생성 오류: {e}")
+            return {"error": str(e)}
