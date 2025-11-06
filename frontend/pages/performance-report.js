@@ -413,67 +413,186 @@ export default function PerformanceReport() {
             {/* 보고서 데이터 */}
             {reportData && !loading && !error && (
               <div className="space-y-6">
-                {/* 요약 정보 - 한 줄 표시 */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-6">
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-medium text-gray-600">총 추천 종목:</span>
-                      <span className="text-lg font-bold text-gray-900">{reportData.statistics.total_stocks}개</span>
+                {/* 핵심 지표 대시보드 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-blue-100 text-sm">총 추천 종목</p>
+                        <p className="text-2xl font-bold">{reportData.statistics.total_stocks}개</p>
+                      </div>
+                      <div className="text-3xl opacity-80">📊</div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-medium text-gray-600">평균 수익률:</span>
-                      <span className={`text-lg font-bold ${reportData.statistics.avg_return >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                        {reportData.statistics.avg_return >= 0 ? '+' : ''}{reportData.statistics.avg_return}%
-                      </span>
+                  </div>
+                  
+                  <div className={`rounded-lg p-6 text-white ${
+                    reportData.statistics.avg_return >= 0 
+                      ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white text-opacity-80 text-sm">평균 수익률</p>
+                        <p className="text-2xl font-bold">
+                          {reportData.statistics.avg_return >= 0 ? '+' : ''}{reportData.statistics.avg_return}%
+                        </p>
+                      </div>
+                      <div className="text-3xl opacity-80">📈</div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-medium text-gray-600">수익 종목 비율:</span>
-                      <div className="flex flex-col items-center">
-                        <span className="text-lg font-bold text-gray-900">
-                          {reportData.statistics.positive_rate}%
-                        </span>
-                        <div className="flex gap-1 mt-2">
-                          <div className={`w-4 h-4 rounded-full ${
-                            reportData.statistics.positive_rate < 50 ? 'bg-red-500' : 'bg-red-100'
-                          }`}></div>
-                          <div className={`w-4 h-4 rounded-full ${
-                            reportData.statistics.positive_rate >= 50 && reportData.statistics.positive_rate < 70 ? 'bg-yellow-300' : 'bg-yellow-100'
-                          }`}></div>
-                          <div className={`w-4 h-4 rounded-full ${
-                            reportData.statistics.positive_rate >= 70 ? 'bg-green-500' : 'bg-green-100'
-                          }`}></div>
+                  </div>
+                  
+                  <div className={`rounded-lg p-6 text-white ${
+                    reportData.statistics.positive_rate >= 70 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600'
+                      : reportData.statistics.positive_rate >= 50
+                      ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                      : 'bg-gradient-to-r from-red-500 to-red-600'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white text-opacity-80 text-sm">승률</p>
+                        <p className="text-2xl font-bold">{reportData.statistics.positive_rate}%</p>
+                        <div className="w-full bg-white bg-opacity-20 rounded-full h-2 mt-2">
+                          <div 
+                            className="bg-white h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${reportData.statistics.positive_rate}%` }}
+                          ></div>
                         </div>
                       </div>
+                      <div className="text-3xl opacity-80">🎯</div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-medium text-gray-600">추천 기간:</span>
-                      <span className="text-lg font-bold text-gray-900">{reportData.dates.length}일</span>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-purple-100 text-sm">분석 기간</p>
+                        <p className="text-2xl font-bold">{reportData.dates.length}일</p>
+                      </div>
+                      <div className="text-3xl opacity-80">📅</div>
                     </div>
                   </div>
                 </div>
 
-                {/* 최고/최저 성과 - 한 줄 표시 */}
-                {reportData.statistics.best_stock && reportData.statistics.worst_stock && (
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-6">
-                      <div className="flex items-center gap-3">
-                        <span className="text-base font-medium text-gray-600">최고 성과:</span>
-                        <span className="text-base font-semibold text-gray-900">{reportData.statistics.best_stock.name}</span>
-                        <span className={`text-base font-bold ${reportData.statistics.best_stock.max_return >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                          {reportData.statistics.best_stock.max_return >= 0 ? '+' : ''}{reportData.statistics.best_stock.max_return}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-base font-medium text-gray-600">최저 성과:</span>
-                        <span className="text-base font-semibold text-gray-900">{reportData.statistics.worst_stock.name}</span>
-                        <span className={`text-base font-bold ${reportData.statistics.worst_stock.max_return >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                          {reportData.statistics.worst_stock.max_return >= 0 ? '+' : ''}{reportData.statistics.worst_stock.max_return}%
-                        </span>
+                {/* 상세 분석 섹션 */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  {/* 최고/최저 성과 */}
+                  {reportData.statistics.best_stock && reportData.statistics.worst_stock && (
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <span className="text-xl mr-2">🏆</span>
+                        최고/최저 성과
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-green-600 font-medium">최고 성과</p>
+                              <p className="text-lg font-bold text-gray-900">{reportData.statistics.best_stock.name}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-green-600">
+                                +{reportData.statistics.best_stock.max_return}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-red-600 font-medium">최저 성과</p>
+                              <p className="text-lg font-bold text-gray-900">{reportData.statistics.worst_stock.name}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-red-600">
+                                {reportData.statistics.worst_stock.max_return}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  )}
+                  
+                  {/* 수익률 분포 */}
+                  <div className="bg-white rounded-lg shadow-sm p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                      <span className="text-xl mr-2">📊</span>
+                      최고 수익률 분포
+                    </h3>
+                    <div className="space-y-3">
+                      {(() => {
+                        const ranges = [
+                          { label: '20% 이상', min: 20, color: 'bg-green-500' },
+                          { label: '10~20%', min: 10, max: 20, color: 'bg-blue-500' },
+                          { label: '0~10%', min: 0, max: 10, color: 'bg-yellow-500' },
+                          { label: '0% 미만', max: 0, color: 'bg-red-500' }
+                        ];
+                        
+                        return ranges.map(range => {
+                          const count = reportData.stocks.filter(stock => {
+                            if (range.min !== undefined && range.max !== undefined) {
+                              return stock.max_return >= range.min && stock.max_return < range.max;
+                            } else if (range.min !== undefined) {
+                              return stock.max_return >= range.min;
+                            } else {
+                              return stock.max_return < range.max;
+                            }
+                          }).length;
+                          
+                          const percentage = (count / reportData.stocks.length * 100).toFixed(1);
+                          
+                          return (
+                            <div key={range.label} className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`w-4 h-4 rounded ${range.color} mr-3`}></div>
+                                <span className="text-sm font-medium">{range.label}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="text-sm text-gray-600 mr-2">{count}개</span>
+                                <span className="text-sm font-bold">{percentage}%</span>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()
+                      }
+                    </div>
                   </div>
-                )}
+                </div>
 
+                {/* AI 인사이트 */}
+                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span className="text-xl mr-2">💡</span>
+                    AI 분석 인사이트
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-800 mb-2">성과 분석</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        {reportData.statistics.avg_return > 10 && (
+                          <li>• 평균 수익률 10% 초과로 우수한 성과</li>
+                        )}
+                        {reportData.statistics.positive_rate > 70 && (
+                          <li>• 70% 이상의 높은 승률 달성</li>
+                        )}
+                        {reportData.statistics.positive_rate < 50 && (
+                          <li>• 승률 개선을 위한 전략 점검 필요</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-green-800 mb-2">투자 가이드</h4>
+                      <ul className="text-sm text-green-700 space-y-1">
+                        <li>• 상위 20% 종목 우선 검토 추천</li>
+                        <li>• 리스크 관리를 위한 분산 투자</li>
+                        <li>• 정기적인 수익 실현 및 손절 관리</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* 종목 리스트 */}
                 {reportData.stocks && reportData.stocks.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm">
@@ -492,6 +611,7 @@ export default function PerformanceReport() {
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">종목명</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">추천가</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">추천일</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">추천횟수</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">현재수익률</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">최고수익률</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">최저수익률</th>
@@ -510,7 +630,24 @@ export default function PerformanceReport() {
                                 {stock.scan_price.toLocaleString()}원
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                {stock.scan_date}
+                                <span className="font-medium">
+                                  {stock.recommendation_dates 
+                                    ? stock.recommendation_dates.map(date => parseInt(date.slice(-2))).join(', ') + '일'
+                                    : parseInt(stock.scan_date.slice(-2)) + '일'
+                                  }
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                <div className="flex items-center space-x-2">
+                                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                                    {stock.recommendation_count || 1}회
+                                  </span>
+                                  {stock.recommendation_dates && stock.recommendation_dates.length > 1 && (
+                                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
+                                      연속추천
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${
                                 stock.current_return >= 0 ? 'text-red-600' : 'text-blue-600'

@@ -1,0 +1,221 @@
+{
+  "report_type": "weekly",
+  "year": 2025,
+  "month": 7,
+  "week": 5,
+  "start_date": "2025-07-29",
+  "end_date": "2025-07-31",
+  "generated_at": "2025-11-06T12:04:32.384326",
+  "statistics": {
+    "total_stocks": 9,
+    "avg_return": 40.83,
+    "positive_rate": 100.0,
+    "best_stock": {
+      "ticker": "395270",
+      "name": "HANARO Fn K-반도체",
+      "scan_price": 11695.0,
+      "scan_date": "20250729",
+      "current_return": 65.84,
+      "max_return": 73.36,
+      "min_return": -1.58,
+      "days_elapsed": 100,
+      "volume": 0,
+      "change_rate": "관심",
+      "market": "{\"TEMA\": 11642.916037553181, \"DEMA\": 11619.525335906825, \"MACD_OSC\": -63.06992404085182, \"MACD_LINE\": 177.38098562501182, \"MACD_SIGNAL\": 240.45090966586363, \"RSI_TEMA\": 67.29744626712557, \"RSI_DEMA\": 59.062614973585795, \"OBV\": 5100252.0, \"VOL\": 191136, \"VOL_MA5\": 297335.2, \"close\": 11695.0, \"change_rate\": -34.48}",
+      "strategy": "{\"TEMA20_SLOPE20\": -3.365616825713206, \"OBV_SLOPE20\": 68961.7969924811, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 0.11621713681377425}",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 1
+    },
+    "worst_stock": {
+      "ticker": "379800",
+      "name": "KODEX 미국S&P500",
+      "scan_price": 20300.0,
+      "scan_date": "20250731",
+      "current_return": 9.8,
+      "max_return": 10.73,
+      "min_return": -3.14,
+      "days_elapsed": 98,
+      "volume": 0,
+      "change_rate": "상승시작 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 20297.004899828728, \"DEMA\": 20264.887624144, \"MACD_OSC\": 9.603432431508509, \"MACD_LINE\": 314.5026780805565, \"MACD_SIGNAL\": 304.899245649048, \"RSI_TEMA\": 69.16805291741119, \"RSI_DEMA\": 70.14157450706463, \"OBV\": 1012146.0, \"VOL\": 10619762, \"VOL_MA5\": 6699297.8, \"close\": 20300.0, \"change_rate\": -7.85}",
+      "strategy": "{\"TEMA20_SLOPE20\": 52.13973139440778, \"OBV_SLOPE20\": 10896.4781954889, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 48.823436856623175}",
+      "recommendation_dates": [
+        "20250731"
+      ],
+      "recommendation_count": 1
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "395270",
+      "name": "HANARO Fn K-반도체",
+      "scan_price": 11695.0,
+      "scan_date": "20250729",
+      "current_return": 65.84,
+      "max_return": 73.36,
+      "min_return": -1.58,
+      "days_elapsed": 100,
+      "volume": 0,
+      "change_rate": "관심",
+      "market": "{\"TEMA\": 11642.916037553181, \"DEMA\": 11619.525335906825, \"MACD_OSC\": -63.06992404085182, \"MACD_LINE\": 177.38098562501182, \"MACD_SIGNAL\": 240.45090966586363, \"RSI_TEMA\": 67.29744626712557, \"RSI_DEMA\": 59.062614973585795, \"OBV\": 5100252.0, \"VOL\": 191136, \"VOL_MA5\": 297335.2, \"close\": 11695.0, \"change_rate\": -34.48}",
+      "strategy": "{\"TEMA20_SLOPE20\": -3.365616825713206, \"OBV_SLOPE20\": 68961.7969924811, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 0.11621713681377425}",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "010120",
+      "name": "LS ELECTRIC",
+      "scan_price": 297000.0,
+      "scan_date": "20250730",
+      "current_return": 52.02,
+      "max_return": 64.48,
+      "min_return": -12.63,
+      "days_elapsed": 99,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 292203.5047962091, \"DEMA\": 295822.8381339496, \"MACD_OSC\": 1618.4023120710526, \"MACD_LINE\": 6760.884425613971, \"MACD_SIGNAL\": 5142.482113542918, \"RSI_TEMA\": 66.67549152938194, \"RSI_DEMA\": 67.05101854307799, \"OBV\": 15131412.0, \"VOL\": 142190, \"VOL_MA5\": 223944.0, \"close\": 297000.0, \"change_rate\": -7.04}",
+      "strategy": "{\"TEMA20_SLOPE20\": 273.53166410991184, \"OBV_SLOPE20\": 57076.94060150336, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 765.9603394452371}",
+      "recommendation_dates": [
+        "20250730"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "278470",
+      "name": "에이피알",
+      "scan_price": 181300.0,
+      "scan_date": "20250729",
+      "current_return": 33.2,
+      "max_return": 52.23,
+      "min_return": -5.13,
+      "days_elapsed": 100,
+      "volume": 0,
+      "change_rate": "상승추세정착",
+      "market": "{\"TEMA\": 178904.54331158937, \"DEMA\": 177644.98939227292, \"MACD_OSC\": -1014.5945913033775, \"MACD_LINE\": 9738.670819771767, \"MACD_SIGNAL\": 10753.265411075145, \"RSI_TEMA\": 68.93788935233223, \"RSI_DEMA\": 65.7207698808839, \"OBV\": 37431214.0, \"VOL\": 538391, \"VOL_MA5\": 432175.6, \"close\": 181300.0, \"change_rate\": -23.34}",
+      "strategy": "{\"TEMA20_SLOPE20\": 1790.5395654979543, \"OBV_SLOPE20\": 132217.04661654, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 1777.476137159253}",
+      "recommendation_dates": [
+        "20250729",
+        "20250731"
+      ],
+      "recommendation_count": 2
+    },
+    {
+      "ticker": "005935",
+      "name": "삼성전자우",
+      "scan_price": 57600.0,
+      "scan_date": "20250731",
+      "current_return": 35.42,
+      "max_return": 50.69,
+      "min_return": -3.82,
+      "days_elapsed": 98,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 57850.8069544945, \"DEMA\": 57810.32986611253, \"MACD_OSC\": 258.0749905825246, \"MACD_LINE\": 2004.0518968615725, \"MACD_SIGNAL\": 1745.9769062790479, \"RSI_TEMA\": 62.31949210720419, \"RSI_DEMA\": 65.70669546478052, \"OBV\": 19077271.0, \"VOL\": 2271922, \"VOL_MA5\": 2290694.2, \"close\": 57600.0, \"change_rate\": -26.44}",
+      "strategy": "{\"TEMA20_SLOPE20\": 335.2394265000149, \"OBV_SLOPE20\": 509057.84210526315, \"ABOVE_CNT5\": 4, \"DEMA10_SLOPE20\": 338.7815625364587}",
+      "recommendation_dates": [
+        "20250731"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "scan_price": 15720.0,
+      "scan_date": "20250729",
+      "current_return": 45.1,
+      "max_return": 47.07,
+      "min_return": -6.58,
+      "days_elapsed": 100,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 15500.19426210964, \"DEMA\": 15529.83806625726, \"MACD_OSC\": 61.29899947476724, \"MACD_LINE\": 272.41789439657623, \"MACD_SIGNAL\": 211.118894921809, \"RSI_TEMA\": 69.9229869768497, \"RSI_DEMA\": 68.17101808956247, \"OBV\": -3356258.0, \"VOL\": 1899511, \"VOL_MA5\": 2304140.4, \"close\": 15720.0, \"change_rate\": -29.19}",
+      "strategy": "{\"TEMA20_SLOPE20\": 75.44641261138767, \"OBV_SLOPE20\": 554929.6172932334, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 84.05908446263462}",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "028260",
+      "name": "삼성물산",
+      "scan_price": 172900.0,
+      "scan_date": "20250729",
+      "current_return": 27.53,
+      "max_return": 33.6,
+      "min_return": -8.04,
+      "days_elapsed": 100,
+      "volume": 0,
+      "change_rate": "관심증가",
+      "market": "{\"TEMA\": 171636.01331019838, \"DEMA\": 170967.6140672725, \"MACD_OSC\": -1489.871236927489, \"MACD_LINE\": 2526.176278171217, \"MACD_SIGNAL\": 4016.047515098706, \"RSI_TEMA\": 65.08041208566817, \"RSI_DEMA\": 55.2498380152819, \"OBV\": 366557.0, \"VOL\": 624179, \"VOL_MA5\": 353828.2, \"close\": 172900.0, \"change_rate\": -16.88}",
+      "strategy": "{\"TEMA20_SLOPE20\": 678.1185636737148, \"OBV_SLOPE20\": -13694.85563909775, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 666.1307556906813}",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "068760",
+      "name": "셀트리온제약",
+      "scan_price": 54100.0,
+      "scan_date": "20250729",
+      "current_return": 20.15,
+      "max_return": 20.52,
+      "min_return": -4.62,
+      "days_elapsed": 100,
+      "volume": 0,
+      "change_rate": "관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 54318.05671134718, \"DEMA\": 53987.40172979316, \"MACD_OSC\": -215.18573130010486, \"MACD_LINE\": 761.0281800141383, \"MACD_SIGNAL\": 976.2139113142432, \"RSI_TEMA\": 54.690415453042476, \"RSI_DEMA\": 52.39582538696016, \"OBV\": 2758147.0, \"VOL\": 142735, \"VOL_MA5\": 103955.8, \"close\": 54100.0, \"change_rate\": -7.04}",
+      "strategy": "{\"TEMA20_SLOPE20\": 106.92169953235447, \"OBV_SLOPE20\": 87936.51203007517, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 74.93658631048518}",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "028050",
+      "name": "삼성E&A",
+      "scan_price": 26400.0,
+      "scan_date": "20250730",
+      "current_return": -2.08,
+      "max_return": 14.77,
+      "min_return": -3.98,
+      "days_elapsed": 99,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 26072.811560051905, \"DEMA\": 26052.330428186542, \"MACD_OSC\": 22.437487098748647, \"MACD_LINE\": 780.1343483618693, \"MACD_SIGNAL\": 757.6968612631207, \"RSI_TEMA\": 65.86477999197098, \"RSI_DEMA\": 64.48559228030643, \"OBV\": -7602419.0, \"VOL\": 905421, \"VOL_MA5\": 1490688.0, \"close\": 26400.0, \"change_rate\": -7.04}",
+      "strategy": "{\"TEMA20_SLOPE20\": 156.85344693840887, \"OBV_SLOPE20\": 270814.0383458649, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 144.86220198180703}",
+      "recommendation_dates": [
+        "20250730",
+        "20250731"
+      ],
+      "recommendation_count": 2
+    },
+    {
+      "ticker": "379800",
+      "name": "KODEX 미국S&P500",
+      "scan_price": 20300.0,
+      "scan_date": "20250731",
+      "current_return": 9.8,
+      "max_return": 10.73,
+      "min_return": -3.14,
+      "days_elapsed": 98,
+      "volume": 0,
+      "change_rate": "상승시작 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 20297.004899828728, \"DEMA\": 20264.887624144, \"MACD_OSC\": 9.603432431508509, \"MACD_LINE\": 314.5026780805565, \"MACD_SIGNAL\": 304.899245649048, \"RSI_TEMA\": 69.16805291741119, \"RSI_DEMA\": 70.14157450706463, \"OBV\": 1012146.0, \"VOL\": 10619762, \"VOL_MA5\": 6699297.8, \"close\": 20300.0, \"change_rate\": -7.85}",
+      "strategy": "{\"TEMA20_SLOPE20\": 52.13973139440778, \"OBV_SLOPE20\": 10896.4781954889, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 48.823436856623175}",
+      "recommendation_dates": [
+        "20250731"
+      ],
+      "recommendation_count": 1
+    }
+  ],
+  "dates": [
+    "20250729",
+    "20250730",
+    "20250731"
+  ]
+}
