@@ -291,9 +291,12 @@ class PortfolioService:
                 total_buy_amount = trade_summary[0] or 0
                 total_sell_amount = trade_summary[1] or 0
             
-            total_investment = sum(item.total_investment or 0 for item in items)
-            total_current_value = sum(item.current_value or 0 for item in items)
-            total_profit_loss = sum(item.profit_loss or 0 for item in items)
+            # 현재 보유 종목들의 합계
+            total_investment = sum(item.total_investment or 0 for item in items)  # 현재 보유분 투자금
+            total_current_value = sum(item.current_value or 0 for item in items)  # 현재 보유분 평가금
+            total_profit_loss = sum(item.profit_loss or 0 for item in items)      # 총 손익 (실현+미실현)
+            
+            # 전체 수익률 = 총 손익 / 총 매수금액 × 100
             total_profit_loss_pct = (total_profit_loss / total_buy_amount * 100) if total_buy_amount > 0 else 0
             
             return PortfolioResponse(
@@ -495,12 +498,20 @@ class PortfolioService:
                 if not current_price:
                     current_price = avg_buy_price  # 현재가를 못 가져오면 평균 매수가 사용
                 
-                # 손익 계산
-                total_investment = avg_buy_price * current_quantity
-                current_value = current_price * current_quantity
-                realized_profit = total_sell_amount - (avg_buy_price * total_sell_qty)  # 매도 실현 손익
-                unrealized_profit = (current_price - avg_buy_price) * current_quantity  # 미실현 손익
+                # 손익 계산 (수정된 로직)
+                total_investment = avg_buy_price * current_quantity  # 현재 보유분 투자금
+                current_value = current_price * current_quantity     # 현재 보유분 평가금
+                
+                # 실현 손익: 매도가 - 매도한 수량의 평균 매수가
+                realized_profit = total_sell_amount - (avg_buy_price * total_sell_qty) if total_sell_qty > 0 else 0
+                
+                # 미실현 손익: (현재가 - 평균 매수가) × 보유 수량
+                unrealized_profit = (current_price - avg_buy_price) * current_quantity
+                
+                # 총 손익 = 실현 손익 + 미실현 손익
                 total_profit = realized_profit + unrealized_profit
+                
+                # 수익률 = 총 손익 / 총 매수금액 × 100
                 total_profit_pct = (total_profit / total_buy_amount * 100) if total_buy_amount > 0 else 0
                 
                 # 포트폴리오 업데이트 또는 생성
