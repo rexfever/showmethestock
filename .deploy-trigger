@@ -1,1 +1,5 @@
-deploy-login-policy-fix-20251031-173910
+DEPLOY_TIMESTAMP=2025-01-15T14:30:00Z
+DEPLOY_TYPE=portfolio-profit-fix
+DEPLOY_DESCRIPTION=수익률 계산 로직 수정 및 테스트 추가
+COMMIT_HASH=37fd4fb
+DEPLOY_TARGET=backend
