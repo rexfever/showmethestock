@@ -1,4 +1,3 @@
-// CACHE BUST: 2025-10-26-20-25-v3
 import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -6,26 +5,29 @@ import { useAuth } from '../contexts/AuthContext';
 import getConfig from '../config';
 import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
-import PopupNotice from '../components/PopupNotice';
-import MarketGuide from '../components/MarketGuide';
 
 export default function CustomerScanner({ initialData, initialScanFile, initialScanDate }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
   
   const [scanResults, setScanResults] = useState(initialData || []);
   const [scanFile, setScanFile] = useState(initialScanFile || '');
   const [scanDate, setScanDate] = useState(initialScanDate || '');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [hasSSRData, setHasSSRData] = useState(initialData && initialData.length > 0);
+  // 포트폴리오 관련 상태 제거 (스캐너에서는 불필요)
   const [recurringStocks, setRecurringStocks] = useState({});
+
+  // 투자 모달 상태
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedStock, setSelectedStock] = useState(null);
   const [investmentLoading, setInvestmentLoading] = useState(false);
-  const [marketGuide, setMarketGuide] = useState(null);
+
+  // 메인트넌스 상태
   const [maintenanceStatus, setMaintenanceStatus] = useState({
     is_enabled: false,
     end_date: null,
@@ -52,15 +54,29 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     checkMaintenanceStatus();
   }, []);
 
+  // 인증 체크 (선택적 - 로그인하지 않아도 스캐너 사용 가능)
+  // useEffect(() => {
+  //   if (!authLoading && !isAuthenticated()) {
+  //     // router.push('/login'); // 주석 처리 - 게스트 사용자도 접근 가능
+  //   }
+  // }, [authLoading, isAuthenticated, router]);
+
+
+  // 포트폴리오 조회 함수 제거 (스캐너에서는 불필요)
+
+  // 투자 모달 열기
   const openInvestmentModal = (stock) => {
     setSelectedStock(stock);
     setShowInvestmentModal(true);
   };
 
+  // 투자 모달 닫기
   const closeInvestmentModal = () => {
     setSelectedStock(null);
     setShowInvestmentModal(false);
   };
+
+  // 투자 등록
   const handleInvestmentRegistration = async (stock, entryPrice, quantity, entryDate) => {
     if (!isAuthenticated() || !user) {
       alert('로그인이 필요합니다.');
@@ -99,6 +115,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   };
 
+  // 재등장 종목 조회 (종목명 표시용)
   const fetchRecurringStocks = useCallback(async () => {
     try {
       const config = getConfig();
@@ -118,8 +135,11 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   }, []);
 
-
+  // 최신 스캔 결과 가져오기
+  // 클라이언트에서 추가 데이터 로드 (필요시에만)
   const fetchScanResults = useCallback(async () => {
+    // SSR로 이미 데이터가 로드되었으므로 클라이언트에서는 추가 로드 불필요
+    // 필요시에만 새로고침 기능으로 사용
     setLoading(true);
     setError(null);
     
@@ -143,38 +163,17 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       
       const data = await response.json();
       
-      console.log('API 응답 데이터:', data);
-      console.log('items 배열:', data.data?.items);
-      console.log('items 개수:', data.data?.items?.length);
-      
       if (data.ok && data.data) {
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
-        const scanDate = data.data.as_of || data.data.scan_date || '';
-        
-        // market_guide를 별도 state로 관리
-        if (data.data.market_guide) {
-          setMarketGuide(data.data.market_guide);
-        }
-        
-        // market_guide를 첫 번째 아이템에 추가 (호환성)
-        if (items.length > 0 && data.data.market_guide) {
-          items[0].market_guide = data.data.market_guide;
-        }
-        
-        console.log('API 응답 전체:', data);
-        console.log('설정할 items:', items);
-        console.log('설정할 scanDate:', scanDate);
-        console.log('market_guide:', data.data.market_guide);
         setScanResults(items);
         setScanFile(data.file || '');
-        setScanDate(scanDate);
+        setScanDate(data.data.as_of || data.data.scan_date || '');
         setError(null);
       } else {
         const errorMsg = data.error || '스캔 결과 조회 실패';
         setError(errorMsg);
         setScanResults([]);
-        setMarketGuide(null);
       }
     } catch (error) {
       if (error.message.includes('Failed to fetch')) {
@@ -198,35 +197,48 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       setIsMobile(isMobileDevice);
     }
     
+    // 스캐너에서는 포트폴리오 조회 생략 (성능 최적화)
+    
     // 재등장 종목 조회
     fetchRecurringStocks();
-  }, [fetchRecurringStocks]);
-
-  useEffect(() => {
-    if (initialData && initialData.length > 0) {
+    
+    // SSR 데이터가 있으면 클라이언트 API 호출 완전 비활성화
+    if (hasSSRData) {
       setScanResults(initialData);
       setScanFile(initialScanFile || '');
       setScanDate(initialScanDate || '');
-      // SSR 데이터에서 market_guide 추출
-      if (initialData[0] && initialData[0].market_guide) {
-        setMarketGuide(initialData[0].market_guide);
-      }
-      setHasSSRData(true);
       setError(null);
       setLoading(false);
+      return;
     }
-  }, [initialData, initialScanFile, initialScanDate]);
-  
-  useEffect(() => {
-    if (!initialData && scanResults.length === 0 && !loading && !error) {
-      setLoading(true);
-      fetchScanResults();
+    
+    // 초기 데이터가 없으면 에러 상태로 설정 (API 호출 제거)
+    if (!hasSSRData) {
+      setError('스캔 데이터가 없습니다.');
+      setLoading(false);
     }
-  }, [scanResults.length, loading, error, fetchScanResults, initialData]);
+    
+    // SSR 데이터가 있을 때는 자동 새로고침 비활성화 (성능 최적화)
+    // 필요시에만 수동 새로고침 버튼으로 fetchScanResults() 호출
+  }, [hasSSRData, initialData]);
 
-  const filteredResults = scanResults.filter(item => item !== null && item !== undefined);
+  // 필터링 (시장별 필터 제거)
+  const filteredResults = scanResults.filter(item => {
+    if (!item) return false;
+    
+    
+    return true;
+  });
+
+  // 정렬 없이 그대로 사용
   const sortedResults = filteredResults;
 
+
+
+
+
+
+  // 메인트넌스 모드인 경우 메인트넌스 페이지 렌더링
   if (maintenanceStatus.is_enabled) {
     return (
       <>
@@ -275,6 +287,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     );
   }
 
+  // mounted 체크 제거 - SSR 데이터가 있으므로 바로 렌더링
 
   return (
     <>
@@ -286,7 +299,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       </Head>
 
       <div className="min-h-screen bg-gray-50">
-        <PopupNotice />
+
         <Header title="스톡인사이트" />
 
         {/* 정보 배너 */}
@@ -311,79 +324,41 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               {/* 왼쪽: 날짜와 매칭종목 */}
               <div className="flex flex-col space-y-1">
                 <div className="text-lg font-semibold text-gray-800">
-                  {(() => {
-                    console.log('날짜 렌더링 - mounted:', mounted, 'scanDate:', scanDate);
-                    
-                    if (!mounted) {
-                      return '로딩 중...';
-                    }
-                    
-                    if (!scanDate || scanDate === '') {
-                      return '날짜 정보 없음';
-                    }
-                    
-                    try {
-                      let date;
-                      if (scanDate.length === 8 && /^\d{8}$/.test(scanDate)) {
-                        // YYYYMMDD 형식 (기본)
-                        const year = scanDate.substring(0, 4);
-                        const month = parseInt(scanDate.substring(4, 6));
-                        const day = parseInt(scanDate.substring(6, 8));
-                        date = new Date(year, month - 1, day);
-                      } else if (scanDate.includes('-')) {
-                        // YYYY-MM-DD 형식 (호환성)
-                        date = new Date(scanDate);
-                      } else {
-                        return `잘못된 날짜 형식: ${scanDate}`;
-                      }
-                      
-                      if (isNaN(date.getTime())) {
-                        return `유효하지 않은 날짜: ${scanDate}`;
-                      }
-                      
-                      return date.toLocaleDateString('ko-KR', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        weekday: 'short'
-                      });
-                    } catch (error) {
-                      console.error('날짜 파싱 오류:', error, 'scanDate:', scanDate);
-                      return `날짜 파싱 오류: ${scanDate}`;
-                    }
-                  })()}
+                  {mounted && scanDate ? (() => {
+                    // YYYYMMDD 형식을 YYYY년 M월 D일 형식으로 변환
+                    const year = scanDate.substring(0, 4);
+                    const month = parseInt(scanDate.substring(4, 6));
+                    const day = parseInt(scanDate.substring(6, 8));
+                    const date = new Date(year, month - 1, day);
+                    return date.toLocaleDateString('ko-KR', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      weekday: 'short'
+                    });
+                  })() : `로딩 중... (scanDate: ${scanDate}, mounted: ${mounted})`}
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span className="text-gray-600 font-medium">매칭종목</span>
-                  <span className="text-blue-600 font-bold text-lg">
-                    {scanResults.length > 0 && scanResults[0].ticker === 'NORESULT' ? 0 : scanResults.length}
-                  </span>
+                  <span className="text-blue-600 font-bold text-lg">{scanResults.length}</span>
                   <span className="text-gray-500 text-sm">개</span>
                 </div>
               </div>
               
               {/* 오른쪽: 버튼 */}
               <button
-                onClick={() => {
-                  if (!isAuthenticated()) {
-                    router.push('/login');
-                    return;
-                  }
-                  router.push('/performance-report');
-                }}
-                className="relative bg-gradient-to-br from-yellow-500 via-yellow-600 to-yellow-700 hover:from-yellow-600 hover:via-yellow-700 hover:to-yellow-800 text-white px-5 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 active:scale-95 overflow-hidden group"
+                onClick={() => router.push('/performance-report')}
+                className="relative bg-gradient-to-br from-red-500 via-rose-600 to-pink-700 hover:from-red-600 hover:via-rose-700 hover:to-pink-800 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 active:scale-95 overflow-hidden group min-w-[180px]"
               >
                 {/* 배경 애니메이션 효과 */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:translate-x-full transition-all duration-700"></div>
                 
-                <div className="relative flex flex-col items-center justify-center space-y-1">
-                  <div className="w-4 h-4 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <span className="text-xs">📋</span>
+                <div className="relative flex items-center justify-center space-x-2">
+                  <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span className="text-sm">📋</span>
                   </div>
-                  <div className="text-xs font-bold tracking-wide text-center leading-tight">
-                    추천종목<br />성과보고서
-                  </div>
+                  <span className="text-sm font-bold tracking-wide whitespace-nowrap">추천 성과보고서</span>
                 </div>
                 
                 {/* 하단 글로우 효과 */}
@@ -393,29 +368,14 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
           </div>
         </div>
 
-
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">
-          {/* Market Guide 섹션 - 항상 표시 */}
-          {marketGuide && (
-            <MarketGuide marketGuide={marketGuide} />
-          )}
-          {/* NORESULT인 경우 가이드 표시 */}
-          {!marketGuide && scanResults.length > 0 && scanResults[0].ticker === 'NORESULT' && (
-            <MarketGuide marketGuide={{
-              market_condition: '급락',
-              guide_message: '😔 장이 좋지 않아 추천 종목이 없습니다. 투자에도 휴식이 필요합니다.',
-              investment_strategy: '전면 관망, 투자 휴식',
-              risk_level: '매우 높음',
-              timing_advice: '시장 회복 신호까지 대기'
-            }} />
-          )}
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
               <p className="text-gray-500 mt-2">스캔 결과를 불러오는 중...</p>
             </div>
-          ) : error && scanResults.length === 0 ? (
+          ) : error ? (
             <div className="text-center py-8">
               <div className="text-red-500 text-lg mb-2">⚠️</div>
               <p className="text-red-600 font-medium">{error}</p>
@@ -439,18 +399,8 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     다른 날짜를 선택하거나 최신 스캔을 확인해보세요.
                   </p>
                 </div>
-              ) : sortedResults.length === 1 && sortedResults[0].ticker === 'NORESULT' ? (
-                <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-                  <div className="text-6xl mb-4">😔</div>
-                  <p className="text-lg text-gray-700 mb-2">
-                    장이 좋지 않아 추천된 종목이 없어요.
-                  </p>
-                  <p className="text-md text-gray-600">
-                    ☕ 투자에도 휴식이 필요합니다.
-                  </p>
-                </div>
               ) : (
-                sortedResults.filter(item => item.ticker !== 'NORESULT').map((item) => (
+                sortedResults.map((item) => (
               <div key={item.ticker} className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
                 {/* 종목명과 가격 */}
                 <div className="flex items-start justify-between">
@@ -626,63 +576,31 @@ export async function getServerSideProps() {
     // 서버에서 백엔드 API 호출 (DB 직접 조회)
     const config = getConfig();
     const base = config.backendUrl;
-    
-    console.log('SSR: Fetching from', `${base}/latest-scan`);
-    
-    // Next.js 서버 측 fetch는 timeout 옵션을 지원하지 않으므로 제거
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
-    
-    const response = await fetch(`${base}/latest-scan`, {
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    clearTimeout(timeoutId);
+    const response = await fetch(`${base}/latest-scan`);
     
     if (!response.ok) {
-      console.error('SSR: HTTP error! status:', response.status);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('SSR: Response data:', data.ok, data.data ? 'has data' : 'no data');
     
     if (data.ok && data.data) {
       // items 또는 rank 필드 처리
       const items = data.data.items || data.data.rank || [];
-      const scanDate = data.data.as_of || data.data.scan_date || '';
-      
-      // market_guide를 첫 번째 아이템에 추가
-      if (items.length > 0 && data.data.market_guide) {
-        items[0].market_guide = data.data.market_guide;
-      }
-      
-      console.log('SSR: Returning', items.length, 'items');
-      console.log('SSR: scanDate:', scanDate);
-      console.log('SSR: market_guide:', data.data.market_guide);
       return {
         props: {
           initialData: items,
           initialScanFile: data.file || '',
-          initialScanDate: scanDate
+          initialScanDate: data.data.as_of || data.data.scan_date || ''
         }
       };
-    } else {
-      console.log('SSR: Data not ok or no data');
     }
   } catch (error) {
-    console.error('SSR: Error fetching scan data:', error.message);
-    // 에러 발생 시에도 빈 데이터로 반환하여 페이지는 정상 렌더링되도록 함
   }
   
-  console.log('SSR: Returning empty data');
   return {
     props: {
       initialData: [],
-      initialScanFile: '',
       initialScanDate: ''
     }
   };

@@ -2953,6 +2953,174 @@ async def delete_user(
         )
 
 
+@app.get("/admin/trend-analysis")
+async def get_trend_analysis(admin_user: User = Depends(get_admin_user)):
+    """추세 변동 대응 분석 (관리자 전용)"""
+    try:
+        import sys
+        import os
+        # 경로 추가 (trend_adaptive_scanner.py가 backend 디렉토리에 있음)
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        
+        from trend_adaptive_scanner import TrendAdaptiveScanner
+        from config import config
+        
+        scanner = TrendAdaptiveScanner()
+        result = scanner.analyze_and_recommend()
+        
+        # analyze_and_recommend()는 recommended_params, evaluation을 반환
+        if isinstance(result, tuple) and len(result) == 2:
+            recommended_params, evaluation = result
+        else:
+            # 반환값이 다른 형식일 경우 처리
+            recommended_params = result if isinstance(result, dict) else {}
+            evaluation = "good"  # 기본값
+        
+        # 현재 설정 가져오기
+        current_params = {
+            "min_signals": config.min_signals,
+            "rsi_upper_limit": config.rsi_upper_limit,
+            "vol_ma5_mult": config.vol_ma5_mult,
+            "gap_max": config.gap_max,
+            "ext_from_tema20_max": config.ext_from_tema20_max,
+        }
+        
+        # 최근 4주간 성과
+        recent_4weeks = scanner.get_recent_performance(weeks=4)
+        recent_metrics = {
+            "avg_return": recent_4weeks.avg_return if recent_4weeks else None,
+            "win_rate": recent_4weeks.win_rate if recent_4weeks else None,
+            "total_stocks": recent_4weeks.total_stocks if recent_4weeks else None,
+            "best_return": recent_4weeks.best_return if recent_4weeks else None,
+            "worst_return": recent_4weeks.worst_return if recent_4weeks else None,
+        }
+        
+        # 현재 월 성과
+        now = datetime.now()
+        monthly_perf = scanner.get_monthly_performance(now.year, now.month)
+        monthly_metrics = {
+            "avg_return": monthly_perf.avg_return if monthly_perf else None,
+            "win_rate": monthly_perf.win_rate if monthly_perf else None,
+            "total_stocks": monthly_perf.total_stocks if monthly_perf else None,
+        }
+        
+        return {
+            "ok": True,
+            "data": {
+                "evaluation": evaluation,
+                "current_params": current_params,
+                "recommended_params": recommended_params,
+                "recent_4weeks": recent_metrics,
+                "current_month": monthly_metrics,
+                "fallback_enabled": config.fallback_enable,
+                "fallback_target_min": config.fallback_target_min,
+                "fallback_target_max": config.fallback_target_max,
+            }
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/admin/trend-apply")
+async def apply_trend_params(
+    params: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """추세 변동 대응 파라미터 적용 (관리자 전용)"""
+    try:
+        import subprocess
+        import os
+        import shutil
+        
+        # .env 파일 경로
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        env_path = os.path.join(backend_dir, ".env")
+        
+        # 백업
+        backup_path = f"{env_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        if os.path.exists(env_path):
+            shutil.copy2(env_path, backup_path)
+        
+        # .env 파일 읽기
+        env_lines = []
+        if os.path.exists(env_path):
+            with open(env_path, 'r', encoding='utf-8') as f:
+                env_lines = f.readlines()
+        
+        # 파라미터 업데이트
+        env_dict = {}
+        for line in env_lines:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                env_dict[key.strip()] = value.strip()
+        
+        # 새로운 파라미터 적용
+        param_mapping = {
+            "min_signals": "MIN_SIGNALS",
+            "rsi_upper_limit": "RSI_UPPER_LIMIT",
+            "vol_ma5_mult": "VOL_MA5_MULT",
+            "gap_max": "GAP_MAX",
+            "ext_from_tema20_max": "EXT_FROM_TEMA20_MAX",
+        }
+        
+        changes = []
+        for key, env_key in param_mapping.items():
+            if key in params:
+                old_value = env_dict.get(env_key, "")
+                new_value = str(params[key])
+                env_dict[env_key] = new_value
+                if old_value != new_value:
+                    changes.append(f"{key}: {old_value} → {new_value}")
+        
+        # .env 파일 쓰기 (더 간단한 방법)
+        output_lines = []
+        existing_keys = set()
+        
+        # 기존 라인 처리
+        for line in env_lines:
+            line_stripped = line.strip()
+            if line_stripped and not line_stripped.startswith('#') and '=' in line_stripped:
+                key = line_stripped.split('=')[0].strip()
+                if key in param_mapping.values():
+                    # 업데이트할 키 찾기
+                    param_key = next(k for k, v in param_mapping.items() if v == key)
+                    if param_key in params:
+                        output_lines.append(f"{key}={params[param_key]}\n")
+                        existing_keys.add(key)
+                    else:
+                        output_lines.append(line)  # 기존 값 유지
+                        existing_keys.add(key)
+                else:
+                    output_lines.append(line)
+            else:
+                output_lines.append(line)
+        
+        # 새로 추가해야 할 항목
+        for param_key, env_key in param_mapping.items():
+            if env_key not in existing_keys and param_key in params:
+                output_lines.append(f"{env_key}={params[param_key]}\n")
+        
+        # 파일 쓰기
+        with open(env_path, 'w', encoding='utf-8') as f:
+            f.writelines(output_lines)
+        
+        return {
+            "ok": True,
+            "message": "파라미터가 성공적으로 적용되었습니다. 서버 재시작이 필요할 수 있습니다.",
+            "changes": changes,
+            "backup_path": os.path.basename(backup_path) if os.path.exists(backup_path) else None
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
 @app.post("/clear-cache")
 async def clear_returns_cache():
     """수익률 계산 캐시를 클리어합니다"""

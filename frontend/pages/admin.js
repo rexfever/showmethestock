@@ -49,6 +49,11 @@ export default function AdminDashboard() {
   });
   const [popupLoading, setPopupLoading] = useState(false);
 
+  // 추세 변동 대응 상태
+  const [trendAnalysis, setTrendAnalysis] = useState(null);
+  const [trendLoading, setTrendLoading] = useState(false);
+  const [trendApplyLoading, setTrendApplyLoading] = useState(false);
+
   useEffect(() => {
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
     if (!authChecked || authLoading) {
@@ -85,8 +90,78 @@ export default function AdminDashboard() {
     } else {
       fetchAdminData();
       fetchScanDates();
+      fetchTrendAnalysis();
     }
   }, [authChecked, authLoading, isAuthenticated, user, router, router.query.analyze]);
+
+  const fetchTrendAnalysis = async () => {
+    setTrendLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/admin/trend-analysis`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok) {
+          setTrendAnalysis(data.data);
+        }
+      } else if (response.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('추세 분석 조회 실패:', error);
+    } finally {
+      setTrendLoading(false);
+    }
+  };
+
+  const applyTrendParams = async () => {
+    if (!trendAnalysis || !trendAnalysis.recommended_params) {
+      alert('권장 파라미터가 없습니다.');
+      return;
+    }
+
+    if (!confirm('권장 파라미터를 적용하시겠습니까? .env 파일이 백업되고 업데이트됩니다.')) {
+      return;
+    }
+
+    setTrendApplyLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/admin/trend-apply`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(trendAnalysis.recommended_params)
+      });
+      
+      const data = await response.json();
+      
+      if (data.ok) {
+        alert(`파라미터 적용 완료!\n변경 사항:\n${data.changes.join('\n')}\n\n서버 재시작이 필요할 수 있습니다.`);
+        // 분석 데이터 다시 불러오기
+        fetchTrendAnalysis();
+      } else {
+        alert(`파라미터 적용 실패: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('파라미터 적용 실패:', error);
+      alert('파라미터 적용 중 오류가 발생했습니다.');
+    } finally {
+      setTrendApplyLoading(false);
+    }
+  };
 
   const performAnalysis = async (ticker) => {
     setAnalysisLoading(true);
@@ -900,6 +975,216 @@ export default function AdminDashboard() {
                 {popupLoading ? '저장 중...' : '설정 저장'}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* 추세 변동 대응 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">📊 추세 변동 대응</h2>
+                <p className="text-sm text-gray-600">성과 분석 및 파라미터 자동 조정</p>
+              </div>
+              <button
+                onClick={fetchTrendAnalysis}
+                disabled={trendLoading}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {trendLoading ? '분석 중...' : '🔄 새로고침'}
+              </button>
+            </div>
+          </div>
+          <div className="px-6 py-4">
+            {trendLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-sm text-gray-600">분석 중...</p>
+              </div>
+            ) : trendAnalysis ? (
+              <div className="space-y-6">
+                {/* 성과 지표 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 최근 4주간 성과 */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">최근 4주간 성과</h3>
+                    {trendAnalysis.recent_4weeks.avg_return !== null ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">평균 수익률:</span>
+                          <span className={`font-semibold ${trendAnalysis.recent_4weeks.avg_return >= 30 ? 'text-green-600' : trendAnalysis.recent_4weeks.avg_return >= 20 ? 'text-blue-600' : trendAnalysis.recent_4weeks.avg_return >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {trendAnalysis.recent_4weeks.avg_return?.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">승률:</span>
+                          <span className={`font-semibold ${trendAnalysis.recent_4weeks.win_rate >= 90 ? 'text-green-600' : trendAnalysis.recent_4weeks.win_rate >= 80 ? 'text-blue-600' : 'text-red-600'}`}>
+                            {trendAnalysis.recent_4weeks.win_rate?.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">추천 종목:</span>
+                          <span className="font-medium">{trendAnalysis.recent_4weeks.total_stocks}개</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">데이터 없음</p>
+                    )}
+                  </div>
+
+                  {/* 현재 월 성과 */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">현재 월 성과</h3>
+                    {trendAnalysis.current_month.avg_return !== null ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">평균 수익률:</span>
+                          <span className={`font-semibold ${trendAnalysis.current_month.avg_return >= 30 ? 'text-green-600' : trendAnalysis.current_month.avg_return >= 20 ? 'text-blue-600' : trendAnalysis.current_month.avg_return >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {trendAnalysis.current_month.avg_return?.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">승률:</span>
+                          <span className={`font-semibold ${trendAnalysis.current_month.win_rate >= 90 ? 'text-green-600' : trendAnalysis.current_month.win_rate >= 80 ? 'text-blue-600' : 'text-red-600'}`}>
+                            {trendAnalysis.current_month.win_rate?.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">추천 종목:</span>
+                          <span className="font-medium">{trendAnalysis.current_month.total_stocks}개</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">데이터 없음</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 평가 결과 */}
+                <div className={`border-l-4 rounded p-4 ${
+                  trendAnalysis.evaluation === 'excellent' ? 'bg-green-50 border-green-500' :
+                  trendAnalysis.evaluation === 'good' ? 'bg-blue-50 border-blue-500' :
+                  trendAnalysis.evaluation === 'fair' ? 'bg-yellow-50 border-yellow-500' :
+                  'bg-red-50 border-red-500'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        평가: {
+                          trendAnalysis.evaluation === 'excellent' ? '⭐ 매우 우수' :
+                          trendAnalysis.evaluation === 'good' ? '✅ 양호' :
+                          trendAnalysis.evaluation === 'fair' ? '⚠️ 보통' :
+                          '❌ 저조'
+                        }
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {trendAnalysis.evaluation === 'poor' && '즉시 파라미터 조정을 권장합니다.'}
+                        {trendAnalysis.evaluation === 'fair' && '파라미터 조정을 검토하세요.'}
+                        {trendAnalysis.evaluation === 'good' && '현재 성과가 양호합니다.'}
+                        {trendAnalysis.evaluation === 'excellent' && '현재 성과가 매우 우수합니다!'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 파라미터 비교 */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">권장 파라미터 조정</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-3 font-medium text-gray-700">파라미터</th>
+                          <th className="text-right py-2 px-3 font-medium text-gray-700">현재 값</th>
+                          <th className="text-right py-2 px-3 font-medium text-gray-700">권장 값</th>
+                          <th className="text-center py-2 px-3 font-medium text-gray-700">변경</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.keys(trendAnalysis.current_params).map((key) => {
+                          const current = trendAnalysis.current_params[key];
+                          const recommended = trendAnalysis.recommended_params[key];
+                          const changed = current !== recommended;
+                          return (
+                            <tr key={key} className="border-b">
+                              <td className="py-2 px-3 text-gray-700">{key}</td>
+                              <td className="py-2 px-3 text-right font-medium">{current}</td>
+                              <td className={`py-2 px-3 text-right font-medium ${changed ? 'text-blue-600' : ''}`}>
+                                {recommended}
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                {changed ? (
+                                  <span className="text-orange-600 font-semibold">변경</span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Fallback 정보 */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Fallback 설정</h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">활성화:</span>
+                      <span className={`ml-2 font-medium ${trendAnalysis.fallback_enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                        {trendAnalysis.fallback_enabled ? '✅ 활성화' : '❌ 비활성화'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">최소 목표:</span>
+                      <span className="ml-2 font-medium">{trendAnalysis.fallback_target_min}개</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">최대 목표:</span>
+                      <span className="ml-2 font-medium">{trendAnalysis.fallback_target_max}개</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 적용 버튼 */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={applyTrendParams}
+                    disabled={trendApplyLoading || !trendAnalysis.recommended_params}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {trendApplyLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        적용 중...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        권장 파라미터 적용
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500">분석 데이터를 불러올 수 없습니다.</p>
+                <button
+                  onClick={fetchTrendAnalysis}
+                  className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  다시 시도
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
