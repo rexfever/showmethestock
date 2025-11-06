@@ -1,0 +1,243 @@
+{
+  "report_type": "monthly",
+  "year": 2025,
+  "month": 9,
+  "start_date": "2025-09-01",
+  "end_date": "2025-09-31",
+  "generated_at": "2025-11-06T17:17:39.293080",
+  "statistics": {
+    "total_stocks": 10,
+    "avg_return": 4.66,
+    "positive_rate": 70.0,
+    "best_stock": {
+      "ticker": "006400",
+      "name": "삼성SDI",
+      "scan_price": 308013.81422029453,
+      "scan_date": "20250901",
+      "current_return": 18.56,
+      "max_return": 28.87,
+      "min_return": 14.85,
+      "days_elapsed": 30,
+      "volume": 3801815,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    "worst_stock": {
+      "ticker": "207940",
+      "name": "삼성바이오로직스",
+      "scan_price": 329615.07597919565,
+      "scan_date": "20250901",
+      "current_return": -6.95,
+      "max_return": 2.52,
+      "min_return": -12.72,
+      "days_elapsed": 30,
+      "volume": 2833712,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "005930",
+      "name": "삼성전자",
+      "scan_price": 183861.1100807915,
+      "scan_date": "20250901",
+      "current_return": 13.8,
+      "max_return": 23.27,
+      "min_return": 6.83,
+      "days_elapsed": 30,
+      "volume": 3455804,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "000660",
+      "name": "SK하이닉스",
+      "scan_price": 406786.28013454226,
+      "scan_date": "20250901",
+      "current_return": 10.06,
+      "max_return": 23.13,
+      "min_return": 6.23,
+      "days_elapsed": 30,
+      "volume": 2712217,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "035420",
+      "name": "NAVER",
+      "scan_price": 226269.42533089875,
+      "scan_date": "20250901",
+      "current_return": -2.28,
+      "max_return": 9.98,
+      "min_return": -6.75,
+      "days_elapsed": 30,
+      "volume": 4719722,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "051910",
+      "name": "LG화학",
+      "scan_price": 160032.7228764563,
+      "scan_date": "20250901",
+      "current_return": 1.57,
+      "max_return": 10.08,
+      "min_return": -4.04,
+      "days_elapsed": 30,
+      "volume": 1631469,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "006400",
+      "name": "삼성SDI",
+      "scan_price": 308013.81422029453,
+      "scan_date": "20250901",
+      "current_return": 18.56,
+      "max_return": 28.87,
+      "min_return": 14.85,
+      "days_elapsed": 30,
+      "volume": 3801815,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "035720",
+      "name": "카카오",
+      "scan_price": 149629.22972012937,
+      "scan_date": "20250901",
+      "current_return": 6.51,
+      "max_return": 17.1,
+      "min_return": 2.98,
+      "days_elapsed": 30,
+      "volume": 3421400,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "207940",
+      "name": "삼성바이오로직스",
+      "scan_price": 329615.07597919565,
+      "scan_date": "20250901",
+      "current_return": -6.95,
+      "max_return": 2.52,
+      "min_return": -12.72,
+      "days_elapsed": 30,
+      "volume": 2833712,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "068270",
+      "name": "셀트리온",
+      "scan_price": 206779.53423697507,
+      "scan_date": "20250901",
+      "current_return": 7.18,
+      "max_return": 15.88,
+      "min_return": 2.0,
+      "days_elapsed": 30,
+      "volume": 1041105,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "323410",
+      "name": "KakaoBank",
+      "scan_price": 436874.13291370333,
+      "scan_date": "20250901",
+      "current_return": 4.87,
+      "max_return": 14.62,
+      "min_return": 0.99,
+      "days_elapsed": 30,
+      "volume": 4065342,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "096770",
+      "name": "SK이노베이션",
+      "scan_price": 92897.84939018213,
+      "scan_date": "20250901",
+      "current_return": -6.72,
+      "max_return": 6.63,
+      "min_return": -12.14,
+      "days_elapsed": 30,
+      "volume": 1011704,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250901"
+      ],
+      "recommendation_count": 1
+    }
+  ],
+  "dates": [
+    "20250901"
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 4.66,
+      "median_return": 5.69,
+      "std_return": 7.99,
+      "total_stocks": 10
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 0.208,
+      "max_drawdown": -12.72,
+      "volatility_adjusted_return": 0.584
+    },
+    "performance_metrics": {
+      "win_rate": 70.0,
+      "avg_win": 8.94,
+      "avg_loss": 5.32,
+      "profit_loss_ratio": 1.8
+    }
+  },
+  "sector_analysis": {
+    "IT/전자": {
+      "count": 10,
+      "avg_return": 4.66,
+      "win_rate": 70.0
+    }
+  },
+  "ai_insights": [
+    "📈 9월은 시장 변동성이 있었던 기간입니다.",
+    "🎯 추천 종목의 평균 수익률이 4.7%를 기록했습니다.",
+    "💡 리스크 관리와 분산 투자가 중요한 시기입니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T17:17:39.293176"
+}

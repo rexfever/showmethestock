@@ -128,5 +128,38 @@
     "20250725",
     "20250726",
     "20250728"
-  ]
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 48.96,
+      "median_return": 44.6,
+      "std_return": 19.32,
+      "total_stocks": 4
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 2.38,
+      "max_drawdown": -13.3,
+      "volatility_adjusted_return": 2.535
+    },
+    "performance_metrics": {
+      "win_rate": 100.0,
+      "avg_win": 48.96,
+      "avg_loss": 0,
+      "profit_loss_ratio": 0
+    }
+  },
+  "sector_analysis": {
+    "기타": {
+      "count": 4,
+      "avg_return": 48.96,
+      "win_rate": 100.0
+    }
+  },
+  "ai_insights": [
+    "🎯 평균 수익률이 10%를 초과하여 우수한 성과를 보이고 있습니다.",
+    "✅ 높은 승률로 안정적인 수익 창출이 가능합니다.",
+    "💎 샤프 비율이 1.0을 초과하여 위험 대비 수익이 우수합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T17:15:13.135465"
 }

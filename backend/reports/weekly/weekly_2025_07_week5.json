@@ -217,5 +217,48 @@
     "20250729",
     "20250730",
     "20250731"
-  ]
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 31.89,
+      "median_return": 33.2,
+      "std_return": 19.85,
+      "total_stocks": 9
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 1.455,
+      "max_drawdown": -12.63,
+      "volatility_adjusted_return": 1.607
+    },
+    "performance_metrics": {
+      "win_rate": 88.89,
+      "avg_win": 36.13,
+      "avg_loss": 2.08,
+      "profit_loss_ratio": 17.37
+    }
+  },
+  "sector_analysis": {
+    "IT/전자": {
+      "count": 2,
+      "avg_return": 50.63,
+      "win_rate": 100.0
+    },
+    "기타": {
+      "count": 6,
+      "avg_return": 27.6,
+      "win_rate": 83.33
+    },
+    "바이오/제약": {
+      "count": 1,
+      "avg_return": 20.15,
+      "win_rate": 100.0
+    }
+  },
+  "ai_insights": [
+    "🎯 평균 수익률이 10%를 초과하여 우수한 성과를 보이고 있습니다.",
+    "✅ 높은 승률로 안정적인 수익 창출이 가능합니다.",
+    "💎 샤프 비율이 1.0을 초과하여 위험 대비 수익이 우수합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T17:15:13.136975"
 }

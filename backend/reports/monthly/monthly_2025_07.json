@@ -507,5 +507,58 @@
       "consistent_pattern_stocks": 19,
       "market_interest_level": "높음"
     }
-  }
+  },
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 46.09,
+      "median_return": 35.42,
+      "std_return": 35.87,
+      "total_stocks": 21
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 1.201,
+      "max_drawdown": -19.14,
+      "volatility_adjusted_return": 1.285
+    },
+    "performance_metrics": {
+      "win_rate": 100.0,
+      "avg_win": 46.09,
+      "avg_loss": 0,
+      "profit_loss_ratio": 0
+    }
+  },
+  "sector_analysis": {
+    "기타": {
+      "count": 14,
+      "avg_return": 50.27,
+      "win_rate": 100.0
+    },
+    "화학/소재": {
+      "count": 2,
+      "avg_return": 41.6,
+      "win_rate": 100.0
+    },
+    "IT/전자": {
+      "count": 2,
+      "avg_return": 50.63,
+      "win_rate": 100.0
+    },
+    "에너지": {
+      "count": 1,
+      "avg_return": 53.78,
+      "win_rate": 100.0
+    },
+    "바이오/제약": {
+      "count": 2,
+      "avg_return": 12.97,
+      "win_rate": 100.0
+    }
+  },
+  "ai_insights": [
+    "🎯 평균 수익률이 10%를 초과하여 우수한 성과를 보이고 있습니다.",
+    "✅ 높은 승률로 안정적인 수익 창출이 가능합니다.",
+    "💎 샤프 비율이 1.0을 초과하여 위험 대비 수익이 우수합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T17:15:13.139054"
 }

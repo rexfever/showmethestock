@@ -1,0 +1,131 @@
+{
+  "report_type": "weekly",
+  "year": 2025,
+  "month": 8,
+  "week": 1,
+  "start_date": "2025-08-01",
+  "end_date": "2025-08-07",
+  "generated_at": "2025-11-06T17:17:39.291314",
+  "statistics": {
+    "total_stocks": 3,
+    "avg_return": 2.32,
+    "positive_rate": 66.67,
+    "best_stock": {
+      "ticker": "000660",
+      "name": "SK하이닉스",
+      "scan_price": 449568.067180386,
+      "scan_date": "20250801",
+      "current_return": 9.93,
+      "max_return": 18.13,
+      "min_return": 2.04,
+      "days_elapsed": 30,
+      "volume": 4523452,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250801"
+      ],
+      "recommendation_count": 1
+    },
+    "worst_stock": {
+      "ticker": "035420",
+      "name": "NAVER",
+      "scan_price": 116532.2060065817,
+      "scan_date": "20250801",
+      "current_return": -7.24,
+      "max_return": 6.15,
+      "min_return": -13.7,
+      "days_elapsed": 30,
+      "volume": 4374709,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250801"
+      ],
+      "recommendation_count": 1
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "005930",
+      "name": "삼성전자",
+      "scan_price": 146400.17415505322,
+      "scan_date": "20250801",
+      "current_return": 4.26,
+      "max_return": 17.24,
+      "min_return": -3.57,
+      "days_elapsed": 30,
+      "volume": 4042595,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250801"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "000660",
+      "name": "SK하이닉스",
+      "scan_price": 449568.067180386,
+      "scan_date": "20250801",
+      "current_return": 9.93,
+      "max_return": 18.13,
+      "min_return": 2.04,
+      "days_elapsed": 30,
+      "volume": 4523452,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250801"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "035420",
+      "name": "NAVER",
+      "scan_price": 116532.2060065817,
+      "scan_date": "20250801",
+      "current_return": -7.24,
+      "max_return": 6.15,
+      "min_return": -13.7,
+      "days_elapsed": 30,
+      "volume": 4374709,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250801"
+      ],
+      "recommendation_count": 1
+    }
+  ],
+  "dates": [
+    "20250807"
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 2.32,
+      "median_return": 4.26,
+      "std_return": 7.14,
+      "total_stocks": 3
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 0.8,
+      "max_drawdown": -5.0,
+      "volatility_adjusted_return": 1.2
+    },
+    "performance_metrics": {
+      "win_rate": 70.0,
+      "avg_win": 8.5,
+      "avg_loss": 3.2,
+      "profit_loss_ratio": 2.7
+    }
+  },
+  "sector_analysis": {
+    "IT/전자": {
+      "count": 3,
+      "avg_return": 2.32,
+      "win_rate": 70.0
+    }
+  },
+  "ai_insights": [
+    "📊 8월 1주차 시장 분석 결과입니다.",
+    "🎯 선별된 종목들의 성과가 양호합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T17:17:39.291415"
+}

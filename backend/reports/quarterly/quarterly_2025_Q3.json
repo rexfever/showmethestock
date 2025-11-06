@@ -1,0 +1,342 @@
+{
+  "report_type": "quarterly",
+  "year": 2025,
+  "quarter": 3,
+  "start_date": "2025-07-01",
+  "end_date": "2025-09-30",
+  "generated_at": "2025-11-06T17:27:42.450738",
+  "statistics": {
+    "total_stocks": 15,
+    "avg_return": 10.35,
+    "positive_rate": 80.0,
+    "best_stock": {
+      "ticker": "323410",
+      "name": "KakaoBank",
+      "scan_price": 44900.0,
+      "scan_date": "20250720",
+      "current_return": 20.83,
+      "max_return": 39.1,
+      "min_return": 8.95,
+      "days_elapsed": 92,
+      "volume": 5702965,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250721"
+      ],
+      "recommendation_count": 3
+    },
+    "worst_stock": {
+      "ticker": "000270",
+      "name": "기아",
+      "scan_price": 464000.0,
+      "scan_date": "20250702",
+      "current_return": -4.26,
+      "max_return": 10.8,
+      "min_return": -12.15,
+      "days_elapsed": 92,
+      "volume": 3778473,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250709"
+      ],
+      "recommendation_count": 1
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "005930",
+      "name": "삼성전자",
+      "scan_price": 42900.0,
+      "scan_date": "20250722",
+      "current_return": 11.27,
+      "max_return": 29.02,
+      "min_return": 3.63,
+      "days_elapsed": 92,
+      "volume": 4425156,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250719"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "000660",
+      "name": "SK하이닉스",
+      "scan_price": 195700.0,
+      "scan_date": "20250716",
+      "current_return": 13.71,
+      "max_return": 33.19,
+      "min_return": 1.74,
+      "days_elapsed": 92,
+      "volume": 1886997,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250701"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "035420",
+      "name": "NAVER",
+      "scan_price": 374600.0,
+      "scan_date": "20250711",
+      "current_return": 9.3,
+      "max_return": 17.41,
+      "min_return": 2.72,
+      "days_elapsed": 92,
+      "volume": 3174876,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "051910",
+      "name": "LG화학",
+      "scan_price": 164300.0,
+      "scan_date": "20250715",
+      "current_return": -0.13,
+      "max_return": 16.21,
+      "min_return": -9.03,
+      "days_elapsed": 92,
+      "volume": 5945067,
+      "change_rate": "매수 후보",
+      "recommendation_dates": [
+        "20250724"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "006400",
+      "name": "삼성SDI",
+      "scan_price": 502600.0,
+      "scan_date": "20250718",
+      "current_return": 10.92,
+      "max_return": 29.18,
+      "min_return": 0.26,
+      "days_elapsed": 92,
+      "volume": 9028723,
+      "change_rate": "매수 후보",
+      "recommendation_dates": [
+        "20250727"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "035720",
+      "name": "카카오",
+      "scan_price": 539800.0,
+      "scan_date": "20250721",
+      "current_return": 12.76,
+      "max_return": 29.19,
+      "min_return": 6.64,
+      "days_elapsed": 92,
+      "volume": 9740323,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250727"
+      ],
+      "recommendation_count": 2
+    },
+    {
+      "ticker": "207940",
+      "name": "삼성바이오로직스",
+      "scan_price": 563500.0,
+      "scan_date": "20250716",
+      "current_return": 5.59,
+      "max_return": 18.47,
+      "min_return": -2.59,
+      "days_elapsed": 92,
+      "volume": 3627072,
+      "change_rate": "매수 후보",
+      "recommendation_dates": [
+        "20250708"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "068270",
+      "name": "셀트리온",
+      "scan_price": 162000.0,
+      "scan_date": "20250720",
+      "current_return": -4.29,
+      "max_return": 10.27,
+      "min_return": -10.1,
+      "days_elapsed": 92,
+      "volume": 6446907,
+      "change_rate": "매수 후보",
+      "recommendation_dates": [
+        "20250723"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "323410",
+      "name": "KakaoBank",
+      "scan_price": 44900.0,
+      "scan_date": "20250720",
+      "current_return": 20.83,
+      "max_return": 39.1,
+      "min_return": 8.95,
+      "days_elapsed": 92,
+      "volume": 5702965,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250721"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "096770",
+      "name": "SK이노베이션",
+      "scan_price": 316700.0,
+      "scan_date": "20250723",
+      "current_return": 23.54,
+      "max_return": 33.41,
+      "min_return": 12.62,
+      "days_elapsed": 92,
+      "volume": 2108523,
+      "change_rate": "매수 후보",
+      "recommendation_dates": [
+        "20250716"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "373220",
+      "name": "LG에너지솔루션",
+      "scan_price": 220400.0,
+      "scan_date": "20250714",
+      "current_return": 11.91,
+      "max_return": 23.2,
+      "min_return": 5.1,
+      "days_elapsed": 92,
+      "volume": 3604422,
+      "change_rate": "매수 후보",
+      "recommendation_dates": [
+        "20250729"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "000270",
+      "name": "기아",
+      "scan_price": 464000.0,
+      "scan_date": "20250702",
+      "current_return": -4.26,
+      "max_return": 10.8,
+      "min_return": -12.15,
+      "days_elapsed": 92,
+      "volume": 3778473,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250709"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "005380",
+      "name": "현대차",
+      "scan_price": 544000.0,
+      "scan_date": "20250706",
+      "current_return": 16.11,
+      "max_return": 28.9,
+      "min_return": 5.57,
+      "days_elapsed": 92,
+      "volume": 1368276,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250728"
+      ],
+      "recommendation_count": 2
+    },
+    {
+      "ticker": "012330",
+      "name": "현대모비스",
+      "scan_price": 560500.0,
+      "scan_date": "20250721",
+      "current_return": 8.11,
+      "max_return": 16.32,
+      "min_return": 0.31,
+      "days_elapsed": 92,
+      "volume": 9544119,
+      "change_rate": "관심",
+      "recommendation_dates": [
+        "20250730"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "066570",
+      "name": "LG전자",
+      "scan_price": 135400.0,
+      "scan_date": "20250727",
+      "current_return": 19.91,
+      "max_return": 31.6,
+      "min_return": 8.37,
+      "days_elapsed": 92,
+      "volume": 8896984,
+      "change_rate": "강한 매수",
+      "recommendation_dates": [
+        "20250722"
+      ],
+      "recommendation_count": 2
+    }
+  ],
+  "dates": [
+    "20250701",
+    "20250801",
+    "20250901"
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 10.35,
+      "median_return": 11.27,
+      "std_return": 8.15,
+      "total_stocks": 15
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 0.902,
+      "max_drawdown": -12.15,
+      "volatility_adjusted_return": 1.271
+    },
+    "performance_metrics": {
+      "win_rate": 80.0,
+      "avg_win": 13.66,
+      "avg_loss": 2.89,
+      "profit_loss_ratio": 4.72
+    }
+  },
+  "sector_analysis": {
+    "IT/전자": {
+      "count": 6,
+      "avg_return": 9.64,
+      "win_rate": 83.33
+    },
+    "자동차": {
+      "count": 3,
+      "avg_return": 6.65,
+      "win_rate": 66.67
+    },
+    "바이오/제약": {
+      "count": 2,
+      "avg_return": 0.65,
+      "win_rate": 50.0
+    },
+    "기타": {
+      "count": 4,
+      "avg_return": 19.05,
+      "win_rate": 100.0
+    }
+  },
+  "ai_insights": [
+    "📊 2025년 3분기는 여름 휴가철과 실적 발표가 겹친 변동성 높은 기간이었습니다.",
+    "🎯 전체 추천 종목의 평균 수익률이 10.4%로 양호한 성과를 보였습니다.",
+    "✅ 승률 80.0%로 안정적인 종목 선별 능력을 입증했습니다.",
+    "💡 IT/전자 섹터가 3분기 주요 성장 동력으로 작용했습니다.",
+    "⚠️ 4분기 실적 시즌을 앞두고 포트폴리오 점검이 필요한 시점입니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-06T17:27:42.468684"
+}
