@@ -308,6 +308,9 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
             <div>
               <h2 className="text-lg font-semibold">오늘의 추천 종목</h2>
               <p className="text-sm opacity-90">AI가 찾아낸 추천 종목을 지금 확인하세요!</p>
+              <p className="text-sm opacity-90 mt-1">
+                매일 오후 <span className="font-bold">3시 40분</span>에 추천됩니다.
+              </p>
             </div>
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
@@ -348,17 +351,25 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
               
               {/* 오른쪽: 버튼 */}
               <button
-                onClick={() => router.push('/performance-report')}
-                className="relative bg-gradient-to-br from-red-500 via-rose-600 to-pink-700 hover:from-red-600 hover:via-rose-700 hover:to-pink-800 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 active:scale-95 overflow-hidden group min-w-[180px]"
+                onClick={() => {
+                  if (!isAuthenticated()) {
+                    router.push('/login');
+                    return;
+                  }
+                  router.push('/performance-report');
+                }}
+                className="relative bg-gradient-to-br from-yellow-500 via-yellow-600 to-yellow-700 hover:from-yellow-600 hover:via-yellow-700 hover:to-yellow-800 text-white px-5 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 hover:-translate-y-1 active:scale-95 overflow-hidden group"
               >
                 {/* 배경 애니메이션 효과 */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:translate-x-full transition-all duration-700"></div>
                 
-                <div className="relative flex items-center justify-center space-x-2">
-                  <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <span className="text-sm">📋</span>
+                <div className="relative flex flex-col items-center justify-center space-y-1">
+                  <div className="w-4 h-4 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span className="text-xs">📋</span>
                   </div>
-                  <span className="text-sm font-bold tracking-wide whitespace-nowrap">추천 성과보고서</span>
+                  <div className="text-xs font-bold tracking-wide text-center leading-tight">
+                    추천종목<br />성과보고서
+                  </div>
                 </div>
                 
                 {/* 하단 글로우 효과 */}
