@@ -164,14 +164,20 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         print(f"🔴 급락장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 추천 종목 없음 반환")
         return [], None
     
-    print(f"🔄 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={config.fallback_enable}")
+    # 약세장에서는 fallback 비활성화 (조건 강화 유지)
+    use_fallback = config.fallback_enable
+    if market_condition and market_condition.market_sentiment == 'bear':
+        print(f"⚠️ 약세장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 조건 강화, fallback 비활성화")
+        use_fallback = False
     
-    if not config.fallback_enable:
-        # Fallback 비활성화 시 기존 로직
-        print(f"📊 Fallback 비활성화 - 기본 조건으로 스캔")
+    print(f"🔄 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={use_fallback}")
+    
+    if not use_fallback:
+        # Fallback 비활성화 시 기존 로직 (약세장에서는 강화된 조건 사용)
+        print(f"📊 Fallback 비활성화 - 시장 상황 기반 조건으로 스캔")
         items = scan_with_preset(universe, {}, date, market_condition)
         items = items[:config.top_k]
-        print(f"📊 기본 스캔 결과: {len(items)}개 종목")
+        print(f"📊 스캔 결과: {len(items)}개 종목 (조건 강화)")
     else:
         # Fallback 활성화 시 단계별 완화
         final_items = []

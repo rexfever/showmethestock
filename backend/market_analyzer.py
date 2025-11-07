@@ -236,9 +236,9 @@ class MarketAnalyzer:
         """시장 심리 판단"""
         if kospi_return > 0.02:  # +2% 이상
             return 'bull'
-        elif kospi_return < -0.03:  # -3% 이상 (급락장)
+        elif kospi_return < -0.03:  # -3% 미만 (급락장)
             return 'crash'
-        elif kospi_return < -0.02:  # -2% 이하 (약세장)
+        elif kospi_return < -0.02:  # -2% 미만 (약세장)
             return 'bear'
         else:
             return 'neutral'

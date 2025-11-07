@@ -556,7 +556,8 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             'ticker': item.ticker,
             'indicators': {'change_rate': item.indicators.change_rate},
             'flags': {'vol_expand': item.flags.vol_expand if item.flags else False}
-        } for item in scan_items]
+        } for item in scan_items],
+        'market_sentiment': market_condition.market_sentiment if market_condition else None  # market_analyzer의 판단 결과 전달
     }
     market_guide = get_market_guide(scan_result_dict)
     

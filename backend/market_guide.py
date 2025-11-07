@@ -37,7 +37,7 @@ def get_market_guide(scan_result):
     declining_ratio = declining_count / len(items) if items else 0
     
     # 시장 상황 판단
-    # market_sentiment가 제공되면 우선 사용, 없으면 점수 기반 판단
+    # market_analyzer의 판단을 우선 사용 (일관성 유지)
     if market_sentiment:
         # market_analyzer의 sentiment를 market_guide의 condition으로 변환
         sentiment_to_condition = {
@@ -48,7 +48,8 @@ def get_market_guide(scan_result):
         }
         market_condition = sentiment_to_condition.get(market_sentiment, '중립')
     else:
-        # 기존 점수 기반 판단
+        # market_sentiment가 없으면 스캔 결과 기반 판단 (fallback)
+        # 주의: 이 경우 market_analyzer의 판단과 다를 수 있음
         market_condition = _analyze_market_condition(
             matched_count, rsi_threshold, avg_change_rate, declining_ratio
         )
