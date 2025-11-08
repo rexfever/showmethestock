@@ -5,127 +5,369 @@
   "week": 3,
   "start_date": "2025-09-15",
   "end_date": "2025-09-21",
-  "generated_at": "2025-11-06T17:17:39.294324",
+  "generated_at": "2025-11-07T04:34:38.838201",
   "statistics": {
-    "total_stocks": 3,
-    "avg_return": 7.19,
-    "positive_rate": 66.67,
+    "total_stocks": 17,
+    "avg_return": 29.94,
+    "positive_rate": 94.12,
     "best_stock": {
-      "ticker": "005930",
-      "name": "삼성전자",
-      "scan_price": 183861.1100807915,
-      "scan_date": "20250901",
-      "current_return": 13.8,
-      "max_return": 23.27,
-      "min_return": 6.83,
-      "days_elapsed": 30,
-      "volume": 3455804,
-      "change_rate": "강한 매수",
+      "ticker": "000150",
+      "name": "두산",
+      "scan_price": 596000.0,
+      "scan_date": "20250918",
+      "current_return": 66.28,
+      "max_return": 70.81,
+      "min_return": -10.74,
+      "days_elapsed": 50,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 620797.0194627354, \"DEMA\": 620195.9193156612, \"MACD_OSC\": 4214.674642030906, \"MACD_LINE\": 14417.509301174432, \"MACD_SIGNAL\": 10202.834659143526, \"RSI_TEMA\": 29.462180342587516, \"RSI_DEMA\": 40.3504572160571, \"OBV\": 1914667.0, \"VOL\": 119447, \"VOL_MA5\": 101886.2, \"close\": 596000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 4911.293112931939, \"OBV_SLOPE20\": 21564.297744360843, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 5059.6253012095585}",
       "recommendation_dates": [
-        "20250901"
+        "20250918"
       ],
       "recommendation_count": 1
     },
     "worst_stock": {
-      "ticker": "035420",
-      "name": "NAVER",
-      "scan_price": 226269.42533089875,
-      "scan_date": "20250901",
-      "current_return": -2.28,
-      "max_return": 9.98,
-      "min_return": -6.75,
-      "days_elapsed": 30,
-      "volume": 4719722,
-      "change_rate": "강한 매수",
+      "ticker": "459580",
+      "name": "KODEX CD금리액티브(합성)",
+      "scan_price": 1074650.0,
+      "scan_date": "20250916",
+      "current_return": -0.06,
+      "max_return": -0.06,
+      "min_return": -0.42,
+      "days_elapsed": 52,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승추세정착",
+      "market": "{\"TEMA\": 1074675.1718040018, \"DEMA\": 1074675.0580450478, \"MACD_OSC\": -4.457262299420336, \"MACD_LINE\": 726.9406781177968, \"MACD_SIGNAL\": 731.3979404172171, \"RSI_TEMA\": 50.0, \"RSI_DEMA\": 50.0, \"OBV\": 52682691.0, \"VOL\": 260777, \"VOL_MA5\": 222552.8, \"close\": 1074650.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 102.128009579196, \"OBV_SLOPE20\": 189371.37293233039, \"ABOVE_CNT5\": 2, \"DEMA10_SLOPE20\": 101.2392134266773}",
       "recommendation_dates": [
-        "20250901"
+        "20250916"
       ],
       "recommendation_count": 1
     }
   },
   "stocks": [
     {
-      "ticker": "005930",
-      "name": "삼성전자",
-      "scan_price": 183861.1100807915,
-      "scan_date": "20250901",
-      "current_return": 13.8,
-      "max_return": 23.27,
-      "min_return": 6.83,
-      "days_elapsed": 30,
-      "volume": 3455804,
-      "change_rate": "강한 매수",
+      "ticker": "000150",
+      "name": "두산",
+      "scan_price": 596000.0,
+      "scan_date": "20250918",
+      "current_return": 66.28,
+      "max_return": 70.81,
+      "min_return": -10.74,
+      "days_elapsed": 50,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 620797.0194627354, \"DEMA\": 620195.9193156612, \"MACD_OSC\": 4214.674642030906, \"MACD_LINE\": 14417.509301174432, \"MACD_SIGNAL\": 10202.834659143526, \"RSI_TEMA\": 29.462180342587516, \"RSI_DEMA\": 40.3504572160571, \"OBV\": 1914667.0, \"VOL\": 119447, \"VOL_MA5\": 101886.2, \"close\": 596000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 4911.293112931939, \"OBV_SLOPE20\": 21564.297744360843, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 5059.6253012095585}",
       "recommendation_dates": [
-        "20250901"
+        "20250918"
       ],
       "recommendation_count": 1
     },
     {
-      "ticker": "000660",
-      "name": "SK하이닉스",
-      "scan_price": 406786.28013454226,
-      "scan_date": "20250901",
-      "current_return": 10.06,
-      "max_return": 23.13,
-      "min_return": 6.23,
-      "days_elapsed": 30,
-      "volume": 2712217,
-      "change_rate": "강한 매수",
+      "ticker": "001440",
+      "name": "대한전선",
+      "scan_price": 16240.0,
+      "scan_date": "20250915",
+      "current_return": 50.86,
+      "max_return": 66.87,
+      "min_return": -7.14,
+      "days_elapsed": 53,
+      "volume": 0,
+      "change_rate": "상승시작",
+      "market": "{\"TEMA\": 15927.420788319094, \"DEMA\": 16146.147858234046, \"MACD_OSC\": 119.76397916479472, \"MACD_LINE\": 37.63211524178405, \"MACD_SIGNAL\": -82.13186392301067, \"RSI_TEMA\": 63.2085353275195, \"RSI_DEMA\": 63.12202769519662, \"OBV\": 94493702.0, \"VOL\": 814367, \"VOL_MA5\": 1604421.6, \"close\": 16240.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": -45.26369578944121, \"OBV_SLOPE20\": 101326.30150375808, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": -32.125323490217376}",
       "recommendation_dates": [
-        "20250901"
+        "20250915"
       ],
       "recommendation_count": 1
     },
     {
-      "ticker": "035420",
-      "name": "NAVER",
-      "scan_price": 226269.42533089875,
-      "scan_date": "20250901",
-      "current_return": -2.28,
-      "max_return": 9.98,
-      "min_return": -6.75,
-      "days_elapsed": 30,
-      "volume": 4719722,
-      "change_rate": "강한 매수",
+      "ticker": "000155",
+      "name": "두산우",
+      "scan_price": 349500.0,
+      "scan_date": "20250919",
+      "current_return": 63.66,
+      "max_return": 66.24,
+      "min_return": -5.87,
+      "days_elapsed": 49,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 358666.09045404993, \"DEMA\": 358642.1003275021, \"MACD_OSC\": 1313.9801108462198, \"MACD_LINE\": 397.3444519531331, \"MACD_SIGNAL\": -916.6356588930868, \"RSI_TEMA\": 12.211386719675076, \"RSI_DEMA\": 29.748400741124073, \"OBV\": 1258102.0, \"VOL\": 83068, \"VOL_MA5\": 27775.2, \"close\": 349500.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 1775.8280090036867, \"OBV_SLOPE20\": 5639.851879699225, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 1837.4424734886263}",
       "recommendation_dates": [
-        "20250901"
+        "20250919"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "042700",
+      "name": "한미반도체",
+      "scan_price": 93300.0,
+      "scan_date": "20250919",
+      "current_return": 38.26,
+      "max_return": 62.38,
+      "min_return": -3.75,
+      "days_elapsed": 49,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 92169.7761318737, \"DEMA\": 93012.261370856, \"MACD_OSC\": 1049.1910063598134, \"MACD_LINE\": 1325.596359115676, \"MACD_SIGNAL\": 276.40535275586257, \"RSI_TEMA\": 68.26187471179489, \"RSI_DEMA\": 70.92216792406457, \"OBV\": 23298987.0, \"VOL\": 1006274, \"VOL_MA5\": 860249.6, \"close\": 93300.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 108.03152517907266, \"OBV_SLOPE20\": 284966.3293233077, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 182.64256319189528}",
+      "recommendation_dates": [
+        "20250919"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "011070",
+      "name": "LG이노텍",
+      "scan_price": 173900.0,
+      "scan_date": "20250917",
+      "current_return": 47.21,
+      "max_return": 47.21,
+      "min_return": 0.0,
+      "days_elapsed": 51,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 172383.57270821658, \"DEMA\": 172772.39373091716, \"MACD_OSC\": 449.5108526195545, \"MACD_LINE\": 3214.4590307448816, \"MACD_SIGNAL\": 2764.948178125327, \"RSI_TEMA\": 59.419219947234225, \"RSI_DEMA\": 59.13296786173025, \"OBV\": 4635579.0, \"VOL\": 199918, \"VOL_MA5\": 297897.2, \"close\": 173900.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 509.71259720461114, \"OBV_SLOPE20\": 129537.07969924815, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 538.0496722097577}",
+      "recommendation_dates": [
+        "20250917",
+        "20250918",
+        "20250919"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "005690",
+      "name": "파미셀",
+      "scan_price": 13000.0,
+      "scan_date": "20250916",
+      "current_return": 40.0,
+      "max_return": 42.77,
+      "min_return": -8.62,
+      "days_elapsed": 52,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 12457.71511812628, \"DEMA\": 12808.286630364139, \"MACD_OSC\": 328.75507005892257, \"MACD_LINE\": 239.35722207808612, \"MACD_SIGNAL\": -89.39784798083645, \"RSI_TEMA\": 60.246773663545596, \"RSI_DEMA\": 62.79483544046882, \"OBV\": 99141906.0, \"VOL\": 8040020, \"VOL_MA5\": 6539512.4, \"close\": 13000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 36.56611662594555, \"OBV_SLOPE20\": 1071155.9962405998, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 63.979628654846756}",
+      "recommendation_dates": [
+        "20250916"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "005380",
+      "name": "현대차",
+      "scan_price": 215000.0,
+      "scan_date": "20250915",
+      "current_return": 25.12,
+      "max_return": 35.58,
+      "min_return": -0.47,
+      "days_elapsed": 53,
+      "volume": 0,
+      "change_rate": "상승신호 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 220310.2574234689, \"DEMA\": 219923.54343913047, \"MACD_OSC\": -531.9108057439444, \"MACD_LINE\": 1248.638603033789, \"MACD_SIGNAL\": 1780.5494087777333, \"RSI_TEMA\": 19.207544732673114, \"RSI_DEMA\": 22.740591471530834, \"OBV\": -6687716.0, \"VOL\": 1712249, \"VOL_MA5\": 756590.6, \"close\": 215000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 186.71086994236097, \"OBV_SLOPE20\": 76906.39323308307, \"ABOVE_CNT5\": 4, \"DEMA10_SLOPE20\": 109.33037321344251}",
+      "recommendation_dates": [
+        "20250915"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "000720",
+      "name": "현대건설",
+      "scan_price": 60000.0,
+      "scan_date": "20250915",
+      "current_return": 8.33,
+      "max_return": 22.5,
+      "min_return": -9.33,
+      "days_elapsed": 53,
+      "volume": 0,
+      "change_rate": "상승시작",
+      "market": "{\"TEMA\": 58615.56136445297, \"DEMA\": 59095.98761859111, \"MACD_OSC\": 140.90382609542849, \"MACD_LINE\": -1679.303752085456, \"MACD_SIGNAL\": -1820.2075781808844, \"RSI_TEMA\": 69.17450336081782, \"RSI_DEMA\": 59.22754101612548, \"OBV\": 15592909.0, \"VOL\": 1030788, \"VOL_MA5\": 826919.0, \"close\": 60000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": -197.2064189072367, \"OBV_SLOPE20\": -83854.88120300775, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": -196.43444467110447}",
+      "recommendation_dates": [
+        "20250915"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "047050",
+      "name": "포스코인터내셔널",
+      "scan_price": 49950.0,
+      "scan_date": "20250916",
+      "current_return": 6.31,
+      "max_return": 19.72,
+      "min_return": -4.2,
+      "days_elapsed": 52,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 49667.15054408205, \"DEMA\": 49904.191984385994, \"MACD_OSC\": 232.28280004877584, \"MACD_LINE\": 30.654891133861383, \"MACD_SIGNAL\": -201.62790891491446, \"RSI_TEMA\": 63.616212021628066, \"RSI_DEMA\": 64.36002955862631, \"OBV\": 14118300.0, \"VOL\": 300259, \"VOL_MA5\": 292142.6, \"close\": 49950.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 20.053206865345228, \"OBV_SLOPE20\": 66906.63458646584, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 5.629750736259577}",
+      "recommendation_dates": [
+        "20250916"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "047810",
+      "name": "한국항공우주",
+      "scan_price": 100200.0,
+      "scan_date": "20250916",
+      "current_return": -1.5,
+      "max_return": 14.77,
+      "min_return": -4.59,
+      "days_elapsed": 52,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 99517.79073191562, \"DEMA\": 99540.09423763369, \"MACD_OSC\": 411.2997468011947, \"MACD_LINE\": 1938.4844877739815, \"MACD_SIGNAL\": 1527.1847409727868, \"RSI_TEMA\": 63.11364673888842, \"RSI_DEMA\": 62.96960206756267, \"OBV\": 48118354.0, \"VOL\": 530200, \"VOL_MA5\": 797890.8, \"close\": 100200.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 559.3556614878984, \"OBV_SLOPE20\": 74466.09172932302, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 555.9387005722061}",
+      "recommendation_dates": [
+        "20250916",
+        "20250918",
+        "20250919"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "055550",
+      "name": "신한지주",
+      "scan_price": 69700.0,
+      "scan_date": "20250917",
+      "current_return": 13.63,
+      "max_return": 13.63,
+      "min_return": -1.87,
+      "days_elapsed": 51,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 68690.40640962035, \"DEMA\": 69587.60995690191, \"MACD_OSC\": 613.8651159695416, \"MACD_LINE\": 683.0861668019934, \"MACD_SIGNAL\": 69.2210508324518, \"RSI_TEMA\": 68.46681532788025, \"RSI_DEMA\": 71.45805591660582, \"OBV\": -2043983.0, \"VOL\": 1201636, \"VOL_MA5\": 1591452.4, \"close\": 69700.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 10.740774943999666, \"OBV_SLOPE20\": 396109.6255639098, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 69.27397439109173}",
+      "recommendation_dates": [
+        "20250917"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "449450",
+      "name": "PLUS K방산",
+      "scan_price": 54230.0,
+      "scan_date": "20250915",
+      "current_return": 0.14,
+      "max_return": 11.8,
+      "min_return": -6.22,
+      "days_elapsed": 53,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 54128.38995157722, \"DEMA\": 54361.40385707681, \"MACD_OSC\": 210.79045039741823, \"MACD_LINE\": 889.8589436707916, \"MACD_SIGNAL\": 679.0684932733734, \"RSI_TEMA\": 62.6941052943776, \"RSI_DEMA\": 65.65934366592413, \"OBV\": 48930838.0, \"VOL\": 1038557, \"VOL_MA5\": 896544.8, \"close\": 54230.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 271.8013465144986, \"OBV_SLOPE20\": 269864.30827067536, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 303.86384684374866}",
+      "recommendation_dates": [
+        "20250915"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "034730",
+      "name": "SK",
+      "scan_price": 230000.0,
+      "scan_date": "20250918",
+      "current_return": 10.43,
+      "max_return": 10.43,
+      "min_return": -10.22,
+      "days_elapsed": 50,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 232665.26600022844, \"DEMA\": 232127.7556285795, \"MACD_OSC\": 2396.8439231998564, \"MACD_LINE\": 9229.116819923045, \"MACD_SIGNAL\": 6832.272896723189, \"RSI_TEMA\": 61.95541855058941, \"RSI_DEMA\": 70.71994863939145, \"OBV\": 6120138.0, \"VOL\": 145890, \"VOL_MA5\": 228898.4, \"close\": 230000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 3123.4375341362174, \"OBV_SLOPE20\": 99157.49097744355, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 2889.5736950053742}",
+      "recommendation_dates": [
+        "20250918"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "079550",
+      "name": "LIG넥스원",
+      "scan_price": 495000.0,
+      "scan_date": "20250915",
+      "current_return": -2.83,
+      "max_return": 9.49,
+      "min_return": -12.42,
+      "days_elapsed": 53,
+      "volume": 0,
+      "change_rate": "상승시작",
+      "market": "{\"TEMA\": 483858.48409214563, \"DEMA\": 492498.79272572836, \"MACD_OSC\": 3176.2699941476494, \"MACD_LINE\": -12080.655930723937, \"MACD_SIGNAL\": -15256.925924871586, \"RSI_TEMA\": 55.66765469715337, \"RSI_DEMA\": 54.802057920619134, \"OBV\": 2461431.0, \"VOL\": 134173, \"VOL_MA5\": 166770.0, \"close\": 495000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": -594.3764901977513, \"OBV_SLOPE20\": 51893.23458646613, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": -289.94675324724557}",
+      "recommendation_dates": [
+        "20250915",
+        "20250917",
+        "20250919"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "272210",
+      "name": "한화시스템",
+      "scan_price": 57600.0,
+      "scan_date": "20250917",
+      "current_return": -8.51,
+      "max_return": 9.38,
+      "min_return": -10.94,
+      "days_elapsed": 51,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 56280.46647777971, \"DEMA\": 56997.66130061319, \"MACD_OSC\": 789.1691585307806, \"MACD_LINE\": 815.4064325379368, \"MACD_SIGNAL\": 26.237274007156174, \"RSI_TEMA\": 68.06994642266719, \"RSI_DEMA\": 70.34149290755792, \"OBV\": 275969702.0, \"VOL\": 1325331, \"VOL_MA5\": 1730175.0, \"close\": 57600.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 233.68944210724493, \"OBV_SLOPE20\": 258228.87894736163, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 252.3219493303245}",
+      "recommendation_dates": [
+        "20250917"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "007540",
+      "name": "샘표",
+      "scan_price": 49700.0,
+      "scan_date": "20250917",
+      "current_return": -0.4,
+      "max_return": 5.43,
+      "min_return": -4.12,
+      "days_elapsed": 51,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 50225.52895515906, \"DEMA\": 50187.94816254207, \"MACD_OSC\": 109.38996371481778, \"MACD_LINE\": 567.5864961466432, \"MACD_SIGNAL\": 458.1965324318254, \"RSI_TEMA\": 42.80455592947648, \"RSI_DEMA\": 48.472233166983465, \"OBV\": 503277.0, \"VOL\": 3969, \"VOL_MA5\": 9189.0, \"close\": 49700.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 211.3815525816997, \"OBV_SLOPE20\": 1766.7338345864673, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 182.30987255476137}",
+      "recommendation_dates": [
+        "20250916",
+        "20250917",
+        "20250918"
+      ],
+      "recommendation_count": 3
+    },
+    {
+      "ticker": "459580",
+      "name": "KODEX CD금리액티브(합성)",
+      "scan_price": 1074650.0,
+      "scan_date": "20250916",
+      "current_return": -0.06,
+      "max_return": -0.06,
+      "min_return": -0.42,
+      "days_elapsed": 52,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승추세정착",
+      "market": "{\"TEMA\": 1074675.1718040018, \"DEMA\": 1074675.0580450478, \"MACD_OSC\": -4.457262299420336, \"MACD_LINE\": 726.9406781177968, \"MACD_SIGNAL\": 731.3979404172171, \"RSI_TEMA\": 50.0, \"RSI_DEMA\": 50.0, \"OBV\": 52682691.0, \"VOL\": 260777, \"VOL_MA5\": 222552.8, \"close\": 1074650.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 102.128009579196, \"OBV_SLOPE20\": 189371.37293233039, \"ABOVE_CNT5\": 2, \"DEMA10_SLOPE20\": 101.2392134266773}",
+      "recommendation_dates": [
+        "20250916"
       ],
       "recommendation_count": 1
     }
   ],
   "dates": [
-    "20250921"
-  ],
-  "enhanced_metrics": {
-    "basic_stats": {
-      "avg_return": 7.19,
-      "median_return": 10.06,
-      "std_return": 6.87,
-      "total_stocks": 3
-    },
-    "risk_metrics": {
-      "sharpe_ratio": 0.8,
-      "max_drawdown": -5.0,
-      "volatility_adjusted_return": 1.2
-    },
-    "performance_metrics": {
-      "win_rate": 70.0,
-      "avg_win": 8.5,
-      "avg_loss": 3.2,
-      "profit_loss_ratio": 2.7
-    }
-  },
-  "sector_analysis": {
-    "IT/전자": {
-      "count": 3,
-      "avg_return": 7.19,
-      "win_rate": 70.0
-    }
-  },
-  "ai_insights": [
-    "📊 9월 3주차 시장 분석 결과입니다.",
-    "🎯 선별된 종목들의 성과가 양호합니다."
-  ],
-  "report_version": "2.0",
-  "enhanced_at": "2025-11-06T17:17:39.294375"
+    "20250915",
+    "20250916",
+    "20250917",
+    "20250918",
+    "20250919"
+  ]
 }

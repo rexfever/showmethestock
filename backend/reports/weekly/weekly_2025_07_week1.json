@@ -5,20 +5,20 @@
   "week": 1,
   "start_date": "2025-07-01",
   "end_date": "2025-07-07",
-  "generated_at": "2025-11-06T11:23:32.290674",
+  "generated_at": "2025-11-07T04:49:18.356078",
   "statistics": {
-    "total_stocks": 14,
-    "avg_return": 64.86,
+    "total_stocks": 5,
+    "avg_return": 95.73,
     "positive_rate": 100.0,
     "best_stock": {
       "ticker": "298040",
       "name": "효성중공업",
       "scan_price": 903000.0,
       "scan_date": "20250707",
-      "current_return": 151.16,
+      "current_return": 149.72,
       "max_return": 157.81,
       "min_return": 0.0,
-      "days_elapsed": 122,
+      "days_elapsed": 123,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 1558777.0162174006, \"DEMA\": 1576788.2544964452, \"MACD_OSC\": 17810.333167174278, \"MACD_LINE\": 75357.18784129177, \"MACD_SIGNAL\": 57546.854674117494, \"RSI_TEMA\": 65.766319464456, \"RSI_DEMA\": 67.85583332911054, \"OBV\": 1003984.0, \"VOL\": 34038, \"VOL_MA5\": 55269.0, \"close\": 1580000.0}",
@@ -29,20 +29,20 @@
       "recommendation_count": 1
     },
     "worst_stock": {
-      "ticker": "098460",
-      "name": "고영",
-      "scan_price": 16050.0,
-      "scan_date": "20250703",
-      "current_return": 1.43,
-      "max_return": 7.04,
-      "min_return": -15.02,
-      "days_elapsed": 126,
+      "ticker": "028260",
+      "name": "삼성물산",
+      "scan_price": 162700.0,
+      "scan_date": "20250707",
+      "current_return": 33.37,
+      "max_return": 41.98,
+      "min_return": -2.27,
+      "days_elapsed": 123,
       "volume": 0,
-      "change_rate": "관심증가 / 상승추세정착",
-      "market": "{\"TEMA\": 15968.373357888771, \"DEMA\": 15939.752750303764, \"MACD_OSC\": -41.55622184713823, \"MACD_LINE\": 91.19442655195417, \"MACD_SIGNAL\": 132.7506483990924, \"RSI_TEMA\": 56.091319324939796, \"RSI_DEMA\": 53.95915969257427, \"OBV\": 119640731.0, \"VOL\": 1266642, \"VOL_MA5\": 915881.4, \"close\": 16050.0, \"change_rate\": -6.58}",
-      "strategy": "{\"TEMA20_SLOPE20\": 29.133625058600394, \"OBV_SLOPE20\": 451180.7067669146, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 41.86594604462234}",
+      "change_rate": 0,
+      "market": "{\"TEMA\": 208522.42341502567, \"DEMA\": 209115.82419590716, \"MACD_OSC\": 1294.4467820254958, \"MACD_LINE\": 7726.345617991872, \"MACD_SIGNAL\": 6431.898835966376, \"RSI_TEMA\": 63.38212063311115, \"RSI_DEMA\": 64.1938111884993, \"OBV\": 6589787.0, \"VOL\": 433956, \"VOL_MA5\": 443464.2, \"close\": 210500.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 601.8156571025509, \"OBV_SLOPE20\": 3146.8842105262434, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 505.7966362340663}",
       "recommendation_dates": [
-        "20250703"
+        "20250707"
       ],
       "recommendation_count": 1
     }
@@ -53,10 +53,10 @@
       "name": "효성중공업",
       "scan_price": 903000.0,
       "scan_date": "20250707",
-      "current_return": 151.16,
+      "current_return": 149.72,
       "max_return": 157.81,
       "min_return": 0.0,
-      "days_elapsed": 122,
+      "days_elapsed": 123,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 1558777.0162174006, \"DEMA\": 1576788.2544964452, \"MACD_OSC\": 17810.333167174278, \"MACD_LINE\": 75357.18784129177, \"MACD_SIGNAL\": 57546.854674117494, \"RSI_TEMA\": 65.766319464456, \"RSI_DEMA\": 67.85583332911054, \"OBV\": 1003984.0, \"VOL\": 34038, \"VOL_MA5\": 55269.0, \"close\": 1580000.0}",
@@ -67,32 +67,14 @@
       "recommendation_count": 1
     },
     {
-      "ticker": "007660",
-      "name": "이수페타시스",
-      "scan_price": 52500.0,
-      "scan_date": "20250703",
-      "current_return": 106.86,
-      "max_return": 121.33,
-      "min_return": -0.76,
-      "days_elapsed": 126,
-      "volume": 0,
-      "change_rate": "상승시작 / 관심증가 / 상승추세정착",
-      "market": "{\"TEMA\": 52085.81862413326, \"DEMA\": 51848.33592418728, \"MACD_OSC\": 299.77474455617084, \"MACD_LINE\": 2911.770630085215, \"MACD_SIGNAL\": 2611.9958855290442, \"RSI_TEMA\": 68.18405802323629, \"RSI_DEMA\": 69.02411189687307, \"OBV\": 100148328.0, \"VOL\": 2646638, \"VOL_MA5\": 1534664.2, \"close\": 52500.0, \"change_rate\": -38.67}",
-      "strategy": "{\"TEMA20_SLOPE20\": 632.7608743106298, \"OBV_SLOPE20\": 675980.9481202982, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 646.9870301187483}",
-      "recommendation_dates": [
-        "20250703"
-      ],
-      "recommendation_count": 1
-    },
-    {
       "ticker": "082740",
       "name": "한화엔진",
       "scan_price": 25100.0,
       "scan_date": "20250707",
-      "current_return": 84.26,
+      "current_return": 80.48,
       "max_return": 104.38,
       "min_return": 0.0,
-      "days_elapsed": 122,
+      "days_elapsed": 123,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 46842.29374024207, \"DEMA\": 47106.78885765072, \"MACD_OSC\": 4.878636167494733, \"MACD_LINE\": 1271.803434237554, \"MACD_SIGNAL\": 1266.9247980700593, \"RSI_TEMA\": 47.07918904443195, \"RSI_DEMA\": 49.73746573121271, \"OBV\": 64717967.0, \"VOL\": 1401645, \"VOL_MA5\": 2132750.4, \"close\": 46450.0}",
@@ -103,52 +85,32 @@
       "recommendation_count": 1
     },
     {
-      "ticker": "131970",
-      "name": "두산테스나",
-      "scan_price": 26950.0,
-      "scan_date": "20250704",
-      "current_return": 76.44,
-      "max_return": 99.63,
-      "min_return": -0.74,
-      "days_elapsed": 125,
-      "volume": 0,
-      "change_rate": "관심증가 / 상승추세정착",
-      "market": "{\"TEMA\": 27378.875983432827, \"DEMA\": 26968.50421220547, \"MACD_OSC\": -278.82104075437906, \"MACD_LINE\": 243.58620618952773, \"MACD_SIGNAL\": 522.4072469439068, \"RSI_TEMA\": 64.92091372296878, \"RSI_DEMA\": 57.499952442206045, \"OBV\": 2781888.0, \"VOL\": 393528, \"VOL_MA5\": 233390.2, \"close\": 27750.0, \"change_rate\": -42.37}",
-      "strategy": "{\"TEMA20_SLOPE20\": 17.96884463056309, \"OBV_SLOPE20\": 10610.624812030052, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": -34.414792567836095}",
-      "recommendation_dates": [
-        "20250704",
-        "20250705"
-      ],
-      "recommendation_count": 2
-    },
-    {
-      "ticker": "005070",
-      "name": "코스모신소재",
-      "scan_price": 34450.0,
-      "scan_date": "20250701",
-      "current_return": 59.36,
-      "max_return": 77.65,
+      "ticker": "336260",
+      "name": "두산퓨얼셀",
+      "scan_price": 21950.0,
+      "scan_date": "20250707",
+      "current_return": 71.3,
+      "max_return": 100.0,
       "min_return": 0.0,
-      "days_elapsed": 128,
+      "days_elapsed": 123,
       "volume": 0,
-      "change_rate": "상승시작 / 상승추세정착",
-      "market": "{\"TEMA\": 34443.561604132796, \"DEMA\": 34271.98181370389, \"MACD_OSC\": 242.28819507018738, \"MACD_LINE\": -192.17452537034114, \"MACD_SIGNAL\": -434.4627204405285, \"RSI_TEMA\": 58.352745412351545, \"RSI_DEMA\": 57.92302086286232, \"OBV\": -3114415.0, \"VOL\": 224327, \"VOL_MA5\": 202478.6, \"close\": 34450.0, \"change_rate\": -41.01}",
-      "strategy": "{\"TEMA20_SLOPE20\": 84.02265054219559, \"OBV_SLOPE20\": 57006.77293233082, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 30.237882578885216}",
+      "change_rate": 0,
+      "market": "{\"TEMA\": 32867.006265828546, \"DEMA\": 33086.81583382748, \"MACD_OSC\": 171.54863529509794, \"MACD_LINE\": 1357.408107668496, \"MACD_SIGNAL\": 1185.8594723733981, \"RSI_TEMA\": 57.16589535301241, \"RSI_DEMA\": 58.40937778913065, \"OBV\": 51329559.0, \"VOL\": 1493041, \"VOL_MA5\": 1662449.0, \"close\": 32950.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 10.431804290977306, \"OBV_SLOPE20\": 147418.39849623997, \"ABOVE_CNT5\": 2, \"DEMA10_SLOPE20\": -16.573672907224818}",
       "recommendation_dates": [
-        "20250701",
-        "20250702"
+        "20250707"
       ],
-      "recommendation_count": 2
+      "recommendation_count": 1
     },
     {
       "ticker": "001440",
       "name": "대한전선",
-      "scan_price": 15470.0,
+      "scan_price": 15530.0,
       "scan_date": "20250707",
-      "current_return": 57.4,
-      "max_return": 75.18,
-      "min_return": -4.07,
-      "days_elapsed": 122,
+      "current_return": 57.76,
+      "max_return": 74.5,
+      "min_return": -4.44,
+      "days_elapsed": 123,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 17448.746331386872, \"DEMA\": 17608.822823333558, \"MACD_OSC\": 231.26131088715556, \"MACD_LINE\": 452.8188879296904, \"MACD_SIGNAL\": 221.55757704253483, \"RSI_TEMA\": 61.75938865501068, \"RSI_DEMA\": 64.6274781751354, \"OBV\": 102975470.0, \"VOL\": 2723747, \"VOL_MA5\": 5437271.8, \"close\": 17570.0}",
@@ -159,149 +121,20 @@
       "recommendation_count": 1
     },
     {
-      "ticker": "373220",
-      "name": "LG에너지솔루션",
-      "scan_price": 310500.0,
-      "scan_date": "20250704",
-      "current_return": 53.78,
-      "max_return": 65.54,
-      "min_return": -1.77,
-      "days_elapsed": 125,
-      "volume": 0,
-      "change_rate": "상승시작 / 상승추세정착",
-      "market": "{\"TEMA\": 307725.1496600941, \"DEMA\": 307872.799173948, \"MACD_OSC\": 2709.397274399564, \"MACD_LINE\": 2141.375712236506, \"MACD_SIGNAL\": -568.0215621630582, \"RSI_TEMA\": 63.907176329769044, \"RSI_DEMA\": 64.65768307698812, \"OBV\": 1464045.0, \"VOL\": 237717, \"VOL_MA5\": 321430.6, \"close\": 310500.0, \"change_rate\": -31.68}",
-      "strategy": "{\"TEMA20_SLOPE20\": 1228.9007691261618, \"OBV_SLOPE20\": 49554.35488721804, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 867.9701982923704}",
-      "recommendation_dates": [
-        "20250704",
-        "20250705"
-      ],
-      "recommendation_count": 2
-    },
-    {
       "ticker": "028260",
       "name": "삼성물산",
       "scan_price": 162700.0,
       "scan_date": "20250707",
-      "current_return": 32.45,
+      "current_return": 33.37,
       "max_return": 41.98,
       "min_return": -2.27,
-      "days_elapsed": 122,
+      "days_elapsed": 123,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 208522.42341502567, \"DEMA\": 209115.82419590716, \"MACD_OSC\": 1294.4467820254958, \"MACD_LINE\": 7726.345617991872, \"MACD_SIGNAL\": 6431.898835966376, \"RSI_TEMA\": 63.38212063311115, \"RSI_DEMA\": 64.1938111884993, \"OBV\": 6589787.0, \"VOL\": 433956, \"VOL_MA5\": 443464.2, \"close\": 210500.0}",
       "strategy": "{\"TEMA20_SLOPE20\": 601.8156571025509, \"OBV_SLOPE20\": 3146.8842105262434, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 505.7966362340663}",
       "recommendation_dates": [
         "20250707"
-      ],
-      "recommendation_count": 1
-    },
-    {
-      "ticker": "121600",
-      "name": "나노신소재",
-      "scan_price": 52400.0,
-      "scan_date": "20250704",
-      "current_return": 23.85,
-      "max_return": 39.31,
-      "min_return": -13.55,
-      "days_elapsed": 125,
-      "volume": 0,
-      "change_rate": "상승시작 / 상승추세정착",
-      "market": "{\"TEMA\": 51856.96518331641, \"DEMA\": 51779.24541469831, \"MACD_OSC\": 413.3883747060386, \"MACD_LINE\": 256.23921764588886, \"MACD_SIGNAL\": -157.14915706014972, \"RSI_TEMA\": 68.53320815952453, \"RSI_DEMA\": 66.89554778942461, \"OBV\": -496386.0, \"VOL\": 37236, \"VOL_MA5\": 66257.6, \"close\": 52400.0, \"change_rate\": -18.63}",
-      "strategy": "{\"TEMA20_SLOPE20\": 104.80078767118073, \"OBV_SLOPE20\": 11874.491729323321, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 66.925003246642}",
-      "recommendation_dates": [
-        "20250704",
-        "20250705"
-      ],
-      "recommendation_count": 2
-    },
-    {
-      "ticker": "005380",
-      "name": "현대차",
-      "scan_price": 210000.0,
-      "scan_date": "20250701",
-      "current_return": 27.86,
-      "max_return": 38.81,
-      "min_return": -1.67,
-      "days_elapsed": 128,
-      "volume": 0,
-      "change_rate": "상승시작 / 상승추세정착",
-      "market": "{\"TEMA\": 211153.5511295572, \"DEMA\": 209477.33756704498, \"MACD_OSC\": 184.73750782811658, \"MACD_LINE\": 4604.350081578741, \"MACD_SIGNAL\": 4419.6125737506245, \"RSI_TEMA\": 57.10119421056416, \"RSI_DEMA\": 57.50146903634008, \"OBV\": -10816924.0, \"VOL\": 1059697, \"VOL_MA5\": 984143.0, \"close\": 210000.0, \"change_rate\": -19.54}",
-      "strategy": "{\"TEMA20_SLOPE20\": 1577.8004858616891, \"OBV_SLOPE20\": 328000.3082706771, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 1463.627484877646}",
-      "recommendation_dates": [
-        "20250701",
-        "20250702"
-      ],
-      "recommendation_count": 2
-    },
-    {
-      "ticker": "028050",
-      "name": "삼성E&A",
-      "scan_price": 22900.0,
-      "scan_date": "20250701",
-      "current_return": 15.28,
-      "max_return": 32.31,
-      "min_return": 0.0,
-      "days_elapsed": 128,
-      "volume": 0,
-      "change_rate": "관심증가 / 상승추세정착",
-      "market": "{\"TEMA\": 22809.878637998398, \"DEMA\": 22629.744915996467, \"MACD_OSC\": -155.63864130390755, \"MACD_LINE\": 391.32179834419003, \"MACD_SIGNAL\": 546.9604396480976, \"RSI_TEMA\": 62.15643708643027, \"RSI_DEMA\": 57.00651872106908, \"OBV\": -18614524.0, \"VOL\": 1358612, \"VOL_MA5\": 881191.8, \"close\": 22900.0, \"change_rate\": -19.37}",
-      "strategy": "{\"TEMA20_SLOPE20\": 56.141033295166224, \"OBV_SLOPE20\": 27547.503007519754, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 41.50182396341117}",
-      "recommendation_dates": [
-        "20250701"
-      ],
-      "recommendation_count": 1
-    },
-    {
-      "ticker": "304360",
-      "name": "에스바이오메딕스",
-      "scan_price": 21600.0,
-      "scan_date": "20250701",
-      "current_return": 5.79,
-      "max_return": 27.78,
-      "min_return": -16.3,
-      "days_elapsed": 128,
-      "volume": 0,
-      "change_rate": "상승추세정착",
-      "market": "{\"TEMA\": 21538.224258155886, \"DEMA\": 21221.512355805662, \"MACD_OSC\": -92.85621891189825, \"MACD_LINE\": 66.12850134039036, \"MACD_SIGNAL\": 158.9847202522886, \"RSI_TEMA\": 62.666885824512306, \"RSI_DEMA\": 56.63458598714949, \"OBV\": -1451104.0, \"VOL\": 52019, \"VOL_MA5\": 69268.4, \"close\": 21600.0, \"change_rate\": -6.49}",
-      "strategy": "{\"TEMA20_SLOPE20\": 169.66390199975493, \"OBV_SLOPE20\": 36157.52481203012, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 136.34976749806538}",
-      "recommendation_dates": [
-        "20250701"
-      ],
-      "recommendation_count": 1
-    },
-    {
-      "ticker": "006260",
-      "name": "LS",
-      "scan_price": 186500.0,
-      "scan_date": "20250702",
-      "current_return": 10.46,
-      "max_return": 19.3,
-      "min_return": -19.14,
-      "days_elapsed": 127,
-      "volume": 0,
-      "change_rate": "상승신호 / 상승시작 / 관심증가 / 상승추세정착",
-      "market": "{\"TEMA\": 196044.6373221349, \"DEMA\": 195783.4784921286, \"MACD_OSC\": 262.02513839211497, \"MACD_LINE\": 10766.230666400254, \"MACD_SIGNAL\": 10504.205528008139, \"RSI_TEMA\": 40.840646711922474, \"RSI_DEMA\": 44.82775077913328, \"OBV\": 8393004.0, \"VOL\": 784327, \"VOL_MA5\": 495053.4, \"close\": 186500.0, \"change_rate\": -7.21}",
-      "strategy": "{\"TEMA20_SLOPE20\": 1186.1304305671918, \"OBV_SLOPE20\": 24422.079699248086, \"ABOVE_CNT5\": 4, \"DEMA10_SLOPE20\": 1143.9068601854349}",
-      "recommendation_dates": [
-        "20250702"
-      ],
-      "recommendation_count": 1
-    },
-    {
-      "ticker": "098460",
-      "name": "고영",
-      "scan_price": 16050.0,
-      "scan_date": "20250703",
-      "current_return": 1.43,
-      "max_return": 7.04,
-      "min_return": -15.02,
-      "days_elapsed": 126,
-      "volume": 0,
-      "change_rate": "관심증가 / 상승추세정착",
-      "market": "{\"TEMA\": 15968.373357888771, \"DEMA\": 15939.752750303764, \"MACD_OSC\": -41.55622184713823, \"MACD_LINE\": 91.19442655195417, \"MACD_SIGNAL\": 132.7506483990924, \"RSI_TEMA\": 56.091319324939796, \"RSI_DEMA\": 53.95915969257427, \"OBV\": 119640731.0, \"VOL\": 1266642, \"VOL_MA5\": 915881.4, \"close\": 16050.0, \"change_rate\": -6.58}",
-      "strategy": "{\"TEMA20_SLOPE20\": 29.133625058600394, \"OBV_SLOPE20\": 451180.7067669146, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 41.86594604462234}",
-      "recommendation_dates": [
-        "20250703"
       ],
       "recommendation_count": 1
     }
@@ -313,53 +146,5 @@
     "20250704",
     "20250705",
     "20250707"
-  ],
-  "enhanced_metrics": {
-    "basic_stats": {
-      "avg_return": 50.46,
-      "median_return": 43.12,
-      "std_return": 41.45,
-      "total_stocks": 14
-    },
-    "risk_metrics": {
-      "sharpe_ratio": 1.145,
-      "max_drawdown": -19.14,
-      "volatility_adjusted_return": 1.217
-    },
-    "performance_metrics": {
-      "win_rate": 100.0,
-      "avg_win": 50.46,
-      "avg_loss": 0,
-      "profit_loss_ratio": 0
-    }
-  },
-  "sector_analysis": {
-    "기타": {
-      "count": 10,
-      "avg_return": 56.36,
-      "win_rate": 100.0
-    },
-    "화학/소재": {
-      "count": 2,
-      "avg_return": 41.6,
-      "win_rate": 100.0
-    },
-    "에너지": {
-      "count": 1,
-      "avg_return": 53.78,
-      "win_rate": 100.0
-    },
-    "바이오/제약": {
-      "count": 1,
-      "avg_return": 5.79,
-      "win_rate": 100.0
-    }
-  },
-  "ai_insights": [
-    "🎯 평균 수익률이 10%를 초과하여 우수한 성과를 보이고 있습니다.",
-    "✅ 높은 승률로 안정적인 수익 창출이 가능합니다.",
-    "💎 샤프 비율이 1.0을 초과하여 위험 대비 수익이 우수합니다."
-  ],
-  "report_version": "2.0",
-  "enhanced_at": "2025-11-06T17:15:13.130086"
+  ]
 }

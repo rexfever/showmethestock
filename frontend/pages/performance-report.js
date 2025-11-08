@@ -434,7 +434,7 @@ export default function PerformanceReport() {
                       <div>
                         <p className="text-white text-opacity-80 text-sm">평균 수익률</p>
                         <p className="text-2xl font-bold">
-                          {reportData.statistics.avg_return >= 0 ? '+' : ''}{reportData.statistics.avg_return}%
+                        {reportData.statistics.avg_return >= 0 ? '+' : ''}{reportData.statistics.avg_return}%
                         </p>
                       </div>
                       <div className="text-3xl opacity-80">📈</div>
@@ -517,7 +517,7 @@ export default function PerformanceReport() {
                 {/* 상세 분석 섹션 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   {/* 최고/최저 성과 */}
-                  {reportData.statistics.best_stock && reportData.statistics.worst_stock && (
+                {reportData.statistics.best_stock && reportData.statistics.worst_stock && (
                     <div className="bg-white rounded-lg shadow-sm p-6">
                       <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <span className="text-xl mr-2">🏆</span>
@@ -710,7 +710,7 @@ export default function PerformanceReport() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* 종목 리스트 */}
                 {reportData.stocks && reportData.stocks.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm">

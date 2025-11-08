@@ -24,7 +24,7 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
         return recurrence_data
     
     try:
-        conn_hist = sqlite3.connect(_db_path(), timeout=30.0)
+        conn_hist = sqlite3.connect(_db_path(), timeout=30.0, check_same_thread=False)
         conn_hist.execute("PRAGMA journal_mode=WAL")
         conn_hist.execute("PRAGMA synchronous=NORMAL")
         cur_hist = conn_hist.cursor()
@@ -80,7 +80,7 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
 def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
     """스캔 스냅샷 저장"""
     try:
-        conn_hist = sqlite3.connect(_db_path(), timeout=30.0)
+        conn_hist = sqlite3.connect(_db_path(), timeout=30.0, check_same_thread=False)
         conn_hist.execute("PRAGMA journal_mode=WAL")
         conn_hist.execute("PRAGMA synchronous=NORMAL")
         conn_hist.execute("PRAGMA cache_size=10000")

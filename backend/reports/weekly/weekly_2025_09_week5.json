@@ -1,0 +1,220 @@
+{
+  "report_type": "weekly",
+  "year": 2025,
+  "month": 9,
+  "week": 5,
+  "start_date": "2025-09-29",
+  "end_date": "2025-09-30",
+  "generated_at": "2025-11-07T04:37:06.661087",
+  "statistics": {
+    "total_stocks": 9,
+    "avg_return": 36.16,
+    "positive_rate": 100.0,
+    "best_stock": {
+      "ticker": "003670",
+      "name": "포스코퓨처엠",
+      "scan_price": 143500.0,
+      "scan_date": "20250930",
+      "current_return": 47.74,
+      "max_return": 71.08,
+      "min_return": 0.0,
+      "days_elapsed": 38,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 141600.51749858278, \"DEMA\": 143590.04769613824, \"MACD_OSC\": 1347.935178016579, \"MACD_LINE\": 276.4855690780969, \"MACD_SIGNAL\": -1071.449608938482, \"RSI_TEMA\": 56.74734406588805, \"RSI_DEMA\": 59.49943660484965, \"OBV\": 6626681.0, \"VOL\": 339174, \"VOL_MA5\": 394237.6, \"close\": 143500.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 258.17089241160795, \"OBV_SLOPE20\": 159178.28571428562, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 521.9457483177727}",
+      "recommendation_dates": [
+        "20250929",
+        "20250930"
+      ],
+      "recommendation_count": 2
+    },
+    "worst_stock": {
+      "ticker": "047810",
+      "name": "한국항공우주",
+      "scan_price": 108800.0,
+      "scan_date": "20250929",
+      "current_return": -9.28,
+      "max_return": 0.09,
+      "min_return": -12.13,
+      "days_elapsed": 39,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 110387.97294178014, \"DEMA\": 109650.41834952272, \"MACD_OSC\": 345.3797417486612, \"MACD_LINE\": 3986.726964958376, \"MACD_SIGNAL\": 3641.3472232097147, \"RSI_TEMA\": 55.040553209293286, \"RSI_DEMA\": 57.667848187050254, \"OBV\": 49359013.0, \"VOL\": 542378, \"VOL_MA5\": 780408.4, \"close\": 108800.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 973.7849256242739, \"OBV_SLOPE20\": 400073.26165413414, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 936.4070079921024}",
+      "recommendation_dates": [
+        "20250929"
+      ],
+      "recommendation_count": 1
+    }
+  },
+  "stocks": [
+    {
+      "ticker": "003670",
+      "name": "포스코퓨처엠",
+      "scan_price": 143500.0,
+      "scan_date": "20250930",
+      "current_return": 47.74,
+      "max_return": 71.08,
+      "min_return": 0.0,
+      "days_elapsed": 38,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 141600.51749858278, \"DEMA\": 143590.04769613824, \"MACD_OSC\": 1347.935178016579, \"MACD_LINE\": 276.4855690780969, \"MACD_SIGNAL\": -1071.449608938482, \"RSI_TEMA\": 56.74734406588805, \"RSI_DEMA\": 59.49943660484965, \"OBV\": 6626681.0, \"VOL\": 339174, \"VOL_MA5\": 394237.6, \"close\": 143500.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 258.17089241160795, \"OBV_SLOPE20\": 159178.28571428562, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 521.9457483177727}",
+      "recommendation_dates": [
+        "20250929",
+        "20250930"
+      ],
+      "recommendation_count": 2
+    },
+    {
+      "ticker": "006400",
+      "name": "삼성SDI",
+      "scan_price": 205000.0,
+      "scan_date": "20250930",
+      "current_return": 57.07,
+      "max_return": 64.63,
+      "min_return": -0.49,
+      "days_elapsed": 38,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 204391.1294431436, \"DEMA\": 205848.84661606266, \"MACD_OSC\": 81.58202936180952, \"MACD_LINE\": 70.12770685038413, \"MACD_SIGNAL\": -11.454322511425389, \"RSI_TEMA\": 46.1962087677963, \"RSI_DEMA\": 47.85674422685203, \"OBV\": -3138287.0, \"VOL\": 247788, \"VOL_MA5\": 321891.6, \"close\": 205000.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 1.45751731118662, \"OBV_SLOPE20\": 33402.441353383605, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 305.4190275635423}",
+      "recommendation_dates": [
+        "20250930"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "005070",
+      "name": "코스모신소재",
+      "scan_price": 38750.0,
+      "scan_date": "20250930",
+      "current_return": 37.03,
+      "max_return": 57.94,
+      "min_return": -0.9,
+      "days_elapsed": 38,
+      "volume": 0,
+      "change_rate": "상승신호 / 관심증가",
+      "market": "{\"TEMA\": 41003.02789184471, \"DEMA\": 40966.97745516204, \"MACD_OSC\": -358.70170439732607, \"MACD_LINE\": -432.2886707616344, \"MACD_SIGNAL\": -73.58696636430837, \"RSI_TEMA\": 9.515723378304685, \"RSI_DEMA\": 16.38625519088052, \"OBV\": 2906094.0, \"VOL\": 729904, \"VOL_MA5\": 401484.0, \"close\": 38750.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": -4.957540754505376, \"OBV_SLOPE20\": 86706.70150375932, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 81.68349543163782}",
+      "recommendation_dates": [
+        "20250930"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "042700",
+      "name": "한미반도체",
+      "scan_price": 96500.0,
+      "scan_date": "20250930",
+      "current_return": 33.68,
+      "max_return": 56.99,
+      "min_return": -1.66,
+      "days_elapsed": 38,
+      "volume": 0,
+      "change_rate": "상승시작 / 관심증가 / 상승추세정착",
+      "market": "{\"TEMA\": 95043.43898164158, \"DEMA\": 94595.05732181405, \"MACD_OSC\": 324.262448231033, \"MACD_LINE\": 1765.6922488227283, \"MACD_SIGNAL\": 1441.4298005916953, \"RSI_TEMA\": 67.8557021077809, \"RSI_DEMA\": 66.63013558230033, \"OBV\": 25662814.0, \"VOL\": 1988564, \"VOL_MA5\": 934721.0, \"close\": 96500.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 773.1004173499883, \"OBV_SLOPE20\": 404620.3789473681, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 775.7409973222467}",
+      "recommendation_dates": [
+        "20250930"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "005930",
+      "name": "삼성전자",
+      "scan_price": 84200.0,
+      "scan_date": "20250929",
+      "current_return": 17.81,
+      "max_return": 31.95,
+      "min_return": -0.36,
+      "days_elapsed": 39,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 85718.0861953869, \"DEMA\": 85596.59995730271, \"MACD_OSC\": 666.8329902158684, \"MACD_LINE\": 3958.125572429941, \"MACD_SIGNAL\": 3291.2925822140724, \"RSI_TEMA\": 53.20616400558958, \"RSI_DEMA\": 62.88240141671188, \"OBV\": 409572462.0, \"VOL\": 13069094, \"VOL_MA5\": 19743339.6, \"close\": 84200.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 998.9678408496688, \"OBV_SLOPE20\": 12876731.975187968, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 1031.3610657724519}",
+      "recommendation_dates": [
+        "20250929"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "005935",
+      "name": "삼성전자우",
+      "scan_price": 66500.0,
+      "scan_date": "20250929",
+      "current_return": 15.49,
+      "max_return": 30.53,
+      "min_return": -0.15,
+      "days_elapsed": 39,
+      "volume": 0,
+      "change_rate": "상승신호 / 상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 67438.28556293697, \"DEMA\": 67287.99247309769, \"MACD_OSC\": 352.5770378520406, \"MACD_LINE\": 2553.0885617663225, \"MACD_SIGNAL\": 2200.511523914282, \"RSI_TEMA\": 53.38666158999088, \"RSI_DEMA\": 61.256568938413146, \"OBV\": 52137797.0, \"VOL\": 1477555, \"VOL_MA5\": 2177139.4, \"close\": 66500.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 669.6918999884459, \"OBV_SLOPE20\": 1104580.737593984, \"ABOVE_CNT5\": 1, \"DEMA10_SLOPE20\": 687.5730163113413}",
+      "recommendation_dates": [
+        "20250929"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "055550",
+      "name": "신한지주",
+      "scan_price": 70800.0,
+      "scan_date": "20250930",
+      "current_return": 11.86,
+      "max_return": 11.86,
+      "min_return": -3.39,
+      "days_elapsed": 38,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 70635.83136830963, \"DEMA\": 70604.95983306684, \"MACD_OSC\": 192.87054808280072, \"MACD_LINE\": 955.6808792046504, \"MACD_SIGNAL\": 762.8103311218497, \"RSI_TEMA\": 69.74248987477824, \"RSI_DEMA\": 69.28227107552155, \"OBV\": -2437135.0, \"VOL\": 1592794, \"VOL_MA5\": 1334736.8, \"close\": 70800.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 410.03801594937573, \"OBV_SLOPE20\": 611553.0571428573, \"ABOVE_CNT5\": 3, \"DEMA10_SLOPE20\": 381.33023163421717}",
+      "recommendation_dates": [
+        "20250930"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "068270",
+      "name": "셀트리온",
+      "scan_price": 178600.0,
+      "scan_date": "20250929",
+      "current_return": -2.18,
+      "max_return": 0.39,
+      "min_return": -4.98,
+      "days_elapsed": 39,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 177103.9448980674, \"DEMA\": 178111.149112862, \"MACD_OSC\": 1113.6084175905455, \"MACD_LINE\": 1516.080842163792, \"MACD_SIGNAL\": 402.47242457324666, \"RSI_TEMA\": 65.06322505434215, \"RSI_DEMA\": 65.23700775085032, \"OBV\": 14362702.0, \"VOL\": 440827, \"VOL_MA5\": 1094621.2, \"close\": 178600.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 329.98793846099295, \"OBV_SLOPE20\": 124798.04436090225, \"ABOVE_CNT5\": 0, \"DEMA10_SLOPE20\": 356.77525977715027}",
+      "recommendation_dates": [
+        "20250929"
+      ],
+      "recommendation_count": 1
+    },
+    {
+      "ticker": "047810",
+      "name": "한국항공우주",
+      "scan_price": 108800.0,
+      "scan_date": "20250929",
+      "current_return": -9.28,
+      "max_return": 0.09,
+      "min_return": -12.13,
+      "days_elapsed": 39,
+      "volume": 0,
+      "change_rate": "상승시작 / 상승추세정착",
+      "market": "{\"TEMA\": 110387.97294178014, \"DEMA\": 109650.41834952272, \"MACD_OSC\": 345.3797417486612, \"MACD_LINE\": 3986.726964958376, \"MACD_SIGNAL\": 3641.3472232097147, \"RSI_TEMA\": 55.040553209293286, \"RSI_DEMA\": 57.667848187050254, \"OBV\": 49359013.0, \"VOL\": 542378, \"VOL_MA5\": 780408.4, \"close\": 108800.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 973.7849256242739, \"OBV_SLOPE20\": 400073.26165413414, \"ABOVE_CNT5\": 5, \"DEMA10_SLOPE20\": 936.4070079921024}",
+      "recommendation_dates": [
+        "20250929"
+      ],
+      "recommendation_count": 1
+    }
+  ],
+  "dates": [
+    "20250929",
+    "20250930"
+  ]
+}

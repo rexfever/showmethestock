@@ -1,0 +1,112 @@
+# AWS 콘솔 정책 편집기에서 복사할 JSON
+
+## 1️⃣ S3 권한 (첫 번째 정책)
+
+기존 템플릿을 모두 삭제하고 아래 JSON을 붙여넣으세요:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::stock-finder-*",
+        "arn:aws:s3:::stock-finder-*/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+---
+
+## 2️⃣ SSM Parameter Store 권한 (두 번째 정책)
+
+기존 템플릿을 모두 삭제하고 아래 JSON을 붙여넣으세요:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath",
+        "ssm:PutParameter",
+        "ssm:DeleteParameter",
+        "ssm:DescribeParameters"
+      ],
+      "Resource": "arn:aws:ssm:ap-northeast-2:*:parameter/stock-finder/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "ssm.ap-northeast-2.amazonaws.com"
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 3️⃣ CloudWatch Logs 권한 (세 번째 정책)
+
+기존 템플릿을 모두 삭제하고 아래 JSON을 붙여넣으세요:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "arn:aws:logs:ap-northeast-2:*:*"
+    }
+  ]
+}
+```
+
+---
+
+## 📋 사용 방법
+
+1. 정책 편집기에서 **모든 내용을 선택하고 삭제** (Ctrl+A 후 Delete)
+2. 위 JSON 중 하나를 **전체 복사**
+3. 편집기에 **붙여넣기** (Ctrl+V)
+4. 정책 이름 입력
+5. 정책 생성 버튼 클릭
+6. 다음 정책도 동일하게 반복
+
+
+

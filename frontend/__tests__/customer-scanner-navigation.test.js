@@ -286,3 +286,5 @@ describe('CustomerScanner Navigation', () => {
   });
 });
 
+
+

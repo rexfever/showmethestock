@@ -5,20 +5,20 @@
   "week": 2,
   "start_date": "2025-07-08",
   "end_date": "2025-07-14",
-  "generated_at": "2025-11-06T13:09:02.860761",
+  "generated_at": "2025-11-07T04:51:32.246548",
   "statistics": {
-    "total_stocks": 4,
-    "avg_return": 81.24,
+    "total_stocks": 5,
+    "avg_return": 82.84,
     "positive_rate": 100.0,
     "best_stock": {
       "ticker": "298040",
       "name": "효성중공업",
       "scan_price": 1008000.0,
       "scan_date": "20250714",
-      "current_return": 125.79,
+      "current_return": 123.71,
       "max_return": 130.95,
       "min_return": 0.0,
-      "days_elapsed": 115,
+      "days_elapsed": 116,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 1558777.0162174006, \"DEMA\": 1576788.2544964452, \"MACD_OSC\": 17810.333167174278, \"MACD_LINE\": 75357.18784129177, \"MACD_SIGNAL\": 57546.854674117494, \"RSI_TEMA\": 65.766319464456, \"RSI_DEMA\": 67.85583332911054, \"OBV\": 1003984.0, \"VOL\": 34038, \"VOL_MA5\": 55269.0, \"close\": 1580000.0}",
@@ -33,10 +33,10 @@
       "name": "삼성물산",
       "scan_price": 183700.0,
       "scan_date": "20250714",
-      "current_return": 20.71,
+      "current_return": 18.13,
       "max_return": 25.75,
       "min_return": -13.45,
-      "days_elapsed": 115,
+      "days_elapsed": 116,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 208522.42341502567, \"DEMA\": 209115.82419590716, \"MACD_OSC\": 1294.4467820254958, \"MACD_LINE\": 7726.345617991872, \"MACD_SIGNAL\": 6431.898835966376, \"RSI_TEMA\": 63.38212063311115, \"RSI_DEMA\": 64.1938111884993, \"OBV\": 6589787.0, \"VOL\": 433956, \"VOL_MA5\": 443464.2, \"close\": 210500.0}",
@@ -53,10 +53,10 @@
       "name": "효성중공업",
       "scan_price": 1008000.0,
       "scan_date": "20250714",
-      "current_return": 125.79,
+      "current_return": 123.71,
       "max_return": 130.95,
       "min_return": 0.0,
-      "days_elapsed": 115,
+      "days_elapsed": 116,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 1558777.0162174006, \"DEMA\": 1576788.2544964452, \"MACD_OSC\": 17810.333167174278, \"MACD_LINE\": 75357.18784129177, \"MACD_SIGNAL\": 57546.854674117494, \"RSI_TEMA\": 65.766319464456, \"RSI_DEMA\": 67.85583332911054, \"OBV\": 1003984.0, \"VOL\": 34038, \"VOL_MA5\": 55269.0, \"close\": 1580000.0}",
@@ -71,10 +71,10 @@
       "name": "한화엔진",
       "scan_price": 26250.0,
       "scan_date": "20250714",
-      "current_return": 76.38,
+      "current_return": 72.57,
       "max_return": 95.43,
       "min_return": 0.0,
-      "days_elapsed": 115,
+      "days_elapsed": 116,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 46842.29374024207, \"DEMA\": 47106.78885765072, \"MACD_OSC\": 4.878636167494733, \"MACD_LINE\": 1271.803434237554, \"MACD_SIGNAL\": 1266.9247980700593, \"RSI_TEMA\": 47.07918904443195, \"RSI_DEMA\": 49.73746573121271, \"OBV\": 64717967.0, \"VOL\": 1401645, \"VOL_MA5\": 2132750.4, \"close\": 46450.0}",
@@ -85,14 +85,32 @@
       "recommendation_count": 1
     },
     {
+      "ticker": "336260",
+      "name": "두산퓨얼셀",
+      "scan_price": 23200.0,
+      "scan_date": "20250714",
+      "current_return": 62.07,
+      "max_return": 89.22,
+      "min_return": -5.17,
+      "days_elapsed": 116,
+      "volume": 0,
+      "change_rate": 0,
+      "market": "{\"TEMA\": 32867.006265828546, \"DEMA\": 33086.81583382748, \"MACD_OSC\": 171.54863529509794, \"MACD_LINE\": 1357.408107668496, \"MACD_SIGNAL\": 1185.8594723733981, \"RSI_TEMA\": 57.16589535301241, \"RSI_DEMA\": 58.40937778913065, \"OBV\": 51329559.0, \"VOL\": 1493041, \"VOL_MA5\": 1662449.0, \"close\": 32950.0}",
+      "strategy": "{\"TEMA20_SLOPE20\": 10.431804290977306, \"OBV_SLOPE20\": 147418.39849623997, \"ABOVE_CNT5\": 2, \"DEMA10_SLOPE20\": -16.573672907224818}",
+      "recommendation_dates": [
+        "20250714"
+      ],
+      "recommendation_count": 1
+    },
+    {
       "ticker": "001440",
       "name": "대한전선",
       "scan_price": 15680.0,
       "scan_date": "20250714",
-      "current_return": 58.8,
+      "current_return": 56.25,
       "max_return": 72.83,
       "min_return": -5.36,
-      "days_elapsed": 115,
+      "days_elapsed": 116,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 17448.746331386872, \"DEMA\": 17608.822823333558, \"MACD_OSC\": 231.26131088715556, \"MACD_LINE\": 452.8188879296904, \"MACD_SIGNAL\": 221.55757704253483, \"RSI_TEMA\": 61.75938865501068, \"RSI_DEMA\": 64.6274781751354, \"OBV\": 102975470.0, \"VOL\": 2723747, \"VOL_MA5\": 5437271.8, \"close\": 17570.0}",
@@ -107,10 +125,10 @@
       "name": "삼성물산",
       "scan_price": 183700.0,
       "scan_date": "20250714",
-      "current_return": 20.71,
+      "current_return": 18.13,
       "max_return": 25.75,
       "min_return": -13.45,
-      "days_elapsed": 115,
+      "days_elapsed": 116,
       "volume": 0,
       "change_rate": 0,
       "market": "{\"TEMA\": 208522.42341502567, \"DEMA\": 209115.82419590716, \"MACD_OSC\": 1294.4467820254958, \"MACD_LINE\": 7726.345617991872, \"MACD_SIGNAL\": 6431.898835966376, \"RSI_TEMA\": 63.38212063311115, \"RSI_DEMA\": 64.1938111884993, \"OBV\": 6589787.0, \"VOL\": 433956, \"VOL_MA5\": 443464.2, \"close\": 210500.0}",
@@ -128,38 +146,5 @@
     "20250711",
     "20250712",
     "20250714"
-  ],
-  "enhanced_metrics": {
-    "basic_stats": {
-      "avg_return": 70.42,
-      "median_return": 67.59,
-      "std_return": 37.77,
-      "total_stocks": 4
-    },
-    "risk_metrics": {
-      "sharpe_ratio": 1.785,
-      "max_drawdown": -13.45,
-      "volatility_adjusted_return": 1.864
-    },
-    "performance_metrics": {
-      "win_rate": 100.0,
-      "avg_win": 70.42,
-      "avg_loss": 0,
-      "profit_loss_ratio": 0
-    }
-  },
-  "sector_analysis": {
-    "기타": {
-      "count": 4,
-      "avg_return": 70.42,
-      "win_rate": 100.0
-    }
-  },
-  "ai_insights": [
-    "🎯 평균 수익률이 10%를 초과하여 우수한 성과를 보이고 있습니다.",
-    "✅ 높은 승률로 안정적인 수익 창출이 가능합니다.",
-    "💎 샤프 비율이 1.0을 초과하여 위험 대비 수익이 우수합니다."
-  ],
-  "report_version": "2.0",
-  "enhanced_at": "2025-11-06T17:15:13.131686"
+  ]
 }

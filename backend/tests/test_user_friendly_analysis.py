@@ -21,7 +21,7 @@ from user_friendly_analysis import (
 
 class TestUserFriendlyAnalysis(unittest.TestCase):
     """사용자 친화적 분석 기능 테스트"""
-
+    
     def setUp(self):
         """테스트 설정"""
         # Mock 분석 결과 생성
@@ -67,7 +67,7 @@ class TestUserFriendlyAnalysis(unittest.TestCase):
         self.mock_analysis_result = Mock()
         self.mock_analysis_result.ok = True
         self.mock_analysis_result.item = self.mock_item
-
+    
     def test_get_user_friendly_analysis_success(self):
         """정상적인 분석 결과 테스트"""
         result = get_user_friendly_analysis(self.mock_analysis_result)
@@ -101,7 +101,7 @@ class TestUserFriendlyAnalysis(unittest.TestCase):
         self.assertEqual(result['summary'], '분석할 수 없습니다.')
         self.assertEqual(result['recommendation'], '분석 실패')
         self.assertEqual(result['confidence'], '낮음')
-
+    
     def test_get_user_friendly_analysis_none_input(self):
         """None 입력 테스트"""
         result = get_user_friendly_analysis(None)
@@ -189,7 +189,7 @@ class TestUserFriendlyAnalysis(unittest.TestCase):
         advice = get_investment_advice(8.0, True, indicators, flags)
         
         self.assertIsInstance(advice, list)
-        self.assertGreater(len(advice), 0)
+            self.assertGreater(len(advice), 0)
         self.assertTrue(any('강력한 매수 신호' in a for a in advice))
 
     def test_get_investment_advice_low_score(self):

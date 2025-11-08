@@ -7,7 +7,7 @@ import os
 import json
 import glob
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, Any
 from dataclasses import dataclass
 
 from services.report_generator import ReportGenerator
@@ -168,8 +168,14 @@ class TrendAdaptiveScanner:
                 "min_score": 4,  # 완화
             }
     
-    def analyze_and_recommend(self):
-        """성과 분석 및 조정 권장사항 출력"""
+    def analyze_and_recommend(self) -> Tuple[Dict[str, Any], str]:
+        """성과 분석 및 조정 권장사항 출력
+        
+        Returns:
+            Tuple[Dict[str, Any], str]: (recommended_params, evaluation)
+                - recommended_params: 권장 파라미터 딕셔너리
+                - evaluation: 성과 평가 ("excellent", "good", "fair", "poor")
+        """
         print("=" * 80)
         print("📊 추세 변화 대응 분석")
         print("=" * 80)

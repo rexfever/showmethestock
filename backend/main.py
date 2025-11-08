@@ -349,7 +349,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
 
 def _log_send(to: str, matched_count: int):
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS send_logs(ts TEXT, to_no TEXT, matched_count INTEGER)")
         cur.execute("INSERT INTO send_logs(ts,to_no,matched_count) VALUES (?,?,?)", (datetime.now().strftime('%Y%m%d%H%M%S'), to, int(matched_count)))
@@ -359,7 +359,7 @@ def _log_send(to: str, matched_count: int):
 
 def _init_positions_table():
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS positions(
@@ -706,7 +706,7 @@ def delete_scan_result(date: str):
             compact_date = date
         
         # 1. 데이터베이스에서 삭제 (두 형식 모두)
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         
         # scan_rank 테이블에서 삭제
@@ -762,7 +762,7 @@ def list_snapshots():
                 continue
         # SQLite 합치기
         try:
-            conn = sqlite3.connect(_db_path())
+            conn = sqlite3.connect(_db_path(), check_same_thread=False)
             cur = conn.cursor()
             create_scan_rank_table(cur)
             for row in cur.execute("SELECT date, COUNT(1) FROM scan_rank GROUP BY date"):
@@ -788,7 +788,7 @@ def backfill_snapshots():
     inserted = 0
     updated = 0
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         create_scan_rank_table(cur)
         for fn in os.listdir(SNAPSHOT_DIR):
@@ -844,7 +844,7 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 1) DB 우선 (두 날짜 형식 지원)
     rank = []
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         # YYYY-MM-DD 형식 우선 시도
         for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (as_of, int(top_k))):
@@ -1128,7 +1128,7 @@ def get_positions():
     """포지션 목록 조회 (현재가 및 수익률 계산 포함)"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         rows = cur.execute("SELECT * FROM positions ORDER BY created_at DESC").fetchall()
         conn.close()
@@ -1228,7 +1228,7 @@ def add_position(request: AddPositionRequest):
         if not name or name == request.ticker:
             return {"ok": False, "error": "종목명 조회 실패"}
         
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
@@ -1247,7 +1247,7 @@ def get_scan_positions():
     """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         
         # 오픈 포지션만 조회
@@ -1337,7 +1337,7 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
                 # 조건 확인: 점수가 임계값 이상이고 매치된 경우
                 if matched and score >= score_threshold:
                     # 이미 포지션이 있는지 확인
-                    conn = sqlite3.connect(_db_path())
+                    conn = sqlite3.connect(_db_path(), check_same_thread=False)
                     cur = conn.cursor()
                     existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
                     
@@ -1382,7 +1382,7 @@ def update_position(position_id: int, request: UpdatePositionRequest):
     """포지션 업데이트 (청산 처리)"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         
         # 기존 포지션 조회
@@ -1413,7 +1413,7 @@ def delete_position(position_id: int):
     """포지션 삭제"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         cur.execute("DELETE FROM positions WHERE id = ?", (position_id,))
         conn.commit()
@@ -1428,7 +1428,7 @@ async def get_available_scan_dates():
     """사용 가능한 스캔 날짜 목록을 가져옵니다."""
     try:
         # DB에서 날짜 목록 조회
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         
         cur.execute("SELECT DISTINCT date FROM scan_rank ORDER BY date DESC")
@@ -1475,7 +1475,7 @@ async def get_scan_by_date(date: str):
         compact_date = formatted_date
         
         # DB에서 해당 날짜의 스캔 결과 조회 (두 형식 모두 지원)
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         
         cur.execute("""
@@ -1563,7 +1563,7 @@ def get_latest_scan_from_db():
         from datetime import datetime
         
         # DB에서 가장 최신 날짜의 스캔 결과 조회
-        conn = sqlite3.connect(_db_path())
+        conn = sqlite3.connect(_db_path(), check_same_thread=False)
         cur = conn.cursor()
         
         # 모든 날짜를 가져와서 datetime으로 변환하여 최신 찾기 (NORESULT 포함)
@@ -1649,7 +1649,7 @@ def get_latest_scan_from_db():
         # DB에서 시장 상황 조회 (스캔 시 저장된 데이터 사용)
         market_condition = None
         try:
-            conn_mc = sqlite3.connect(_db_path())
+            conn_mc = sqlite3.connect(_db_path(), check_same_thread=False)
             cur_mc = conn_mc.cursor()
             create_market_conditions_table(cur_mc)
             cur_mc.execute("""
@@ -2613,7 +2613,7 @@ async def get_user_by_id(
 async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
     """메인트넌스 설정 조회"""
     try:
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cur = conn.cursor()
         
         # 테이블 생성
@@ -2653,7 +2653,7 @@ async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
 async def get_popup_notice(admin_user: User = Depends(get_admin_user)):
     """팝업 공지 설정 조회"""
     try:
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cur = conn.cursor()
         
         create_popup_notice_table(cur)
@@ -2699,7 +2699,7 @@ async def update_popup_notice(
 ):
     """팝업 공지 설정 업데이트"""
     try:
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cur = conn.cursor()
         
         create_popup_notice_table(cur)
@@ -2731,7 +2731,7 @@ async def update_popup_notice(
 async def get_popup_notice_status():
     """팝업 공지 상태 조회 (공개 API)"""
     try:
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cur = conn.cursor()
         
         create_popup_notice_table(cur)
@@ -2793,7 +2793,7 @@ async def update_maintenance_settings(
 ):
     """메인트넌스 설정 업데이트"""
     try:
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cur = conn.cursor()
         
         # 테이블 생성
@@ -2825,7 +2825,7 @@ async def update_maintenance_settings(
 async def get_maintenance_status():
     """메인트넌스 상태 조회 (공개 API)"""
     try:
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cur = conn.cursor()
         
         # 테이블 생성
@@ -3156,7 +3156,7 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
             raise HTTPException(status_code=400, detail="잘못된 분기입니다")
         
         # 데이터베이스에서 해당 기간의 스캔 데이터 조회
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -3469,7 +3469,7 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         end_date = f"{year}{month:02d}{week_end:02d}"
         
         # 데이터베이스에서 해당 기간의 스캔 데이터 조회
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -3625,7 +3625,7 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
     try:
         from datetime import datetime, timedelta
         
-        conn = sqlite3.connect('snapshots.db')
+        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
         cursor = conn.cursor()
         
         # 최근 N일간의 데이터 조회

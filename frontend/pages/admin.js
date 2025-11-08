@@ -149,11 +149,14 @@ export default function AdminDashboard() {
       const data = await response.json();
       
       if (data.ok) {
-        alert(`파라미터 적용 완료!\n변경 사항:\n${data.changes.join('\n')}\n\n서버 재시작이 필요할 수 있습니다.`);
+        const changesText = Array.isArray(data.changes) && data.changes.length > 0
+          ? data.changes.join('\n')
+          : '변경 사항 없음';
+        alert(`파라미터 적용 완료!\n변경 사항:\n${changesText}\n\n서버 재시작이 필요할 수 있습니다.`);
         // 분석 데이터 다시 불러오기
         fetchTrendAnalysis();
       } else {
-        alert(`파라미터 적용 실패: ${data.error}`);
+        alert(`파라미터 적용 실패: ${data.error || '알 수 없는 오류'}`);
       }
     } catch (error) {
       console.error('파라미터 적용 실패:', error);

@@ -224,7 +224,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
     }
   }, [scanResults.length, loading, error, fetchScanResults, initialData]);
 
-  const filteredResults = scanResults.filter(item => item !== null && item !== undefined);
+  const filteredResults = (scanResults || []).filter(item => item !== null && item !== undefined);
   const sortedResults = filteredResults;
 
   if (maintenanceStatus.is_enabled) {
@@ -357,7 +357,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span className="text-gray-600 font-medium">매칭종목</span>
                   <span className="text-blue-600 font-bold text-lg">
-                    {scanResults.length > 0 && scanResults[0].ticker === 'NORESULT' ? 0 : scanResults.length}
+                    {(scanResults || []).length > 0 && scanResults[0]?.ticker === 'NORESULT' ? 0 : (scanResults || []).length}
                   </span>
                   <span className="text-gray-500 text-sm">개</span>
                 </div>
@@ -401,7 +401,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
             <MarketGuide marketGuide={marketGuide} />
           )}
           {/* NORESULT인 경우 가이드 표시 */}
-          {!marketGuide && scanResults.length > 0 && scanResults[0].ticker === 'NORESULT' && (
+          {!marketGuide && (scanResults || []).length > 0 && scanResults[0]?.ticker === 'NORESULT' && (
             <MarketGuide marketGuide={{
               market_condition: '급락',
               guide_message: '😔 장이 좋지 않아 추천 종목이 없습니다. 투자에도 휴식이 필요합니다.',
@@ -439,7 +439,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                     다른 날짜를 선택하거나 최신 스캔을 확인해보세요.
                   </p>
                 </div>
-              ) : sortedResults.length === 1 && sortedResults[0].ticker === 'NORESULT' ? (
+              ) : sortedResults.length === 1 && sortedResults[0]?.ticker === 'NORESULT' ? (
                 <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
                   <div className="text-6xl mb-4">😔</div>
                   <p className="text-lg text-gray-700 mb-2">
