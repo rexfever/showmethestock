@@ -3083,14 +3083,17 @@ async def apply_trend_params(
         existing_keys = set()
         
         # 기존 라인 처리
+        # 역매핑 생성 (성능 향상 및 안전성)
+        reverse_mapping = {v: k for k, v in param_mapping.items()}
+        
         for line in env_lines:
             line_stripped = line.strip()
             if line_stripped and not line_stripped.startswith('#') and '=' in line_stripped:
                 key = line_stripped.split('=')[0].strip()
-                if key in param_mapping.values():
-                    # 업데이트할 키 찾기
-                    param_key = next(k for k, v in param_mapping.items() if v == key)
-                    if param_key in params:
+                if key in reverse_mapping:
+                    # 업데이트할 키 찾기 (안전하게)
+                    param_key = reverse_mapping.get(key)
+                    if param_key and param_key in params:
                         output_lines.append(f"{key}={params[param_key]}\n")
                         existing_keys.add(key)
                     else:
