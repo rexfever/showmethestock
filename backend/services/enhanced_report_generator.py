@@ -3,7 +3,6 @@
 """
 import os
 import json
-import sqlite3
 import logging
 import numpy as np
 from datetime import datetime, timedelta
@@ -29,7 +28,6 @@ class EnhancedReportGenerator:
             project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
         
         self.reports_dir = os.path.join(project_root, "backend", "reports")
-        self.db_path = os.path.join(project_root, "backend", "snapshots.db")
     
     def calculate_enhanced_metrics(self, stocks: List[Dict]) -> Dict:
         """향상된 성과 지표 계산"""

@@ -4,9 +4,9 @@ import string
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
-import sqlite3
 import os
 from typing import Optional
+from db_manager import db_manager
 
 class EmailService:
     def __init__(self):
@@ -94,46 +94,36 @@ Stock Insight 팀
 
 class EmailVerificationService:
     def __init__(self):
-        self.db_path = "email_verifications.db"
         self.init_db()
     
     def init_db(self):
         """이메일 인증 데이터베이스 초기화"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS email_verifications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                verification_code TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                expires_at TIMESTAMP NOT NULL,
-                is_verified BOOLEAN DEFAULT FALSE,
-                verification_type TEXT DEFAULT 'signup'  -- 'signup' or 'password_reset'
-            )
-        ''')
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS email_verifications (
+                    id SERIAL PRIMARY KEY,
+                    email TEXT NOT NULL,
+                    verification_code TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    expires_at TIMESTAMP NOT NULL,
+                    is_verified BOOLEAN DEFAULT FALSE,
+                    verification_type TEXT DEFAULT 'signup'
+                )
+            """)
     
     def store_verification_code(self, email: str, verification_code: str, verification_type: str = 'signup') -> bool:
         """인증 코드 저장"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 기존 인증 코드 삭제
-            cursor.execute('DELETE FROM email_verifications WHERE email = ? AND verification_type = ?', 
-                         (email, verification_type))
-            
-            # 새 인증 코드 저장 (10분 유효)
             expires_at = datetime.now() + timedelta(minutes=10)
-            cursor.execute('''
-                INSERT INTO email_verifications (email, verification_code, expires_at, verification_type)
-                VALUES (?, ?, ?, ?)
-            ''', (email, verification_code, expires_at, verification_type))
-            
-            conn.commit()
-            conn.close()
+            with db_manager.get_cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM email_verifications WHERE email = %s AND verification_type = %s",
+                    (email, verification_type),
+                )
+                cursor.execute("""
+                    INSERT INTO email_verifications (email, verification_code, expires_at, verification_type)
+                    VALUES (%s, %s, %s, %s)
+                """, (email, verification_code, expires_at, verification_type))
             return True
         except Exception as e:
             print(f"인증 코드 저장 실패: {e}")
@@ -142,27 +132,20 @@ class EmailVerificationService:
     def verify_code(self, email: str, verification_code: str, verification_type: str = 'signup') -> bool:
         """인증 코드 검증"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT id FROM email_verifications 
-                WHERE email = ? AND verification_code = ? AND verification_type = ?
-                AND expires_at > ? AND is_verified = FALSE
-            ''', (email, verification_code, verification_type, datetime.now()))
-            
-            result = cursor.fetchone()
-            
-            if result:
-                # 인증 완료 처리
-                cursor.execute('UPDATE email_verifications SET is_verified = TRUE WHERE id = ?', (result[0],))
-                conn.commit()
-                conn.close()
-                return True
-            else:
-                conn.close()
+            with db_manager.get_cursor() as cursor:
+                cursor.execute("""
+                    SELECT id FROM email_verifications 
+                    WHERE email = %s AND verification_code = %s AND verification_type = %s
+                    AND expires_at > %s AND is_verified = FALSE
+                """, (email, verification_code, verification_type, datetime.now()))
+                result = cursor.fetchone()
+                if result:
+                    cursor.execute(
+                        "UPDATE email_verifications SET is_verified = TRUE WHERE id = %s",
+                        (result[0],),
+                    )
+                    return True
                 return False
-                
         except Exception as e:
             print(f"인증 코드 검증 실패: {e}")
             return False
@@ -170,11 +153,11 @@ class EmailVerificationService:
     def cleanup_expired_codes(self):
         """만료된 인증 코드 정리"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM email_verifications WHERE expires_at < ?', (datetime.now(),))
-            conn.commit()
-            conn.close()
+            with db_manager.get_cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM email_verifications WHERE expires_at < %s",
+                    (datetime.now(),),
+                )
         except Exception as e:
             print(f"만료된 코드 정리 실패: {e}")
 

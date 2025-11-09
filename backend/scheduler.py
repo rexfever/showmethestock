@@ -5,9 +5,9 @@ import logging
 from datetime import datetime, timedelta
 import holidays
 import os
-import sqlite3
 import pytz
 from environment import get_environment_info
+from db_manager import db_manager
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -17,19 +17,17 @@ def get_notification_recipients():
     """알림 수신자 목록을 데이터베이스에서 조회"""
     try:
         # 데이터베이스에서 알림 수신 동의한 사용자 조회
-        # 현재 스크립트 위치 기준으로 절대경로 계산
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        db_path = os.path.join(current_dir, 'snapshots.db')
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        with db_manager.get_cursor(commit=False) as cursor:
+            cursor.execute("""
+                SELECT phone
+                FROM users
+                WHERE notification_enabled = TRUE
+                  AND phone IS NOT NULL
+                  AND phone != ''
+            """)
+            rows = cursor.fetchall()
         
-        cursor.execute("""
-            SELECT phone FROM users 
-            WHERE notification_enabled = 1 AND phone IS NOT NULL AND phone != ''
-        """)
-        
-        recipients = [row[0] for row in cursor.fetchall()]
-        conn.close()
+        recipients = [row["phone"] for row in rows if row.get("phone")]
         
         if recipients:
             logger.info(f"데이터베이스에서 {len(recipients)}명의 수신자 조회")

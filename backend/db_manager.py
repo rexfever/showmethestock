@@ -1,38 +1,34 @@
 """데이터베이스 연결 관리자 - 리소스 누수 방지"""
-import sqlite3
 from contextlib import contextmanager
 from typing import Generator
 
+from psycopg import Connection, Cursor
+
+from db import get_connection
+
+
 class DatabaseManager:
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-    
+    """Backward-compatible wrapper around the new PostgreSQL helper."""
+
     @contextmanager
-    def get_connection(self) -> Generator[sqlite3.Connection, None, None]:
-        """Context manager로 안전한 DB 연결 관리"""
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
+    def get_connection(self) -> Generator[Connection, None, None]:
+        with get_connection() as conn:
             yield conn
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            raise e
-        finally:
-            if conn:
-                conn.close()
     
     @contextmanager
-    def get_cursor(self) -> Generator[sqlite3.Cursor, None, None]:
-        """Context manager로 안전한 커서 관리"""
-        with self.get_connection() as conn:
+    def get_cursor(self, *, commit: bool = True) -> Generator[Cursor, None, None]:
+        with get_connection() as conn:
             cursor = conn.cursor()
             try:
                 yield cursor
-                conn.commit()
-            except Exception as e:
+                if commit:
+                    conn.commit()
+            except Exception as exc:
                 conn.rollback()
-                raise e
+                raise exc
+            finally:
+                cursor.close()
 
-# 전역 인스턴스
-db_manager = DatabaseManager('snapshots.db')
+
+# 전역 인스턴스 (경로 인자 불필요, 호환성 유지)
+db_manager = DatabaseManager()

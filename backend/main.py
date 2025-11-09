@@ -11,6 +11,11 @@ import asyncio
 import glob
 import httpx
 
+try:
+    from . import db_patch  # type: ignore  # noqa: F401
+except ImportError:
+    import db_patch  # type: ignore  # noqa: F401
+
 from config import config, reload_from_env
 from environment import get_environment_info
 from kiwoom_api import KiwoomAPI
@@ -77,35 +82,34 @@ def create_maintenance_settings_table(cur):
     """maintenance_settings 테이블 생성"""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS maintenance_settings(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            is_enabled BOOLEAN DEFAULT 0,
+            id SERIAL PRIMARY KEY,
+            is_enabled BOOLEAN DEFAULT FALSE,
             end_date TEXT,
             message TEXT DEFAULT '서비스 점검 중입니다.',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
         )
     """)
     
-    # 기본 설정이 없으면 추가
     cur.execute("SELECT COUNT(*) FROM maintenance_settings")
     if cur.fetchone()[0] == 0:
         cur.execute("""
             INSERT INTO maintenance_settings (is_enabled, end_date, message)
-            VALUES (0, '', '서비스 점검 중입니다.')
+            VALUES (FALSE, '', '서비스 점검 중입니다.')
         """)
 
 def create_popup_notice_table(cur):
     """popup_notice 테이블 생성"""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS popup_notice(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            is_enabled BOOLEAN DEFAULT 0,
+            id SERIAL PRIMARY KEY,
+            is_enabled BOOLEAN DEFAULT FALSE,
             title TEXT NOT NULL,
             message TEXT NOT NULL,
             start_date TEXT NOT NULL,
             end_date TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
         )
     """)
 
@@ -256,11 +260,25 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                 with db_manager.get_cursor() as cur:
                     create_market_conditions_table(cur)
                     cur.execute("""
-                        INSERT OR REPLACE INTO market_conditions(
+                        INSERT INTO market_conditions(
                             date, market_sentiment, kospi_return, volatility, rsi_threshold,
                             sector_rotation, foreign_flow, volume_trend,
                             min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (date) DO UPDATE SET
+                            market_sentiment = EXCLUDED.market_sentiment,
+                            kospi_return = EXCLUDED.kospi_return,
+                            volatility = EXCLUDED.volatility,
+                            rsi_threshold = EXCLUDED.rsi_threshold,
+                            sector_rotation = EXCLUDED.sector_rotation,
+                            foreign_flow = EXCLUDED.foreign_flow,
+                            volume_trend = EXCLUDED.volume_trend,
+                            min_signals = EXCLUDED.min_signals,
+                            macd_osc_min = EXCLUDED.macd_osc_min,
+                            vol_ma5_mult = EXCLUDED.vol_ma5_mult,
+                            gap_max = EXCLUDED.gap_max,
+                            ext_from_tema20_max = EXCLUDED.ext_from_tema20_max,
+                            created_at = NOW()
                     """, (
                         as_of,
                         market_condition.market_sentiment,
@@ -284,20 +302,23 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
         if not items:
             print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {as_of}")
             with db_manager.get_cursor() as cur:
-                # 테이블 생성 (없으면)
                 create_scan_rank_table(cur)
-                # 기존 데이터 삭제 (같은 날짜)
-                cur.execute("DELETE FROM scan_rank WHERE date = ?", (as_of,))
+                cur.execute("DELETE FROM scan_rank WHERE date = %s", (as_of,))
                 cur.execute("""
                     INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
                         market, strategy, indicators, trend, flags, details, returns, recurrence, close_price
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     as_of, "NORESULT", "추천종목 없음", 0.0, "추천종목 없음",
-                    0.0, 0, 0.0, "", "", 
-                    json.dumps({}), json.dumps({}), json.dumps({"no_result": True}), 
-                    json.dumps({}), json.dumps({}), json.dumps({}), 0.0
+                    0.0, 0, 0.0, "", "",
+                    json.dumps({}, ensure_ascii=False),
+                    json.dumps({}, ensure_ascii=False),
+                    json.dumps({"no_result": True}, ensure_ascii=False),
+                    json.dumps({}, ensure_ascii=False),
+                    json.dumps({}, ensure_ascii=False),
+                    json.dumps({}, ensure_ascii=False),
+                    0.0
                 ))
             print(f"✅ NORESULT 저장 완료: {as_of}")
             return
@@ -332,13 +353,12 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
             with db_manager.get_cursor() as cur:
                 # 테이블 생성 (없으면)
                 create_scan_rank_table(cur)
-                # 기존 데이터 삭제 (같은 날짜)
-                cur.execute("DELETE FROM scan_rank WHERE date = ?", (as_of,))
+                cur.execute("DELETE FROM scan_rank WHERE date = %s", (as_of,))
                 cur.executemany("""
                     INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
                         market, strategy, indicators, trend, flags, details, returns, recurrence, close_price
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, rows)
         
         print(f"✅ 데이터베이스 저장 완료: {as_of}")
@@ -349,37 +369,42 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
 
 def _log_send(to: str, matched_count: int):
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS send_logs(ts TEXT, to_no TEXT, matched_count INTEGER)")
-        cur.execute("INSERT INTO send_logs(ts,to_no,matched_count) VALUES (?,?,?)", (datetime.now().strftime('%Y%m%d%H%M%S'), to, int(matched_count)))
-        conn.commit(); conn.close()
+        with db_manager.get_cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS send_logs(
+                    id SERIAL PRIMARY KEY,
+                    ts TIMESTAMP NOT NULL DEFAULT NOW(),
+                    to_no TEXT,
+                    matched_count INTEGER
+                )
+            """)
+            cur.execute(
+                "INSERT INTO send_logs(ts, to_no, matched_count) VALUES (NOW(), %s, %s)",
+                (to, int(matched_count)),
+            )
     except Exception:
         pass
 
 def _init_positions_table():
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS positions(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ticker TEXT NOT NULL,
-                name TEXT NOT NULL,
-                entry_date TEXT NOT NULL,
-                quantity INTEGER NOT NULL,
-                score INTEGER,
-                strategy TEXT,
-                current_return_pct REAL,
-                max_return_pct REAL,
-                exit_date TEXT,
-                status TEXT DEFAULT 'open',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS positions(
+                    id SERIAL PRIMARY KEY,
+                    ticker TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    entry_date DATE NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    score INTEGER,
+                    strategy TEXT,
+                    current_return_pct DOUBLE PRECISION,
+                    max_return_pct DOUBLE PRECISION,
+                    exit_date DATE,
+                    status TEXT DEFAULT 'open',
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
     except Exception:
         pass
 
@@ -697,24 +722,22 @@ def _debug_stockinfo(market_tp: str = '001'):
 def delete_scan_result(date: str):
     """특정 날짜의 스캔 결과 삭제"""
     try:
-        # 두 날짜 형식 모두 준비
-        if len(date) == 8:  # YYYYMMDD 형식
-            formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
-            compact_date = date
-        else:  # YYYY-MM-DD 형식
-            formatted_date = date
-            compact_date = date
+        try:
+            normalized = normalize_date(date)
+        except ValueError:
+            return {
+                "ok": False,
+                "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."
+            }
+        formatted_date = normalized
+        target_date = datetime.strptime(formatted_date, "%Y%m%d").date()
         
-        # 1. 데이터베이스에서 삭제 (두 형식 모두)
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        
-        # scan_rank 테이블에서 삭제
-        cur.execute("DELETE FROM scan_rank WHERE date = ? OR date = ?", (formatted_date, compact_date))
-        deleted_count = cur.rowcount
-        
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor(commit=True) as cur:
+            cur.execute(
+                "DELETE FROM scan_rank WHERE date = %s OR date = %s",
+                (target_date, formatted_date),
+            )
+            deleted_count = cur.rowcount or 0
         
         # 2. JSON 스냅샷 파일 삭제 (경로 검증)
         safe_filename = f"scan-{formatted_date}.json"
@@ -762,18 +785,44 @@ def list_snapshots():
                 continue
         # SQLite 합치기
         try:
-            conn = sqlite3.connect(_db_path(), check_same_thread=False)
-            cur = conn.cursor()
-            create_scan_rank_table(cur)
-            for row in cur.execute("SELECT date, COUNT(1) FROM scan_rank GROUP BY date"):
-                date, cnt = row
-                # 이미 파일 항목이 있으면 rank_count만 업데이트
-                hit = next((x for x in files if x.get('as_of') == date), None)
-                if hit:
-                    hit['rank_count'] = max(hit.get('rank_count') or 0, int(cnt))
+            with db_manager.get_cursor(commit=False) as cur:
+                cur.execute("SELECT date, COUNT(1) AS cnt FROM scan_rank GROUP BY date")
+                rows = cur.fetchall()
+            
+            for row in rows:
+                if isinstance(row, dict):
+                    date_val = row.get('date')
+                    cnt = row.get('cnt', 0)
                 else:
-                    files.append({'file': f"db:{date}", 'as_of': date, 'created_at': '', 'matched_count': None, 'rank_count': int(cnt)})
-            conn.close()
+                    date_val, cnt = row
+                cnt = int(cnt or 0)
+                date_iso = None
+                date_compact = None
+                if hasattr(date_val, 'strftime'):
+                    date_iso = date_val.strftime('%Y-%m-%d')
+                    date_compact = date_val.strftime('%Y%m%d')
+                elif isinstance(date_val, str):
+                    date_iso = date_val
+                    date_compact = date_val.replace('-', '')
+                else:
+                    date_iso = str(date_val)
+                    date_compact = str(date_val)
+                
+                # 이미 파일 항목이 있으면 rank_count만 업데이트
+                hit = next(
+                    (x for x in files if x.get('as_of') in {date_iso, date_compact}),
+                    None
+                )
+                if hit:
+                    hit['rank_count'] = max(hit.get('rank_count') or 0, cnt)
+                else:
+                    files.append({
+                        'file': f"db:{date_compact}",
+                        'as_of': date_compact,
+                        'created_at': '',
+                        'matched_count': None,
+                        'rank_count': cnt
+                    })
         except Exception:
             pass
         files.sort(key=lambda x: x.get('as_of') or '', reverse=True)
@@ -788,43 +837,108 @@ def backfill_snapshots():
     inserted = 0
     updated = 0
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        create_scan_rank_table(cur)
-        for fn in os.listdir(SNAPSHOT_DIR):
-            if not fn.startswith('scan-') or not fn.endswith('.json'):
-                continue
-            safe_path = sanitize_file_path(fn, SNAPSHOT_DIR)
-            if not safe_path:
-                continue
-            try:
-                with open(safe_path, 'r', encoding='utf-8') as f:
-                    snap = json.load(f)
+        with db_manager.get_cursor(commit=True) as cur:
+            for fn in os.listdir(SNAPSHOT_DIR):
+                if not fn.startswith('scan-') or not fn.endswith('.json'):
+                    continue
+                safe_path = sanitize_file_path(fn, SNAPSHOT_DIR)
+                if not safe_path:
+                    continue
+                try:
+                    with open(safe_path, 'r', encoding='utf-8') as f:
+                        snap = json.load(f)
+                except Exception:
+                    continue
+                
                 as_of = snap.get('as_of')
                 rank = snap.get('rank', [])
                 if not as_of or not isinstance(rank, list):
                     continue
+                
+                try:
+                    if len(as_of) == 8:
+                        target_date = datetime.strptime(as_of, "%Y%m%d").date()
+                    elif len(as_of) == 10 and as_of.count('-') == 2:
+                        target_date = datetime.strptime(as_of, "%Y-%m-%d").date()
+                        as_of = target_date.strftime("%Y%m%d")
+                    else:
+                        continue
+                except Exception:
+                    continue
+                
                 for it in rank:
                     code = it.get('ticker') or it.get('code')
                     if not code:
                         continue
+                    name = it.get('name') or code
                     score = float(it.get('score') or 0.0)
                     label = it.get('score_label') or ''
+                    current_price = it.get('current_price') or it.get('close_price') or 0.0
+                    close_price = it.get('close_price') or current_price
+                    volume = it.get('volume') or 0
+                    change_rate = it.get('change_rate') or it.get('returns', {}).get('current_return')
+                    market = it.get('market')
+                    strategy = it.get('strategy')
+                    indicators = it.get('indicators') or {}
+                    trend = it.get('trend')
+                    flags = it.get('flags') or {}
+                    details = it.get('details') or {}
+                    returns_data = it.get('returns') or {}
+                    recurrence = it.get('recurrence') or {}
+                    
                     try:
-                        cur.execute("INSERT OR IGNORE INTO scan_rank(date, code, score, flags, score_label, current_price) VALUES (?,?,?,?,?,?)",
-                                    (as_of, code, score, json.dumps({}, ensure_ascii=False), label, 0.0))
-                        if cur.rowcount == 1:
+                        cur.execute("""
+                            INSERT INTO scan_rank(
+                                date, code, name, score, score_label, current_price, close_price,
+                                volume, change_rate, market, strategy, indicators, trend, flags,
+                                details, returns, recurrence
+                            ) VALUES (
+                                %s, %s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s, %s, %s, %s,
+                                %s, %s, %s
+                            )
+                            ON CONFLICT (date, code) DO UPDATE SET
+                                name = EXCLUDED.name,
+                                score = EXCLUDED.score,
+                                score_label = EXCLUDED.score_label,
+                                current_price = EXCLUDED.current_price,
+                                close_price = EXCLUDED.close_price,
+                                volume = EXCLUDED.volume,
+                                change_rate = EXCLUDED.change_rate,
+                                market = EXCLUDED.market,
+                                strategy = EXCLUDED.strategy,
+                                indicators = EXCLUDED.indicators,
+                                trend = EXCLUDED.trend,
+                                flags = EXCLUDED.flags,
+                                details = EXCLUDED.details,
+                                returns = EXCLUDED.returns,
+                                recurrence = EXCLUDED.recurrence
+                        """, (
+                            target_date,
+                            code,
+                            name,
+                            score,
+                            label,
+                            current_price,
+                            close_price,
+                            volume,
+                            change_rate,
+                            market,
+                            strategy,
+                            indicators,
+                            trend,
+                            flags,
+                            details,
+                            returns_data,
+                            recurrence,
+                        ))
+                        status = cur.statusmessage or ""
+                        if status.startswith("INSERT"):
                             inserted += 1
-                        else:
-                            cur.execute("UPDATE scan_rank SET score=?, score_label=? WHERE date=? AND code=?",
-                                        (score, label, as_of, code))
-                            if cur.rowcount == 1:
-                                updated += 1
+                        elif status.startswith("UPDATE"):
+                            updated += 1
                     except Exception:
                         continue
-            except Exception:
-                continue
-        conn.commit(); conn.close()
     except Exception as e:
         return {'ok': False, 'error': str(e), 'inserted': inserted, 'updated': updated}
     return {'ok': True, 'inserted': inserted, 'updated': updated}
@@ -844,17 +958,54 @@ def validate_from_snapshot(as_of: str, top_k: int = 20):
     # 1) DB 우선 (두 날짜 형식 지원)
     rank = []
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        # YYYY-MM-DD 형식 우선 시도
-        for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (as_of, int(top_k))):
-            rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
-        # 데이터가 없으면 YYYYMMDD 형식 시도
-        if not rank:
-            compact_date = as_of
-            for row in cur.execute("SELECT code, score, score_label FROM scan_rank WHERE date=? ORDER BY score DESC LIMIT ?", (compact_date, int(top_k))):
+        try:
+            normalized = normalize_date(as_of)
+        except ValueError:
+            normalized = as_of.replace('-', '')
+        target_date = None
+        try:
+            target_date = datetime.strptime(normalized, "%Y%m%d").date()
+        except Exception:
+            target_date = None
+        
+        with db_manager.get_cursor(commit=False) as cur:
+            if target_date:
+                cur.execute(
+                    """
+                    SELECT code, score, score_label
+                    FROM scan_rank
+                    WHERE date = %s
+                    ORDER BY score DESC
+                    LIMIT %s
+                    """,
+                    (target_date, int(top_k)),
+                )
+                rows = cur.fetchall()
+            else:
+                rows = []
+            
+            if not rows:
+                cur.execute(
+                    """
+                    SELECT code, score, score_label
+                    FROM scan_rank
+                    WHERE date = %s
+                    ORDER BY score DESC
+                    LIMIT %s
+                    """,
+                    (normalized, int(top_k)),
+                )
+                rows = cur.fetchall()
+        
+        for row in rows:
+            if isinstance(row, dict):
+                rank.append({
+                    'ticker': row.get('code'),
+                    'score': row.get('score'),
+                    'score_label': row.get('score_label')
+                })
+            else:
                 rank.append({'ticker': row[0], 'score': row[1], 'score_label': row[2]})
-        conn.close()
     except Exception:
         rank = []
     # 2) JSON 스냅샷 보조
@@ -1128,67 +1279,57 @@ def get_positions():
     """포지션 목록 조회 (현재가 및 수익률 계산 포함)"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        rows = cur.execute("SELECT * FROM positions ORDER BY created_at DESC").fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT id, ticker, name, entry_date, quantity, score, strategy,
+                       current_return_pct, max_return_pct, exit_date, status, created_at, updated_at
+                FROM positions
+                ORDER BY created_at DESC
+            """)
+            rows = cur.fetchall()
         
         items = []
-        total_return_amount = 0.0
-        total_investment = 0.0
-        
         for row in rows:
-            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
+            if isinstance(row, dict):
+                data = row
+            else:
+                columns = [
+                    "id", "ticker", "name", "entry_date", "quantity", "score", "strategy",
+                    "current_return_pct", "max_return_pct", "exit_date", "status",
+                    "created_at", "updated_at"
+                ]
+                data = dict(zip(columns, row))
             
-            # 현재 수익률과 최대 수익률 계산 (오픈 포지션만)
+            id_ = data.get("id")
+            ticker = data.get("ticker")
+            name = data.get("name")
+            entry_date = data.get("entry_date")
+            quantity = data.get("quantity")
+            score = data.get("score")
+            strategy = data.get("strategy")
+            current_return_pct = data.get("current_return_pct")
+            max_return_pct = data.get("max_return_pct")
+            exit_date = data.get("exit_date")
+            status = data.get("status")
+            
+            entry_date_str = None
+            if hasattr(entry_date, "strftime"):
+                entry_date_str = entry_date.strftime('%Y%m%d')
+            elif isinstance(entry_date, str):
+                entry_date_str = entry_date.replace('-', '')
+            else:
+                entry_date_str = None
+            
             if status == 'open':
                 try:
-                    # returns_service 활용하여 수익률 계산
-                    returns_data = calculate_returns(ticker, entry_date)
+                    returns_data = calculate_returns(ticker, entry_date_str) if entry_date_str else None
                     if returns_data:
-                        current_return_pct = returns_data['current_return']
-                        max_return_pct = returns_data['max_return']
-                    else:
-                        # 대체 로직: 직접 계산
-                        from datetime import datetime
-                        entry_date_formatted = entry_date
-                        
-                        # 진입일 데이터 조회
-                        df_entry = api.get_ohlcv(ticker, 1, entry_date_formatted)
-                        if df_entry.empty:
-                            # 진입일 데이터가 없으면 다음 거래일 사용
-                            df_entry = api.get_ohlcv(ticker, 5)
-                            if not df_entry.empty:
-                                entry_dt = datetime.strptime(date_str, '%Y%m%d')
-                                df_entry['date_dt'] = pd.to_datetime(df_entry['date'], format='%Y%m%d')
-                                df_entry = df_entry[df_entry['date_dt'] >= entry_dt]
-                        
-                        # 현재 데이터 조회
-                        df_current = api.get_ohlcv(ticker, 1)
-                        
-                        if not df_entry.empty and not df_current.empty:
-                            entry_price = float(df_entry.iloc[-1]['close'])
-                            current_price = float(df_current.iloc[-1]['close'])
-                            current_return_pct = ((current_price - entry_price) / entry_price) * 100
-                            
-                            # 최대 수익률 계산
-                            days_diff = (datetime.now() - datetime.strptime(date_str, '%Y%m%d')).days
-                            df_period = api.get_ohlcv(ticker, min(days_diff + 5, 50))
-                            if not df_period.empty:
-                                max_price = float(df_period['close'].max())
-                                max_return_pct = ((max_price - entry_price) / entry_price) * 100
-                            else:
-                                max_return_pct = current_return_pct
-                        else:
-                            current_return_pct = None
-                            max_return_pct = None
+                        current_return_pct = returns_data.get('current_return')
+                        max_return_pct = returns_data.get('max_return')
                 except Exception as e:
                     print(f"수익률 계산 오류 ({ticker}): {e}")
                     current_return_pct = None
                     max_return_pct = None
-            else:
-                # 종료된 포지션은 기존 값 유지
-                pass
             
             items.append(PositionItem(
                 id=id_,
@@ -1228,16 +1369,23 @@ def add_position(request: AddPositionRequest):
         if not name or name == request.ticker:
             return {"ok": False, "error": "종목명 조회 실패"}
         
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'open')
-        """, (request.ticker, name, request.entry_date, request.quantity, request.score, request.strategy))
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor(commit=True) as cur:
+            cur.execute("""
+                INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
+                VALUES (%s, %s, %s, %s, %s, %s, 'open')
+                RETURNING id
+            """, (
+                request.ticker,
+                name,
+                request.entry_date,
+                request.quantity,
+                request.score,
+                request.strategy,
+            ))
+            new_id_row = cur.fetchone()
+            new_id = new_id_row['id'] if new_id_row and isinstance(new_id_row, dict) else (new_id_row[0] if new_id_row else None)
         
-        return {"ok": True, "id": cur.lastrowid}
+        return {"ok": True, "id": new_id}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
@@ -1247,48 +1395,54 @@ def get_scan_positions():
     """스캔된 종목들 중 포지션이 있는 종목들의 수익률 조회"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        
-        # 오픈 포지션만 조회
-        rows = cur.execute("SELECT * FROM positions WHERE status = 'open' ORDER BY created_at DESC").fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT id, ticker, name, entry_date, quantity, score, strategy,
+                       current_return_pct, max_return_pct, exit_date, status, created_at, updated_at
+                FROM positions
+                WHERE status = 'open'
+                ORDER BY created_at DESC
+            """)
+            rows = cur.fetchall()
         
         items = []
         for row in rows:
-            id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
+            if isinstance(row, dict):
+                data = row
+            else:
+                columns = [
+                    "id", "ticker", "name", "entry_date", "quantity", "score", "strategy",
+                    "current_return_pct", "max_return_pct", "exit_date", "status",
+                    "created_at", "updated_at"
+                ]
+                data = dict(zip(columns, row))
+            
+            id_ = data.get("id")
+            ticker = data.get("ticker")
+            name = data.get("name")
+            entry_date = data.get("entry_date")
+            quantity = data.get("quantity")
+            score = data.get("score")
+            strategy = data.get("strategy")
+            current_return_pct = data.get("current_return_pct")
+            max_return_pct = data.get("max_return_pct")
+            
+            entry_date_str = None
+            if hasattr(entry_date, "strftime"):
+                entry_date_str = entry_date.strftime('%Y%m%d')
+                entry_date_display = entry_date.strftime('%Y-%m-%d')
+            elif isinstance(entry_date, str):
+                entry_date_str = entry_date.replace('-', '')
+                entry_date_display = entry_date
+            else:
+                entry_date_display = entry_date
             
             # 현재 수익률과 최대 수익률 계산
             try:
-                # 진입일부터 현재까지의 데이터 조회
-                from datetime import datetime, timedelta
-                entry_dt = datetime.strptime(date_str, '%Y%m%d')
-                days_diff = (datetime.now() - entry_dt).days
-                lookback_days = min(days_diff + 10, 100)  # 여유분 포함
-                
-                df = api.get_ohlcv(ticker, lookback_days)
-                if not df.empty and len(df) > 1:
-                    # 진입일 이후 데이터만 필터링
-                    df['date'] = pd.to_datetime(df.index)
-                    entry_date_dt = pd.to_datetime(entry_date)
-                    df = df[df['date'] >= entry_date_dt]
-                    
-                    if len(df) > 0:
-                        # 진입가 (첫 번째 종가)
-                        entry_price = float(df.iloc[0].close)
-                        # 현재가 (마지막 종가)
-                        current_price = float(df.iloc[-1].close)
-                        # 현재 수익률
-                        current_return_pct = (current_price / entry_price - 1.0) * 100.0
-                        # 기간내 최대 수익률
-                        max_price = float(df['close'].max())
-                        max_return_pct = (max_price / entry_price - 1.0) * 100.0
-                    else:
-                        current_return_pct = None
-                        max_return_pct = None
-                else:
-                    current_return_pct = None
-                    max_return_pct = None
+                returns_data = calculate_returns(ticker, entry_date_str) if entry_date_str else None
+                if returns_data:
+                    current_return_pct = returns_data.get('current_return')
+                    max_return_pct = returns_data.get('max_return')
             except Exception:
                 current_return_pct = None
                 max_return_pct = None
@@ -1296,7 +1450,7 @@ def get_scan_positions():
             items.append({
                 'ticker': ticker,
                 'name': name,
-                'entry_date': entry_date,
+                'entry_date': entry_date_display,
                 'quantity': quantity,
                 'score': score,
                 'strategy': strategy,
@@ -1324,44 +1478,57 @@ def auto_add_positions(score_threshold: int = 8, default_quantity: int = 10, ent
 
         added_positions = []
         entry_dt = entry_date or datetime.now().strftime('%Y%m%d')
+        try:
+            entry_date_obj = datetime.strptime(entry_dt, "%Y%m%d").date()
+        except Exception:
+            entry_date_obj = datetime.now().date()
+            entry_dt = entry_date_obj.strftime("%Y%m%d")
 
-        for code in universe:
-            try:
-                df = api.get_ohlcv(code, config.ohlcv_count)
-                if df.empty or len(df) < 21:
-                    continue
-                df = compute_indicators(df)
-                matched, sig_true, sig_total = match_stats(df)
-                score, flags = score_conditions(df)
-                
-                # 조건 확인: 점수가 임계값 이상이고 매치된 경우
-                if matched and score >= score_threshold:
-                    # 이미 포지션이 있는지 확인
-                    conn = sqlite3.connect(_db_path(), check_same_thread=False)
-                    cur = conn.cursor()
-                    existing = cur.execute("SELECT id FROM positions WHERE ticker = ? AND status = 'open'", (code,)).fetchone()
+        with db_manager.get_cursor(commit=True) as cur:
+            for code in universe:
+                try:
+                    df = api.get_ohlcv(code, config.ohlcv_count)
+                    if df.empty or len(df) < 21:
+                        continue
+                    df = compute_indicators(df)
+                    matched, sig_true, sig_total = match_stats(df)
+                    score, flags = score_conditions(df)
                     
-                    if not existing:  # 기존 포지션이 없으면 추가
+                    if matched and score >= score_threshold:
+                        cur.execute(
+                            "SELECT id FROM positions WHERE ticker = %s AND status = 'open'",
+                            (code,),
+                        )
+                        existing = cur.fetchone()
+                        if existing:
+                            continue
+                        
                         name = api.get_stock_name(code)
                         current_price = float(df.iloc[-1].close)
+                        strategy_label = flags.get('label', '') if isinstance(flags, dict) else ''
                         
                         cur.execute("""
                             INSERT INTO positions (ticker, name, entry_date, quantity, score, strategy, status)
-                            VALUES (?, ?, ?, ?, ?, ?, 'open')
-                        """, (code, name, entry_dt, default_quantity, score, flags.get('label', '')))
-                        conn.commit()
+                            VALUES (%s, %s, %s, %s, %s, %s, 'open')
+                        """, (
+                            code,
+                            name,
+                            entry_date_obj,
+                            default_quantity,
+                            score,
+                            strategy_label,
+                        ))
                         
-                        added_positions.append({
-                            'ticker': code,
-                            'name': name,
-                            'entry_price': current_price,
-                            'quantity': default_quantity,
-                            'score': score
-                        })
-                    
-                    conn.close()
-            except Exception:
-                continue
+                        if cur.rowcount:
+                            added_positions.append({
+                                'ticker': code,
+                                'name': name,
+                                'entry_price': current_price,
+                                'quantity': default_quantity,
+                                'score': score
+                            })
+                except Exception:
+                    continue
 
         return {
             'ok': True,
@@ -1382,27 +1549,20 @@ def update_position(position_id: int, request: UpdatePositionRequest):
     """포지션 업데이트 (청산 처리)"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        
-        # 기존 포지션 조회
-        row = cur.execute("SELECT * FROM positions WHERE id = ?", (position_id,)).fetchone()
-        if not row:
-            conn.close()
-            return {"ok": False, "error": "포지션을 찾을 수 없습니다"}
-        
-        id_, ticker, name, entry_date, quantity, score, strategy, current_return_pct, max_return_pct, exit_date, status, created_at, updated_at = row
-        
-        # 청산 처리
-        if request.exit_date:
-            cur.execute("""
-                UPDATE positions 
-                SET exit_date = ?, status = 'closed', updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            """, (request.exit_date, position_id))
-        
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor(commit=True) as cur:
+            cur.execute("SELECT id FROM positions WHERE id = %s", (position_id,))
+            row = cur.fetchone()
+            if not row:
+                return {"ok": False, "error": "포지션을 찾을 수 없습니다"}
+            
+            if request.exit_date:
+                cur.execute("""
+                    UPDATE positions
+                    SET exit_date = %s,
+                        status = 'closed',
+                        updated_at = NOW()
+                    WHERE id = %s
+                """, (request.exit_date, position_id))
         
         return {"ok": True}
     except Exception as e:
@@ -1413,11 +1573,8 @@ def delete_position(position_id: int):
     """포지션 삭제"""
     _init_positions_table()
     try:
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        cur.execute("DELETE FROM positions WHERE id = ?", (position_id,))
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor(commit=True) as cur:
+            cur.execute("DELETE FROM positions WHERE id = %s", (position_id,))
         
         return {"ok": True}
     except Exception as e:
@@ -1427,13 +1584,9 @@ def delete_position(position_id: int):
 async def get_available_scan_dates():
     """사용 가능한 스캔 날짜 목록을 가져옵니다."""
     try:
-        # DB에서 날짜 목록 조회
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        
-        cur.execute("SELECT DISTINCT date FROM scan_rank ORDER BY date DESC")
-        rows = cur.fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("SELECT DISTINCT date FROM scan_rank ORDER BY date DESC")
+            rows = cur.fetchall()
         
         if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
@@ -1441,14 +1594,18 @@ async def get_available_scan_dates():
         # 날짜 형식을 YYYYMMDD로 통일
         normalized_dates = []
         for row in rows:
-            date_str = row[0]
+            raw_date = row.get('date') if isinstance(row, dict) else row[0]
             try:
-                if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD 유지
-                    formatted_date = date_str
-                elif len(date_str) == 10 and date_str.count('-') == 2:  # YYYY-MM-DD -> YYYYMMDD
-                    formatted_date = date_str.replace('-', '')
+                if hasattr(raw_date, "strftime"):
+                    formatted_date = raw_date.strftime('%Y%m%d')
                 else:
-                    continue  # 잘못된 형식은 제외
+                    date_str = str(raw_date)
+                    if len(date_str) == 8 and date_str.isdigit():
+                        formatted_date = date_str
+                    elif len(date_str) == 10 and date_str.count('-') == 2:
+                        formatted_date = date_str.replace('-', '')
+                    else:
+                        continue
                 normalized_dates.append(formatted_date)
             except:
                 continue
@@ -1466,44 +1623,65 @@ async def get_available_scan_dates():
 async def get_scan_by_date(date: str):
     """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)"""
     try:
-        # 날짜 형식 검증 및 정규화
+        from datetime import datetime
+
+        def _row_to_dict(row):
+            if isinstance(row, dict):
+                return row
+            keys = [
+                "code", "name", "score", "score_label", "current_price", "volume",
+                "change_rate", "market", "strategy", "indicators", "trend",
+                "flags", "details", "returns", "recurrence"
+            ]
+            return dict(zip(keys, row))
+        
         try:
             formatted_date = normalize_date(date)
         except ValueError:
             return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."}
         
-        compact_date = formatted_date
+        target_date = datetime.strptime(formatted_date, "%Y%m%d").date()
         
-        # DB에서 해당 날짜의 스캔 결과 조회 (두 형식 모두 지원)
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            SELECT code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-            FROM scan_rank 
-            WHERE date = ? OR date = ?
-            ORDER BY score DESC
-        """, (formatted_date, compact_date))
-        
-        rows = cur.fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT code, name, score, score_label, close_price AS current_price, volume,
+                       change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
+                FROM scan_rank
+                WHERE date = %s OR date = %s
+                ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
+            """, (target_date, formatted_date))
+            rows = cur.fetchall()
         
         if not rows:
             return {"ok": False, "error": f"{date} 날짜의 스캔 결과가 없습니다."}
         
-        # 데이터 변환
         items = []
         for row in rows:
-            code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            data = _row_to_dict(row)
+            indicators = data.get("indicators")
+            trend = data.get("trend")
+            flags = data.get("flags")
+            details = data.get("details")
+            returns_raw = data.get("returns")
+            recurrence_raw = data.get("recurrence")
             
-            # 수익률 계산 (실시간)
+            code = data.get("code")
+            name = data.get("name")
+            score = data.get("score")
+            score_label = data.get("score_label")
+            current_price = data.get("current_price")
+            volume = data.get("volume")
+            change_rate = data.get("change_rate")
+            market = data.get("market")
+            strategy = data.get("strategy")
+            
             try:
                 returns_info = calculate_returns(code, formatted_date)
                 current_return = returns_info.get('current_return', 0)
                 max_return = returns_info.get('max_return', 0)
                 min_return = returns_info.get('min_return', 0)
                 days_elapsed = returns_info.get('days_elapsed', 0)
-            except:
+            except Exception:
                 current_return = 0
                 max_return = 0
                 min_return = 0
@@ -1519,34 +1697,31 @@ async def get_scan_by_date(date: str):
                 "change_rate": change_rate,
                 "market": market,
                 "strategy": strategy,
-                "indicators": json.loads(indicators) if indicators else {},
-                "trend": json.loads(trend) if trend else {},
-                "flags": json.loads(flags) if flags else {},
-                "details": json.loads(details) if details else {},
+                "indicators": json.loads(indicators) if isinstance(indicators, str) and indicators else (indicators or {}),
+                "trend": json.loads(trend) if isinstance(trend, str) and trend else (trend or {}),
+                "flags": json.loads(flags) if isinstance(flags, str) and flags else (flags or {}),
+                "details": json.loads(details) if isinstance(details, str) and details else (details or {}),
                 "returns": {
                     "current_return": current_return,
                     "max_return": max_return,
                     "min_return": min_return,
                     "days_elapsed": days_elapsed
                 },
-                "recurrence": json.loads(recurrence) if recurrence else {}
+                "recurrence": json.loads(recurrence_raw) if isinstance(recurrence_raw, str) and recurrence_raw else (recurrence_raw or {})
             }
             items.append(item)
         
-        # 응답 데이터 구성
         data = {
             "as_of": formatted_date,
             "scan_date": formatted_date,
             "is_latest": False,
-            "universe_count": 100,  # 기본값
+            "universe_count": 100,
             "matched_count": len(items),
             "rsi_mode": "current_status",
             "rsi_period": 14,
             "rsi_threshold": 57.0,
             "items": items
         }
-        
-        # enhanced_items 추가 (호환성을 위해)
         data["enhanced_items"] = items
         
         return {"ok": True, "data": data}
@@ -1562,142 +1737,161 @@ def get_latest_scan_from_db():
     try:
         from datetime import datetime
         
-        # DB에서 가장 최신 날짜의 스캔 결과 조회
-        conn = sqlite3.connect(_db_path(), check_same_thread=False)
-        cur = conn.cursor()
+        def _row_to_dict(row):
+            if isinstance(row, dict):
+                return row
+            return {desc: value for desc, value in zip(
+                ["date", "code", "name", "score", "score_label", "current_price",
+                 "volume", "change_rate", "market", "strategy", "indicators",
+                 "trend", "flags", "details", "returns", "recurrence"],
+                row
+            )}
         
-        # 모든 날짜를 가져와서 datetime으로 변환하여 최신 찾기 (NORESULT 포함)
-        cur.execute("SELECT DISTINCT date FROM scan_rank WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'")
-        all_dates = cur.fetchall()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT date
+                FROM scan_rank
+                WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'
+                ORDER BY date DESC
+                LIMIT 1
+            """)
+            latest_row = cur.fetchone()
         
-        if not all_dates:
+        if not latest_row:
             return {"ok": False, "error": "올바른 스캔 결과가 없습니다."}
         
-        # 날짜를 datetime으로 변환하여 정렬
-        parsed_dates = []
-        for (date_str,) in all_dates:
-            try:
-                if len(date_str) == 8 and date_str.isdigit():  # YYYYMMDD
-                    dt = datetime.strptime(date_str, '%Y%m%d')
-                    parsed_dates.append((dt, date_str))
-            except:
-                continue
-        
-        if not parsed_dates:
-            return {"ok": False, "error": "유효한 날짜 데이터가 없습니다."}
-        
-        # 최신 날짜 찾기
-        parsed_dates.sort(reverse=True)
-        latest_date = parsed_dates[0][1]
-        
-        if not latest_date:
+        raw_date = latest_row.get("date") if isinstance(latest_row, dict) else latest_row[0]
+        if not raw_date:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 해당 날짜의 스캔 결과 조회 (NORESULT 포함)
-        cur.execute("""
-            SELECT date, code, name, score, score_label, close_price as current_price, volume, change_rate, '' as market, '' as strategy, '' as indicators, '' as trend, flags, '' as details, '' as returns, '' as recurrence
-            FROM scan_rank 
-            WHERE date = ? AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
-            ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
-        """, (latest_date,))
+        if hasattr(raw_date, "strftime"):
+            formatted_date = raw_date.strftime('%Y%m%d')
+        else:
+            formatted_date = str(raw_date).replace('-', '')
         
-        rows = cur.fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT date,
+                       code,
+                       name,
+                       score,
+                       score_label,
+                       close_price AS current_price,
+                       volume,
+                       change_rate,
+                       market,
+                       strategy,
+                       indicators,
+                       trend,
+                       flags,
+                       details,
+                       returns,
+                       recurrence
+                FROM scan_rank
+                WHERE date = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
+            """, (raw_date,))
+            rows = cur.fetchall()
         
         if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
-        # 데이터 변환
         items = []
         for row in rows:
-            date, code, name, score, score_label, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
-            
-            # 스캐너에서는 수익률 계산 생략 (성능 최적화)
-            current_return = 0
-            max_return = 0
-            min_return = 0
-            days_elapsed = 0
-            
-            # 등락률은 DB에 저장된 값 사용 (키움 API에서 가져온 값)
-            real_time_change_rate = change_rate
+            data = _row_to_dict(row)
+            flags = data.get("flags")
+            indicators = data.get("indicators")
+            trend = data.get("trend")
+            details = data.get("details")
+            returns = data.get("returns")
+            recurrence = data.get("recurrence")
             
             item = {
-                "ticker": code,
-                "name": name,
-                "score": score,
-                "score_label": score_label,
-                "current_price": current_price,  # 현재가
-                "volume": volume,
-                "change_rate": real_time_change_rate,  # 실시간 등락률 사용
-                "market": market,
-                "strategy": strategy,
-                "indicators": json.loads(indicators) if indicators else {},
-                "trend": json.loads(trend) if trend else {},
-                "flags": json.loads(flags) if flags else {},
-                "details": json.loads(details) if details else {},
-                "returns": {
-                    "current_return": current_return,
-                    "max_return": max_return,
-                    "min_return": min_return,
-                    "days_elapsed": days_elapsed
-                },
-                "recurrence": json.loads(recurrence) if recurrence else {}
+                "ticker": data.get("code"),
+                "name": data.get("name"),
+                "score": data.get("score"),
+                "score_label": data.get("score_label"),
+                "current_price": data.get("current_price"),
+                "volume": data.get("volume"),
+                "change_rate": data.get("change_rate"),
+                "market": data.get("market"),
+                "strategy": data.get("strategy"),
+                "indicators": json.loads(indicators) if isinstance(indicators, str) and indicators else (indicators or {}),
+                "trend": json.loads(trend) if isinstance(trend, str) and trend else (trend or {}),
+                "flags": json.loads(flags) if isinstance(flags, str) and flags else (flags or {}),
+                "details": json.loads(details) if isinstance(details, str) and details else (details or {}),
+                "returns": json.loads(returns) if isinstance(returns, str) and returns else (returns or {}),
+                "recurrence": json.loads(recurrence) if isinstance(recurrence, str) and recurrence else (recurrence or {}),
             }
+            # returns 필드 호환성 보정
+            if not item["returns"]:
+                item["returns"] = {
+                    "current_return": 0,
+                    "max_return": 0,
+                    "min_return": 0,
+                    "days_elapsed": 0,
+                }
+            else:
+                item["returns"].setdefault("current_return", 0)
+                item["returns"].setdefault("max_return", 0)
+                item["returns"].setdefault("min_return", 0)
+                item["returns"].setdefault("days_elapsed", 0)
             items.append(item)
         
-        # 시장 가이드 생성
-        # DB에서 시장 상황 조회 (스캔 시 저장된 데이터 사용)
         market_condition = None
         try:
-            conn_mc = sqlite3.connect(_db_path(), check_same_thread=False)
-            cur_mc = conn_mc.cursor()
-            create_market_conditions_table(cur_mc)
-            cur_mc.execute("""
-                SELECT market_sentiment, kospi_return, volatility, rsi_threshold,
-                       sector_rotation, foreign_flow, volume_trend,
-                       min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
-                FROM market_conditions WHERE date = ?
-            """, (latest_date,))
-            row_mc = cur_mc.fetchone()
-            conn_mc.close()
+            with db_manager.get_cursor(commit=False) as cur_mc:
+                create_market_conditions_table(cur_mc)
+                cur_mc.execute("""
+                    SELECT market_sentiment, kospi_return, volatility, rsi_threshold,
+                           sector_rotation, foreign_flow, volume_trend,
+                           min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
+                    FROM market_conditions WHERE date = %s
+                """, (raw_date,))
+                row_mc = cur_mc.fetchone()
             
             if row_mc:
-                # DB에서 읽은 데이터로 MarketCondition 객체 생성
+                if isinstance(row_mc, dict):
+                    values = row_mc
+                else:
+                    keys = [
+                        "market_sentiment", "kospi_return", "volatility", "rsi_threshold",
+                        "sector_rotation", "foreign_flow", "volume_trend",
+                        "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max"
+                    ]
+                    values = dict(zip(keys, row_mc))
+                
                 from market_analyzer import MarketCondition
                 market_condition = MarketCondition(
-                    date=latest_date,
-                    market_sentiment=row_mc[0],
-                    kospi_return=row_mc[1],
-                    volatility=row_mc[2],
-                    rsi_threshold=row_mc[3],
-                    sector_rotation=row_mc[4],
-                    foreign_flow=row_mc[5],
-                    volume_trend=row_mc[6],
-                    min_signals=row_mc[7],
-                    macd_osc_min=row_mc[8],
-                    vol_ma5_mult=row_mc[9],
-                    gap_max=row_mc[10],
-                    ext_from_tema20_max=row_mc[11]
+                    date=formatted_date,
+                    market_sentiment=values.get("market_sentiment"),
+                    kospi_return=values.get("kospi_return"),
+                    volatility=values.get("volatility"),
+                    rsi_threshold=values.get("rsi_threshold"),
+                    sector_rotation=values.get("sector_rotation"),
+                    foreign_flow=values.get("foreign_flow"),
+                    volume_trend=values.get("volume_trend"),
+                    min_signals=values.get("min_signals"),
+                    macd_osc_min=values.get("macd_osc_min"),
+                    vol_ma5_mult=values.get("vol_ma5_mult"),
+                    gap_max=values.get("gap_max"),
+                    ext_from_tema20_max=values.get("ext_from_tema20_max"),
                 )
                 print(f"📊 시장 상황 조회 (DB): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
-            else:
-                # DB에 없으면 동적 분석 (fallback)
-                if config.market_analysis_enable:
-                    try:
-                        market_condition = market_analyzer.analyze_market_condition(latest_date)
-                        print(f"📊 시장 상황 분석 (Fallback): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
-                    except Exception as e:
-                        print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+            elif config.market_analysis_enable:
+                try:
+                    market_condition = market_analyzer.analyze_market_condition(formatted_date)
+                    print(f"📊 시장 상황 분석 (Fallback): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+                except Exception as e:
+                    print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
         except Exception as e:
             print(f"⚠️ 시장 상황 DB 조회 실패: {e}")
-            # Fallback: 동적 분석
             if config.market_analysis_enable:
                 try:
-                    market_condition = market_analyzer.analyze_market_condition(latest_date)
+                    market_condition = market_analyzer.analyze_market_condition(formatted_date)
                 except Exception as e2:
                     print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e2}")
         
-        # NORESULT만 있는 경우 matched_count는 0으로 처리
         actual_matched_count = len([item for item in items if item.get('ticker') != 'NORESULT'])
         scan_result_dict = {
             'matched_count': actual_matched_count,
@@ -1707,31 +1901,26 @@ def get_latest_scan_from_db():
                 'indicators': {'change_rate': item.get('change_rate', 0)},
                 'flags': {'vol_expand': False}
             } for item in items],
-            # 시장 상황 정보 전달 (market_guide.py에서 사용)
             'market_sentiment': market_condition.market_sentiment if market_condition else None
         }
         market_guide = get_market_guide(scan_result_dict)
         
-        # 응답 데이터 구성
-        scan_date = latest_date
         today = datetime.now().strftime('%Y%m%d')
-        is_today = (latest_date == today)
+        is_today = formatted_date == today
         data = {
-            "as_of": latest_date,
-            "scan_date": scan_date,
+            "as_of": formatted_date,
+            "scan_date": formatted_date,
             "is_latest": True,
             "is_today": is_today,
             "is_holiday": not is_today,
-            "universe_count": 100,  # 기본값
+            "universe_count": 100,
             "matched_count": len(items),
             "rsi_mode": "current_status",
             "rsi_period": 14,
-            "rsi_threshold": 57.0,
+            "rsi_threshold": market_condition.rsi_threshold if market_condition else 57.0,
             "items": items,
             "market_guide": market_guide
         }
-        
-        # enhanced_items 추가 (호환성을 위해)
         data["enhanced_items"] = items
         
         return {"ok": True, "data": data}
@@ -2613,23 +2802,18 @@ async def get_user_by_id(
 async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
     """메인트넌스 설정 조회"""
     try:
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cur = conn.cursor()
-        
-        # 테이블 생성
-        create_maintenance_settings_table(cur)
-        
-        cur.execute("SELECT * FROM maintenance_settings ORDER BY id DESC LIMIT 1")
-        row = cur.fetchone()
-        
+        with db_manager.get_cursor() as cur:
+            create_maintenance_settings_table(cur)
+            cur.execute("SELECT * FROM maintenance_settings ORDER BY id DESC LIMIT 1")
+            row = cur.fetchone()
         if row:
             settings = {
                 "id": row[0],
                 "is_enabled": bool(row[1]),
                 "end_date": row[2],
                 "message": row[3],
-                "created_at": row[4],
-                "updated_at": row[5]
+                "created_at": row[4].isoformat() if row[4] else None,
+                "updated_at": row[5].isoformat() if row[5] else None,
             }
         else:
             settings = {
@@ -2640,8 +2824,6 @@ async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
                 "created_at": None,
                 "updated_at": None
             }
-        
-        conn.close()
         return settings
     except Exception as e:
         raise HTTPException(
@@ -2653,14 +2835,10 @@ async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
 async def get_popup_notice(admin_user: User = Depends(get_admin_user)):
     """팝업 공지 설정 조회"""
     try:
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cur = conn.cursor()
-        
-        create_popup_notice_table(cur)
-        
-        cur.execute("SELECT * FROM popup_notice ORDER BY id DESC LIMIT 1")
-        row = cur.fetchone()
-        
+        with db_manager.get_cursor() as cur:
+            create_popup_notice_table(cur)
+            cur.execute("SELECT * FROM popup_notice ORDER BY id DESC LIMIT 1")
+            row = cur.fetchone()
         if row:
             notice = {
                 "id": row[0],
@@ -2669,8 +2847,8 @@ async def get_popup_notice(admin_user: User = Depends(get_admin_user)):
                 "message": row[3],
                 "start_date": row[4],
                 "end_date": row[5],
-                "created_at": row[6],
-                "updated_at": row[7]
+                "created_at": row[6].isoformat() if row[6] else None,
+                "updated_at": row[7].isoformat() if row[7] else None,
             }
         else:
             notice = {
@@ -2683,8 +2861,6 @@ async def get_popup_notice(admin_user: User = Depends(get_admin_user)):
                 "created_at": None,
                 "updated_at": None
             }
-        
-        conn.close()
         return notice
     except Exception as e:
         raise HTTPException(
@@ -2699,27 +2875,21 @@ async def update_popup_notice(
 ):
     """팝업 공지 설정 업데이트"""
     try:
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cur = conn.cursor()
-        
-        create_popup_notice_table(cur)
-        
-        cur.execute("DELETE FROM popup_notice")
-        
-        cur.execute("""
-            INSERT INTO popup_notice (is_enabled, title, message, start_date, end_date, updated_at)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        """, (
-            notice.is_enabled,
-            notice.title,
-            notice.message,
-            notice.start_date,
-            notice.end_date
-        ))
-        
-        conn.commit()
-        conn.close()
-        
+        with db_manager.get_connection() as conn:
+            cur = conn.cursor()
+            create_popup_notice_table(cur)
+            cur.execute("DELETE FROM popup_notice")
+            cur.execute("""
+                INSERT INTO popup_notice (is_enabled, title, message, start_date, end_date, updated_at)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+            """, (
+                notice.is_enabled,
+                notice.title,
+                notice.message,
+                notice.start_date,
+                notice.end_date
+            ))
+            conn.commit()
         return {"message": "팝업 공지 설정이 업데이트되었습니다."}
     except Exception as e:
         raise HTTPException(
@@ -2731,14 +2901,14 @@ async def update_popup_notice(
 async def get_popup_notice_status():
     """팝업 공지 상태 조회 (공개 API)"""
     try:
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cur = conn.cursor()
-        
-        create_popup_notice_table(cur)
-        
-        cur.execute("SELECT is_enabled, title, message, start_date, end_date FROM popup_notice ORDER BY id DESC LIMIT 1")
-        row = cur.fetchone()
-        
+        with db_manager.get_cursor() as cur:
+            create_popup_notice_table(cur)
+            cur.execute("""
+                SELECT is_enabled, title, message, start_date, end_date
+                FROM popup_notice
+                ORDER BY id DESC LIMIT 1
+            """)
+            row = cur.fetchone()
         if row:
             is_enabled = bool(row[0])
             title = row[1]
@@ -2782,9 +2952,6 @@ async def get_popup_notice_status():
             "start_date": "",
             "end_date": ""
         }
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 @app.post("/admin/maintenance")
 async def update_maintenance_settings(
@@ -2793,27 +2960,19 @@ async def update_maintenance_settings(
 ):
     """메인트넌스 설정 업데이트"""
     try:
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cur = conn.cursor()
-        
-        # 테이블 생성
-        create_maintenance_settings_table(cur)
-        
-        # 기존 설정 삭제 후 새로 추가
-        cur.execute("DELETE FROM maintenance_settings")
-        
-        cur.execute("""
-            INSERT INTO maintenance_settings (is_enabled, end_date, message, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        """, (
-            settings.is_enabled,
-            settings.end_date,
-            settings.message or "서비스 점검 중입니다."
-        ))
-        
-        conn.commit()
-        conn.close()
-        
+        with db_manager.get_connection() as conn:
+            cur = conn.cursor()
+            create_maintenance_settings_table(cur)
+            cur.execute("DELETE FROM maintenance_settings")
+            cur.execute("""
+                INSERT INTO maintenance_settings (is_enabled, end_date, message, updated_at)
+                VALUES (%s, %s, %s, NOW())
+            """, (
+                settings.is_enabled,
+                settings.end_date,
+                settings.message or "서비스 점검 중입니다."
+            ))
+            conn.commit()
         return {"message": "메인트넌스 설정이 업데이트되었습니다."}
     except Exception as e:
         raise HTTPException(
@@ -2825,19 +2984,19 @@ async def update_maintenance_settings(
 async def get_maintenance_status():
     """메인트넌스 상태 조회 (공개 API)"""
     try:
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cur = conn.cursor()
-        
-        # 테이블 생성
-        create_maintenance_settings_table(cur)
-        
-        cur.execute("SELECT is_enabled, end_date, message FROM maintenance_settings ORDER BY id DESC LIMIT 1")
-        row = cur.fetchone()
-        
+        with db_manager.get_cursor() as cur:
+            create_maintenance_settings_table(cur)
+            cur.execute("""
+                SELECT is_enabled, end_date, message, id
+                FROM maintenance_settings
+                ORDER BY id DESC LIMIT 1
+            """)
+            row = cur.fetchone()
         if row:
             is_enabled = bool(row[0])
             end_date = row[1]
             message = row[2]
+            record_id = row[3]
             
             # 종료 날짜가 설정되어 있고 현재 날짜가 종료 날짜를 지났으면 자동으로 비활성화
             if is_enabled and end_date:
@@ -2847,12 +3006,12 @@ async def get_maintenance_status():
                     if datetime.now() > end_datetime:
                         is_enabled = False
                         # 자동으로 비활성화
-                        cur.execute("""
-                            UPDATE maintenance_settings 
-                            SET is_enabled = 0, updated_at = CURRENT_TIMESTAMP
-                            WHERE id = (SELECT id FROM maintenance_settings ORDER BY id DESC LIMIT 1)
-                        """)
-                        conn.commit()
+                        with db_manager.get_cursor() as cur_update:
+                            cur_update.execute("""
+                                UPDATE maintenance_settings 
+                                SET is_enabled = FALSE, updated_at = NOW()
+                                WHERE id = %s
+                            """, (record_id,))
                 except ValueError:
                     pass  # 날짜 형식이 잘못된 경우 무시
             
@@ -2873,9 +3032,6 @@ async def get_maintenance_status():
             "end_date": None,
             "message": "서비스 점검 중입니다."
         }
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 @app.put("/admin/users/{user_id}")
 async def update_user(
@@ -3155,19 +3311,18 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
         else:
             raise HTTPException(status_code=400, detail="잘못된 분기입니다")
         
-        # 데이터베이스에서 해당 기간의 스캔 데이터 조회
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cursor = conn.cursor()
+        start_dt = datetime.strptime(start_date, '%Y%m%d').date()
+        end_dt = datetime.strptime(end_date, '%Y%m%d').date()
         
-        cursor.execute("""
-            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-    FROM scan_rank 
-            WHERE date BETWEEN ? AND ?
-            ORDER BY date
-        """, (start_date, end_date))
-        
-        rows = cursor.fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT date, code, name, current_price, volume, change_rate, market, strategy,
+                       indicators, trend, flags, details, returns, recurrence
+                FROM scan_rank
+                WHERE date BETWEEN %s AND %s
+                ORDER BY date
+            """, (start_dt, end_dt))
+            rows = cur.fetchall()
         
         if not rows:
             return {
@@ -3190,16 +3345,38 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
         positive_count = 0
         
         for row in rows:
-            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            if isinstance(row, dict):
+                data = row
+            else:
+                columns = [
+                    "date", "code", "name", "current_price", "volume", "change_rate",
+                    "market", "strategy", "indicators", "trend", "flags", "details",
+                    "returns", "recurrence"
+                ]
+                data = dict(zip(columns, row))
+            
+            date_value = data.get("date")
+            code = data.get("code")
+            name = data.get("name")
+            current_price = data.get("current_price")
+            volume = data.get("volume")
+            change_rate = data.get("change_rate")
+            market = data.get("market")
+            strategy = data.get("strategy")
             
             if not name or not current_price:
                 continue
                 
-            dates.add(date)
+            if hasattr(date_value, "strftime"):
+                date_str = date_value.strftime('%Y%m%d')
+                dates.add(date_value.strftime('%Y-%m-%d'))
+            else:
+                date_str = str(date_value)
+                dates.add(date_str)
             
             # 수익률 계산 (실시간)
             try:
-                returns_info = calculate_returns(code, date)
+                returns_info = calculate_returns(code, date_str)
                 current_return = returns_info.get('current_return', 0)
                 max_return = returns_info.get('max_return', 0)
                 min_return = returns_info.get('min_return', 0)
@@ -3214,7 +3391,7 @@ async def get_quarterly_analysis(year: int = 2025, quarter: int = 1):
                 "ticker": code,
                 "name": name,
                 "scan_price": current_price,
-                "scan_date": date,
+                "scan_date": date_str,
                 "current_return": current_return,
                 "max_return": max_return,
                 "min_return": min_return,
@@ -3468,19 +3645,18 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         start_date = f"{year}{month:02d}{week_start:02d}"
         end_date = f"{year}{month:02d}{week_end:02d}"
         
-        # 데이터베이스에서 해당 기간의 스캔 데이터 조회
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cursor = conn.cursor()
+        start_dt = datetime.strptime(start_date, '%Y%m%d').date()
+        end_dt = datetime.strptime(end_date, '%Y%m%d').date()
         
-        cursor.execute("""
-            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-            FROM scan_rank 
-            WHERE date BETWEEN ? AND ?
-            ORDER BY date
-        """, (start_date, end_date))
-        
-        rows = cursor.fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT date, code, name, current_price, volume, change_rate, market, strategy,
+                       indicators, trend, flags, details, returns, recurrence
+                FROM scan_rank
+                WHERE date BETWEEN %s AND %s
+                ORDER BY date
+            """, (start_dt, end_dt))
+            rows = cur.fetchall()
         
         if not rows:
             return {
@@ -3505,17 +3681,37 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
         # 유효한 데이터만 필터링
         valid_rows = []
         for row in rows:
-            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            if isinstance(row, dict):
+                data = row
+            else:
+                columns = [
+                    "date", "code", "name", "current_price", "volume", "change_rate",
+                    "market", "strategy", "indicators", "trend", "flags", "details",
+                    "returns", "recurrence"
+                ]
+                data = dict(zip(columns, row))
+            
+            date_value = data.get("date")
+            code = data.get("code")
+            name = data.get("name")
+            current_price = data.get("current_price")
             
             if not name or not current_price:
                 continue
                 
-            dates.add(date)
-            valid_rows.append(row)
+            if hasattr(date_value, "strftime"):
+                date_label = date_value.strftime('%Y-%m-%d')
+            else:
+                date_label = str(date_value)
+            dates.add(date_label)
+            valid_rows.append(data)
         
         # 데이터 구성 및 수익률 계산
-        for row in valid_rows:
-            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+        for data in valid_rows:
+            date_value = data.get("date")
+            code = data.get("code")
+            name = data.get("name")
+            current_price = data.get("current_price")
             
             # 수익률 계산 (임시로 비활성화 - 성능 문제)
             current_return = 0
@@ -3527,7 +3723,7 @@ async def get_weekly_analysis(year: int = 2025, month: int = 1, week: int = 1):
                 "ticker": code,
                 "name": name,
                 "scan_price": current_price,
-                "scan_date": date,
+                "scan_date": date_value.strftime('%Y%m%d') if hasattr(date_value, "strftime") else str(date_value),
                 "current_return": current_return,
                 "max_return": max_return,
                 "min_return": min_return,
@@ -3625,22 +3821,18 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
     try:
         from datetime import datetime, timedelta
         
-        conn = sqlite3.connect('snapshots.db', check_same_thread=False)
-        cursor = conn.cursor()
+        end_dt = datetime.now().date()
+        start_dt = (datetime.now() - timedelta(days=days)).date()
         
-        # 최근 N일간의 데이터 조회
-        end_date = datetime.now().strftime('%Y%m%d')
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
-        
-        cursor.execute("""
-            SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-            FROM scan_rank 
-            WHERE date BETWEEN ? AND ?
-            ORDER BY date DESC
-        """, (start_date, end_date))
-        
-        rows = cursor.fetchall()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT date, code, name, current_price, volume, change_rate, market, strategy,
+                       indicators, trend, flags, details, returns, recurrence
+                FROM scan_rank
+                WHERE date BETWEEN %s AND %s
+                ORDER BY date DESC
+            """, (start_dt, end_dt))
+            rows = cur.fetchall()
         
         if not rows:
             return {"ok": True, "data": {"recurring_stocks": {}}}
@@ -3648,7 +3840,21 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
         # 종목별 등장 횟수와 날짜 수집
         stock_data = {}
         for row in rows:
-            date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence = row
+            if isinstance(row, dict):
+                data = row
+            else:
+                columns = [
+                    "date", "code", "name", "current_price", "volume", "change_rate",
+                    "market", "strategy", "indicators", "trend", "flags", "details",
+                    "returns", "recurrence"
+                ]
+                data = dict(zip(columns, row))
+            
+            date_val = data.get("date")
+            code = data.get("code")
+            name = data.get("name")
+            current_price = data.get("current_price")
+            change_rate = data.get("change_rate")
             
             if not name or not code:
                 continue
@@ -3663,7 +3869,10 @@ async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
                 }
             
             stock_data[code]["appearances"] += 1
-            stock_data[code]["dates"].append(date)
+            if hasattr(date_val, "strftime"):
+                stock_data[code]["dates"].append(date_val.strftime('%Y%m%d'))
+            else:
+                stock_data[code]["dates"].append(str(date_val))
             stock_data[code]["latest_price"] = current_price
             stock_data[code]["latest_change_rate"] = change_rate
         

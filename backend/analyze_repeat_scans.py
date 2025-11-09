@@ -4,31 +4,42 @@
 반복적으로 스캔되는 종목들의 의미와 투자 성과를 분석합니다.
 """
 
-import sqlite3
 from collections import Counter, defaultdict
 import json
 from datetime import datetime, timedelta
+from db_manager import db_manager
 
 def analyze_repeat_scans():
     """반복 스캔 종목 분석"""
-    
-    # DB 연결
-    conn = sqlite3.connect('snapshots.db')
-    cursor = conn.cursor()
     
     print("=" * 70)
     print("🔄 반복 스캔 종목 분석 리포트")
     print("=" * 70)
     
     # 최근 60일간 데이터 조회
-    cursor.execute('''
-        SELECT date, code, name, score, strategy 
-        FROM scan_rank 
-        WHERE date >= date('now', '-60 days')
-        ORDER BY date DESC
-    ''')
+    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y%m%d')
+    with db_manager.get_cursor(commit=False) as cursor:
+        cursor.execute(
+            """
+            SELECT date, code, name, score, strategy
+            FROM scan_rank
+            WHERE date >= %s
+            ORDER BY date DESC
+            """,
+            (start_date,),
+        )
+        rows = cursor.fetchall()
     
-    data = cursor.fetchall()
+    data = [
+        (
+            row.get("date"),
+            row.get("code"),
+            row.get("name"),
+            row.get("score"),
+            row.get("strategy"),
+        )
+        for row in rows
+    ]
     
     # 종목별 데이터 정리
     stock_data = defaultdict(list)
@@ -172,8 +183,6 @@ def analyze_repeat_scans():
             strategy_count = Counter(strategies)
             main_strategy = strategy_count.most_common(1)[0]
             print(f"   주요전략: {main_strategy[0]} ({main_strategy[1]}회)")
-    
-    conn.close()
     
     print("\n" + "=" * 70)
     print("분석 완료")

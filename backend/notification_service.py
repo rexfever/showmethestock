@@ -1,21 +1,30 @@
-import sqlite3
 import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from daily_update_service import daily_update_service
+from db_manager import db_manager
 
 
 class NotificationService:
-    def __init__(self, db_path: str = "portfolio.db"):
-        self.db_path = db_path
+    def __init__(self):
+        self.init_db()
+    
+    def init_db(self):
+        with db_manager.get_cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS daily_reports (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    report_date TEXT NOT NULL,
+                    report_data TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
     
     def send_daily_portfolio_report(self):
         """일일 포트폴리오 리포트 전송"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # 모든 활성 사용자 조회
+            with db_manager.get_cursor(commit=False) as cursor:
                 cursor.execute("""
                     SELECT DISTINCT user_id FROM portfolio 
                     WHERE status IN ('watching', 'holding')
@@ -88,48 +97,30 @@ class NotificationService:
     def _save_daily_report(self, user_id: int, report: Dict[str, Any]):
         """일일 리포트 저장"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # 리포트 테이블 생성 (없는 경우)
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS daily_reports (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        report_date TEXT NOT NULL,
-                        report_data TEXT NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                # 리포트 저장
+            with db_manager.get_cursor() as cursor:
                 cursor.execute("""
                     INSERT INTO daily_reports (user_id, report_date, report_data)
-                    VALUES (?, ?, ?)
-                """, (user_id, report.get('date'), json.dumps(report)))
-                
-                conn.commit()
-                
+                    VALUES (%s, %s, %s)
+                """, (user_id, report.get('date'), json.dumps(report, ensure_ascii=False)))
         except Exception as e:
             print(f"일일 리포트 저장 오류: {e}")
     
     def get_user_reports(self, user_id: int, days: int = 7) -> List[Dict[str, Any]]:
         """사용자의 최근 리포트 조회"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
+            with db_manager.get_cursor(commit=False) as cursor:
                 cursor.execute("""
                     SELECT report_date, report_data, created_at
                     FROM daily_reports 
-                    WHERE user_id = ? 
+                    WHERE user_id = %s 
                     ORDER BY report_date DESC 
-                    LIMIT ?
+                    LIMIT %s
                 """, (user_id, days))
-                
                 reports = []
                 for row in cursor.fetchall():
                     report_date, report_data, created_at = row
+                    if isinstance(created_at, datetime):
+                        created_at = created_at.isoformat()
                     reports.append({
                         'date': report_date,
                         'data': json.loads(report_data),

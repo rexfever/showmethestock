@@ -3,13 +3,13 @@
 """
 import os
 import json
-import sqlite3
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import calendar
 from collections import Counter, defaultdict
 from services.returns_service import calculate_returns
+from db_manager import db_manager
 import concurrent.futures
 
 logger = logging.getLogger(__name__)
@@ -34,10 +34,6 @@ class ReportGenerator:
         
         self.reports_dir = os.path.join(project_root, "backend", "reports")
         self.db_path = os.path.join(project_root, "backend", "snapshots.db")
-        
-    def _get_db_path(self):
-        """데이터베이스 경로 반환"""
-        return self.db_path
     
     def _save_report(self, report_type: str, filename: str, data: Dict):
         """보고서 파일 저장"""
@@ -70,27 +66,42 @@ class ReportGenerator:
     
     def _get_scan_data(self, start_date: str, end_date: str) -> List[Dict]:
         """지정 기간의 스캔 데이터 조회"""
-        conn = sqlite3.connect(self._get_db_path())
-        cursor = conn.cursor()
-        
         # 날짜 형식 통일: YYYY-MM-DD → YYYYMMDD
         start_compact = start_date.replace('-', '') if '-' in start_date else start_date
         end_compact = end_date.replace('-', '') if '-' in end_date else end_date
         
         try:
-            cursor.execute("""
+            with db_manager.get_cursor(commit=False) as cursor:
+                cursor.execute("""
                 SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-                FROM scan_rank 
-                WHERE date >= ? AND date <= ? AND code != 'NORESULT'
+                FROM scan_rank
+                WHERE date >= %s AND date <= %s AND code != 'NORESULT'
                 ORDER BY date
             """, (start_compact, end_compact))
+                dict_rows = cursor.fetchall()
             
-            rows = cursor.fetchall()
-        except sqlite3.Error as e:
+            rows = [
+                (
+                    row.get("date"),
+                    row.get("code"),
+                    row.get("name"),
+                    row.get("current_price"),
+                    row.get("volume"),
+                    row.get("change_rate"),
+                    row.get("market"),
+                    row.get("strategy"),
+                    row.get("indicators"),
+                    row.get("trend"),
+                    row.get("flags"),
+                    row.get("details"),
+                    row.get("returns"),
+                    row.get("recurrence"),
+                )
+                for row in dict_rows
+            ]
+        except Exception as e:
             logger.error(f"스캔 데이터 조회 오류: {e}")
             rows = []
-        finally:
-            conn.close()
         
         return rows
     
@@ -181,27 +192,32 @@ class ReportGenerator:
     
     def _analyze_repeat_scans(self, start_date: str, end_date: str) -> Dict:
         """반복 스캔 종목 분석"""
-        conn = sqlite3.connect(self._get_db_path())
-        cursor = conn.cursor()
-        
         # 날짜 형식 통일: YYYY-MM-DD → YYYYMMDD
         start_compact = start_date.replace('-', '') if '-' in start_date else start_date
         end_compact = end_date.replace('-', '') if '-' in end_date else end_date
         
         try:
-            cursor.execute("""
+            with db_manager.get_cursor(commit=False) as cursor:
+                cursor.execute("""
                 SELECT date, code, name, strategy 
-                FROM scan_rank 
-                WHERE date >= ? AND date <= ? AND code != 'NORESULT'
+                FROM scan_rank
+                WHERE date >= %s AND date <= %s AND code != 'NORESULT'
                 ORDER BY date DESC
             """, (start_compact, end_compact))
+                dict_rows = cursor.fetchall()
             
-            data = cursor.fetchall()
-        except sqlite3.Error as e:
+            data = [
+                (
+                    row.get("date"),
+                    row.get("code"),
+                    row.get("name"),
+                    row.get("strategy"),
+                )
+                for row in dict_rows
+            ]
+        except Exception as e:
             logger.error(f"반복 스캔 분석 오류: {e}")
             data = []
-        finally:
-            conn.close()
         
         if not data:
             return {"repeat_analysis": None}

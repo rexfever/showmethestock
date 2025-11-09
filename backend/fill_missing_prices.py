@@ -2,55 +2,38 @@
 """
 DB에서 가격 정보가 없는 종목들을 조회하여 스캔 당시 가격을 채워넣는 스크립트
 """
-import os
-import sys
-import sqlite3
 import json
 import logging
 from typing import List, Tuple, Optional
 from kiwoom_api import api
+from db_manager import db_manager
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-def get_db_path():
-    """데이터베이스 경로 반환"""
-    # 현재 스크립트 위치 기준으로 DB 경로 찾기
-    current_file = os.path.abspath(__file__)
-    # fill_missing_prices.py가 있는 디렉토리 (backend)에서 찾기
-    backend_dir = os.path.dirname(current_file)
-    db_path = os.path.join(backend_dir, "snapshots.db")
-    
-    # 존재하지 않으면 프로젝트 루트에서 찾기
-    if not os.path.exists(db_path):
-        project_root = os.path.dirname(backend_dir)
-        db_path = os.path.join(project_root, "backend", "snapshots.db")
-    
-    return db_path
-
-
 def get_missing_price_stocks() -> List[Tuple]:
     """가격 정보가 없는 종목 조회"""
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    try:
-        # current_price가 0이거나 NULL인 종목 조회
+    with db_manager.get_cursor(commit=False) as cursor:
         cursor.execute("""
             SELECT date, code, name, indicators
             FROM scan_rank
             WHERE (current_price IS NULL OR current_price = 0 OR current_price < 1000)
-            AND code != 'NORESULT'
+              AND code != 'NORESULT'
             ORDER BY date DESC, code
         """)
-        
         rows = cursor.fetchall()
-        logger.info(f"가격 정보가 없는 종목: {len(rows)}개")
-        return rows
-    finally:
-        conn.close()
+    
+    logger.info(f"가격 정보가 없는 종목: {len(rows)}개")
+    return [
+        (
+            row.get("date"),
+            row.get("code"),
+            row.get("name"),
+            row.get("indicators"),
+        )
+        for row in rows
+    ]
 
 
 def get_price_from_indicators(indicators_json: str) -> Optional[float]:
@@ -111,33 +94,24 @@ def get_price_from_api(ticker: str, scan_date: str) -> Optional[float]:
 
 def update_price(date: str, code: str, price: float, volume: Optional[int] = None) -> bool:
     """DB에 가격 정보 업데이트"""
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
     try:
-        if volume is not None:
-            cursor.execute("""
-                UPDATE scan_rank
-                SET current_price = ?, volume = ?
-                WHERE date = ? AND code = ?
-            """, (price, volume, date, code))
-        else:
-            cursor.execute("""
-                UPDATE scan_rank
-                SET current_price = ?
-                WHERE date = ? AND code = ?
-            """, (price, date, code))
-        
-        conn.commit()
-        updated = cursor.rowcount > 0
-        return updated
+        with db_manager.get_cursor(commit=True) as cursor:
+            if volume is not None:
+                cursor.execute("""
+                    UPDATE scan_rank
+                    SET current_price = %s, volume = %s
+                    WHERE date = %s AND code = %s
+                """, (price, volume, date, code))
+            else:
+                cursor.execute("""
+                    UPDATE scan_rank
+                    SET current_price = %s
+                    WHERE date = %s AND code = %s
+                """, (price, date, code))
+            return cursor.rowcount > 0
     except Exception as e:
         logger.error(f"가격 업데이트 실패 ({code}, {date}): {e}")
-        conn.rollback()
         return False
-    finally:
-        conn.close()
 
 
 def fill_missing_prices(dry_run: bool = False, limit: Optional[int] = None):

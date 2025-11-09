@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import hashlib
 import secrets
 from datetime import datetime, timedelta
@@ -7,7 +6,9 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from auth_models import User, UserCreate, TokenData, EmailSignupRequest, EmailLoginRequest, MembershipTier, SubscriptionStatus
+from psycopg.errors import UniqueViolation
 from email_service import email_service, email_verification_service
+from db_manager import db_manager
 
 # JWT 설정
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
@@ -18,42 +19,54 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7일 (10080분)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
-    def __init__(self, db_path: str = "snapshots.db"):
-        self.db_path = db_path
+    def __init__(self):
         self.init_db()
+    
+    def _row_to_user(self, row) -> Optional[User]:
+        if not row:
+            return None
+        return User(
+            id=row[0],
+            email=row[1],
+            name=row[2],
+            provider=row[3],
+            provider_id=row[4],
+            membership_tier=MembershipTier(row[5]) if row[5] else MembershipTier.FREE,
+            subscription_status=SubscriptionStatus(row[6]) if row[6] else SubscriptionStatus.ACTIVE,
+            subscription_expires_at=row[7],
+            payment_method=row[8],
+            is_admin=bool(row[9]),
+            created_at=row[10],
+            last_login=row[11],
+            is_active=bool(row[12]),
+        )
     
     def init_db(self):
         """사용자 테이블 초기화"""
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE NOT NULL,
-                name TEXT NOT NULL,
-                provider TEXT NOT NULL,
-                provider_id TEXT NOT NULL,
-                password_hash TEXT,
-                is_email_verified BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_login TIMESTAMP,
-                is_active BOOLEAN DEFAULT 1,
-                membership_tier TEXT DEFAULT 'free',
-                subscription_status TEXT DEFAULT 'active',
-                subscription_expires_at TEXT,
-                payment_method TEXT,
-                is_admin BOOLEAN DEFAULT 0,
-                UNIQUE(provider, provider_id)
-            )
-        """)
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    name TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    provider_id TEXT NOT NULL,
+                    password_hash TEXT,
+                    is_email_verified BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    last_login TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    membership_tier TEXT DEFAULT 'free',
+                    subscription_status TEXT DEFAULT 'active',
+                    subscription_expires_at TIMESTAMP,
+                    payment_method TEXT,
+                    is_admin BOOLEAN DEFAULT FALSE,
+                    UNIQUE(provider, provider_id)
+                )
+            """)
     
     def create_user(self, user: UserCreate) -> User:
         """새 사용자 생성 또는 기존 사용자 업데이트"""
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
         try:
             # 먼저 이메일로 기존 사용자 확인
             existing_user = self.get_user_by_email(user.email)
@@ -64,11 +77,11 @@ class AuthService:
                 # provider가 다르면 업데이트
                 if existing_user.provider != user.provider:
                     print(f"provider 업데이트: {existing_user.provider} -> {user.provider}")
-                    cur.execute("""
-                        UPDATE users SET provider = ?, provider_id = ?, name = ?
-                        WHERE email = ?
-                    """, (user.provider, user.provider_id, user.name, user.email))
-                    conn.commit()
+                    with db_manager.get_cursor() as cur:
+                        cur.execute("""
+                            UPDATE users SET provider = %s, provider_id = %s, name = %s
+                            WHERE email = %s
+                        """, (user.provider, user.provider_id, user.name, user.email))
                     print("사용자 정보 업데이트 완료")
                 
                 # 업데이트된 사용자 정보 반환
@@ -78,22 +91,32 @@ class AuthService:
             else:
                 # 새 사용자 생성
                 print(f"새 사용자 생성: email={user.email}, name={user.name}, provider={user.provider}, provider_id={user.provider_id}")
-                cur.execute("""
-                    INSERT INTO users (email, name, provider, provider_id, membership_tier, subscription_status, is_active, is_admin)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (user.email, user.name, user.provider, user.provider_id, 
-                      user.membership_tier.value, user.subscription_status.value, 
-                      user.is_active, user.is_admin))
-                
-                user_id = cur.lastrowid
+                with db_manager.get_connection() as conn:
+                    cur = conn.cursor()
+                    cur.execute("""
+                        INSERT INTO users (
+                            email, name, provider, provider_id, membership_tier,
+                            subscription_status, is_active, is_admin
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        user.email,
+                        user.name,
+                        user.provider,
+                        user.provider_id,
+                        user.membership_tier.value,
+                        user.subscription_status.value,
+                        user.is_active,
+                        user.is_admin,
+                    ))
+                    user_id = cur.fetchone()[0]
+                    conn.commit()
                 print(f"새 사용자 생성 완료: user_id={user_id}")
-                conn.commit()
-                
                 result = self.get_user_by_id(user_id)
                 print(f"생성된 사용자: {result}")
                 return result
                 
-        except sqlite3.IntegrityError as e:
+        except UniqueViolation as e:
             print(f"IntegrityError 발생: {e}")
             # provider로 사용자 조회 시도
             result = self.get_user_by_provider(user.provider, user.provider_id)
@@ -108,116 +131,47 @@ class AuthService:
         except Exception as e:
             print(f"기타 오류 발생: {e}")
             raise
-        finally:
-            conn.close()
     
     def get_user_by_id(self, user_id: int) -> Optional[User]:
         """ID로 사용자 조회"""
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
-        cur.execute("""
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
             SELECT id, email, name, provider, provider_id, membership_tier, subscription_status, 
                    subscription_expires_at, payment_method, is_admin, created_at, last_login, is_active
-            FROM users WHERE id = ?
+            FROM users WHERE id = %s
         """, (user_id,))
-        
-        row = cur.fetchone()
-        conn.close()
-        
-        if row:
-            return User(
-                id=row[0],
-                email=row[1],
-                name=row[2],
-                provider=row[3],
-                provider_id=row[4],
-                membership_tier=MembershipTier(row[5]) if row[5] and row[5] != '' else MembershipTier.FREE,
-                subscription_status=SubscriptionStatus(row[6]) if row[6] and row[6] != '' else SubscriptionStatus.ACTIVE,
-                subscription_expires_at=datetime.fromisoformat(row[7]) if row[7] else None,
-                payment_method=row[8],
-                is_admin=bool(row[9]),
-                created_at=datetime.fromisoformat(row[10]),
-                last_login=datetime.fromisoformat(row[11]) if row[11] else None,
-                is_active=bool(row[12])
-            )
-        return None
+            row = cur.fetchone()
+        return self._row_to_user(row)
     
     def get_user_by_email(self, email: str) -> Optional[User]:
         """이메일로 사용자 조회"""
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
-        cur.execute("""
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
             SELECT id, email, name, provider, provider_id, membership_tier, subscription_status, 
                    subscription_expires_at, payment_method, is_admin, created_at, last_login, is_active
-            FROM users WHERE email = ?
+            FROM users WHERE email = %s
         """, (email,))
-        
-        row = cur.fetchone()
-        conn.close()
-        
-        if row:
-            return User(
-                id=row[0],
-                email=row[1],
-                name=row[2],
-                provider=row[3],
-                provider_id=row[4],
-                membership_tier=MembershipTier(row[5]) if row[5] and row[5] != '' else MembershipTier.FREE,
-                subscription_status=SubscriptionStatus(row[6]) if row[6] and row[6] != '' else SubscriptionStatus.ACTIVE,
-                subscription_expires_at=datetime.fromisoformat(row[7]) if row[7] else None,
-                payment_method=row[8],
-                is_admin=bool(row[9]),
-                created_at=datetime.fromisoformat(row[10]),
-                last_login=datetime.fromisoformat(row[11]) if row[11] else None,
-                is_active=bool(row[12])
-            )
-        return None
+            row = cur.fetchone()
+        return self._row_to_user(row)
     
     def get_user_by_provider(self, provider: str, provider_id: str) -> Optional[User]:
         """소셜 로그인 제공자로 사용자 조회"""
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
-        cur.execute("""
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
             SELECT id, email, name, provider, provider_id, membership_tier, subscription_status, 
                    subscription_expires_at, payment_method, is_admin, created_at, last_login, is_active
-            FROM users WHERE provider = ? AND provider_id = ?
+            FROM users WHERE provider = %s AND provider_id = %s
         """, (provider, provider_id))
-        
-        row = cur.fetchone()
-        conn.close()
-        
-        if row:
-            return User(
-                id=row[0],
-                email=row[1],
-                name=row[2],
-                provider=row[3],
-                provider_id=row[4],
-                membership_tier=MembershipTier(row[5]) if row[5] and row[5] != '' else MembershipTier.FREE,
-                subscription_status=SubscriptionStatus(row[6]) if row[6] and row[6] != '' else SubscriptionStatus.ACTIVE,
-                subscription_expires_at=datetime.fromisoformat(row[7]) if row[7] else None,
-                payment_method=row[8],
-                is_admin=bool(row[9]),
-                created_at=datetime.fromisoformat(row[10]),
-                last_login=datetime.fromisoformat(row[11]) if row[11] else None,
-                is_active=bool(row[12])
-            )
-        return None
+            row = cur.fetchone()
+        return self._row_to_user(row)
     
     def update_last_login(self, user_id: int):
         """마지막 로그인 시간 업데이트"""
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
-        """, (user_id,))
-        
-        conn.commit()
-        conn.close()
+        with db_manager.get_cursor(commit=True) as cur:
+            cur.execute(
+                "UPDATE users SET last_login = NOW() WHERE id = %s",
+                (user_id,),
+            )
     
     def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         """JWT 액세스 토큰 생성"""
@@ -273,21 +227,15 @@ class AuthService:
         # 비밀번호 해싱
         password_hash = pwd_context.hash(signup_request.password)
         
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
         try:
-            cur.execute("""
-                INSERT INTO users (email, name, provider, provider_id, password_hash, is_email_verified)
-                VALUES (?, ?, 'local', ?, ?, 0)
-            """, (signup_request.email, signup_request.name, signup_request.email, password_hash))
-            
-            conn.commit()
+            with db_manager.get_cursor(commit=True) as cur:
+                cur.execute("""
+                    INSERT INTO users (email, name, provider, provider_id, password_hash, is_email_verified)
+                    VALUES (%s, %s, 'local', %s, %s, FALSE)
+                """, (signup_request.email, signup_request.name, signup_request.email, password_hash))
             return True
-        except sqlite3.IntegrityError:
+        except UniqueViolation:
             return False
-        finally:
-            conn.close()
     
     def verify_email_user(self, email: str, password: str) -> Optional[User]:
         """이메일 로그인 사용자 인증"""
@@ -295,12 +243,9 @@ class AuthService:
         if not user or user.provider != 'local':
             return None
         
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        
-        cur.execute("SELECT password_hash FROM users WHERE email = ?", (email,))
-        row = cur.fetchone()
-        conn.close()
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("SELECT password_hash FROM users WHERE email = %s", (email,))
+            row = cur.fetchone()
         
         if row and pwd_context.verify(password, row[0]):
             return user
@@ -320,11 +265,11 @@ class AuthService:
         """이메일 인증 코드 검증"""
         if email_verification_service.verify_code(email, verification_code, 'signup'):
             # 이메일 인증 완료 처리
-            conn = sqlite3.connect(self.db_path)
-            cur = conn.cursor()
-            cur.execute("UPDATE users SET is_email_verified = 1 WHERE email = ?", (email,))
-            conn.commit()
-            conn.close()
+            with db_manager.get_cursor(commit=True) as cur:
+                cur.execute(
+                    "UPDATE users SET is_email_verified = TRUE WHERE email = %s",
+                    (email,),
+                )
             return True
         return False
     
@@ -347,11 +292,11 @@ class AuthService:
         if email_verification_service.verify_code(email, verification_code, 'password_reset'):
             # 비밀번호 업데이트
             password_hash = pwd_context.hash(new_password)
-            conn = sqlite3.connect(self.db_path)
-            cur = conn.cursor()
-            cur.execute("UPDATE users SET password_hash = ? WHERE email = ?", (password_hash, email))
-            conn.commit()
-            conn.close()
+            with db_manager.get_cursor(commit=True) as cur:
+                cur.execute(
+                    "UPDATE users SET password_hash = %s WHERE email = %s",
+                    (password_hash, email),
+                )
             return True
         return False
 

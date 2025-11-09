@@ -32,6 +32,12 @@ class Config:
     universe_kosdaq: int = int(os.getenv("UNIVERSE_KOSDAQ", str(_env_overrides.get("universe_kosdaq", 25))))
     ohlcv_count: int = int(os.getenv("OHLCV_COUNT", "220"))
 
+    # 데이터베이스
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        os.getenv("POSTGRES_DSN", os.getenv("DB_URL", "")),
+    )
+
     # === Tight preset ===
     min_signals: int = int(os.getenv("MIN_SIGNALS", "2"))              # 3 -> 2 (현실적)
     macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "0.0"))        # -10 -> 0 (음모멘텀 제외)

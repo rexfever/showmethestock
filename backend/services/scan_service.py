@@ -1,7 +1,6 @@
 """
 스캔 관련 서비스
 """
-import sqlite3
 import json
 import pandas as pd
 from typing import List, Dict, Optional
@@ -9,11 +8,24 @@ from datetime import datetime
 from scanner import scan_with_preset
 from config import config
 from kiwoom_api import api
+from db_manager import db_manager
 
 
-def _db_path() -> str:
-    """데이터베이스 경로 반환"""
-    return "snapshots.db"
+def _ensure_scan_rank_table(cursor) -> None:
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scan_rank(
+            date TEXT NOT NULL,
+            code TEXT NOT NULL,
+            name TEXT,
+            score DOUBLE PRECISION,
+            flags TEXT,
+            score_label TEXT,
+            close_price DOUBLE PRECISION,
+            volume DOUBLE PRECISION,
+            change_rate DOUBLE PRECISION,
+            PRIMARY KEY (date, code)
+        )
+    """)
 
 
 def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]:
@@ -24,22 +36,19 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
         return recurrence_data
     
     try:
-        conn_hist = sqlite3.connect(_db_path(), timeout=30.0, check_same_thread=False)
-        conn_hist.execute("PRAGMA journal_mode=WAL")
-        conn_hist.execute("PRAGMA synchronous=NORMAL")
-        cur_hist = conn_hist.cursor()
-        cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, PRIMARY KEY(date, code))")
-        
-        # 모든 종목의 재등장 이력을 한 번에 조회
-        placeholders = ','.join(['?' for _ in tickers])
-        query = f"SELECT code, date FROM scan_rank WHERE code IN ({placeholders}) ORDER BY code, date DESC"
-        
-        rows = cur_hist.execute(query, tickers).fetchall()
-        conn_hist.close()
+        with db_manager.get_cursor(commit=False) as cur_hist:
+            _ensure_scan_rank_table(cur_hist)
+            cur_hist.execute("""
+                SELECT code, date
+                FROM scan_rank
+                WHERE code = ANY(%s)
+                ORDER BY code, date DESC
+            """, (tickers,))
+            rows = cur_hist.fetchall()
         
         # 결과를 종목별로 그룹화
         for ticker in tickers:
-            prev_dates = [str(row[1]) for row in rows if row[0] == ticker and str(row[1]) < today_as_of]
+            prev_dates = [str(row["date"]) for row in rows if row["code"] == ticker and str(row["date"]) < today_as_of]
             if prev_dates:
                 last_as_of = prev_dates[0]
                 first_as_of = prev_dates[-1]
@@ -80,77 +89,64 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
 def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
     """스캔 스냅샷 저장"""
     try:
-        conn_hist = sqlite3.connect(_db_path(), timeout=30.0, check_same_thread=False)
-        conn_hist.execute("PRAGMA journal_mode=WAL")
-        conn_hist.execute("PRAGMA synchronous=NORMAL")
-        conn_hist.execute("PRAGMA cache_size=10000")
-        conn_hist.execute("PRAGMA temp_store=memory")
-        cur_hist = conn_hist.cursor()
-        cur_hist.execute("CREATE TABLE IF NOT EXISTS scan_rank(date TEXT, code TEXT, name TEXT, score REAL, flags TEXT, score_label TEXT, close_price REAL, volume REAL, change_rate REAL, PRIMARY KEY(date, code))")
-        # 기존 테이블에 컬럼이 없으면 추가
-        try:
-            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN name TEXT")
-        except sqlite3.OperationalError:
-            pass
-        try:
-            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN close_price REAL")
-        except sqlite3.OperationalError:
-            pass
-        try:
-            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN volume REAL")
-        except sqlite3.OperationalError:
-            pass
-        try:
-            cur_hist.execute("ALTER TABLE scan_rank ADD COLUMN change_rate REAL")
-        except sqlite3.OperationalError:
-            pass
+        with db_manager.get_cursor(commit=True) as cur_hist:
+            _ensure_scan_rank_table(cur_hist)
         
-        # 스냅샷에는 핵심 메타/랭킹만 저장(용량 절약)
-        enhanced_rank = []
-        for it in scan_items:
-            try:
-                # 최신 OHLCV 데이터 가져오기 (스냅샷 생성 시점)
-                df = api.get_ohlcv(it["ticker"], 2)  # 최근 2일 데이터 (전일 대비 변동률 계산용)
-                if not df.empty:
-                    latest = df.iloc[-1]
-                    prev = df.iloc[-2] if len(df) > 1 else None
-                    change_rate = (latest.close - prev.close) / prev.close if prev is not None and prev.close else 0.0
-                    enhanced_rank.append({
-                        "date": today_as_of,
-                        "code": it["ticker"],
-                        "name": it["name"],
-                        "score": it["score"],
-                        "flags": json.dumps(it["flags"]),
-                        "score_label": it["score_label"],
-                        "close_price": latest.close,
-                        "volume": latest.volume,
-                        "change_rate": change_rate,
-                    })
-            except Exception:
-                continue
+            enhanced_rank = []
+            for it in scan_items:
+                try:
+                    df = api.get_ohlcv(it["ticker"], 2)
+                    if not df.empty:
+                        latest = df.iloc[-1]
+                        prev = df.iloc[-2] if len(df) > 1 else None
+                        change_rate = (latest.close - prev.close) / prev.close if prev is not None and prev.close else 0.0
+                        enhanced_rank.append({
+                            "date": today_as_of,
+                            "code": it["ticker"],
+                            "name": it["name"],
+                            "score": it["score"],
+                            "flags": json.dumps(it["flags"], ensure_ascii=False),
+                            "score_label": it["score_label"],
+                            "close_price": float(latest.close),
+                            "volume": float(latest.volume),
+                            "change_rate": float(change_rate),
+                        })
+                except Exception:
+                    continue
         
-        # 기존 스냅샷 삭제
-        cur_hist.execute("DELETE FROM scan_rank WHERE date=?", (today_as_of,))
-        
-        # 스캔 결과가 0개인 경우 NORESULT 레코드 추가
-        if not scan_items:
-            print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of}")
-            cur_hist.execute(
-                "INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}), "추천종목 없음", 0.0, 0.0, 0.0)
-            )
-        elif enhanced_rank:
-            cur_hist.executemany("INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                [(r["date"], r["code"], r["name"], r["score"], r["flags"], r["score_label"], r["close_price"], r["volume"], r["change_rate"]) for r in enhanced_rank])
-        else:
-            # enhanced_rank도 비어있으면 NORESULT 저장
-            print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of}")
-            cur_hist.execute(
-                "INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}), "추천종목 없음", 0.0, 0.0, 0.0)
-            )
-        conn_hist.commit()
-        conn_hist.close()
+            cur_hist.execute("DELETE FROM scan_rank WHERE date = %s", (today_as_of,))
+            
+            if not scan_items:
+                print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of}")
+                cur_hist.execute(
+                    """
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
+                     "추천종목 없음", 0.0, 0.0, 0.0)
+                )
+            elif enhanced_rank:
+                cur_hist.executemany("""
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, [
+                    (
+                        r["date"], r["code"], r["name"], r["score"], r["flags"],
+                        r["score_label"], r["close_price"], r["volume"], r["change_rate"]
+                    )
+                    for r in enhanced_rank
+                ])
+            else:
+                print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of}")
+                cur_hist.execute(
+                    """
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
+                     "추천종목 없음", 0.0, 0.0, 0.0)
+                )
     except Exception as e:
         print(f"스냅샷 저장 오류: {e}")
 
