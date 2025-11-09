@@ -230,17 +230,51 @@ def send_auto_notification(matched_count):
     except Exception as e:
         logger.error(f"자동 알림 발송 중 오류 발생: {str(e)}")
 
+def run_validation():
+    """데이터 확정 시점 검증 (15:31~15:40)"""
+    if not is_trading_day():
+        return
+    
+    try:
+        logger.info("🔍 장세 데이터 검증을 시작합니다...")
+        import subprocess
+        result = subprocess.run(
+            ["python", "validate_market_data_timing.py"],
+            cwd="/home/ubuntu/showmethestock/backend",
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            logger.info("✅ 검증 완료")
+        else:
+            logger.error(f"❌ 검증 실패: {result.stderr}")
+    except Exception as e:
+        logger.error(f"검증 중 오류 발생: {str(e)}")
+
 def setup_scheduler():
     """스케줄러 설정 - KST 기준"""
-    # 매일 오후 3시 35분에 장세 분석 실행 (장 마감 데이터 안정화 후) - KST 기준
-    schedule.every().day.at("15:35").do(run_market_analysis)
+    # 데이터 확정 시점 검증 (15:31~15:40, 매분)
+    schedule.every().day.at("15:31").do(run_validation)
+    schedule.every().day.at("15:32").do(run_validation)
+    schedule.every().day.at("15:33").do(run_validation)
+    schedule.every().day.at("15:34").do(run_validation)
+    schedule.every().day.at("15:35").do(run_validation)
+    schedule.every().day.at("15:36").do(run_validation)
+    schedule.every().day.at("15:37").do(run_validation)
+    schedule.every().day.at("15:38").do(run_validation)
+    schedule.every().day.at("15:39").do(run_validation)
+    schedule.every().day.at("15:40").do(run_validation)
     
-    # 매일 오후 3시 40분에 스캔 실행 (장세 분석 후) - KST 기준
-    schedule.every().day.at("15:40").do(run_scan)
+    # 매일 오후 3시 40분에 장세 분석 실행 (데이터 확정 후) - KST 기준
+    schedule.every().day.at("15:40").do(run_market_analysis)
+    
+    # 매일 오후 3시 42분에 스캔 실행 (장세 분석 후) - KST 기준
+    schedule.every().day.at("15:42").do(run_scan)
     
     logger.info("자동 스케줄러가 설정되었습니다.")
-    logger.info("- 매일 오후 3:35 KST: 장세 분석 실행")
-    logger.info("- 매일 오후 3:40 KST: 스캔 실행 (장 마감 후)")
+    logger.info("- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)")
+    logger.info("- 매일 오후 3:40 KST: 장세 분석 실행")
+    logger.info("- 매일 오후 3:42 KST: 스캔 실행")
     logger.info("- 주말과 공휴일은 자동으로 제외됩니다.")
 
 def run_scheduler():

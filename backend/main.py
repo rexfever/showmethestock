@@ -4116,5 +4116,82 @@ def get_test_scan_result(scenario: str):
         "test_scenario": scenario_data["name"]
     }
 
+@app.get("/admin/market-validation")
+async def get_market_validation(date: str = None):
+    """장세 데이터 검증 결과 조회 (관리자용)"""
+    try:
+        from datetime import datetime, timedelta
+        
+        # 날짜 파라미터 처리
+        if date:
+            target_date = datetime.strptime(date, '%Y%m%d').date()
+        else:
+            target_date = datetime.now().date()
+        
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT 
+                    analysis_date,
+                    analysis_time,
+                    kospi_return,
+                    kospi_close,
+                    kospi_prev_close,
+                    samsung_return,
+                    samsung_close,
+                    samsung_prev_close,
+                    data_available,
+                    data_complete,
+                    error_message,
+                    created_at
+                FROM market_analysis_validation
+                WHERE analysis_date = %s
+                ORDER BY analysis_time
+            """, (target_date,))
+            
+            rows = cur.fetchall()
+        
+        if not rows:
+            return {
+                "ok": False,
+                "error": f"해당 날짜({target_date})의 검증 데이터가 없습니다."
+            }
+        
+        # 결과 변환
+        validations = []
+        for row in rows:
+            validations.append({
+                "time": str(row["analysis_time"])[:5],  # HH:MM
+                "kospi_return": round(row["kospi_return"] * 100, 2) if row["kospi_return"] else None,
+                "kospi_close": row["kospi_close"],
+                "samsung_return": round(row["samsung_return"] * 100, 2) if row["samsung_return"] else None,
+                "samsung_close": row["samsung_close"],
+                "data_available": row["data_available"],
+                "data_complete": row["data_complete"],
+                "error_message": row["error_message"]
+            })
+        
+        # 데이터 확정 시점 분석
+        first_complete = None
+        for v in validations:
+            if v["data_complete"]:
+                first_complete = v["time"]
+                break
+        
+        return {
+            "ok": True,
+            "data": {
+                "date": str(target_date),
+                "validations": validations,
+                "first_complete_time": first_complete,
+                "total_checks": len(validations)
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": f"검증 데이터 조회 중 오류: {str(e)}"
+        }
+
 # 라우터 포함
 app.include_router(recurrence_router)
