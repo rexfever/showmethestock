@@ -1768,10 +1768,10 @@ async def get_scan_by_date(date: str):
                 else:
                     keys = [
                         "market_sentiment", "sentiment_score", "kospi_return", "volatility", "rsi_threshold",
-                        "sector_rotation", "foreign_flow", "volume_trend",
+                        "sector_rotation", "foreign_flow", "institution_flow", "volume_trend",
                         "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max",
                         "trend_metrics", "breadth_metrics", "flow_metrics", "sector_metrics", "volatility_metrics",
-                        "foreign_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
+                        "foreign_flow_label", "institution_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
                     ]
                     values = dict(zip(keys, row_mc))
                 
@@ -1955,10 +1955,10 @@ def get_latest_scan_from_db():
             with db_manager.get_cursor(commit=False) as cur_mc:
                 cur_mc.execute("""
                     SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
-                           sector_rotation, foreign_flow, volume_trend,
+                           sector_rotation, foreign_flow, institution_flow, volume_trend,
                            min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                            trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                           foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                           foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
                     FROM market_conditions WHERE date = %s
                 """, (raw_date,))
                 row_mc = cur_mc.fetchone()
@@ -1969,10 +1969,10 @@ def get_latest_scan_from_db():
                 else:
                     keys = [
                         "market_sentiment", "sentiment_score", "kospi_return", "volatility", "rsi_threshold",
-                        "sector_rotation", "foreign_flow", "volume_trend",
+                        "sector_rotation", "foreign_flow", "institution_flow", "volume_trend",
                         "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max",
                         "trend_metrics", "breadth_metrics", "flow_metrics", "sector_metrics", "volatility_metrics",
-                        "foreign_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
+                        "foreign_flow_label", "institution_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
                     ]
                     values = dict(zip(keys, row_mc))
                 
@@ -1992,6 +1992,7 @@ def get_latest_scan_from_db():
                 adjusted_params = _ensure_json(values.get("adjusted_params"))
                 sentiment_score = values.get("sentiment_score") or 0.0
                 foreign_flow_label = values.get("foreign_flow_label") or values.get("foreign_flow") or "neutral"
+                institution_flow_label = values.get("institution_flow_label") or values.get("institution_flow") or "neutral"
                 volume_trend_label = values.get("volume_trend_label") or values.get("volume_trend") or "normal"
                 analysis_notes = values.get("analysis_notes")
 
@@ -2004,6 +2005,7 @@ def get_latest_scan_from_db():
                     rsi_threshold=values.get("rsi_threshold"),
                     sector_rotation=values.get("sector_rotation"),
                     foreign_flow=values.get("foreign_flow"),
+                    institution_flow=values.get("institution_flow"),
                     volume_trend=values.get("volume_trend"),
                     min_signals=values.get("min_signals"),
                     macd_osc_min=values.get("macd_osc_min"),
@@ -2017,6 +2019,7 @@ def get_latest_scan_from_db():
                     sector_metrics=sector_metrics,
                     volatility_metrics=volatility_metrics,
                     foreign_flow_label=foreign_flow_label,
+                    institution_flow_label=institution_flow_label,
                     volume_trend_label=volume_trend_label,
                     adjusted_params=adjusted_params,
                     analysis_notes=analysis_notes,
