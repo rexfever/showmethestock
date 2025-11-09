@@ -8,8 +8,9 @@ import Header from '../components/Header';
 import BottomNavigation from '../components/BottomNavigation';
 import PopupNotice from '../components/PopupNotice';
 import MarketGuide from '../components/MarketGuide';
+import MarketConditionCard from '../components/MarketConditionCard';
 
-export default function CustomerScanner({ initialData, initialScanFile, initialScanDate }) {
+export default function CustomerScanner({ initialData, initialScanFile, initialScanDate, initialMarketCondition }) {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   
@@ -26,6 +27,7 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
   const [selectedStock, setSelectedStock] = useState(null);
   const [investmentLoading, setInvestmentLoading] = useState(false);
   const [marketGuide, setMarketGuide] = useState(null);
+  const [marketCondition, setMarketCondition] = useState(initialMarketCondition || null);
   const [maintenanceStatus, setMaintenanceStatus] = useState({
     is_enabled: false,
     end_date: null,
@@ -155,6 +157,11 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
         // market_guide를 별도 state로 관리
         if (data.data.market_guide) {
           setMarketGuide(data.data.market_guide);
+        }
+        
+        // market_condition을 별도 state로 관리
+        if (data.data.market_condition) {
+          setMarketCondition(data.data.market_condition);
         }
         
         // market_guide를 첫 번째 아이템에 추가 (호환성)
@@ -396,6 +403,11 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
 
         {/* 스캔 결과 목록 */}
         <div className="p-4 space-y-3">
+          {/* Market Condition Card - 장세 분석 결과 */}
+          {marketCondition && (
+            <MarketConditionCard marketCondition={marketCondition} />
+          )}
+          
           {/* Market Guide 섹션 - 항상 표시 */}
           {marketGuide && (
             <MarketGuide marketGuide={marketGuide} />
@@ -663,11 +675,13 @@ export async function getServerSideProps() {
       console.log('SSR: Returning', items.length, 'items');
       console.log('SSR: scanDate:', scanDate);
       console.log('SSR: market_guide:', data.data.market_guide);
+      console.log('SSR: market_condition:', data.data.market_condition ? 'exists' : 'null');
       return {
         props: {
           initialData: items,
           initialScanFile: data.file || '',
-          initialScanDate: scanDate
+          initialScanDate: scanDate,
+          initialMarketCondition: data.data.market_condition || null
         }
       };
     } else {
@@ -683,7 +697,8 @@ export async function getServerSideProps() {
     props: {
       initialData: [],
       initialScanFile: '',
-      initialScanDate: ''
+      initialScanDate: '',
+      initialMarketCondition: null
     }
   };
 }
