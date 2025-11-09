@@ -17,7 +17,7 @@ export default function MarketConditionCard({ marketCondition }) {
       message: '시장이 활발하게 움직이고 있어요',
       color: 'bg-green-50 border-green-200',
       textColor: 'text-green-700',
-      advice: '좋은 종목을 찾기 좋은 날입니다'
+      advice: '추천 종목에 적극적으로 투자해보세요'
     },
     'neutral': {
       emoji: '📊',
@@ -25,7 +25,7 @@ export default function MarketConditionCard({ marketCondition }) {
       message: '시장이 안정적으로 움직이고 있어요',
       color: 'bg-blue-50 border-blue-200',
       textColor: 'text-blue-700',
-      advice: '신중하게 종목을 선별하세요'
+      advice: '추천 종목에 투자하되 분할 매수하세요'
     },
     'bear': {
       emoji: '📉',
@@ -33,7 +33,7 @@ export default function MarketConditionCard({ marketCondition }) {
       message: '시장이 조정을 받고 있어요',
       color: 'bg-orange-50 border-orange-200',
       textColor: 'text-orange-700',
-      advice: '보수적으로 접근하는 것이 좋습니다'
+      advice: '소액으로 분할 매수를 고려하세요'
     },
     'crash': {
       emoji: '⚠️',
@@ -41,7 +41,7 @@ export default function MarketConditionCard({ marketCondition }) {
       message: '시장이 크게 하락하고 있어요',
       color: 'bg-red-50 border-red-200',
       textColor: 'text-red-700',
-      advice: '투자를 쉬는 것을 권장합니다'
+      advice: '오늘은 투자를 쉬는 것을 권장합니다'
     }
   };
 
