@@ -4159,15 +4159,35 @@ async def get_market_validation(date: str = None):
         # 결과 변환
         validations = []
         for row in rows:
+            # row가 dict인지 tuple인지 확인
+            if isinstance(row, dict):
+                data = row
+            else:
+                # tuple인 경우 컬럼명으로 매핑
+                data = {
+                    "analysis_date": row[0],
+                    "analysis_time": row[1],
+                    "kospi_return": row[2],
+                    "kospi_close": row[3],
+                    "kospi_prev_close": row[4],
+                    "samsung_return": row[5],
+                    "samsung_close": row[6],
+                    "samsung_prev_close": row[7],
+                    "data_available": row[8],
+                    "data_complete": row[9],
+                    "error_message": row[10],
+                    "created_at": row[11]
+                }
+            
             validations.append({
-                "time": str(row["analysis_time"])[:5],  # HH:MM
-                "kospi_return": round(row["kospi_return"] * 100, 2) if row["kospi_return"] else None,
-                "kospi_close": row["kospi_close"],
-                "samsung_return": round(row["samsung_return"] * 100, 2) if row["samsung_return"] else None,
-                "samsung_close": row["samsung_close"],
-                "data_available": row["data_available"],
-                "data_complete": row["data_complete"],
-                "error_message": row["error_message"]
+                "time": str(data["analysis_time"])[:5],  # HH:MM
+                "kospi_return": round(data["kospi_return"] * 100, 2) if data["kospi_return"] else None,
+                "kospi_close": data["kospi_close"],
+                "samsung_return": round(data["samsung_return"] * 100, 2) if data["samsung_return"] else None,
+                "samsung_close": data["samsung_close"],
+                "data_available": data["data_available"],
+                "data_complete": data["data_complete"],
+                "error_message": data["error_message"]
             })
         
         # 데이터 확정 시점 분석
