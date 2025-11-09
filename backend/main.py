@@ -62,6 +62,7 @@ def create_market_conditions_table(cur):
         CREATE TABLE IF NOT EXISTS market_conditions(
             date TEXT NOT NULL PRIMARY KEY,
             market_sentiment TEXT NOT NULL,
+            sentiment_score NUMERIC(5,2) DEFAULT 0,
             kospi_return REAL,
             volatility REAL,
             rsi_threshold REAL,
@@ -73,7 +74,17 @@ def create_market_conditions_table(cur):
             vol_ma5_mult REAL,
             gap_max REAL,
             ext_from_tema20_max REAL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            trend_metrics JSONB DEFAULT '{}'::JSONB,
+            breadth_metrics JSONB DEFAULT '{}'::JSONB,
+            flow_metrics JSONB DEFAULT '{}'::JSONB,
+            sector_metrics JSONB DEFAULT '{}'::JSONB,
+            volatility_metrics JSONB DEFAULT '{}'::JSONB,
+            foreign_flow_label TEXT,
+            volume_trend_label TEXT,
+            adjusted_params JSONB DEFAULT '{}'::JSONB,
+            analysis_notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
@@ -261,12 +272,15 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                     create_market_conditions_table(cur)
                     cur.execute("""
                         INSERT INTO market_conditions(
-                            date, market_sentiment, kospi_return, volatility, rsi_threshold,
+                            date, market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
                             sector_rotation, foreign_flow, volume_trend,
-                            min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                            trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                            foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (date) DO UPDATE SET
                             market_sentiment = EXCLUDED.market_sentiment,
+                            sentiment_score = EXCLUDED.sentiment_score,
                             kospi_return = EXCLUDED.kospi_return,
                             volatility = EXCLUDED.volatility,
                             rsi_threshold = EXCLUDED.rsi_threshold,
@@ -278,10 +292,20 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                             vol_ma5_mult = EXCLUDED.vol_ma5_mult,
                             gap_max = EXCLUDED.gap_max,
                             ext_from_tema20_max = EXCLUDED.ext_from_tema20_max,
-                            created_at = NOW()
+                            trend_metrics = EXCLUDED.trend_metrics,
+                            breadth_metrics = EXCLUDED.breadth_metrics,
+                            flow_metrics = EXCLUDED.flow_metrics,
+                            sector_metrics = EXCLUDED.sector_metrics,
+                            volatility_metrics = EXCLUDED.volatility_metrics,
+                            foreign_flow_label = EXCLUDED.foreign_flow_label,
+                            volume_trend_label = EXCLUDED.volume_trend_label,
+                            adjusted_params = EXCLUDED.adjusted_params,
+                            analysis_notes = EXCLUDED.analysis_notes,
+                            updated_at = NOW()
                     """, (
                         as_of,
                         market_condition.market_sentiment,
+                        market_condition.sentiment_score,
                         market_condition.kospi_return,
                         market_condition.volatility,
                         market_condition.rsi_threshold,
@@ -292,7 +316,16 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                         market_condition.macd_osc_min,
                         market_condition.vol_ma5_mult,
                         market_condition.gap_max,
-                        market_condition.ext_from_tema20_max
+                        market_condition.ext_from_tema20_max,
+                        json.dumps(market_condition.trend_metrics) if market_condition.trend_metrics else None,
+                        json.dumps(market_condition.breadth_metrics) if market_condition.breadth_metrics else None,
+                        json.dumps(market_condition.flow_metrics) if market_condition.flow_metrics else None,
+                        json.dumps(market_condition.sector_metrics) if market_condition.sector_metrics else None,
+                        json.dumps(market_condition.volatility_metrics) if market_condition.volatility_metrics else None,
+                        market_condition.foreign_flow_label,
+                        market_condition.volume_trend_label,
+                        json.dumps(market_condition.adjusted_params) if market_condition.adjusted_params else None,
+                        market_condition.analysis_notes
                     ))
                 print(f"✅ 시장 상황 저장 완료: {as_of} ({market_condition.market_sentiment})")
             except Exception as e:
@@ -1711,6 +1744,80 @@ async def get_scan_by_date(date: str):
             }
             items.append(item)
         
+        # 시장 상황 데이터 조회
+        market_condition = None
+        try:
+            with db_manager.get_cursor(commit=False) as cur_mc:
+                cur_mc.execute("""
+                    SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                           sector_rotation, foreign_flow, volume_trend,
+                           min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                           trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                           foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                    FROM market_conditions WHERE date = %s OR date = %s
+                """, (target_date, formatted_date))
+                row_mc = cur_mc.fetchone()
+            
+            if row_mc:
+                if isinstance(row_mc, dict):
+                    values = row_mc
+                else:
+                    keys = [
+                        "market_sentiment", "sentiment_score", "kospi_return", "volatility", "rsi_threshold",
+                        "sector_rotation", "foreign_flow", "volume_trend",
+                        "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max",
+                        "trend_metrics", "breadth_metrics", "flow_metrics", "sector_metrics", "volatility_metrics",
+                        "foreign_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
+                    ]
+                    values = dict(zip(keys, row_mc))
+                
+                def _ensure_json(value):
+                    if isinstance(value, str) and value:
+                        try:
+                            return json.loads(value)
+                        except json.JSONDecodeError:
+                            return {}
+                    return value or {}
+
+                trend_metrics = _ensure_json(values.get("trend_metrics"))
+                breadth_metrics = _ensure_json(values.get("breadth_metrics"))
+                flow_metrics = _ensure_json(values.get("flow_metrics"))
+                sector_metrics = _ensure_json(values.get("sector_metrics"))
+                volatility_metrics = _ensure_json(values.get("volatility_metrics"))
+                adjusted_params = _ensure_json(values.get("adjusted_params"))
+                sentiment_score = values.get("sentiment_score") or 0.0
+                foreign_flow_label = values.get("foreign_flow_label") or values.get("foreign_flow") or "neutral"
+                volume_trend_label = values.get("volume_trend_label") or values.get("volume_trend") or "normal"
+                analysis_notes = values.get("analysis_notes")
+                
+                market_condition = {
+                    "market_sentiment": values.get("market_sentiment"),
+                    "sentiment_score": sentiment_score,
+                    "kospi_return": values.get("kospi_return"),
+                    "volatility": values.get("volatility"),
+                    "rsi_threshold": values.get("rsi_threshold"),
+                    "sector_rotation": values.get("sector_rotation"),
+                    "foreign_flow": values.get("foreign_flow"),
+                    "volume_trend": values.get("volume_trend"),
+                    "min_signals": values.get("min_signals"),
+                    "macd_osc_min": values.get("macd_osc_min"),
+                    "vol_ma5_mult": values.get("vol_ma5_mult"),
+                    "gap_max": values.get("gap_max"),
+                    "ext_from_tema20_max": values.get("ext_from_tema20_max"),
+                    "trend_metrics": trend_metrics,
+                    "breadth_metrics": breadth_metrics,
+                    "flow_metrics": flow_metrics,
+                    "sector_metrics": sector_metrics,
+                    "volatility_metrics": volatility_metrics,
+                    "foreign_flow_label": foreign_flow_label,
+                    "volume_trend_label": volume_trend_label,
+                    "adjusted_params": adjusted_params,
+                    "analysis_notes": analysis_notes,
+                }
+        except Exception as e:
+            print(f"⚠️ 시장 상황 조회 실패: {e}")
+            market_condition = None
+        
         data = {
             "as_of": formatted_date,
             "scan_date": formatted_date,
@@ -1720,7 +1827,8 @@ async def get_scan_by_date(date: str):
             "rsi_mode": "current_status",
             "rsi_period": 14,
             "rsi_threshold": 57.0,
-            "items": items
+            "items": items,
+            "market_condition": market_condition
         }
         data["enhanced_items"] = items
         
@@ -1841,11 +1949,12 @@ def get_latest_scan_from_db():
         market_condition = None
         try:
             with db_manager.get_cursor(commit=False) as cur_mc:
-                create_market_conditions_table(cur_mc)
                 cur_mc.execute("""
-                    SELECT market_sentiment, kospi_return, volatility, rsi_threshold,
+                    SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
                            sector_rotation, foreign_flow, volume_trend,
-                           min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max
+                           min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                           trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                           foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
                     FROM market_conditions WHERE date = %s
                 """, (raw_date,))
                 row_mc = cur_mc.fetchone()
@@ -1855,12 +1964,33 @@ def get_latest_scan_from_db():
                     values = row_mc
                 else:
                     keys = [
-                        "market_sentiment", "kospi_return", "volatility", "rsi_threshold",
+                        "market_sentiment", "sentiment_score", "kospi_return", "volatility", "rsi_threshold",
                         "sector_rotation", "foreign_flow", "volume_trend",
-                        "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max"
+                        "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max",
+                        "trend_metrics", "breadth_metrics", "flow_metrics", "sector_metrics", "volatility_metrics",
+                        "foreign_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
                     ]
                     values = dict(zip(keys, row_mc))
                 
+                def _ensure_json(value):
+                    if isinstance(value, str) and value:
+                        try:
+                            return json.loads(value)
+                        except json.JSONDecodeError:
+                            return {}
+                    return value or {}
+
+                trend_metrics = _ensure_json(values.get("trend_metrics"))
+                breadth_metrics = _ensure_json(values.get("breadth_metrics"))
+                flow_metrics = _ensure_json(values.get("flow_metrics"))
+                sector_metrics = _ensure_json(values.get("sector_metrics"))
+                volatility_metrics = _ensure_json(values.get("volatility_metrics"))
+                adjusted_params = _ensure_json(values.get("adjusted_params"))
+                sentiment_score = values.get("sentiment_score") or 0.0
+                foreign_flow_label = values.get("foreign_flow_label") or values.get("foreign_flow") or "neutral"
+                volume_trend_label = values.get("volume_trend_label") or values.get("volume_trend") or "normal"
+                analysis_notes = values.get("analysis_notes")
+
                 from market_analyzer import MarketCondition
                 market_condition = MarketCondition(
                     date=formatted_date,
@@ -1876,21 +2006,22 @@ def get_latest_scan_from_db():
                     vol_ma5_mult=values.get("vol_ma5_mult"),
                     gap_max=values.get("gap_max"),
                     ext_from_tema20_max=values.get("ext_from_tema20_max"),
+                    sentiment_score=sentiment_score,
+                    trend_metrics=trend_metrics,
+                    breadth_metrics=breadth_metrics,
+                    flow_metrics=flow_metrics,
+                    sector_metrics=sector_metrics,
+                    volatility_metrics=volatility_metrics,
+                    foreign_flow_label=foreign_flow_label,
+                    volume_trend_label=volume_trend_label,
+                    adjusted_params=adjusted_params,
+                    analysis_notes=analysis_notes,
                 )
                 print(f"📊 시장 상황 조회 (DB): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
-            elif config.market_analysis_enable:
-                try:
-                    market_condition = market_analyzer.analyze_market_condition(formatted_date)
-                    print(f"📊 시장 상황 분석 (Fallback): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
-                except Exception as e:
-                    print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+            else:
+                print(f"ℹ️ 시장 상황 데이터 없음 (날짜: {formatted_date})")
         except Exception as e:
             print(f"⚠️ 시장 상황 DB 조회 실패: {e}")
-            if config.market_analysis_enable:
-                try:
-                    market_condition = market_analyzer.analyze_market_condition(formatted_date)
-                except Exception as e2:
-                    print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e2}")
         
         actual_matched_count = len([item for item in items if item.get('ticker') != 'NORESULT'])
         scan_result_dict = {
@@ -1907,6 +2038,12 @@ def get_latest_scan_from_db():
         
         today = datetime.now().strftime('%Y%m%d')
         is_today = formatted_date == today
+        # market_condition을 dict로 변환
+        market_condition_dict = None
+        if market_condition:
+            from dataclasses import asdict
+            market_condition_dict = asdict(market_condition)
+        
         data = {
             "as_of": formatted_date,
             "scan_date": formatted_date,
@@ -1919,7 +2056,8 @@ def get_latest_scan_from_db():
             "rsi_period": 14,
             "rsi_threshold": market_condition.rsi_threshold if market_condition else 57.0,
             "items": items,
-            "market_guide": market_guide
+            "market_guide": market_guide,
+            "market_condition": market_condition_dict
         }
         data["enhanced_items"] = items
         
