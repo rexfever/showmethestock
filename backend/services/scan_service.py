@@ -160,11 +160,12 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         print(f"🔴 급락장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 추천 종목 없음 반환")
         return [], None
     
-    # 약세장에서는 fallback 비활성화 (조건 강화 유지)
+    # 약세장에서도 fallback 활성화하되, 최대 3개만 추천
     use_fallback = config.fallback_enable
+    max_bear_results = 3  # 약세장 최대 추천 개수
+    
     if market_condition and market_condition.market_sentiment == 'bear':
-        print(f"⚠️ 약세장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 조건 강화, fallback 비활성화")
-        use_fallback = False
+        print(f"⚠️ 약세장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - Fallback 활성화, 최대 {max_bear_results}개 추천")
     
     print(f"🔄 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={use_fallback}")
     
@@ -179,8 +180,11 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         final_items = []
         chosen_step = 0
         
+        # 약세장일 때는 최대 개수 제한
+        max_results = max_bear_results if (market_condition and market_condition.market_sentiment == 'bear') else config.fallback_target_max
+        
         print(f"📊 Fallback 활성화 - {len(config.fallback_presets)}단계 완화 시도")
-        print(f"📊 목표: 최소 {config.fallback_target_min}개, 최대 {config.fallback_target_max}개")
+        print(f"📊 목표: 최소 {config.fallback_target_min}개, 최대 {max_results}개")
         
         for step, overrides in enumerate(config.fallback_presets):
             print(f"🔄 Step {step}: {overrides if overrides else '기본 조건'}")
@@ -190,7 +194,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
             # 하드 컷은 scan_one_symbol 내부에서 이미 처리되어야 함(과열/유동성/가격 등)
             if len(items) >= config.fallback_target_min:
                 chosen_step = step
-                final_items = items[:min(config.top_k, config.fallback_target_max)]
+                final_items = items[:min(config.top_k, max_results)]
                 print(f"✅ Step {step}에서 목표 달성: {len(final_items)}개 종목 선택")
                 break
             else:
@@ -200,7 +204,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         if not final_items:
             print(f"⚠️ 모든 단계에서 목표 미달 - 마지막 단계 결과 사용")
             if items:  # 마지막 단계에서 결과가 있다면
-                final_items = items[:min(config.top_k, config.fallback_target_max)]
+                final_items = items[:min(config.top_k, max_results)]
                 chosen_step = len(config.fallback_presets) - 1
                 print(f"📊 최종 결과: {len(final_items)}개 종목 (마지막 단계)")
             else:
