@@ -118,6 +118,18 @@ export default function MarketConditionDetailCard({ marketCondition }) {
             </span>
           </div>
 
+          {/* 기관 수급 */}
+          <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
+            <span className="text-sm text-gray-600">기관 수급</span>
+            <span className={`text-sm font-medium ${
+              marketCondition.institution_flow === 'buy' ? 'text-red-600' :
+              marketCondition.institution_flow === 'sell' ? 'text-blue-600' :
+              'text-gray-600'
+            }`}>
+              {flowLabels[marketCondition.institution_flow] || '중립'}
+            </span>
+          </div>
+
           {/* 거래량 추세 */}
           <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
             <span className="text-sm text-gray-600">거래량 추세</span>

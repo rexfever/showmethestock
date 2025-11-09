@@ -19,6 +19,7 @@ class MarketCondition:
     market_sentiment: str  # 'bull', 'neutral', 'bear'
     sector_rotation: str   # 'tech', 'value', 'mixed'
     foreign_flow: str      # 'buy', 'sell', 'neutral'
+    institution_flow: str  # 'buy', 'sell', 'neutral' - 기관 수급
     volume_trend: str      # 'high', 'normal', 'low'
     
     # 동적 조정된 조건들
@@ -35,6 +36,7 @@ class MarketCondition:
     sector_metrics: Dict[str, Any] = field(default_factory=dict)
     volatility_metrics: Dict[str, Any] = field(default_factory=dict)
     foreign_flow_label: str = ""
+    institution_flow_label: str = ""
     volume_trend_label: str = ""
     adjusted_params: Dict[str, Any] = field(default_factory=dict)
     analysis_notes: Optional[str] = None
@@ -95,6 +97,7 @@ class MarketAnalyzer:
             market_sentiment = self._determine_market_sentiment(effective_return, volatility)
             sector_rotation = self._analyze_sector_rotation(date)
             foreign_flow = self._analyze_foreign_flow(date)
+            institution_flow = self._analyze_institution_flow(date)
             volume_trend = self._analyze_volume_trend(date)
             
             # 동적 조건 조정
@@ -123,6 +126,7 @@ class MarketAnalyzer:
 
             flow_metrics = {
                 "foreign_flow_raw": foreign_flow,
+                "institution_flow_raw": institution_flow,
             }
 
             sector_metrics = {
@@ -140,6 +144,7 @@ class MarketAnalyzer:
                 market_sentiment=market_sentiment,
                 sector_rotation=sector_rotation,
                 foreign_flow=foreign_flow,
+                institution_flow=institution_flow,
                 volume_trend=volume_trend,
                 sentiment_score=sentiment_score,
                 trend_metrics={k: v for k, v in trend_metrics.items()},
@@ -148,6 +153,7 @@ class MarketAnalyzer:
                 sector_metrics={k: v for k, v in sector_metrics.items()},
                 volatility_metrics={k: v for k, v in volatility_metrics.items()},
                 foreign_flow_label=foreign_flow or "neutral",
+                institution_flow_label=institution_flow or "neutral",
                 volume_trend_label=volume_trend or "normal",
                 adjusted_params=dict(adjusted_conditions),
                 analysis_notes=f"effective={effective_return:.4f}, vol={volatility:.4f}, sample={sample_size}",
@@ -391,6 +397,54 @@ class MarketAnalyzer:
                 
         except Exception as e:
             logger.warning(f"외국인 수급 분석 실패: {e}")
+            return 'neutral'  # 기본값
+    
+    def _analyze_institution_flow(self, date: str) -> str:
+        """기관 자금 흐름 분석 - 중대형주 수익률로 간접 추정"""
+        try:
+            from kiwoom_api import api
+            
+            # 기관 선호 중대형주 (안정적 배당주 + 우량주)
+            institution_favorites = [
+                '005930',  # 삼성전자
+                '055550',  # 신한지주
+                '105560',  # KB금융
+                '086790',  # 하나금융지주
+                '032830',  # 삼성생명
+                '000810',  # 삼성화재
+            ]
+            
+            returns = []
+            for code in institution_favorites:
+                try:
+                    df = api.get_ohlcv(code, 2, date)
+                    if df.empty or len(df) < 2:
+                        continue
+                    
+                    prev_close = df.iloc[-2]['close']
+                    current_close = df.iloc[-1]['close']
+                    
+                    if prev_close > 0:
+                        stock_return = (current_close / prev_close - 1)
+                        returns.append(stock_return)
+                except Exception:
+                    continue
+            
+            if not returns:
+                return 'neutral'
+            
+            # 중대형주 평균 수익률로 기관 수급 추정
+            avg_return = sum(returns) / len(returns)
+            
+            if avg_return > 0.008:  # +0.8% 이상 (기관은 외국인보다 보수적)
+                return 'buy'
+            elif avg_return < -0.008:  # -0.8% 이하
+                return 'sell'
+            else:
+                return 'neutral'
+                
+        except Exception as e:
+            logger.warning(f"기관 수급 분석 실패: {e}")
             return 'neutral'  # 기본값
     
     def _analyze_volume_trend(self, date: str) -> str:

@@ -273,11 +273,11 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                     cur.execute("""
                         INSERT INTO market_conditions(
                             date, market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
-                            sector_rotation, foreign_flow, volume_trend,
+                            sector_rotation, foreign_flow, institution_flow, volume_trend,
                             min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                             trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                            foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (date) DO UPDATE SET
                             market_sentiment = EXCLUDED.market_sentiment,
                             sentiment_score = EXCLUDED.sentiment_score,
@@ -286,6 +286,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                             rsi_threshold = EXCLUDED.rsi_threshold,
                             sector_rotation = EXCLUDED.sector_rotation,
                             foreign_flow = EXCLUDED.foreign_flow,
+                            institution_flow = EXCLUDED.institution_flow,
                             volume_trend = EXCLUDED.volume_trend,
                             min_signals = EXCLUDED.min_signals,
                             macd_osc_min = EXCLUDED.macd_osc_min,
@@ -298,6 +299,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                             sector_metrics = EXCLUDED.sector_metrics,
                             volatility_metrics = EXCLUDED.volatility_metrics,
                             foreign_flow_label = EXCLUDED.foreign_flow_label,
+                            institution_flow_label = EXCLUDED.institution_flow_label,
                             volume_trend_label = EXCLUDED.volume_trend_label,
                             adjusted_params = EXCLUDED.adjusted_params,
                             analysis_notes = EXCLUDED.analysis_notes,
@@ -311,6 +313,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                         market_condition.rsi_threshold,
                         market_condition.sector_rotation,
                         market_condition.foreign_flow,
+                        market_condition.institution_flow,
                         market_condition.volume_trend,
                         market_condition.min_signals,
                         market_condition.macd_osc_min,
@@ -323,6 +326,7 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                         json.dumps(market_condition.sector_metrics) if market_condition.sector_metrics else None,
                         json.dumps(market_condition.volatility_metrics) if market_condition.volatility_metrics else None,
                         market_condition.foreign_flow_label,
+                        market_condition.institution_flow_label,
                         market_condition.volume_trend_label,
                         json.dumps(market_condition.adjusted_params) if market_condition.adjusted_params else None,
                         market_condition.analysis_notes
