@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import getConfig from '../config';
+import MarketConditionDetailCard from '../components/MarketConditionDetailCard';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -53,6 +54,10 @@ export default function AdminDashboard() {
   const [trendAnalysis, setTrendAnalysis] = useState(null);
   const [trendLoading, setTrendLoading] = useState(false);
   const [trendApplyLoading, setTrendApplyLoading] = useState(false);
+  
+  // 장세 분석 상태
+  const [marketCondition, setMarketCondition] = useState(null);
+  const [marketLoading, setMarketLoading] = useState(false);
 
   useEffect(() => {
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
@@ -91,6 +96,7 @@ export default function AdminDashboard() {
       fetchAdminData();
       fetchScanDates();
       fetchTrendAnalysis();
+      fetchMarketCondition();
     }
   }, [authChecked, authLoading, isAuthenticated, user, router, router.query.analyze]);
 
@@ -119,6 +125,27 @@ export default function AdminDashboard() {
       console.error('추세 분석 조회 실패:', error);
     } finally {
       setTrendLoading(false);
+    }
+  };
+  
+  const fetchMarketCondition = async () => {
+    setMarketLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/latest-scan`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && data.data && data.data.market_condition) {
+          setMarketCondition(data.data.market_condition);
+        }
+      }
+    } catch (error) {
+      console.error('장세 분석 조회 실패:', error);
+    } finally {
+      setMarketLoading(false);
     }
   };
 
@@ -978,6 +1005,40 @@ export default function AdminDashboard() {
                 {popupLoading ? '저장 중...' : '설정 저장'}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* 장세 분석 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">📊 오늘의 장세 분석</h2>
+                <p className="text-sm text-gray-600">시장 상황 및 스캔 파라미터</p>
+              </div>
+              <button
+                onClick={fetchMarketCondition}
+                disabled={marketLoading}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {marketLoading ? '조회 중...' : '🔄 새로고침'}
+              </button>
+            </div>
+          </div>
+          <div className="px-6 py-4">
+            {marketLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-sm text-gray-600">조회 중...</p>
+              </div>
+            ) : marketCondition ? (
+              <MarketConditionDetailCard marketCondition={marketCondition} />
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>장세 분석 데이터가 없습니다.</p>
+                <p className="text-sm mt-2">스캔이 실행되면 자동으로 표시됩니다.</p>
+              </div>
+            )}
           </div>
         </div>
 
