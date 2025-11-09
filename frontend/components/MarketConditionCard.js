@@ -80,8 +80,8 @@ export default function MarketConditionCard({ marketCondition }) {
               {info.advice}
             </p>
             {sentiment === 'bear' && (
-              <p className="text-xs text-gray-500 mt-2">
-                ⚠️ 추천 종목은 최대 3개까지만 제공됩니다
+              <p className="text-xs text-orange-600 mt-2 font-medium">
+                ⚠️ 약세장에서는 보수적으로 1~3개 종목만 추천합니다
               </p>
             )}
             {sentiment === 'crash' && (
