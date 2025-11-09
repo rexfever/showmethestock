@@ -86,8 +86,8 @@ class Config:
     market_preset_bear_rsi: float = float(os.getenv("MARKET_PRESET_BEAR_RSI", "45.0"))  # 약세장: 낮은 RSI 허용
     
     # KOSPI 임계값 (시장 상황 판단용)
-    kospi_bull_threshold: float = float(os.getenv("KOSPI_BULL_THRESHOLD", "0.02"))  # +2% (0.02 -> 0.02)
-    kospi_bear_threshold: float = float(os.getenv("KOSPI_BEAR_THRESHOLD", "-0.02"))  # -2% (0.02 -> 0.02)
+    kospi_bull_threshold: float = float(os.getenv("KOSPI_BULL_THRESHOLD", "0.015"))  # +1.5%
+    kospi_bear_threshold: float = float(os.getenv("KOSPI_BEAR_THRESHOLD", "-0.015"))  # -1.5%
     
     # === 필터링 설정 ===
     # RSI 상한선 (과매수 구간 진입 방지)
