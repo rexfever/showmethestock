@@ -72,8 +72,16 @@ class Config:
     
     # === Auto Fallback 설정 ===
     fallback_enable: bool = os.getenv("FALLBACK_ENABLE", "true").lower() == "true"  # false -> true (안전한 Fallback 활성화)
-    fallback_target_min: int = int(os.getenv("FALLBACK_TARGET_MIN", "1"))  # 최소 확보 개수
-    fallback_target_max: int = int(os.getenv("FALLBACK_TARGET_MAX", "5"))  # 최대 반환 개수(=TOP_K와 동일 권장)
+    
+    # 장세별 Fallback 목표 개수
+    fallback_target_min_bull: int = int(os.getenv("FALLBACK_TARGET_MIN_BULL", "3"))  # 강세장 최소 개수
+    fallback_target_max_bull: int = int(os.getenv("FALLBACK_TARGET_MAX_BULL", "5"))  # 강세장 최대 개수
+    fallback_target_min_bear: int = int(os.getenv("FALLBACK_TARGET_MIN_BEAR", "2"))  # 약세장 최소 개수
+    fallback_target_max_bear: int = int(os.getenv("FALLBACK_TARGET_MAX_BEAR", "3"))  # 약세장 최대 개수
+    
+    # 하위 호환성을 위한 기본값 (장세 구분 없이 사용하는 경우)
+    fallback_target_min: int = int(os.getenv("FALLBACK_TARGET_MIN", "3"))  # 기본 최소 개수
+    fallback_target_max: int = int(os.getenv("FALLBACK_TARGET_MAX", "5"))  # 기본 최대 개수
     
     # === 시장 상황 연동 설정 ===
     market_analysis_enable: bool = os.getenv("MARKET_ANALYSIS_ENABLE", "true").lower() == "true"

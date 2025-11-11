@@ -10,6 +10,8 @@ import pandas as pd
 import asyncio
 import glob
 import httpx
+import threading
+from contextlib import asynccontextmanager
 
 try:
     from . import db_patch  # type: ignore  # noqa: F401
@@ -149,7 +151,31 @@ from admin_service import admin_service
 from portfolio_service import portfolio_service
 
 
-app = FastAPI(title='Stock Scanner API')
+# 스케줄러 백그라운드 스레드
+scheduler_thread = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI 앱 생명주기 관리"""
+    # 시작 시
+    global scheduler_thread
+    from scheduler import run_scheduler
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.info("🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...")
+    
+    # 스케줄러를 백그라운드 스레드로 실행
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+    logger.info("✅ 스케줄러 백그라운드 스레드 시작 완료")
+    
+    yield
+    
+    # 종료 시
+    logger.info("🛑 FastAPI 앱 종료 중...")
+
+app = FastAPI(title='Stock Scanner API', lifespan=lifespan)
 
 # CORS 설정 (환경별 동적 설정)
 def get_cors_origins():
