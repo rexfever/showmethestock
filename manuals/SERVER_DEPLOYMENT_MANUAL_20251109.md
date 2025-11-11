@@ -58,12 +58,17 @@
 
 ### SSH 접속
 
-```bash
-# 기본 접속
-ssh ubuntu@52.79.145.238
+**사용 키 파일**: `~/.ssh/id_rsa`
 
-# 키 파일 사용 (있는 경우)
-ssh -i ~/.ssh/your-key.pem ubuntu@52.79.145.238
+```bash
+# SSH config 사용 (권장)
+ssh stock-finder
+
+# 직접 키 파일 지정
+ssh -i ~/.ssh/id_rsa ubuntu@52.79.145.238
+
+# 기본 접속 (키 없이)
+ssh ubuntu@52.79.145.238
 ```
 
 ### 초기 설정 확인
