@@ -215,5 +215,42 @@
   "dates": [
     "20251001",
     "20251002"
-  ]
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 20.17,
+      "median_return": 19.68,
+      "std_return": 18.88,
+      "total_stocks": 9
+    },
+    "risk_metrics": {
+      "sharpe_ratio": 0.909,
+      "max_drawdown": -5.3,
+      "volatility_adjusted_return": 1.068
+    },
+    "performance_metrics": {
+      "win_rate": 77.78,
+      "avg_win": 27.19,
+      "avg_loss": 4.42,
+      "profit_loss_ratio": 6.16
+    }
+  },
+  "sector_analysis": {
+    "기타": {
+      "count": 8,
+      "avg_return": 21.56,
+      "win_rate": 75.0
+    },
+    "금융": {
+      "count": 1,
+      "avg_return": 8.99,
+      "win_rate": 100.0
+    }
+  },
+  "ai_insights": [
+    "🎯 평균 수익률이 10%를 초과하여 우수한 성과를 보이고 있습니다.",
+    "✅ 높은 승률로 안정적인 수익 창출이 가능합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-11T20:10:02.440672"
 }

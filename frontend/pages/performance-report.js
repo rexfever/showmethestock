@@ -545,7 +545,7 @@ export default function PerformanceReport() {
                             </div>
                             <div className="text-right">
                               <p className="text-2xl font-bold text-red-600">
-                                {reportData.statistics.worst_stock.max_return}%
+                                {reportData.statistics.worst_stock.min_return}%
                               </p>
                             </div>
                           </div>

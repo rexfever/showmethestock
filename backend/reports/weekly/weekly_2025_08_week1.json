@@ -104,28 +104,33 @@
       "total_stocks": 3
     },
     "risk_metrics": {
-      "sharpe_ratio": 0.8,
-      "max_drawdown": -5.0,
-      "volatility_adjusted_return": 1.2
+      "sharpe_ratio": -0.096,
+      "max_drawdown": -13.7,
+      "volatility_adjusted_return": 0.324
     },
     "performance_metrics": {
-      "win_rate": 70.0,
-      "avg_win": 8.5,
-      "avg_loss": 3.2,
-      "profit_loss_ratio": 2.7
+      "win_rate": 66.67,
+      "avg_win": 7.1,
+      "avg_loss": 7.24,
+      "profit_loss_ratio": 0.98
     }
   },
   "sector_analysis": {
     "IT/전자": {
-      "count": 3,
-      "avg_return": 2.32,
-      "win_rate": 70.0
+      "count": 1,
+      "avg_return": 4.26,
+      "win_rate": 100.0
+    },
+    "기타": {
+      "count": 2,
+      "avg_return": 1.34,
+      "win_rate": 50.0
     }
   },
   "ai_insights": [
-    "📊 8월 1주차 시장 분석 결과입니다.",
-    "🎯 선별된 종목들의 성과가 양호합니다."
+    "⚠️ 평균 수익률이 기대치를 하회하고 있어 전략 점검이 필요합니다.",
+    "⚡ 변동성 대비 수익률이 낮아 리스크 관리가 필요합니다."
   ],
   "report_version": "2.0",
-  "enhanced_at": "2025-11-06T17:17:39.291415"
+  "enhanced_at": "2025-11-11T20:09:55.323480"
 }

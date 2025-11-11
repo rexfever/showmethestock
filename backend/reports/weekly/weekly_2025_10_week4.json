@@ -348,5 +348,48 @@
     "20251024",
     "20251027",
     "20251028"
-  ]
+  ],
+  "enhanced_metrics": {
+    "basic_stats": {
+      "avg_return": 0.41,
+      "median_return": -0.89,
+      "std_return": 8.93,
+      "total_stocks": 16
+    },
+    "risk_metrics": {
+      "sharpe_ratio": -0.289,
+      "max_drawdown": -10.06,
+      "volatility_adjusted_return": 0.046
+    },
+    "performance_metrics": {
+      "win_rate": 43.75,
+      "avg_win": 8.05,
+      "avg_loss": 5.53,
+      "profit_loss_ratio": 1.46
+    }
+  },
+  "sector_analysis": {
+    "기타": {
+      "count": 13,
+      "avg_return": 0.41,
+      "win_rate": 46.15
+    },
+    "금융": {
+      "count": 2,
+      "avg_return": 1.23,
+      "win_rate": 50.0
+    },
+    "바이오/제약": {
+      "count": 1,
+      "avg_return": -1.2,
+      "win_rate": 0.0
+    }
+  },
+  "ai_insights": [
+    "⚠️ 평균 수익률이 기대치를 하회하고 있어 전략 점검이 필요합니다.",
+    "🔍 승률이 50% 미만으로 종목 선별 기준 강화가 필요합니다.",
+    "⚡ 변동성 대비 수익률이 낮아 리스크 관리가 필요합니다."
+  ],
+  "report_version": "2.0",
+  "enhanced_at": "2025-11-11T20:10:10.242187"
 }
