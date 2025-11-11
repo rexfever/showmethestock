@@ -33,7 +33,6 @@ class ReportGenerator:
             project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
         
         self.reports_dir = os.path.join(project_root, "backend", "reports")
-        self.db_path = os.path.join(project_root, "backend", "snapshots.db")
     
     def _save_report(self, report_type: str, filename: str, data: Dict):
         """보고서 파일 저장"""
@@ -66,18 +65,14 @@ class ReportGenerator:
     
     def _get_scan_data(self, start_date: str, end_date: str) -> List[Dict]:
         """지정 기간의 스캔 데이터 조회"""
-        # 날짜 형식 통일: YYYY-MM-DD → YYYYMMDD
-        start_compact = start_date.replace('-', '') if '-' in start_date else start_date
-        end_compact = end_date.replace('-', '') if '-' in end_date else end_date
-        
         try:
             with db_manager.get_cursor(commit=False) as cursor:
                 cursor.execute("""
                 SELECT date, code, name, current_price, volume, change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
                 FROM scan_rank
-                WHERE date >= %s AND date <= %s AND code != 'NORESULT'
+                WHERE date BETWEEN %s AND %s AND code != 'NORESULT'
                 ORDER BY date
-            """, (start_compact, end_compact))
+            """, (start_date, end_date))
                 dict_rows = cursor.fetchall()
             
             rows = [
@@ -192,18 +187,14 @@ class ReportGenerator:
     
     def _analyze_repeat_scans(self, start_date: str, end_date: str) -> Dict:
         """반복 스캔 종목 분석"""
-        # 날짜 형식 통일: YYYY-MM-DD → YYYYMMDD
-        start_compact = start_date.replace('-', '') if '-' in start_date else start_date
-        end_compact = end_date.replace('-', '') if '-' in end_date else end_date
-        
         try:
             with db_manager.get_cursor(commit=False) as cursor:
                 cursor.execute("""
                 SELECT date, code, name, strategy 
                 FROM scan_rank
-                WHERE date >= %s AND date <= %s AND code != 'NORESULT'
+                WHERE date BETWEEN %s AND %s AND code != 'NORESULT'
                 ORDER BY date DESC
-            """, (start_compact, end_compact))
+            """, (start_date, end_date))
                 dict_rows = cursor.fetchall()
             
             data = [
