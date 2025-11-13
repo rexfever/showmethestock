@@ -48,7 +48,7 @@ def is_trading_day(check_date: str = None):
     return True
 
 
-def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.0, tolerance_amount=100):
+def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.0, tolerance_amount=100, fix_mismatches=False):
     """
     스캔된 종목의 가격 정보 검증
     
@@ -57,6 +57,7 @@ def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.
         max_records: 검증할 최대 레코드 수 (None이면 전체)
         tolerance_percent: 허용 오차율 (%)
         tolerance_amount: 허용 오차 금액 (원)
+        fix_mismatches: True면 불일치 레코드를 자동으로 수정
     """
     print("=" * 80)
     print("🔍 스캔된 종목의 가격 정보 검증")
@@ -264,7 +265,7 @@ def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.
                     print(f" ✅ API: {api_price:,.0f}원 (차이: {diff:,.0f}원, {diff_percent:.2f}%)")
                     valid_count += 1
                 else:
-                    print(f" ❌ API: {api_price:,.0f}원 (차이: {diff:,.0f}원, {diff_percent:.2f}%)")
+                    print(f" ❌ API: {api_price:,.0f}원 (차이: {diff:,.0f}원, {diff_percent:.2f}%)", end="")
                     invalid_count += 1
                     invalid_records.append({
                         'date': date_str,
@@ -276,6 +277,29 @@ def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.
                         'diff_percent': diff_percent,
                         'error': None
                     })
+                    
+                    # 불일치 수정 옵션이 켜져 있으면 자동 수정
+                    if fix_mismatches:
+                        try:
+                            with db_manager.get_cursor(commit=True) as cur_fix:
+                                cur_fix.execute("""
+                                    UPDATE scan_rank
+                                    SET current_price = %s,
+                                        close_price = %s
+                                    WHERE date = %s AND code = %s
+                                """, (api_price, api_price, date_str, code))
+                            
+                            if cur_fix.rowcount > 0:
+                                print(f" → ✅ 수정됨 (DB: {db_price:,.0f}원 → API: {api_price:,.0f}원)")
+                                invalid_count -= 1  # 수정되었으므로 불일치에서 제외
+                                valid_count += 1  # 정상으로 변경
+                                invalid_records[-1]['fixed'] = True
+                            else:
+                                print(f" → ⚠️ 수정 실패 (레코드 없음)")
+                        except Exception as fix_error:
+                            print(f" → ❌ 수정 오류: {str(fix_error)}")
+                    else:
+                        print()
                 
                 # API 호출 제한 고려
                 time.sleep(0.2)
@@ -308,13 +332,14 @@ def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.
     print(f"📊 총 검증: {total_checked}개")
     print()
     
-    # 불일치 레코드 상세 리포트
-    if invalid_records:
+    # 불일치 레코드 상세 리포트 (수정되지 않은 것만 표시)
+    unfixed_records = [r for r in invalid_records if not r.get('fixed', False)]
+    if unfixed_records:
         print("=" * 80)
         print("❌ 불일치 또는 오류 레코드 상세")
         print("=" * 80)
-        for record in invalid_records[:20]:  # 최대 20개만 표시
-            if record['error']:
+        for record in unfixed_records[:20]:  # 최대 20개만 표시
+            if record.get('error'):
                 print(f"📅 {record['date']} | {record['code']} ({record['name']})")
                 print(f"   DB 가격: {record['db_price']:,.0f}원")
                 print(f"   오류: {record['error']}")
@@ -325,16 +350,23 @@ def validate_scan_prices(date_limit=None, max_records=None, tolerance_percent=1.
                 print(f"   차이: {record['diff']:,.0f}원 ({record['diff_percent']:.2f}%)")
             print()
         
-        if len(invalid_records) > 20:
-            print(f"... 외 {len(invalid_records) - 20}개 레코드")
+        if len(unfixed_records) > 20:
+            print(f"... 외 {len(unfixed_records) - 20}개 레코드")
         print()
     
     # 통계 요약
     if invalid_count > 0 and invalid_records:
-        avg_diff = sum(r.get('diff', 0) for r in invalid_records if r.get('diff') is not None) / invalid_count
-        max_diff = max((r.get('diff', 0) for r in invalid_records if r.get('diff') is not None), default=0)
-        print(f"📊 불일치 평균 차이: {avg_diff:,.0f}원")
-        print(f"📊 불일치 최대 차이: {max_diff:,.0f}원")
+        unfixed_records = [r for r in invalid_records if not r.get('fixed', False) and r.get('diff') is not None]
+        if unfixed_records:
+            avg_diff = sum(r.get('diff', 0) for r in unfixed_records) / len(unfixed_records)
+            max_diff = max((r.get('diff', 0) for r in unfixed_records), default=0)
+            print(f"📊 불일치 평균 차이: {avg_diff:,.0f}원")
+            print(f"📊 불일치 최대 차이: {max_diff:,.0f}원")
+        
+        if fix_mismatches:
+            fixed_count = sum(1 for r in invalid_records if r.get('fixed', False))
+            if fixed_count > 0:
+                print(f"🔧 수정된 레코드: {fixed_count}개")
         print()
 
 
@@ -346,6 +378,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-records", type=int, help="검증할 최대 레코드 수")
     parser.add_argument("--tolerance-percent", type=float, default=1.0, help="허용 오차율 %% (기본: 1.0%%)")
     parser.add_argument("--tolerance-amount", type=int, default=100, help="허용 오차 금액 원 (기본: 100원)")
+    parser.add_argument("--fix", action="store_true", help="불일치 레코드를 자동으로 수정")
     
     args = parser.parse_args()
     
@@ -353,6 +386,7 @@ if __name__ == "__main__":
         date_limit=args.date_limit,
         max_records=args.max_records,
         tolerance_percent=args.tolerance_percent,
-        tolerance_amount=args.tolerance_amount
+        tolerance_amount=args.tolerance_amount,
+        fix_mismatches=args.fix
     )
 
