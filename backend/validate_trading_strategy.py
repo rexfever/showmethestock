@@ -211,8 +211,9 @@ def validate_trading_strategy(
             
             for i, price_row in df_tracking.iterrows():
                 close_price = float(price_row['close'])
-                high_price = float(price_row['high'])
-                low_price = float(price_row['low'])
+                # API에서 high/low가 0인 경우 close를 사용 (성과보고서와 동일)
+                high_price = float(price_row['high']) if price_row['high'] > 0 else close_price
+                low_price = float(price_row['low']) if price_row['low'] > 0 else close_price
                 current_date = price_row['date_normalized']
                 
                 # 수익률 계산
