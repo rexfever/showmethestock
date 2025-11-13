@@ -178,12 +178,12 @@ def validate_trading_strategy(
             # 날짜순 정렬
             df_filtered = df_filtered.sort_values('date_normalized').reset_index(drop=True)
             
-            # 스캔일부터 추적 (성과보고서와 동일하게)
-            # 스캔일의 최고가도 익절에 포함되어야 함
-            df_tracking = df_filtered[df_filtered['date_normalized'] >= scan_date_normalized].copy()
+            # 스캔일 다음날부터 추적 (실제 매수는 다음 거래일 아침)
+            # 스캔 당일 종가로 매수하므로, 실제 매수는 다음날 아침
+            df_tracking = df_filtered[df_filtered['date_normalized'] > scan_date_normalized].copy()
             
             if df_tracking.empty:
-                print("❌ 추적 데이터 없음 (스캔일 데이터 없음)")
+                print("❌ 추적 데이터 없음 (스캔일 다음날 데이터 없음)")
                 results.append({
                     'code': code,
                     'name': name,
@@ -200,7 +200,7 @@ def validate_trading_strategy(
                 time.sleep(0.2)
                 continue
             
-            # 전략 추적 (스캔일부터)
+            # 전략 추적 (스캔일 다음날부터, 실제 매수 후)
             status = 'HOLDING'  # HOLDING, STOP_LOSS, TAKE_PROFIT, PRESERVED, MAX_DAYS
             exit_price = None
             exit_date = None
