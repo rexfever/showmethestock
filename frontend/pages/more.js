@@ -3,6 +3,8 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import Header from '../components/Header';
+import fs from 'fs';
+import path from 'path';
 
 export default function More({ strategyGuideMarkdown }) {
   const router = useRouter();
@@ -478,9 +480,6 @@ export default function More({ strategyGuideMarkdown }) {
     </>
   );
 }
-
-import fs from 'fs';
-import path from 'path';
 
 export async function getServerSideProps() {
   try {
