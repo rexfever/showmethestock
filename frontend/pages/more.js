@@ -201,11 +201,16 @@ export default function More({ strategyGuideMarkdown = '' }) {
         }
       };
       
-      parseMarkdown();
-    } else {
-      console.log('모달 상태:', { showStrategyModal, strategyContent: strategyContent ? '있음' : '없음', strategyGuideMarkdown: strategyGuideMarkdown ? `있음 (길이: ${strategyGuideMarkdown.length})` : '없음' });
+      // 파싱 실행 (에러 처리 포함)
+      parseMarkdown().catch(error => {
+        console.error('[More] parseMarkdown 실행 중 에러:', error);
+        setStrategyContent('<p class="text-red-500">가이드를 불러오는 중 오류가 발생했습니다. 페이지를 새로고침해주세요.</p>');
+      });
+    } else if (!showStrategyModal && strategyContent) {
+      // 모달이 닫혔을 때 콘텐츠 초기화 (다음에 열 때 다시 파싱)
+      setStrategyContent('');
     }
-  }, [showStrategyModal, strategyContent, strategyGuideMarkdown]);
+  }, [showStrategyModal, strategyGuideMarkdown]);
 
   const handleLogout = async () => {
     if (user && logout) {
