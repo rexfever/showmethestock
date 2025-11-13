@@ -165,8 +165,8 @@ class Config:
     score_w_dema_slope: int = int(os.getenv("SCORE_W_DEMA_SLOPE", "2"))
     score_w_obv_slope: int = int(os.getenv("SCORE_W_OBV_SLOPE", "2"))
     score_w_above_cnt: int = int(os.getenv("SCORE_W_ABOVE_CNT", "2"))
-    score_level_strong: int = int(os.getenv("SCORE_LEVEL_STRONG", "8"))
-    score_level_watch: int = int(os.getenv("SCORE_LEVEL_WATCH", "5"))
+    score_level_strong: int = int(os.getenv("SCORE_LEVEL_STRONG", "10"))  # 8 -> 10 (품질 향상)
+    score_level_watch: int = int(os.getenv("SCORE_LEVEL_WATCH", "8"))  # 5 -> 8 (관심 기준 상향)
     
     # 위험도 필터링 설정
     # rsi_overbought_threshold: float = float(os.getenv("RSI_OVERBOUGHT_THRESHOLD", "80"))  # 비활성화

@@ -430,20 +430,26 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         "ext_ok": bool(ext_ok),
     })
     
-    # 레이블링 (더 세분화된 평가) - 품질 향상: 8점 이상만 추천
-    # 6점대는 승률이 낮고 변동성이 크므로 제외
+    # 레이블링 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)
+    # 10점 이상: 우선 추천
+    # 8-9점: Fallback 시 포함 (10점 이상이 없을 때)
+    # 6점대: 제외 (승률 낮음, 변동성 높음)
     if score >= 10:
         flags["label"] = "강한 매수"
         flags["match"] = True
+        flags["fallback"] = False  # 10점 이상은 Fallback 불필요
     elif score >= 8:
         flags["label"] = "매수 후보"
-        flags["match"] = True
+        flags["match"] = False  # 기본적으로 제외
+        flags["fallback"] = True  # Fallback 시 포함 가능
     elif score >= 6:
         flags["label"] = "관심 (제외)"
         flags["match"] = False  # 6점대는 추천하지 않음 (승률 낮음, 변동성 높음)
+        flags["fallback"] = False  # Fallback 시에도 제외
     else:
         flags["label"] = "제외"
         flags["match"] = False  # 제외 종목은 매칭되지 않음
+        flags["fallback"] = False  # Fallback 시에도 제외
     
     # ----- 신호 요건 상향 (MIN_SIGNALS=3) -----
     signals_true = sum([bool(flags.get("cross", False)), bool(flags.get("vol_expand", False)), 

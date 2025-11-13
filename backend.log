@@ -171,3 +171,131 @@ INFO:     127.0.0.1:58594 - "GET /popup-notice/status HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58597 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58596 - "GET /maintenance/status HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58597 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'scanner.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38356]
+INFO:     Started server process [56086]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56086]
+INFO:     Started server process [56329]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner.py', 'config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56329]
+INFO:     Started server process [58455]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [58455]
+INFO:     Started server process [64980]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'services/scan_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64980]
+INFO:     Started server process [65721]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scanner.py', 'services/scan_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [65721]
+INFO:     Started server process [66267]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'services/scan_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [66267]
+INFO:     Started server process [68912]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'services/scan_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [68912]
+INFO:     Started server process [70228]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
