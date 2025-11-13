@@ -381,7 +381,7 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     details['rsi'] = {'ok': bool(rsi_ok), 'w': W['rsi'], 'gain': W['rsi'] if rsi_ok else 0}
 
     # 5) TEMA20 SLOPE > 0 AND 주가 > TEMA20 (+2)
-    tema_slope_ok = (float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0) and (cur.close > cur.TEMA20)
+    tema_slope_ok = (float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0.001) and (cur.close > cur.TEMA20)
     flags["tema_slope_ok"] = bool(tema_slope_ok)
     if tema_slope_ok:
         score += W['tema_slope']
