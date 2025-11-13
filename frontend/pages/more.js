@@ -47,17 +47,22 @@ export default function More({ strategyGuideMarkdown = '' }) {
         return;
       }
       
-      // 이미 파싱된 내용이 있고 strategyGuideMarkdown이 같다면 재파싱하지 않음
-      if (strategyContent && strategyContent.length > 100) {
-        console.log('이미 파싱된 내용이 있음, 재파싱 생략');
-        return;
-      }
-      
       // 마크다운 파일 파싱 (클라이언트 사이드에서만 실행)
       const parseMarkdown = async () => {
         try {
+          console.log('마크다운 파싱 시작...');
+          
           // DOMPurify를 동적으로 import (클라이언트 사이드에서만)
-          const DOMPurify = (await import('isomorphic-dompurify')).default;
+          let DOMPurify;
+          try {
+            const dompurifyModule = await import('isomorphic-dompurify');
+            DOMPurify = dompurifyModule.default || dompurifyModule;
+            console.log('DOMPurify 로드 완료');
+          } catch (importError) {
+            console.error('DOMPurify import 실패:', importError);
+            // DOMPurify 없이 진행 (기본 sanitization만 수행)
+            DOMPurify = null;
+          }
           
           const text = strategyGuideMarkdown;
           
