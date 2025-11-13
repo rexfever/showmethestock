@@ -2,7 +2,7 @@
 const config = {
   development: {
     domain: 'http://localhost:3000',
-    backendUrl: 'http://localhost:8000'
+    backendUrl: 'http://localhost:8010'
   },
   production: {
     domain: 'https://sohntech.ai.kr',

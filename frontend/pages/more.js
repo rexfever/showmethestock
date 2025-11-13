@@ -8,10 +8,151 @@ export default function More() {
   const router = useRouter();
   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [showStrategyModal, setShowStrategyModal] = useState(false);
+  const [strategyContent, setStrategyContent] = useState('');
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 모달 열림 시 배경 스크롤 방지 (모바일)
+  useEffect(() => {
+    if (showStrategyModal) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [showStrategyModal]);
+
+  useEffect(() => {
+    if (showStrategyModal) {
+      // 마크다운 파일 로드 및 파싱 (클라이언트 사이드에서만 실행)
+      const loadAndParseMarkdown = async () => {
+        try {
+          // DOMPurify를 동적으로 import (클라이언트 사이드에서만)
+          const DOMPurify = (await import('isomorphic-dompurify')).default;
+          
+          const res = await fetch('/content/TRADING_STRATEGY_GUIDE.md');
+          const text = await res.text();
+          
+          // 라인 단위로 처리
+          const lines = text.split('\n');
+          let html = '';
+          let inList = false;
+          let listType = '';
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            
+            // 빈 줄 처리
+            if (!trimmed) {
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              html += '\n';
+              continue;
+            }
+            
+            // 헤더 처리
+            if (trimmed.startsWith('# ')) {
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              html += `<h1 class="text-2xl font-bold mb-4 mt-6">${trimmed.substring(2)}</h1>`;
+            } else if (trimmed.startsWith('## ')) {
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              html += `<h2 class="text-xl font-semibold mt-6 mb-3 text-gray-800">${trimmed.substring(3)}</h2>`;
+            } else if (trimmed.startsWith('### ')) {
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              html += `<h3 class="text-lg font-medium mt-5 mb-2 text-gray-700">${trimmed.substring(4)}</h3>`;
+            } else if (trimmed.startsWith('#### ')) {
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              html += `<h4 class="text-base font-medium mt-4 mb-2 text-gray-700">${trimmed.substring(5)}</h4>`;
+            } else if (trimmed === '---') {
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              html += '<hr class="my-6 border-gray-300">';
+            } else if (trimmed.match(/^- /)) {
+              // 리스트 항목
+              if (!inList || listType !== 'ul') {
+                if (inList) html += '</ol>';
+                html += '<ul class="list-disc mb-4 ml-6 space-y-1">';
+                inList = true;
+                listType = 'ul';
+              }
+              const content = trimmed.substring(2);
+              // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+              let listContent = content
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+              html += `<li class="text-gray-700">${listContent}</li>`;
+            } else if (trimmed.match(/^\d+\. /)) {
+              // 번호 리스트
+              if (!inList || listType !== 'ol') {
+                if (inList) html += '</ul>';
+                html += '<ol class="list-decimal mb-4 ml-6 space-y-1">';
+                inList = true;
+                listType = 'ol';
+              }
+              const content = trimmed.replace(/^\d+\. /, '');
+              // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+              let listContent = content
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+              html += `<li class="text-gray-700">${listContent}</li>`;
+            } else {
+              // 일반 문단
+              if (inList) {
+                html += listType === 'ul' ? '</ul>' : '</ol>';
+                inList = false;
+              }
+              // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+              let paraContent = trimmed
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+                .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>');
+              html += `<p class="mb-3 text-gray-700 leading-relaxed">${paraContent}</p>`;
+            }
+          }
+          
+          // 리스트가 끝나지 않았다면 닫기
+          if (inList) {
+            html += listType === 'ul' ? '</ul>' : '</ol>';
+          }
+          
+          // XSS 방지를 위한 DOMPurify 적용
+          const sanitizedHtml = DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'code', 'a', 'hr'],
+            ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+            ALLOW_DATA_ATTR: false
+          });
+          
+          setStrategyContent(sanitizedHtml);
+        } catch (err) {
+          console.error('가이드 로드 실패:', err);
+          setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
+        }
+      };
+      
+      loadAndParseMarkdown();
+    }
+  }, [showStrategyModal]);
 
   const handleLogout = async () => {
     if (user && logout) {
@@ -97,6 +238,40 @@ export default function More() {
 
 
 
+
+          {/* 매매전략 가이드 카드 */}
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg p-4 mb-6 text-white cursor-pointer hover:shadow-xl transition-shadow"
+               onClick={() => setShowStrategyModal(true)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">📈</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">매매전략 가이드</h3>
+                  <p className="text-sm opacity-90">검증된 매매 전략으로 수익 극대화</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm opacity-90">자세히 보기</span>
+                <span className="text-xl">→</span>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+              <div className="bg-white bg-opacity-20 rounded-lg p-2">
+                <div className="font-semibold">익절</div>
+                <div className="text-xs opacity-90">+3% 도달 시</div>
+              </div>
+              <div className="bg-white bg-opacity-20 rounded-lg p-2">
+                <div className="font-semibold">손절</div>
+                <div className="text-xs opacity-90">-7% (5일 후)</div>
+              </div>
+              <div className="bg-white bg-opacity-20 rounded-lg p-2">
+                <div className="font-semibold">승률</div>
+                <div className="text-xs opacity-90">62.5%</div>
+              </div>
+            </div>
+          </div>
 
           {/* 투자 활용법 가이드 */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -246,6 +421,61 @@ export default function More() {
         {/* 하단 네비게이션 공간 확보 */}
         <div className="h-20"></div>
       </div>
+
+      {/* 매매전략 가이드 모달 */}
+      {showStrategyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+             onClick={() => setShowStrategyModal(false)}>
+          <div className="bg-white rounded-lg max-w-4xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col shadow-xl"
+               onClick={(e) => e.stopPropagation()}>
+            {/* 모달 헤더 */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-bold">매매전략 가이드</h2>
+              <button 
+                onClick={() => setShowStrategyModal(false)}
+                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="모달 닫기"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* 모달 콘텐츠 - 스크롤 가능 영역 (모바일 최적화) */}
+            <div 
+              className="flex-1 overflow-y-auto p-6 min-h-0" 
+              style={{ 
+                maxHeight: 'calc(90vh - 160px)',
+                WebkitOverflowScrolling: 'touch' // iOS 부드러운 스크롤
+              }}
+            >
+              {strategyContent ? (
+                <div 
+                  className="prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: strategyContent }}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">가이드를 불러오는 중...</p>
+                </div>
+              )}
+            </div>
+            
+            {/* 모달 푸터 */}
+            <div className="border-t p-4 bg-gray-50 flex-shrink-0">
+              <button
+                onClick={() => setShowStrategyModal(false)}
+                className="w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition-colors font-medium min-h-[44px]"
+                aria-label="모달 닫기"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

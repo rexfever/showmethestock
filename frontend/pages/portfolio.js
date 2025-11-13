@@ -11,7 +11,7 @@ import Header from '../components/Header';
 const getConfig = () => ({
   backendUrl: process.env.NODE_ENV === 'production' 
     ? 'https://sohntech.ai.kr/api' 
-    : 'http://localhost:8000'
+    : 'http://localhost:8010'
 });
 
 export default function Portfolio() {
