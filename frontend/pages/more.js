@@ -40,15 +40,19 @@ export default function More() {
             ? 'http://localhost:3000/api/guide/trading-strategy-guide'  // 서버 내부 접근
             : '/api/guide/trading-strategy-guide';  // 개발 환경
             
-          const res = await fetch(apiUrl);
+          let res;
+          try {
+            res = await fetch(apiUrl);
+          } catch (e) {
+            // API 실패 시 직접 파일 경로 시도
+            res = await fetch('/content/TRADING_STRATEGY_GUIDE.md');
+          }
           
           if (!res.ok) {
-            // API 라우트 실패 시 직접 파일 경로 시도
-            const fallbackRes = await fetch('/content/TRADING_STRATEGY_GUIDE.md');
-            if (!fallbackRes.ok) {
-              throw new Error(`Failed to fetch guide: ${res.status}`);
-            }
-            const text = await fallbackRes.text();
+            throw new Error(`Failed to fetch guide: ${res.status}`);
+          }
+          
+          const text = await res.text();
           
           // 라인 단위로 처리
           const lines = text.split('\n');
