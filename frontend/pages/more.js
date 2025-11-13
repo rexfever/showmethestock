@@ -50,6 +50,14 @@ export default function More({ strategyGuideMarkdown = '' }) {
           
           const text = strategyGuideMarkdown;
           
+          if (!text || typeof text !== 'string') {
+            console.error('마크다운 텍스트가 유효하지 않습니다:', typeof text, text);
+            setStrategyContent('<p class="text-red-500">가이드 데이터를 불러올 수 없습니다.</p>');
+            return;
+          }
+          
+          console.log('마크다운 파싱 시작, 텍스트 길이:', text.length);
+          
           // 라인 단위로 처리
           const lines = text.split('\n');
           let html = '';
@@ -150,23 +158,35 @@ export default function More({ strategyGuideMarkdown = '' }) {
             html += listType === 'ul' ? '</ul>' : '</ol>';
           }
           
-          // XSS 방지를 위한 DOMPurify 적용
-          const sanitizedHtml = DOMPurify.sanitize(html, {
-            ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'code', 'a', 'hr'],
-            ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-            ALLOW_DATA_ATTR: false
-          });
+          console.log('마크다운 파싱 완료, HTML 길이:', html.length);
           
-          setStrategyContent(sanitizedHtml);
+          // XSS 방지를 위한 DOMPurify 적용
+          if (!DOMPurify || typeof DOMPurify.sanitize !== 'function') {
+            console.error('DOMPurify가 올바르게 로드되지 않았습니다');
+            // DOMPurify 없이도 기본적인 sanitization 수행
+            setStrategyContent(html);
+          } else {
+            const sanitizedHtml = DOMPurify.sanitize(html, {
+              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'code', 'a', 'hr'],
+              ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+              ALLOW_DATA_ATTR: false
+            });
+            
+            console.log('DOMPurify 적용 완료, sanitized HTML 길이:', sanitizedHtml.length);
+            setStrategyContent(sanitizedHtml);
+          }
         } catch (err) {
           console.error('가이드 파싱 실패:', err);
-          setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
+          console.error('에러 스택:', err.stack);
+          setStrategyContent(`<p class="text-red-500">가이드를 불러올 수 없습니다: ${err.message}</p>`);
         }
       };
       
       parseMarkdown();
+    } else {
+      console.log('모달 상태:', { showStrategyModal, strategyContent: strategyContent ? '있음' : '없음', strategyGuideMarkdown: strategyGuideMarkdown ? `있음 (길이: ${strategyGuideMarkdown.length})` : '없음' });
     }
-  }, [showStrategyModal, strategyGuideMarkdown]);
+  }, [showStrategyModal, strategyContent, strategyGuideMarkdown]);
 
   const handleLogout = async () => {
     if (user && logout) {
