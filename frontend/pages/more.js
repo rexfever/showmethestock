@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import Header from '../components/Header';
 
-export default function More() {
+export default function More({ strategyGuideMarkdown }) {
   const router = useRouter();
   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -26,33 +26,14 @@ export default function More() {
   }, [showStrategyModal]);
 
   useEffect(() => {
-    if (showStrategyModal && !strategyContent) {
-      // 마크다운 파일 로드 및 파싱 (클라이언트 사이드에서만 실행)
-      const loadAndParseMarkdown = async () => {
+    if (showStrategyModal && !strategyContent && strategyGuideMarkdown) {
+      // 마크다운 파일 파싱 (클라이언트 사이드에서만 실행)
+      const parseMarkdown = async () => {
         try {
           // DOMPurify를 동적으로 import (클라이언트 사이드에서만)
           const DOMPurify = (await import('isomorphic-dompurify')).default;
           
-          // 마크다운 파일 로드 - 서버의 Next.js API 라우트 사용
-          // 프로덕션에서는 내부 포트로 접근, 개발에서는 직접 접근
-          const isProduction = window.location.hostname !== 'localhost';
-          const apiUrl = isProduction 
-            ? 'http://localhost:3000/api/guide/trading-strategy-guide'  // 서버 내부 접근
-            : '/api/guide/trading-strategy-guide';  // 개발 환경
-            
-          let res;
-          try {
-            res = await fetch(apiUrl);
-          } catch (e) {
-            // API 실패 시 직접 파일 경로 시도
-            res = await fetch('/content/TRADING_STRATEGY_GUIDE.md');
-          }
-          
-          if (!res.ok) {
-            throw new Error(`Failed to fetch guide: ${res.status}`);
-          }
-          
-          const text = await res.text();
+          const text = strategyGuideMarkdown;
           
           // 라인 단위로 처리
           const lines = text.split('\n');
@@ -496,4 +477,36 @@ export default function More() {
       )}
     </>
   );
+}
+
+import fs from 'fs';
+import path from 'path';
+
+export async function getServerSideProps() {
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'content', 'TRADING_STRATEGY_GUIDE.md');
+    
+    if (fs.existsSync(filePath)) {
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      return {
+        props: {
+          strategyGuideMarkdown: fileContent
+        }
+      };
+    } else {
+      console.error('TRADING_STRATEGY_GUIDE.md 파일을 찾을 수 없습니다:', filePath);
+      return {
+        props: {
+          strategyGuideMarkdown: ''
+        }
+      };
+    }
+  } catch (error) {
+    console.error('가이드 파일 읽기 실패:', error);
+    return {
+      props: {
+        strategyGuideMarkdown: ''
+      }
+    };
+  }
 }
