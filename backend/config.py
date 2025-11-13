@@ -39,7 +39,7 @@ class Config:
     )
 
     # === Tight preset ===
-    min_signals: int = int(os.getenv("MIN_SIGNALS", "2"))              # 3 -> 2 (현실적)
+    min_signals: int = int(os.getenv("MIN_SIGNALS", "3"))              # 2 -> 3 (품질 향상)
     macd_osc_min: float = float(os.getenv("MACD_OSC_MIN", "0.0"))        # -10 -> 0 (음모멘텀 제외)
     rsi_mode: str = os.getenv("RSI_MODE", "tema")              # hybrid -> tema
     rsi_threshold: float = float(os.getenv("RSI_THRESHOLD", "58"))       # 55 -> 58
@@ -50,7 +50,7 @@ class Config:
     ext_from_tema20_max: float = float(os.getenv("EXT_FROM_TEMA20_MAX", "0.015"))  # 2% -> 1.5%
     
     # 거래량·유동성
-    vol_ma5_mult: float = float(os.getenv("VOL_MA5_MULT", "1.8"))        # 2.0 -> 1.8 (현실적)
+    vol_ma5_mult: float = float(os.getenv("VOL_MA5_MULT", "2.5"))        # 1.8 -> 2.5 (거래량 조건 강화)
     vol_ma20_mult: float = float(os.getenv("VOL_MA20_MULT", "1.2"))      # 신규: MA20도 함께 요구
     min_turnover_krw: int = int(os.getenv("MIN_TURNOVER_KRW", "1000000000"))  # 10억 이상
     

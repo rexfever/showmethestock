@@ -387,8 +387,8 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         score += W['tema_slope']
     details['tema_slope'] = {'ok': bool(tema_slope_ok), 'w': W['tema_slope'], 'gain': W['tema_slope'] if tema_slope_ok else 0}
 
-    # 6) OBV SLOPE > 0 (+2)
-    obv_slope_ok = float(df.iloc[-1]["OBV_SLOPE20"]) > 0
+    # 6) OBV SLOPE > 0.001 (+2) - 더 강한 자금 유입만 선택
+    obv_slope_ok = float(df.iloc[-1]["OBV_SLOPE20"]) > 0.001
     flags["obv_slope_ok"] = bool(obv_slope_ok)
     if obv_slope_ok:
         score += W['obv_slope']
@@ -430,18 +430,15 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         "ext_ok": bool(ext_ok),
     })
     
-    # 레이블링 (더 세분화된 평가) - 임계값 완화
-    if score >= 8:
+    # 레이블링 (더 세분화된 평가) - 품질 향상을 위해 임계값 상향
+    if score >= 10:
         flags["label"] = "강한 매수"
         flags["match"] = True
-    elif score >= 6:
+    elif score >= 8:
         flags["label"] = "매수 후보"
         flags["match"] = True
-    elif score >= 4:
+    elif score >= 6:
         flags["label"] = "관심"
-        flags["match"] = True
-    elif score >= 2:
-        flags["label"] = "관망"
         flags["match"] = True
     else:
         flags["label"] = "제외"
