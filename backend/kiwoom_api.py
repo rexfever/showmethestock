@@ -290,16 +290,32 @@ class KiwoomAPI:
         if not rows:
             prev = pd.bdate_range(end=pd.Timestamp.today(), periods=2)[0]
             rows = _request(prev.strftime("%Y%m%d"))
+        # API 응답 디버깅: 실제 응답 구조 확인 (high/low가 0인 경우)
+        # 디버깅 플래그가 활성화된 경우에만 로깅
+        if rows and len(rows) > 0 and os.getenv("DEBUG_API_RESPONSE") == "1":
+            sample_row = rows[0]
+            print(f"🔍 API 응답 디버깅 (코드: {code}):")
+            print(f"   사용 가능한 모든 키: {list(sample_row.keys())}")
+            high_candidates = {k: sample_row.get(k) for k in ["high_prc", "hg_prc", "high", "stck_hgpr"] if k in sample_row}
+            if high_candidates:
+                print(f"   high 후보 필드: {high_candidates}")
+            low_candidates = {k: sample_row.get(k) for k in ["low_prc", "lw_prc", "low", "stck_lwpr"] if k in sample_row}
+            if low_candidates:
+                print(f"   low 후보 필드: {low_candidates}")
+            print(f"   샘플 응답: {str(sample_row)[:500]}")
+        
         df = pd.DataFrame(
             [
                 {
                     "date": r.get("dt") or r.get("date") or r.get("stck_bsop_date"),
                     "open": float(r.get("opn_prc") or r.get("open_prc") or r.get("open") or r.get("stck_oprc") or 0),
-                    "high": float(r.get("high_prc") or r.get("hg_prc") or r.get("high") or r.get("stck_hgpr") or 0),
-                    "low": float(r.get("low_prc") or r.get("lw_prc") or r.get("low") or r.get("stck_lwpr") or 0),
+                    # 키움 API 문서 기준: stck_hgpr (최고가), stck_lwpr (최저가)
+                    # ka10081 API 응답 구조에 따라 다양한 필드명 시도
+                    "high": float(r.get("stck_hgpr") or r.get("high_prc") or r.get("hg_prc") or r.get("high") or 0),
+                    "low": float(r.get("stck_lwpr") or r.get("low_prc") or r.get("lw_prc") or r.get("low") or 0),
                     # 종가 우선. 장중에는 cls_prc가 비거나 0일 수 있어 cur_prc를 보조로 사용
-                    "close": float(r.get("cls_prc") or r.get("cur_prc") or r.get("close") or r.get("stck_clpr") or 0),
-                    "volume": int(r.get("trde_qty") or r.get("trd_qty") or r.get("volume") or r.get("acml_vol") or 0),
+                    "close": float(r.get("stck_clpr") or r.get("cls_prc") or r.get("cur_prc") or r.get("close") or 0),
+                    "volume": int(r.get("acml_vol") or r.get("trde_qty") or r.get("trd_qty") or r.get("volume") or 0),
                 }
                 for r in rows
             ]
