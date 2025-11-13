@@ -13,10 +13,13 @@ export default function More({ strategyGuideMarkdown = '' }) {
   const [showStrategyModal, setShowStrategyModal] = useState(false);
   const [strategyContent, setStrategyContent] = useState('');
 
-  // 디버깅: strategyGuideMarkdown 확인
+  // 디버깅: strategyGuideMarkdown 확인 (개발 환경에서만)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('strategyGuideMarkdown:', strategyGuideMarkdown ? `있음 (길이: ${strategyGuideMarkdown.length})` : '없음');
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[More] strategyGuideMarkdown:', strategyGuideMarkdown ? `있음 (길이: ${strategyGuideMarkdown.length})` : '없음');
+      if (strategyGuideMarkdown) {
+        console.log('[More] strategyGuideMarkdown 첫 100자:', strategyGuideMarkdown.substring(0, 100));
+      }
     }
   }, [strategyGuideMarkdown]);
 
