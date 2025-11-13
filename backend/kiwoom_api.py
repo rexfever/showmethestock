@@ -308,14 +308,13 @@ class KiwoomAPI:
             [
                 {
                     "date": r.get("dt") or r.get("date") or r.get("stck_bsop_date"),
-                    "open": float(r.get("opn_prc") or r.get("open_prc") or r.get("open") or r.get("stck_oprc") or 0),
-                    # 키움 API 문서 기준: stck_hgpr (최고가), stck_lwpr (최저가)
-                    # ka10081 API 응답 구조에 따라 다양한 필드명 시도
-                    "high": float(r.get("stck_hgpr") or r.get("high_prc") or r.get("hg_prc") or r.get("high") or 0),
-                    "low": float(r.get("stck_lwpr") or r.get("low_prc") or r.get("lw_prc") or r.get("low") or 0),
+                    # ka10081 API 실제 응답 필드명: open_pric, high_pric, low_pric, cur_prc, trde_qty
+                    "open": float(r.get("open_pric") or r.get("opn_prc") or r.get("open_prc") or r.get("open") or r.get("stck_oprc") or 0),
+                    "high": float(r.get("high_pric") or r.get("stck_hgpr") or r.get("high_prc") or r.get("hg_prc") or r.get("high") or 0),
+                    "low": float(r.get("low_pric") or r.get("stck_lwpr") or r.get("low_prc") or r.get("lw_prc") or r.get("low") or 0),
                     # 종가 우선. 장중에는 cls_prc가 비거나 0일 수 있어 cur_prc를 보조로 사용
-                    "close": float(r.get("stck_clpr") or r.get("cls_prc") or r.get("cur_prc") or r.get("close") or 0),
-                    "volume": int(r.get("acml_vol") or r.get("trde_qty") or r.get("trd_qty") or r.get("volume") or 0),
+                    "close": float(r.get("cur_prc") or r.get("stck_clpr") or r.get("cls_prc") or r.get("close") or 0),
+                    "volume": int(r.get("trde_qty") or r.get("acml_vol") or r.get("trd_qty") or r.get("volume") or 0),
                 }
                 for r in rows
             ]
