@@ -34,14 +34,25 @@ export default function More({ strategyGuideMarkdown = '' }) {
     }
   }, [showStrategyModal]);
 
+  // 모달이 열릴 때마다 마크다운 파싱
   useEffect(() => {
-    if (showStrategyModal && !strategyContent) {
+    // 클라이언트 사이드에서만 실행
+    if (typeof window === 'undefined') return;
+    
+    if (showStrategyModal) {
       // strategyGuideMarkdown이 없거나 빈 문자열인 경우 에러 메시지 표시
       if (!strategyGuideMarkdown || strategyGuideMarkdown.trim() === '') {
         console.error('strategyGuideMarkdown이 없습니다:', strategyGuideMarkdown);
         setStrategyContent('<p class="text-red-500">가이드 데이터를 불러올 수 없습니다.</p>');
         return;
       }
+      
+      // 이미 파싱된 내용이 있고 strategyGuideMarkdown이 같다면 재파싱하지 않음
+      if (strategyContent && strategyContent.length > 100) {
+        console.log('이미 파싱된 내용이 있음, 재파싱 생략');
+        return;
+      }
+      
       // 마크다운 파일 파싱 (클라이언트 사이드에서만 실행)
       const parseMarkdown = async () => {
         try {
