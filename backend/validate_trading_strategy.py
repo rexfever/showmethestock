@@ -45,12 +45,12 @@ def validate_trading_strategy(
     print(f"  - 최대 추적: {max_days}일")
     print()
     
-    # 스캔된 종목 조회
+    # 스캔된 종목 조회 (전체 기간)
     with db_manager.get_cursor(commit=False) as cur:
         if date_limit:
             date_threshold = (datetime.now() - timedelta(days=date_limit)).strftime('%Y-%m-%d')
             query = """
-                SELECT DISTINCT date, code, name, current_price
+                SELECT date, code, name, current_price
                 FROM scan_rank
                 WHERE date >= %s
                   AND code != 'NORESULT'
@@ -62,19 +62,18 @@ def validate_trading_strategy(
                 query += f" LIMIT {max_stocks}"
             cur.execute(query, (date_threshold,))
         else:
-            date_threshold = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+            # 전체 기간 조회 (DISTINCT 제거)
             query = """
-                SELECT DISTINCT date, code, name, current_price
+                SELECT date, code, name, current_price
                 FROM scan_rank
-                WHERE date >= %s
-                  AND code != 'NORESULT'
+                WHERE code != 'NORESULT'
                   AND current_price IS NOT NULL
                   AND current_price > 0
                 ORDER BY date DESC, code
             """
             if max_stocks:
                 query += f" LIMIT {max_stocks}"
-            cur.execute(query, (date_threshold,))
+            cur.execute(query)
         
         rows = cur.fetchall()
     
