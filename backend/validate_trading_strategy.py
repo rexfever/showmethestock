@@ -22,7 +22,8 @@ def validate_trading_strategy(
     stop_loss_pct=-5.0,
     take_profit_pct=8.0,
     preserve_pct=3.0,
-    max_days=60
+    max_days=60,
+    min_hold_days=0
 ):
     """
     매매 전략 유효성 검증
@@ -34,6 +35,7 @@ def validate_trading_strategy(
         take_profit_pct: 익절 비율 (%)
         preserve_pct: 보존 비율 (%)
         max_days: 최대 추적 일수
+        min_hold_days: 최소 보유 기간 (일) - 이 기간 동안은 손절 제외
     """
     print("=" * 80)
     print("📊 매매 전략 유효성 검증")
@@ -43,6 +45,7 @@ def validate_trading_strategy(
     print(f"  - 익절: {take_profit_pct}%")
     print(f"  - 보존: {preserve_pct}%")
     print(f"  - 최대 추적: {max_days}일")
+    print(f"  - 최소 보유: {min_hold_days}일")
     print()
     
     # 스캔된 종목 조회 (전체 기간)
@@ -226,25 +229,31 @@ def validate_trading_strategy(
                     preserve_triggered = True
                     # 손절선을 매수가로 변경 (이제 0% 미만이면 손절)
                 
-                # 손절 조건 체크
-                if preserve_triggered:
-                    # 보존 후에는 0% 미만이면 손절
-                    if low_return_pct < 0:
-                        status = 'STOP_LOSS'
-                        exit_price = entry_price  # 보존 후 손절은 매수가
-                        exit_date = current_date
-                        days_to_exit = (datetime.strptime(exit_date, '%Y%m%d') - 
-                                       datetime.strptime(scan_date_normalized, '%Y%m%d')).days
-                        break
-                else:
-                    # 보존 전에는 -5% 손절
-                    if low_return_pct <= stop_loss_pct:
-                        status = 'STOP_LOSS'
-                        exit_price = entry_price * (1 + stop_loss_pct / 100)
-                        exit_date = current_date
-                        days_to_exit = (datetime.strptime(exit_date, '%Y%m%d') - 
-                                       datetime.strptime(scan_date_normalized, '%Y%m%d')).days
-                        break
+                # 최소 보유 기간 체크
+                current_days = (datetime.strptime(current_date, '%Y%m%d') - 
+                               datetime.strptime(scan_date_normalized, '%Y%m%d')).days
+                
+                # 최소 보유 기간 전에는 손절 제외
+                can_stop_loss = current_days >= min_hold_days
+                
+                # 손절 조건 체크 (최소 보유 기간 경과 후에만)
+                if can_stop_loss:
+                    if preserve_triggered:
+                        # 보존 후에는 0% 미만이면 손절
+                        if low_return_pct < 0:
+                            status = 'STOP_LOSS'
+                            exit_price = entry_price  # 보존 후 손절은 매수가
+                            exit_date = current_date
+                            days_to_exit = current_days
+                            break
+                    else:
+                        # 보존 전에는 손절 기준으로 손절
+                        if low_return_pct <= stop_loss_pct:
+                            status = 'STOP_LOSS'
+                            exit_price = entry_price * (1 + stop_loss_pct / 100)
+                            exit_date = current_date
+                            days_to_exit = current_days
+                            break
                 
                 # 익절 조건 체크
                 if high_return_pct >= take_profit_pct:
@@ -255,9 +264,7 @@ def validate_trading_strategy(
                                    datetime.strptime(scan_date_normalized, '%Y%m%d')).days
                     break
                 
-                # 최대 일수 체크
-                current_days = (datetime.strptime(current_date, '%Y%m%d') - 
-                               datetime.strptime(scan_date_normalized, '%Y%m%d')).days
+                # 최대 일수 체크 (current_days는 이미 위에서 계산됨)
                 if current_days >= max_days:
                     status = 'MAX_DAYS'
                     exit_price = close_price
@@ -432,6 +439,7 @@ if __name__ == "__main__":
     parser.add_argument("--take-profit", type=float, default=8.0, help="익절 비율 %% (기본: 8.0%%)")
     parser.add_argument("--preserve", type=float, default=3.0, help="보존 비율 %% (기본: 3.0%%)")
     parser.add_argument("--max-days", type=int, default=60, help="최대 추적 일수 (기본: 60일)")
+    parser.add_argument("--min-hold-days", type=int, default=0, help="최소 보유 기간 일 (기본: 0일)")
     
     args = parser.parse_args()
     
@@ -441,6 +449,7 @@ if __name__ == "__main__":
         stop_loss_pct=args.stop_loss,
         take_profit_pct=args.take_profit,
         preserve_pct=args.preserve,
-        max_days=args.max_days
+        max_days=args.max_days,
+        min_hold_days=args.min_hold_days
     )
 
