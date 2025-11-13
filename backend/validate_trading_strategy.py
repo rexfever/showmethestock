@@ -178,12 +178,12 @@ def validate_trading_strategy(
             # 날짜순 정렬
             df_filtered = df_filtered.sort_values('date_normalized').reset_index(drop=True)
             
-            # 스캔일은 매수 전이므로 제외하고, 다음날부터 추적
-            # 스캔일 이후의 데이터만 사용 (스캔일 다음날부터)
-            df_tracking = df_filtered[df_filtered['date_normalized'] > scan_date_normalized].copy()
+            # 스캔일부터 추적 (성과보고서와 동일하게)
+            # 스캔일의 최고가도 익절에 포함되어야 함
+            df_tracking = df_filtered[df_filtered['date_normalized'] >= scan_date_normalized].copy()
             
             if df_tracking.empty:
-                print("❌ 추적 데이터 없음 (스캔일 다음날 데이터 없음)")
+                print("❌ 추적 데이터 없음 (스캔일 데이터 없음)")
                 results.append({
                     'code': code,
                     'name': name,
@@ -200,7 +200,7 @@ def validate_trading_strategy(
                 time.sleep(0.2)
                 continue
             
-            # 전략 추적 (다음날부터)
+            # 전략 추적 (스캔일부터)
             status = 'HOLDING'  # HOLDING, STOP_LOSS, TAKE_PROFIT, PRESERVED, MAX_DAYS
             exit_price = None
             exit_date = None
@@ -255,13 +255,12 @@ def validate_trading_strategy(
                             days_to_exit = current_days
                             break
                 
-                # 익절 조건 체크
+                # 익절 조건 체크 (스캔일 포함)
                 if high_return_pct >= take_profit_pct:
                     status = 'TAKE_PROFIT'
                     exit_price = entry_price * (1 + take_profit_pct / 100)
                     exit_date = current_date
-                    days_to_exit = (datetime.strptime(exit_date, '%Y%m%d') - 
-                                   datetime.strptime(scan_date_normalized, '%Y%m%d')).days
+                    days_to_exit = current_days  # current_days는 이미 계산됨
                     break
                 
                 # 최대 일수 체크 (current_days는 이미 위에서 계산됨)
