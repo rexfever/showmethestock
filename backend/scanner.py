@@ -430,7 +430,8 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         "ext_ok": bool(ext_ok),
     })
     
-    # 레이블링 (더 세분화된 평가) - 품질 향상을 위해 임계값 상향
+    # 레이블링 (더 세분화된 평가) - 품질 향상: 8점 이상만 추천
+    # 6점대는 승률이 낮고 변동성이 크므로 제외
     if score >= 10:
         flags["label"] = "강한 매수"
         flags["match"] = True
@@ -438,8 +439,8 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         flags["label"] = "매수 후보"
         flags["match"] = True
     elif score >= 6:
-        flags["label"] = "관심"
-        flags["match"] = True
+        flags["label"] = "관심 (제외)"
+        flags["match"] = False  # 6점대는 추천하지 않음 (승률 낮음, 변동성 높음)
     else:
         flags["label"] = "제외"
         flags["match"] = False  # 제외 종목은 매칭되지 않음
