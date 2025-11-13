@@ -33,7 +33,7 @@ export default function More() {
           // DOMPurify를 동적으로 import (클라이언트 사이드에서만)
           const DOMPurify = (await import('isomorphic-dompurify')).default;
           
-          const res = await fetch('/content/TRADING_STRATEGY_GUIDE.md');
+          const res = await fetch('/api/trading-strategy-guide');
           const text = await res.text();
           
           // 라인 단위로 처리
