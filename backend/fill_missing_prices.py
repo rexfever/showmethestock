@@ -137,8 +137,7 @@ def fill_missing_prices(dry_run=False, date_limit=None):
                         cur_update.execute("""
                             UPDATE scan_rank
                             SET current_price = %s,
-                                close_price = %s,
-                                updated_at = NOW()
+                                close_price = %s
                             WHERE date = %s AND code = %s
                         """, (target_price, target_price, date_str, code))
                     
