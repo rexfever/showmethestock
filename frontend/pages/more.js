@@ -146,14 +146,14 @@ export default function More({ strategyGuideMarkdown }) {
           
           setStrategyContent(sanitizedHtml);
         } catch (err) {
-          console.error('가이드 로드 실패:', err);
+          console.error('가이드 파싱 실패:', err);
           setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
         }
       };
       
-      loadAndParseMarkdown();
+      parseMarkdown();
     }
-  }, [showStrategyModal]);
+  }, [showStrategyModal, strategyGuideMarkdown]);
 
   const handleLogout = async () => {
     if (user && logout) {

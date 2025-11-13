@@ -1,0 +1,173 @@
+INFO:     Will watch for changes in these directories: ['/Users/rexsmac/workspace/stock-finder/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8010 (Press CTRL+C to quit)
+INFO:     Started reloader process [38330] using WatchFiles
+INFO:     Started server process [38356]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+INFO:     127.0.0.1:52010 - "GET /health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52021 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58313 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58393 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58393 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58436 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58395 - "OPTIONS /auth/kakao/callback HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://kauth.kakao.com/oauth/token "HTTP/1.1 200 "
+INFO:httpx:HTTP Request: GET https://kapi.kakao.com/v2/user/me "HTTP/1.1 200 OK"
+카카오 콜백 요청: {'code': 'NOVLFNOtDG81w9x864jIy_Vxg5LJeS3o8QpHXZw17PP9jhqeblsJlAAAAAQKFxafAAABmn4zN9HHP8VuE1ZNOQ', 'redirect_uri': 'http://localhost:3000/kakao-callback'}
+카카오 토큰 응답 상태: 200
+카카오 토큰 응답 내용: {"access_token":"EcjKifYUwyGh9Mv8RsnYokKWglGBqT9uAAAAAQoXEC8AAAGafjNBZ7G7d-HwzTGR","token_type":"bearer","refresh_token":"qWPaisxhE_vLTu6u-wemEBKQR7vtitYxAAAAAgoXEC8AAAGafjNBYrG7d-HwzTGR","id_token":"eyJraWQiOiI5ZjI1MmRhZGQ1ZjIzM2Y5M2QyZmE1MjhkMTJmZWEiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0ZWI1NzllNTI3MDllYTY0ZThiOTQxYjljOTVkMjBkYSIsInN1YiI6IjQ0NTY1ODUwMjMiLCJhdXRoX3RpbWUiOjE3NjMwNTM4NzksImlzcyI6Imh0dHBzOi8va2F1dGgua2FrYW8uY29tIiwibmlja25hbWUiOiLshpDsp4TtmJUiLCJleHAiOjE3NjMwNjEwNzksImlhdCI6MTc2MzA1Mzg3OSwicGljdHVyZSI6Imh0dHA6Ly9rLmtha2FvY2RuLm5ldC9kbi9jd0V1ZzcvYnRzSlBGckhMSUwvM0UydlBFYmM5QXpEWGVZMW92djlEMC9pbWdfMTEweDExMC5qcGciLCJlbWFpbCI6ImVtb3plcm9AbmF2ZXIuY29tIn0.DB5uvzHZMMoNgu6znoUpyk11SnTOY8vE1yUCbDJzj6S6HzNHhuq5yQ62tOV1aMslnJCPoPZojQIe6iD4EjcJ4K6mayWT5xdVMOz9sN1CgAvD3Ne8uq2kMIKJa2ZblgtNdcpH02RvxPlERyKbBT01oAhADJ_ttTGqD7ElqpooA7m--VagtZeJE0xerQl6LPITmqZtqHX0QGSv-QI60CjBNTIgkZ395C6A4qjntJj7PG2InhqmU06gXfXfMjYFasTR5wd4Y_II7El2LzMdyesXdKq826mAAxxHaCbVIsNpyhprEKhV_MmWGvpYQEUdq91UW5xGerugpfGuQLxKk4btAA","expires_in":7199,"scope":"account_email profile_image profile_nickname","refresh_token_expires_in":5183999}
+카카오 사용자 정보 응답 상태: 200
+카카오 사용자 정보 응답 내용: {"id":4456585023,"connected_at":"2025-09-20T14:50:32Z","properties":{"nickname":"손진형","profile_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","thumbnail_image":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg"},"kakao_account":{"profile_nickname_needs_agreement":false,"profile_image_needs_agreement":false,"profile":{"nickname":"손진형","thumbnail_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_110x110.jpg","profile_image_url":"http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg","is_default_image":false,"is_default_nickname":false},"has_email":true,"email_needs_agreement":false,"is_email_valid":true,"is_email_verified":true,"email":"emozero@naver.com"}}
+사용자 정보 구성: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+create_user_from_social 입력: {'provider': 'kakao', 'provider_id': '4456585023', 'email': 'emozero@naver.com', 'name': '손진형', 'profile_image': 'http://k.kakaocdn.net/dn/cwEug7/btsJPFrHLIL/3E2vPEbc9AzDXeY1ovv9D0/img_640x640.jpg', 'phone_number': '', 'gender': '', 'age_range': '', 'birthday': ''}
+provider_id 값: 4456585023
+UserCreate 객체 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+사용자 생성 요청: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account='' gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.FREE: 'free'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=False is_active=True
+기존 사용자 발견: email=emozero@naver.com, provider=kakao
+업데이트된 사용자: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.VIP: 'vip'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=1 created_at=datetime.datetime(2025, 10, 12, 1, 1, 18, tzinfo=backports.zoneinfo.ZoneInfo(key='Asia/Seoul')) last_login=datetime.datetime(2025, 11, 9, 9, 4, 12, 604795, tzinfo=backports.zoneinfo.ZoneInfo(key='Asia/Seoul'))
+사용자 생성 완료: email='emozero@naver.com' name='손진형' provider='kakao' provider_id='4456585023' birth_year=None kakao_account=None gender=None age_group=None birthday=None is_profile_complete=False membership_tier=<MembershipTier.VIP: 'vip'> subscription_status=<SubscriptionStatus.ACTIVE: 'active'> subscription_expires_at=None payment_method=None is_admin=True is_active=True id=1 created_at=datetime.datetime(2025, 10, 12, 1, 1, 18, tzinfo=backports.zoneinfo.ZoneInfo(key='Asia/Seoul')) last_login=datetime.datetime(2025, 11, 9, 9, 4, 12, 604795, tzinfo=backports.zoneinfo.ZoneInfo(key='Asia/Seoul'))
+마지막 로그인 시간 업데이트 완료
+INFO:     127.0.0.1:58395 - "POST /auth/kakao/callback HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "institution_flow" does not exist
+LINE 3: ...                   sector_rotation, foreign_flow, institutio...
+                                                             ^
+INFO:     127.0.0.1:58524 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58395 - "GET /popup-notice/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58506 - "GET /maintenance/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58526 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58395 - "GET /popup-notice/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58506 - "GET /maintenance/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58526 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58526 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58506 - "OPTIONS /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58395 - "OPTIONS /admin/maintenance HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58545 - "OPTIONS /admin/popup-notice HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58547 - "GET /available-scan-dates HTTP/1.1" 404 Not Found
+⚠️ 시장 상황 DB 조회 실패: column "institution_flow" does not exist
+LINE 3: ...                   sector_rotation, foreign_flow, institutio...
+                                                             ^
+INFO:     127.0.0.1:58506 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58526 - "OPTIONS /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58395 - "OPTIONS /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58545 - "OPTIONS /admin/maintenance HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58548 - "OPTIONS /admin/trend-analysis HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58545 - "OPTIONS /admin/popup-notice HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58506 - "OPTIONS /admin/trend-analysis HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58506 - "GET /available-scan-dates HTTP/1.1" 404 Not Found
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+INFO:     127.0.0.1:58547 - "GET /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58526 - "GET /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58548 - "GET /admin/maintenance HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58395 - "GET /admin/popup-notice HTTP/1.1" 200 OK
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+⚠️ 시장 상황 DB 조회 실패: column "institution_flow" does not exist
+LINE 3: ...                   sector_rotation, foreign_flow, institutio...
+                                                             ^
+INFO:     127.0.0.1:58506 - "GET /latest-scan HTTP/1.1" 200 OK
+================================================================================
+📊 추세 변화 대응 분석
+================================================================================
+
+1️⃣ 최근 4주간 성과 분석
+   평균 수익률: 19.12%
+   승률: 89.29%
+   추천 종목 수: 56개
+   최고 수익률: 84.65%
+   최저 수익률: 0.00%
+   평가: poor
+
+2️⃣ 2025년 11월 성과 분석
+   데이터 없음
+
+3️⃣ 권장 파라미터 조정
+   현재 설정:
+     min_signals: 3
+     rsi_upper_limit: 70.0
+     vol_ma5_mult: 1.8
+     gap_max: 0.05
+     ext_from_tema20_max: 0.05
+
+   권장 설정 (poor 기준):
+     min_signals: 2
+     rsi_upper_limit: 70
+     vol_ma5_mult: 1.5
+     gap_max: 0.02
+     ext_from_tema20_max: 0.02
+     min_score: 4
+
+   변경 사항:
+     - min_signals: 3 → 2
+     - vol_ma5_mult: 1.8 → 1.5
+     - gap_max: 0.05 → 0.02
+     - ext_from_tema20_max: 0.05 → 0.02
+
+================================================================================
+INFO:     127.0.0.1:58545 - "GET /admin/trend-analysis HTTP/1.1" 200 OK
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+INFO:     127.0.0.1:58547 - "GET /admin/maintenance HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58548 - "GET /admin/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58395 - "GET /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58526 - "GET /admin/popup-notice HTTP/1.1" 200 OK
+사용자 ID 1의 is_admin 값: True (타입: <class 'bool'>)
+================================================================================
+📊 추세 변화 대응 분석
+================================================================================
+
+1️⃣ 최근 4주간 성과 분석
+   평균 수익률: 19.12%
+   승률: 89.29%
+   추천 종목 수: 56개
+   최고 수익률: 84.65%
+   최저 수익률: 0.00%
+   평가: poor
+
+2️⃣ 2025년 11월 성과 분석
+   데이터 없음
+
+3️⃣ 권장 파라미터 조정
+   현재 설정:
+     min_signals: 3
+     rsi_upper_limit: 70.0
+     vol_ma5_mult: 1.8
+     gap_max: 0.05
+     ext_from_tema20_max: 0.05
+
+   권장 설정 (poor 기준):
+     min_signals: 2
+     rsi_upper_limit: 70
+     vol_ma5_mult: 1.5
+     gap_max: 0.02
+     ext_from_tema20_max: 0.02
+     min_score: 4
+
+   변경 사항:
+     - min_signals: 3 → 2
+     - vol_ma5_mult: 1.8 → 1.5
+     - gap_max: 0.05 → 0.02
+     - ext_from_tema20_max: 0.05 → 0.02
+
+================================================================================
+INFO:     127.0.0.1:58545 - "GET /admin/trend-analysis HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "institution_flow" does not exist
+LINE 3: ...                   sector_rotation, foreign_flow, institutio...
+                                                             ^
+INFO:     127.0.0.1:58591 - "GET /latest-scan HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58594 - "GET /popup-notice/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58596 - "GET /maintenance/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58594 - "GET /popup-notice/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58597 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58596 - "GET /maintenance/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58597 - "GET /recurring-stocks?days=14&min_appearances=2 HTTP/1.1" 200 OK
