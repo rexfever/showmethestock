@@ -6,12 +6,19 @@ import Header from '../components/Header';
 import fs from 'fs';
 import path from 'path';
 
-export default function More({ strategyGuideMarkdown }) {
+export default function More({ strategyGuideMarkdown = '' }) {
   const router = useRouter();
   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showStrategyModal, setShowStrategyModal] = useState(false);
   const [strategyContent, setStrategyContent] = useState('');
+
+  // 디버깅: strategyGuideMarkdown 확인
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('strategyGuideMarkdown:', strategyGuideMarkdown ? `있음 (길이: ${strategyGuideMarkdown.length})` : '없음');
+    }
+  }, [strategyGuideMarkdown]);
 
   useEffect(() => {
     setMounted(true);
@@ -28,7 +35,13 @@ export default function More({ strategyGuideMarkdown }) {
   }, [showStrategyModal]);
 
   useEffect(() => {
-    if (showStrategyModal && !strategyContent && strategyGuideMarkdown) {
+    if (showStrategyModal && !strategyContent) {
+      // strategyGuideMarkdown이 없거나 빈 문자열인 경우 에러 메시지 표시
+      if (!strategyGuideMarkdown || strategyGuideMarkdown.trim() === '') {
+        console.error('strategyGuideMarkdown이 없습니다:', strategyGuideMarkdown);
+        setStrategyContent('<p class="text-red-500">가이드 데이터를 불러올 수 없습니다.</p>');
+        return;
+      }
       // 마크다운 파일 파싱 (클라이언트 사이드에서만 실행)
       const parseMarkdown = async () => {
         try {
