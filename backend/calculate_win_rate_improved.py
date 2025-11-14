@@ -1,19 +1,19 @@
 """
 개선된 스캔 로직(Step 0~3)으로 승률 재계산
+데이터베이스에 저장된 최근 스캔 결과를 활용
 """
 import sys
 import os
 from datetime import datetime, timedelta
 import json
+import time
 
 # 경로 추가
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from services.scan_service import execute_scan_with_fallback
 from services.returns_service import calculate_returns_batch
-from market_analyzer import MarketAnalyzer
-from kiwoom_api import KiwoomAPI
-from config import config
+from kiwoom_api import api
+from db_manager import db_manager
 
 
 def calculate_trading_strategy_win_rate(returns_data, take_profit_pct=3.0, stop_loss_pct=-7.0, preserve_pct=1.5, min_hold_days=5, max_hold_days=45):
@@ -132,75 +132,59 @@ def calculate_trading_strategy_win_rate(returns_data, take_profit_pct=3.0, stop_
     }
 
 
-def scan_recent_period(days=60):
-    """최근 N일간 스캔 실행"""
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+def get_recent_scan_results(days=60):
+    """데이터베이스에서 최근 N일간 스캔 결과 조회"""
+    date_threshold = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    
+    print(f"📊 데이터베이스에서 최근 {days}일간 스캔 결과 조회")
+    print(f"📅 기준일: {date_threshold} 이후")
     
     results = {}
-    api = KiwoomAPI()
-    analyzer = MarketAnalyzer()
     
-    # 유니버스 가져오기
-    kospi = api.get_top_codes('KOSPI', config.universe_kospi)
-    kosdaq = api.get_top_codes('KOSDAQ', config.universe_kosdaq)
-    universe = [*kospi, *kosdaq]
+    with db_manager.get_cursor(commit=False) as cur:
+        query = """
+            SELECT date, code, name, current_price, score
+            FROM scan_rank
+            WHERE date >= %s
+              AND code != 'NORESULT'
+              AND current_price IS NOT NULL
+              AND current_price > 0
+            ORDER BY date DESC, code
+        """
+        cur.execute(query, (date_threshold,))
+        rows = cur.fetchall()
     
-    print(f"📊 유니버스: KOSPI {len(kospi)}개, KOSDAQ {len(kosdaq)}개, 총 {len(universe)}개")
-    print(f"📅 스캔 기간: {start_date.strftime('%Y%m%d')} ~ {end_date.strftime('%Y%m%d')} ({days}일)")
+    print(f"📊 조회된 종목 수: {len(rows)}개")
     
-    current_date = start_date
-    scan_count = 0
-    
-    while current_date <= end_date:
-        date_str = current_date.strftime('%Y%m%d')
+    # 날짜별로 그룹화
+    for row in rows:
+        if isinstance(row, dict):
+            date_str = row['date'].strftime('%Y%m%d') if hasattr(row['date'], 'strftime') else str(row['date']).replace('-', '')[:8]
+            code = row['code']
+            name = row['name']
+            price = row['current_price']
+            score = row.get('score', 0)
+        else:
+            date_str = row[0].strftime('%Y%m%d') if hasattr(row[0], 'strftime') else str(row[0]).replace('-', '')[:8]
+            code = row[1]
+            name = row[2]
+            price = row[3]
+            score = row[4] if len(row) > 4 else 0
         
-        # 주말 제외
-        if current_date.weekday() >= 5:  # 토요일(5), 일요일(6)
-            current_date += timedelta(days=1)
-            continue
-        
-        try:
-            # 시장 분석
-            market_condition = None
-            try:
-                market_condition = analyzer.analyze_market_condition(date_str)
-            except Exception as e:
-                print(f"⚠️ 시장 분석 실패 ({date_str}): {e}")
-            
-            # 스캔 실행 (개선된 로직: Step 0~3만 사용)
-            items, chosen_step = execute_scan_with_fallback(universe, date_str, market_condition)
-            
-            if items:
-                results[date_str] = {
-                    'items': items,
-                    'chosen_step': chosen_step,
-                    'market_condition': {
-                        'sentiment': market_condition.market_sentiment if market_condition else None,
-                        'kospi_return': market_condition.kospi_return if market_condition else None
-                    } if market_condition else None
-                }
-                scan_count += 1
-                if scan_count % 10 == 0:
-                    print(f"  진행: {scan_count}일 스캔 완료...")
-            else:
-                results[date_str] = {
-                    'items': [],
-                    'chosen_step': chosen_step,
-                    'market_condition': None
-                }
-        
-        except Exception as e:
-            print(f"❌ 스캔 오류 ({date_str}): {e}")
+        if date_str not in results:
             results[date_str] = {
                 'items': [],
-                'chosen_step': None,
-                'error': str(e)
+                'chosen_step': None  # DB에는 step 정보가 없음
             }
         
-        current_date += timedelta(days=1)
+        results[date_str]['items'].append({
+            'ticker': code,
+            'name': name,
+            'price': price,
+            'score': score
+        })
     
-    print(f"\n✅ 스캔 완료: {scan_count}일")
+    print(f"✅ {len(results)}일치 스캔 결과 조회 완료")
     return results
 
 
@@ -222,6 +206,9 @@ def validate_trading_strategy_performance(scan_results: dict, validation_date: s
         
         items = result['items']
         tickers = [item['ticker'] for item in items]
+        
+        print(f"  처리 중: {date_str} ({len(tickers)}개 종목)...")
+        
         returns_data = calculate_returns_batch(tickers, date_str, validation_date)
         
         for ticker in tickers:
@@ -239,6 +226,8 @@ def validate_trading_strategy_performance(scan_results: dict, validation_date: s
                     'min_return': ret['min_return'],
                     'days_elapsed': ret['days_elapsed']
                 })
+        
+        time.sleep(0.1)  # API 호출 제한 방지
     
     if not all_returns:
         print("❌ 수익률 데이터가 없습니다.")
@@ -319,8 +308,8 @@ def main():
     print(f"🚀 개선된 스캔 로직(Step 0~3)으로 승률 재계산 시작")
     print(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    # 최근 60일 스캔
-    scan_results = scan_recent_period(days=60)
+    # 데이터베이스에서 최근 60일 스캔 결과 조회
+    scan_results = get_recent_scan_results(days=60)
     
     # 결과 저장
     output_file = f"scan_results_improved_{datetime.now().strftime('%Y%m%d')}.json"
