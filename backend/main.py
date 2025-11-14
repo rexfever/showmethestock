@@ -207,6 +207,12 @@ def root():
     return {'status': 'running'}
 
 
+@app.get('/health')
+def health():
+    """헬스 체크 엔드포인트"""
+    return {'status': 'healthy', 'timestamp': datetime.now().isoformat()}
+
+
 @app.get('/environment')
 def get_environment():
     """현재 실행 환경 정보 반환"""
