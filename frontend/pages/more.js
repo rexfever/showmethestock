@@ -17,8 +17,13 @@ export default function More() {
   useEffect(() => {
     if (typeof window !== 'undefined' && showStrategyModal && !strategyGuideMarkdown && !loadingGuide) {
       setLoadingGuide(true);
-      // public 폴더의 파일을 직접 fetch
-      fetch('/content/TRADING_STRATEGY_GUIDE.md')
+      // public 폴더의 파일을 직접 fetch (캐시 무시)
+      fetch('/content/TRADING_STRATEGY_GUIDE.md', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
         .then(res => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
