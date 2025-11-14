@@ -45,7 +45,9 @@ export default function More({ strategyGuideMarkdown = '' }) {
     if (showStrategyModal) {
       // strategyGuideMarkdown이 없거나 빈 문자열인 경우 에러 메시지 표시
       if (!strategyGuideMarkdown || strategyGuideMarkdown.trim() === '') {
-        console.error('strategyGuideMarkdown이 없습니다:', strategyGuideMarkdown);
+        console.error('[More] strategyGuideMarkdown이 없습니다:', strategyGuideMarkdown);
+        console.error('[More] strategyGuideMarkdown 타입:', typeof strategyGuideMarkdown);
+        console.error('[More] strategyGuideMarkdown 길이:', strategyGuideMarkdown?.length);
         setStrategyContent('<p class="text-red-500">가이드 데이터를 불러올 수 없습니다.</p>');
         return;
       }
@@ -540,17 +542,34 @@ export default function More({ strategyGuideMarkdown = '' }) {
 
 export async function getServerSideProps() {
   try {
+    // Next.js에서 process.cwd()는 프로젝트 루트를 가리킴
     const filePath = path.join(process.cwd(), 'public', 'content', 'TRADING_STRATEGY_GUIDE.md');
+    
+    console.log('[getServerSideProps] 파일 경로:', filePath);
+    console.log('[getServerSideProps] process.cwd():', process.cwd());
+    console.log('[getServerSideProps] 파일 존재 여부:', fs.existsSync(filePath));
     
     if (fs.existsSync(filePath)) {
       const fileContent = fs.readFileSync(filePath, 'utf-8');
+      console.log('[getServerSideProps] 파일 읽기 성공, 길이:', fileContent.length);
       return {
         props: {
           strategyGuideMarkdown: fileContent
         }
       };
     } else {
-      console.error('TRADING_STRATEGY_GUIDE.md 파일을 찾을 수 없습니다:', filePath);
+      console.error('[getServerSideProps] TRADING_STRATEGY_GUIDE.md 파일을 찾을 수 없습니다:', filePath);
+      // 대체 경로 시도
+      const altPath = path.join(process.cwd(), 'frontend', 'public', 'content', 'TRADING_STRATEGY_GUIDE.md');
+      if (fs.existsSync(altPath)) {
+        console.log('[getServerSideProps] 대체 경로에서 파일 발견:', altPath);
+        const fileContent = fs.readFileSync(altPath, 'utf-8');
+        return {
+          props: {
+            strategyGuideMarkdown: fileContent
+          }
+        };
+      }
       return {
         props: {
           strategyGuideMarkdown: ''
@@ -558,7 +577,8 @@ export async function getServerSideProps() {
       };
     }
   } catch (error) {
-    console.error('가이드 파일 읽기 실패:', error);
+    console.error('[getServerSideProps] 가이드 파일 읽기 실패:', error);
+    console.error('[getServerSideProps] 에러 스택:', error.stack);
     return {
       props: {
         strategyGuideMarkdown: ''
