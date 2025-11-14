@@ -58,17 +58,15 @@ export default function More() {
     if (typeof window === 'undefined') return;
     
     if (showStrategyModal) {
-      // strategyGuideMarkdown이 없거나 빈 문자열인 경우, 로딩 중이면 기다림
+      // strategyGuideMarkdown이 없거나 빈 문자열인 경우
       if (!strategyGuideMarkdown || strategyGuideMarkdown.trim() === '') {
-        // 로딩 중이면 파싱하지 않고 기다림
+        // 로딩 중이면 파싱하지 않고 기다림 (에러 로그 출력 안 함)
         if (loadingGuide) {
           return;
         }
         // 로딩이 완료되었는데도 없으면 에러 메시지 표시
-        console.error('[More] strategyGuideMarkdown이 없습니다:', strategyGuideMarkdown);
-        console.error('[More] strategyGuideMarkdown 타입:', typeof strategyGuideMarkdown);
-        console.error('[More] strategyGuideMarkdown 길이:', strategyGuideMarkdown?.length);
-        setStrategyContent('<p class="text-red-500">가이드 데이터를 불러올 수 없습니다.</p>');
+        // (단, 가이드 로드가 아직 시작되지 않은 경우는 제외)
+        console.warn('[More] strategyGuideMarkdown이 아직 로드되지 않았습니다.');
         return;
       }
       
