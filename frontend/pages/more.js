@@ -357,7 +357,7 @@ export default function More() {
               </div>
               <div className="bg-white bg-opacity-20 rounded-lg p-2">
                 <div className="font-semibold">승률</div>
-                <div className="text-xs opacity-90">62.5%</div>
+                <div className="text-xs opacity-90">94.6%</div>
               </div>
             </div>
           </div>
