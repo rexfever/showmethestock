@@ -3,28 +3,39 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import Header from '../components/Header';
-import fs from 'fs';
-import path from 'path';
 
-export default function More({ strategyGuideMarkdown = '' }) {
+export default function More() {
   const router = useRouter();
   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showStrategyModal, setShowStrategyModal] = useState(false);
   const [strategyContent, setStrategyContent] = useState('');
+  const [strategyGuideMarkdown, setStrategyGuideMarkdown] = useState('');
+  const [loadingGuide, setLoadingGuide] = useState(false);
 
-  // 디버깅: strategyGuideMarkdown 확인 (항상 로그 출력)
+  // API에서 가이드 로드
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('[More] strategyGuideMarkdown:', strategyGuideMarkdown ? `있음 (길이: ${strategyGuideMarkdown.length})` : '없음');
-      console.log('[More] strategyGuideMarkdown 타입:', typeof strategyGuideMarkdown);
-      if (strategyGuideMarkdown) {
-        console.log('[More] strategyGuideMarkdown 첫 100자:', strategyGuideMarkdown.substring(0, 100));
-      } else {
-        console.error('[More] strategyGuideMarkdown이 비어있습니다!');
-      }
+    if (typeof window !== 'undefined' && showStrategyModal && !strategyGuideMarkdown && !loadingGuide) {
+      setLoadingGuide(true);
+      fetch('/api/trading-strategy-guide')
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.text();
+        })
+        .then(text => {
+          console.log('[More] API에서 가이드 로드 성공, 길이:', text.length);
+          setStrategyGuideMarkdown(text);
+          setLoadingGuide(false);
+        })
+        .catch(error => {
+          console.error('[More] API에서 가이드 로드 실패:', error);
+          setStrategyGuideMarkdown('');
+          setLoadingGuide(false);
+        });
     }
-  }, [strategyGuideMarkdown]);
+  }, [showStrategyModal, strategyGuideMarkdown, loadingGuide]);
 
   useEffect(() => {
     setMounted(true);
@@ -211,9 +222,10 @@ export default function More({ strategyGuideMarkdown = '' }) {
         console.error('[More] parseMarkdown 실행 중 에러:', error);
         setStrategyContent('<p class="text-red-500">가이드를 불러오는 중 오류가 발생했습니다. 페이지를 새로고침해주세요.</p>');
       });
-    } else if (!showStrategyModal && strategyContent) {
+    } else if (!showStrategyModal) {
       // 모달이 닫혔을 때 콘텐츠 초기화 (다음에 열 때 다시 파싱)
       setStrategyContent('');
+      // 가이드는 유지 (다음에 열 때 다시 로드하지 않음)
     }
   }, [showStrategyModal, strategyGuideMarkdown]);
 
@@ -513,15 +525,19 @@ export default function More({ strategyGuideMarkdown = '' }) {
                 WebkitOverflowScrolling: 'touch' // iOS 부드러운 스크롤
               }}
             >
-              {strategyContent ? (
+              {loadingGuide ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">가이드를 불러오는 중...</p>
+                </div>
+              ) : strategyContent ? (
                 <div 
                   className="prose max-w-none"
                   dangerouslySetInnerHTML={{ __html: strategyContent }}
                 />
               ) : (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
-                  <p className="text-gray-500 mt-2">가이드를 불러오는 중...</p>
+                  <p className="text-red-500">가이드를 불러올 수 없습니다.</p>
                 </div>
               )}
             </div>
@@ -543,49 +559,9 @@ export default function More({ strategyGuideMarkdown = '' }) {
   );
 }
 
+// getServerSideProps 제거 - API 라우트를 통해 클라이언트에서 로드
 export async function getServerSideProps() {
-  try {
-    // Next.js에서 process.cwd()는 프로젝트 루트를 가리킴
-    const filePath = path.join(process.cwd(), 'public', 'content', 'TRADING_STRATEGY_GUIDE.md');
-    
-    console.log('[getServerSideProps] 파일 경로:', filePath);
-    console.log('[getServerSideProps] process.cwd():', process.cwd());
-    console.log('[getServerSideProps] 파일 존재 여부:', fs.existsSync(filePath));
-    
-    if (fs.existsSync(filePath)) {
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      console.log('[getServerSideProps] 파일 읽기 성공, 길이:', fileContent.length);
-      return {
-        props: {
-          strategyGuideMarkdown: fileContent
-        }
-      };
-    } else {
-      console.error('[getServerSideProps] TRADING_STRATEGY_GUIDE.md 파일을 찾을 수 없습니다:', filePath);
-      // 대체 경로 시도
-      const altPath = path.join(process.cwd(), 'frontend', 'public', 'content', 'TRADING_STRATEGY_GUIDE.md');
-      if (fs.existsSync(altPath)) {
-        console.log('[getServerSideProps] 대체 경로에서 파일 발견:', altPath);
-        const fileContent = fs.readFileSync(altPath, 'utf-8');
-        return {
-          props: {
-            strategyGuideMarkdown: fileContent
-          }
-        };
-      }
-      return {
-        props: {
-          strategyGuideMarkdown: ''
-        }
-      };
-    }
-  } catch (error) {
-    console.error('[getServerSideProps] 가이드 파일 읽기 실패:', error);
-    console.error('[getServerSideProps] 에러 스택:', error.stack);
-    return {
-      props: {
-        strategyGuideMarkdown: ''
-      }
-    };
-  }
+  return {
+    props: {}
+  };
 }
