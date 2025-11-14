@@ -27,6 +27,9 @@ export default function More() {
         })
         .then(text => {
           console.log('[More] 가이드 로드 성공, 길이:', text.length);
+          console.log('[More] 로드된 내용 첫 200자:', text.substring(0, 200));
+          console.log('[More] 로드된 내용에 "매매 전략" 포함 여부:', text.includes('매매 전략'));
+          console.log('[More] 로드된 내용에 "스톡인사이트" 포함 여부:', text.includes('스톡인사이트'));
           setStrategyGuideMarkdown(text);
           setLoadingGuide(false);
         })
@@ -96,6 +99,8 @@ export default function More() {
           }
           
           console.log('마크다운 파싱 시작, 텍스트 길이:', text.length);
+          console.log('[More] 파싱할 텍스트 첫 200자:', text.substring(0, 200));
+          console.log('[More] 파싱할 텍스트에 "매매 전략" 포함 여부:', text.includes('매매 전략'));
           
           // 라인 단위로 처리
           const lines = text.split('\n');
