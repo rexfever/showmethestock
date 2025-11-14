@@ -18,9 +18,25 @@ export default function Header({ title = "스톡인사이트" }) {
         </div>
         <div className="flex items-center space-x-3">
           {!authLoading && authChecked && user ? (
-            <span className="text-sm text-gray-600">
-              {user.name}님 ({user.provider})
-            </span>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                {user.name}님
+              </span>
+              {user.is_admin ? (
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                  🔧 관리자
+                </span>
+              ) : user.membership_tier === 'premium' ? (
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                  👑 프리미엄
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                  일반 회원
+                </span>
+              )}
+              <span className="text-xs text-gray-400">({user.provider})</span>
+            </div>
           ) : !authLoading && authChecked ? (
             <span className="text-sm text-gray-500">게스트 사용자</span>
           ) : (
