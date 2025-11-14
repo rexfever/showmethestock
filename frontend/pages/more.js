@@ -13,11 +13,12 @@ export default function More() {
   const [strategyGuideMarkdown, setStrategyGuideMarkdown] = useState('');
   const [loadingGuide, setLoadingGuide] = useState(false);
 
-  // API에서 가이드 로드
+  // public 폴더에서 가이드 로드
   useEffect(() => {
     if (typeof window !== 'undefined' && showStrategyModal && !strategyGuideMarkdown && !loadingGuide) {
       setLoadingGuide(true);
-      fetch('/api/trading-strategy-guide')
+      // public 폴더의 파일을 직접 fetch
+      fetch('/content/TRADING_STRATEGY_GUIDE.md')
         .then(res => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -25,12 +26,12 @@ export default function More() {
           return res.text();
         })
         .then(text => {
-          console.log('[More] API에서 가이드 로드 성공, 길이:', text.length);
+          console.log('[More] 가이드 로드 성공, 길이:', text.length);
           setStrategyGuideMarkdown(text);
           setLoadingGuide(false);
         })
         .catch(error => {
-          console.error('[More] API에서 가이드 로드 실패:', error);
+          console.error('[More] 가이드 로드 실패:', error);
           setStrategyGuideMarkdown('');
           setLoadingGuide(false);
         });
