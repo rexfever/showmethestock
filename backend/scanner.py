@@ -381,14 +381,14 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     details['rsi'] = {'ok': bool(rsi_ok), 'w': W['rsi'], 'gain': W['rsi'] if rsi_ok else 0}
 
     # 5) TEMA20 SLOPE > 0 AND 주가 > TEMA20 (+2)
-    tema_slope_ok = (float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0) and (cur.close > cur.TEMA20)
+    tema_slope_ok = (float(df.iloc[-1]["TEMA20_SLOPE20"]) > 0.001) and (cur.close > cur.TEMA20)
     flags["tema_slope_ok"] = bool(tema_slope_ok)
     if tema_slope_ok:
         score += W['tema_slope']
     details['tema_slope'] = {'ok': bool(tema_slope_ok), 'w': W['tema_slope'], 'gain': W['tema_slope'] if tema_slope_ok else 0}
 
-    # 6) OBV SLOPE > 0 (+2)
-    obv_slope_ok = float(df.iloc[-1]["OBV_SLOPE20"]) > 0
+    # 6) OBV SLOPE > 0.001 (+2) - 더 강한 자금 유입만 선택
+    obv_slope_ok = float(df.iloc[-1]["OBV_SLOPE20"]) > 0.001
     flags["obv_slope_ok"] = bool(obv_slope_ok)
     if obv_slope_ok:
         score += W['obv_slope']
@@ -430,22 +430,26 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         "ext_ok": bool(ext_ok),
     })
     
-    # 레이블링 (더 세분화된 평가) - 임계값 완화
-    if score >= 8:
+    # 레이블링 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)
+    # 10점 이상: 우선 추천
+    # 8-9점: Fallback 시 포함 (10점 이상이 없을 때)
+    # 6점대: 제외 (승률 낮음, 변동성 높음)
+    if score >= 10:
         flags["label"] = "강한 매수"
         flags["match"] = True
-    elif score >= 6:
+        flags["fallback"] = False  # 10점 이상은 Fallback 불필요
+    elif score >= 8:
         flags["label"] = "매수 후보"
-        flags["match"] = True
-    elif score >= 4:
-        flags["label"] = "관심"
-        flags["match"] = True
-    elif score >= 2:
-        flags["label"] = "관망"
-        flags["match"] = True
+        flags["match"] = False  # 기본적으로 제외
+        flags["fallback"] = True  # Fallback 시 포함 가능
+    elif score >= 6:
+        flags["label"] = "관심 (제외)"
+        flags["match"] = False  # 6점대는 추천하지 않음 (승률 낮음, 변동성 높음)
+        flags["fallback"] = False  # Fallback 시에도 제외
     else:
         flags["label"] = "제외"
         flags["match"] = False  # 제외 종목은 매칭되지 않음
+        flags["fallback"] = False  # Fallback 시에도 제외
     
     # ----- 신호 요건 상향 (MIN_SIGNALS=3) -----
     signals_true = sum([bool(flags.get("cross", False)), bool(flags.get("vol_expand", False)), 

@@ -152,7 +152,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
 
 
 def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, market_condition=None) -> tuple:
-    """Fallback 로직을 적용한 스캔 실행"""
+    """Fallback 로직을 적용한 스캔 실행 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)"""
     chosen_step = None
     
     # 급락장 감지 시 추천하지 않음
@@ -174,47 +174,84 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         if market_condition:
             print(f"📈 {market_condition.market_sentiment} 장세 (KOSPI: {market_condition.kospi_return:.2f}%) - Fallback 활성화, 목표: {target_min}~{target_max}개")
     
-    print(f"🔄 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={use_fallback}")
+    print(f"🔄 하이브리드 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={use_fallback}")
     
     if not use_fallback:
-        # Fallback 비활성화 시 기존 로직
-        print(f"📊 Fallback 비활성화 - 시장 상황 기반 조건으로 스캔")
+        # Fallback 비활성화 시 기존 로직 (10점 이상만)
+        print(f"📊 Fallback 비활성화 - 시장 상황 기반 조건으로 스캔 (10점 이상만)")
         items = scan_with_preset(universe, {}, date, market_condition)
-        items = items[:config.top_k]
-        print(f"📊 스캔 결과: {len(items)}개 종목 (조건 강화)")
+        # 10점 이상만 필터링
+        items_10_plus = [item for item in items if item.get("score", 0) >= 10]
+        items = items_10_plus[:config.top_k]
+        print(f"📊 스캔 결과: {len(items)}개 종목 (10점 이상만, 조건 강화)")
     else:
-        # Fallback 활성화 시 단계별 완화
+        # 통합 Fallback: 점수와 지표를 동시에 Fallback
+        print(f"📊 통합 Fallback 활성화 - 목표: 최소 {target_min}개, 최대 {target_max}개")
+        
         final_items = []
         chosen_step = 0
         
-        print(f"📊 Fallback 활성화 - {len(config.fallback_presets)}단계 완화 시도")
-        print(f"📊 목표: 최소 {target_min}개, 최대 {target_max}개")
+        # Step 0: 기본 조건 (10점 이상만, 지표 완화 없음)
+        print(f"🔄 Step 0: 기본 조건 (10점 이상만)")
+        items = scan_with_preset(universe, {}, date, market_condition)
+        items_10_plus = [item for item in items if item.get("score", 0) >= 10]
+        print(f"📊 Step 0 결과: {len(items_10_plus)}개 종목 (10점 이상만)")
         
-        for step, overrides in enumerate(config.fallback_presets):
-            print(f"🔄 Step {step}: {overrides if overrides else '기본 조건'}")
-            items = scan_with_preset(universe, overrides, date, market_condition)
-            print(f"📊 Step {step} 결과: {len(items)}개 종목")
+        if len(items_10_plus) >= target_min:
+            chosen_step = 0
+            final_items = items_10_plus[:min(config.top_k, target_max)]
+            print(f"✅ Step 0에서 목표 달성: {len(final_items)}개 종목 선택 (10점 이상만)")
+        else:
+            # Step 1: 지표 완화 Level 1 + 10점 이상
+            print(f"🔄 Step 1: 지표 완화 Level 1 + 10점 이상")
+            items = scan_with_preset(universe, config.fallback_presets[1], date, market_condition)
+            items_10_plus = [item for item in items if item.get("score", 0) >= 10]
+            print(f"📊 Step 1 결과: {len(items_10_plus)}개 종목 (지표 완화 + 10점 이상)")
             
-            # 하드 컷은 scan_one_symbol 내부에서 이미 처리되어야 함(과열/유동성/가격 등)
-            if len(items) >= target_min:
-                chosen_step = step
-                final_items = items[:min(config.top_k, target_max)]
-                print(f"✅ Step {step}에서 목표 달성: {len(final_items)}개 종목 선택")
-                break
+            if len(items_10_plus) >= target_min:
+                chosen_step = 1
+                final_items = items_10_plus[:min(config.top_k, target_max)]
+                print(f"✅ Step 1에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 10점 이상)")
             else:
-                print(f"❌ Step {step} 목표 미달: {len(items)} < {target_min}")
-        
-        # 만약 모든 단계에서도 목표 미달이라면, 마지막 단계 결과에서 score 상위만 가져오기
-        if not final_items:
-            print(f"⚠️ 모든 단계에서 목표 미달 - 마지막 단계 결과 사용")
-            if items:  # 마지막 단계에서 결과가 있다면
-                final_items = items[:min(config.top_k, target_max)]
-                chosen_step = len(config.fallback_presets) - 1
-                print(f"📊 최종 결과: {len(final_items)}개 종목 (마지막 단계)")
-            else:
-                print(f"❌ 모든 단계에서 0개 결과 - 빈 리스트 반환")
-                print(f"🔍 디버깅: universe={len(universe)}개, market_condition={market_condition}")
-                final_items = []
+                # Step 2: 지표 완화 Level 1 + 8점 이상 (점수 Fallback)
+                print(f"🔄 Step 2: 지표 완화 Level 1 + 8점 이상")
+                items_8_plus = [item for item in items if item.get("score", 0) >= 8]
+                print(f"📊 Step 2 결과: {len(items_8_plus)}개 종목 (지표 완화 + 8점 이상)")
+                
+                if len(items_8_plus) >= target_min:
+                    chosen_step = 2
+                    final_items = items_8_plus[:min(config.top_k, target_max)]
+                    print(f"✅ Step 2에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 8점 이상)")
+                else:
+                    # Step 3+: 지표 추가 완화 + 8점 이상
+                    print(f"⚠️ Step 2에서 목표 미달 - 지표 추가 완화 시도")
+                    
+                    for step_idx, overrides in enumerate(config.fallback_presets[2:], start=3):
+                        print(f"🔄 Step {step_idx}: 지표 완화 Level {step_idx - 1} + 8점 이상")
+                        print(f"   설정: {overrides}")
+                        items = scan_with_preset(universe, overrides, date, market_condition)
+                        items_8_plus = [item for item in items if item.get("score", 0) >= 8]
+                        print(f"📊 Step {step_idx} 결과: {len(items_8_plus)}개 종목 (지표 완화 Level {step_idx - 1} + 8점 이상)")
+                        
+                        if len(items_8_plus) >= target_min:
+                            chosen_step = step_idx
+                            final_items = items_8_plus[:min(config.top_k, target_max)]
+                            print(f"✅ Step {step_idx}에서 목표 달성: {len(final_items)}개 종목 선택")
+                            break
+                        else:
+                            print(f"❌ Step {step_idx} 목표 미달: {len(items_8_plus)} < {target_min}")
+                    
+                    # 만약 모든 단계에서도 목표 미달이라면, 마지막 단계 결과에서 score 상위만 가져오기
+                    if not final_items:
+                        print(f"⚠️ 모든 단계에서 목표 미달 - 마지막 단계 결과 사용")
+                        if items_8_plus:  # 마지막 단계에서 결과가 있다면
+                            final_items = items_8_plus[:min(config.top_k, target_max)]
+                            chosen_step = len(config.fallback_presets) + 1
+                            print(f"📊 최종 결과: {len(final_items)}개 종목 (마지막 단계)")
+                        else:
+                            print(f"❌ 모든 단계에서 0개 결과 - 빈 리스트 반환")
+                            print(f"🔍 디버깅: universe={len(universe)}개, market_condition={market_condition}")
+                            final_items = []
         
         items = final_items
     

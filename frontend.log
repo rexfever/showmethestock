@@ -1,0 +1,1175 @@
+
+> dev
+> NODE_ENV=development next dev
+
+  ▲ Next.js 13.5.11
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Ready in 4.5s
+ ✓ Compiled / in 1850ms (273 modules)
+ ✓ Compiled /customer-scanner in 616ms (287 modules)
+SSR: Fetching from http://localhost:8000/latest-scan
+SSR: Error fetching scan data: fetch failed
+SSR: Returning empty data
+ ✓ Compiled /more in 258ms (291 modules)
+ ✓ Compiled /_error in 147ms (293 modules)
+ ✓ Compiled in 313ms (289 modules)
+ ✓ Compiled in 263ms (289 modules)
+ ✓ Compiled in 289ms (287 modules)
+ ✓ Compiled in 385ms (287 modules)
+ ✓ Compiled in 284ms (287 modules)
+ ✓ Compiled in 194ms (287 modules)
+ ✓ Compiled in 283ms (287 modules)
+ ✓ Compiled in 197ms (287 modules)
+ ✓ Compiled in 278ms (287 modules)
+ ✓ Compiled in 215ms (287 modules)
+ ⨯ ./pages/more.js:6:0
+Module not found: Can't resolve 'isomorphic-dompurify'
+[0m [90m 4 | [39m[36mimport[39m [33mHead[39m [36mfrom[39m [32m'next/head'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[36mimport[39m [33mHeader[39m [36mfrom[39m [32m'../components/Header'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 | [39m[36mimport[39m [33mDOMPurify[39m [36mfrom[39m [32m'isomorphic-dompurify'[39m[33m;[39m[0m
+[0m [90m 7 | [39m[0m
+[0m [90m 8 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mMore[39m() {[0m
+[0m [90m 9 | [39m  [36mconst[39m router [33m=[39m useRouter()[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./pages/more.js:6:0
+Module not found: Can't resolve 'isomorphic-dompurify'
+[0m [90m 4 | [39m[36mimport[39m [33mHead[39m [36mfrom[39m [32m'next/head'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[36mimport[39m [33mHeader[39m [36mfrom[39m [32m'../components/Header'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 | [39m[36mimport[39m [33mDOMPurify[39m [36mfrom[39m [32m'isomorphic-dompurify'[39m[33m;[39m[0m
+[0m [90m 7 | [39m[0m
+[0m [90m 8 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mMore[39m() {[0m
+[0m [90m 9 | [39m  [36mconst[39m router [33m=[39m useRouter()[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./pages/more.js:6:0
+Module not found: Can't resolve 'isomorphic-dompurify'
+[0m [90m 4 | [39m[36mimport[39m [33mHead[39m [36mfrom[39m [32m'next/head'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[36mimport[39m [33mHeader[39m [36mfrom[39m [32m'../components/Header'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 | [39m[36mimport[39m [33mDOMPurify[39m [36mfrom[39m [32m'isomorphic-dompurify'[39m[33m;[39m[0m
+[0m [90m 7 | [39m[0m
+[0m [90m 8 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mMore[39m() {[0m
+[0m [90m 9 | [39m  [36mconst[39m router [33m=[39m useRouter()[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./pages/more.js:6:0
+Module not found: Can't resolve 'isomorphic-dompurify'
+[0m [90m 4 | [39m[36mimport[39m [33mHead[39m [36mfrom[39m [32m'next/head'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[36mimport[39m [33mHeader[39m [36mfrom[39m [32m'../components/Header'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 | [39m[36mimport[39m [33mDOMPurify[39m [36mfrom[39m [32m'isomorphic-dompurify'[39m[33m;[39m[0m
+[0m [90m 7 | [39m[0m
+[0m [90m 8 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mMore[39m() {[0m
+[0m [90m 9 | [39m  [36mconst[39m router [33m=[39m useRouter()[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./pages/more.js:6:0
+Module not found: Can't resolve 'isomorphic-dompurify'
+[0m [90m 4 | [39m[36mimport[39m [33mHead[39m [36mfrom[39m [32m'next/head'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[36mimport[39m [33mHeader[39m [36mfrom[39m [32m'../components/Header'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 | [39m[36mimport[39m [33mDOMPurify[39m [36mfrom[39m [32m'isomorphic-dompurify'[39m[33m;[39m[0m
+[0m [90m 7 | [39m[0m
+[0m [90m 8 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mMore[39m() {[0m
+[0m [90m 9 | [39m  [36mconst[39m router [33m=[39m useRouter()[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./pages/more.js:6:0
+Module not found: Can't resolve 'isomorphic-dompurify'
+[0m [90m 4 | [39m[36mimport[39m [33mHead[39m [36mfrom[39m [32m'next/head'[39m[33m;[39m[0m
+[0m [90m 5 | [39m[36mimport[39m [33mHeader[39m [36mfrom[39m [32m'../components/Header'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 | [39m[36mimport[39m [33mDOMPurify[39m [36mfrom[39m [32m'isomorphic-dompurify'[39m[33m;[39m[0m
+[0m [90m 7 | [39m[0m
+[0m [90m 8 | [39m[36mexport[39m [36mdefault[39m [36mfunction[39m [33mMore[39m() {[0m
+[0m [90m 9 | [39m  [36mconst[39m router [33m=[39m useRouter()[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+ ✓ Compiled in 512ms (290 modules)
+ ✓ Compiled in 388ms (290 modules)
+ ⨯ Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/rexsmac/workspace/stock-finder/frontend/node_modules/parse5/dist/index.js from /Users/rexsmac/workspace/stock-finder/frontend/node_modules/jsdom/lib/jsdom/browser/parser/html.js not supported.
+Instead change the require of index.js in /Users/rexsmac/workspace/stock-finder/frontend/node_modules/jsdom/lib/jsdom/browser/parser/html.js to a dynamic import() which is available in all CommonJS modules.
+    at mod.require (/Users/rexsmac/workspace/stock-finder/frontend/node_modules/next/dist/server/require-hook.js:64:28)
+    at Object.<anonymous> (/Users/rexsmac/workspace/stock-finder/frontend/node_modules/jsdom/lib/jsdom/browser/parser/html.js:3:16)
+    at mod.require (/Users/rexsmac/workspace/stock-finder/frontend/node_modules/next/dist/server/require-hook.js:64:28)
+    at Object.<anonymous> (/Users/rexsmac/workspace/stock-finder/frontend/node_modules/jsdom/lib/jsdom/browser/parser/index.js:4:20) {
+  code: 'ERR_REQUIRE_ESM',
+  page: '/more'
+}
+ ✓ Compiled /_error in 202ms (292 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 503ms (283 modules)
+ ✓ Compiled in 239ms (290 modules)
+ ✓ Compiled in 192ms (290 modules)
+ ✓ Compiled /portfolio in 879ms (310 modules)
+ ✓ Compiled /login in 287ms (325 modules)
+ ✓ Compiled /kakao-callback in 119ms (329 modules)
+ ✓ Compiled in 450ms (323 modules)
+ ✓ Compiled in 411ms (294 modules)
+ ✓ Compiled in 151ms (294 modules)
+ ✓ Compiled /kakao-callback in 96ms (298 modules)
+ ✓ Compiled /customer-scanner in 255ms (311 modules)
+SSR: Fetching from http://localhost:8010/latest-scan
+SSR: Response data: true has data
+SSR: Returning 5 items
+SSR: scanDate: 20251113
+SSR: market_guide: {
+  market_condition: '상승',
+  guide_message: '📈 상승 추세입니다. 선별적 매수를 고려하세요.',
+  investment_strategy: '우량주 중심 매수, 분할 매수 권장',
+  risk_level: '보통',
+  timing_advice: '시초가 확인 후 매수, 급등 시 추격 매수 지양'
+}
+SSR: market_condition: null
+ ✓ Compiled /admin in 329ms (317 modules)
+SSR: Fetching from http://localhost:8010/latest-scan
+SSR: Response data: true has data
+SSR: Returning 5 items
+SSR: scanDate: 20251113
+SSR: market_guide: {
+  market_condition: '상승',
+  guide_message: '📈 상승 추세입니다. 선별적 매수를 고려하세요.',
+  investment_strategy: '우량주 중심 매수, 분할 매수 권장',
+  risk_level: '보통',
+  timing_advice: '시초가 확인 후 매수, 급등 시 추격 매수 지양'
+}
+SSR: market_condition: null
+ ✓ Compiled /more in 136ms (321 modules)
+ ✓ Compiled in 355ms (294 modules)
+ ✓ Compiled in 252ms (294 modules)
+ ✓ Compiled in 302ms (294 modules)
+ ✓ Compiled in 302ms (294 modules)
+ ⨯ ./pages/more.js
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/pages/more.js[0m:158:1]
+ [2m158[0m |           });
+ [2m159[0m |           
+ [2m160[0m |           setStrategyContent(sanitizedHtml);
+ [2m161[0m |         } catch (err) {
+     : [31;1m          ^^^^^[0m
+ [2m162[0m |           console.error('가이드 로드 실패:', err);
+ [2m163[0m |           setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
+ [2m164[0m |         }
+     `----
+
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/pages/more.js[0m:162:1]
+ [2m162[0m |           console.error('가이드 로드 실패:', err);
+ [2m163[0m |           setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
+ [2m164[0m |         }
+ [2m165[0m |       };
+     : [31;1m       ^[0m
+ [2m166[0m |       
+ [2m167[0m |       loadAndParseMarkdown();
+ [2m168[0m |     }
+     `----
+
+  [31mx[0m Expression expected
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/pages/more.js[0m:166:1]
+ [2m166[0m |       
+ [2m167[0m |       loadAndParseMarkdown();
+ [2m168[0m |     }
+ [2m169[0m |   }, [showStrategyModal]);
+     : [31;1m   ^[0m
+ [2m170[0m | 
+ [2m171[0m |   const handleLogout = async () => {
+ [2m172[0m |     if (user && logout) {
+     `----
+
+Caused by:
+    Syntax Error
+ ✓ Compiled in 280ms (294 modules)
+ ✓ Compiled in 163ms (294 modules)
+ ✓ Compiled in 198ms (294 modules)
+ ✓ Compiled in 302ms (294 modules)
+ ✓ Compiled in 254ms (294 modules)
+ ✓ Compiled in 451ms (295 modules)
+ ⨯ ./pages/more.js
+Error: 
+  [31mx[0m the name `fs` is defined multiple times
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/pages/more.js[0m:3:1]
+ [2m  3[0m | import { useAuth } from '../contexts/AuthContext';
+ [2m  4[0m | import Head from 'next/head';
+ [2m  5[0m | import Header from '../components/Header';
+ [2m  6[0m | import fs from 'fs';
+     : [31;1m       ^|[0m
+     :         [31;1m`-- [31;1mprevious definition of `fs` here[0m[0m
+ [2m  7[0m | import path from 'path';
+ [2m  8[0m | 
+ [2m  9[0m | export default function More({ strategyGuideMarkdown }) {
+ [2m 10[0m |   const router = useRouter();
+ [2m 11[0m |   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
+ [2m 12[0m |   const [mounted, setMounted] = useState(false);
+ [2m 13[0m |   const [showStrategyModal, setShowStrategyModal] = useState(false);
+ [2m 14[0m |   const [strategyContent, setStrategyContent] = useState('');
+ [2m 15[0m | 
+ [2m 16[0m |   useEffect(() => {
+ [2m 17[0m |     setMounted(true);
+ [2m 18[0m |   }, []);
+ [2m 19[0m | 
+ [2m 20[0m |   // 모달 열림 시 배경 스크롤 방지 (모바일)
+ [2m 21[0m |   useEffect(() => {
+ [2m 22[0m |     if (showStrategyModal) {
+ [2m 23[0m |       document.body.style.overflow = 'hidden';
+ [2m 24[0m |       return () => {
+ [2m 25[0m |         document.body.style.overflow = 'unset';
+ [2m 26[0m |       };
+ [2m 27[0m |     }
+ [2m 28[0m |   }, [showStrategyModal]);
+ [2m 29[0m | 
+ [2m 30[0m |   useEffect(() => {
+ [2m 31[0m |     if (showStrategyModal && !strategyContent && strategyGuideMarkdown) {
+ [2m 32[0m |       // 마크다운 파일 파싱 (클라이언트 사이드에서만 실행)
+ [2m 33[0m |       const parseMarkdown = async () => {
+ [2m 34[0m |         try {
+ [2m 35[0m |           // DOMPurify를 동적으로 import (클라이언트 사이드에서만)
+ [2m 36[0m |           const DOMPurify = (await import('isomorphic-dompurify')).default;
+ [2m 37[0m |           
+ [2m 38[0m |           const text = strategyGuideMarkdown;
+ [2m 39[0m |           
+ [2m 40[0m |           // 라인 단위로 처리
+ [2m 41[0m |           const lines = text.split('\n');
+ [2m 42[0m |           let html = '';
+ [2m 43[0m |           let inList = false;
+ [2m 44[0m |           let listType = '';
+ [2m 45[0m |           
+ [2m 46[0m |           for (let i = 0; i < lines.length; i++) {
+ [2m 47[0m |             const line = lines[i];
+ [2m 48[0m |             const trimmed = line.trim();
+ [2m 49[0m |             
+ [2m 50[0m |             // 빈 줄 처리
+ [2m 51[0m |             if (!trimmed) {
+ [2m 52[0m |               if (inList) {
+ [2m 53[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 54[0m |                 inList = false;
+ [2m 55[0m |               }
+ [2m 56[0m |               html += '\n';
+ [2m 57[0m |               continue;
+ [2m 58[0m |             }
+ [2m 59[0m |             
+ [2m 60[0m |             // 헤더 처리
+ [2m 61[0m |             if (trimmed.startsWith('# ')) {
+ [2m 62[0m |               if (inList) {
+ [2m 63[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 64[0m |                 inList = false;
+ [2m 65[0m |               }
+ [2m 66[0m |               html += `<h1 class="text-2xl font-bold mb-4 mt-6">${trimmed.substring(2)}</h1>`;
+ [2m 67[0m |             } else if (trimmed.startsWith('## ')) {
+ [2m 68[0m |               if (inList) {
+ [2m 69[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 70[0m |                 inList = false;
+ [2m 71[0m |               }
+ [2m 72[0m |               html += `<h2 class="text-xl font-semibold mt-6 mb-3 text-gray-800">${trimmed.substring(3)}</h2>`;
+ [2m 73[0m |             } else if (trimmed.startsWith('### ')) {
+ [2m 74[0m |               if (inList) {
+ [2m 75[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 76[0m |                 inList = false;
+ [2m 77[0m |               }
+ [2m 78[0m |               html += `<h3 class="text-lg font-medium mt-5 mb-2 text-gray-700">${trimmed.substring(4)}</h3>`;
+ [2m 79[0m |             } else if (trimmed.startsWith('#### ')) {
+ [2m 80[0m |               if (inList) {
+ [2m 81[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 82[0m |                 inList = false;
+ [2m 83[0m |               }
+ [2m 84[0m |               html += `<h4 class="text-base font-medium mt-4 mb-2 text-gray-700">${trimmed.substring(5)}</h4>`;
+ [2m 85[0m |             } else if (trimmed === '---') {
+ [2m 86[0m |               if (inList) {
+ [2m 87[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 88[0m |                 inList = false;
+ [2m 89[0m |               }
+ [2m 90[0m |               html += '<hr class="my-6 border-gray-300">';
+ [2m 91[0m |             } else if (trimmed.match(/^- /)) {
+ [2m 92[0m |               // 리스트 항목
+ [2m 93[0m |               if (!inList || listType !== 'ul') {
+ [2m 94[0m |                 if (inList) html += '</ol>';
+ [2m 95[0m |                 html += '<ul class="list-disc mb-4 ml-6 space-y-1">';
+ [2m 96[0m |                 inList = true;
+ [2m 97[0m |                 listType = 'ul';
+ [2m 98[0m |               }
+ [2m 99[0m |               const content = trimmed.substring(2);
+ [2m100[0m |               // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+ [2m101[0m |               let listContent = content
+ [2m102[0m |                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+ [2m103[0m |                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+ [2m104[0m |               html += `<li class="text-gray-700">${listContent}</li>`;
+ [2m105[0m |             } else if (trimmed.match(/^\d+\. /)) {
+ [2m106[0m |               // 번호 리스트
+ [2m107[0m |               if (!inList || listType !== 'ol') {
+ [2m108[0m |                 if (inList) html += '</ul>';
+ [2m109[0m |                 html += '<ol class="list-decimal mb-4 ml-6 space-y-1">';
+ [2m110[0m |                 inList = true;
+ [2m111[0m |                 listType = 'ol';
+ [2m112[0m |               }
+ [2m113[0m |               const content = trimmed.replace(/^\d+\. /, '');
+ [2m114[0m |               // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+ [2m115[0m |               let listContent = content
+ [2m116[0m |                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+ [2m117[0m |                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+ [2m118[0m |               html += `<li class="text-gray-700">${listContent}</li>`;
+ [2m119[0m |             } else {
+ [2m120[0m |               // 일반 문단
+ [2m121[0m |               if (inList) {
+ [2m122[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m123[0m |                 inList = false;
+ [2m124[0m |               }
+ [2m125[0m |               // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+ [2m126[0m |               let paraContent = trimmed
+ [2m127[0m |                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+ [2m128[0m |                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+ [2m129[0m |                 .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+ [2m130[0m |                 .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>');
+ [2m131[0m |               html += `<p class="mb-3 text-gray-700 leading-relaxed">${paraContent}</p>`;
+ [2m132[0m |             }
+ [2m133[0m |           }
+ [2m134[0m |           
+ [2m135[0m |           // 리스트가 끝나지 않았다면 닫기
+ [2m136[0m |           if (inList) {
+ [2m137[0m |             html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m138[0m |           }
+ [2m139[0m |           
+ [2m140[0m |           // XSS 방지를 위한 DOMPurify 적용
+ [2m141[0m |           const sanitizedHtml = DOMPurify.sanitize(html, {
+ [2m142[0m |             ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'code', 'a', 'hr'],
+ [2m143[0m |             ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+ [2m144[0m |             ALLOW_DATA_ATTR: false
+ [2m145[0m |           });
+ [2m146[0m |           
+ [2m147[0m |           setStrategyContent(sanitizedHtml);
+ [2m148[0m |         } catch (err) {
+ [2m149[0m |           console.error('가이드 로드 실패:', err);
+ [2m150[0m |           setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
+ [2m151[0m |         }
+ [2m152[0m |       };
+ [2m153[0m |       
+ [2m154[0m |       loadAndParseMarkdown();
+ [2m155[0m |     }
+ [2m156[0m |   }, [showStrategyModal]);
+ [2m157[0m | 
+ [2m158[0m |   const handleLogout = async () => {
+ [2m159[0m |     if (user && logout) {
+ [2m160[0m |       try {
+ [2m161[0m |         await logout();
+ [2m162[0m |         router.push('/customer-scanner');
+ [2m163[0m |       } catch (error) {
+ [2m164[0m |         console.error('로그아웃 중 오류:', error);
+ [2m165[0m |         router.push('/customer-scanner');
+ [2m166[0m |       }
+ [2m167[0m |     }
+ [2m168[0m |   };
+ [2m169[0m | 
+ [2m170[0m |   if (!mounted) {
+ [2m171[0m |     return null;
+ [2m172[0m |   }
+ [2m173[0m | 
+ [2m174[0m |   return (
+ [2m175[0m |     <>
+ [2m176[0m |       <Head>
+ [2m177[0m |         <title>더보기 - 스톡인사이트</title>
+ [2m178[0m |         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ [2m179[0m |       </Head>
+ [2m180[0m | 
+ [2m181[0m |       <div className="min-h-screen bg-gray-50">
+ [2m182[0m |         <Header />
+ [2m183[0m | 
+ [2m184[0m |         {/* 정보 배너 */}
+ [2m185[0m |         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+ [2m186[0m |           <div className="flex items-center justify-between">
+ [2m187[0m |             <div>
+ [2m188[0m |               <h2 className="text-lg font-semibold">더보기</h2>
+ [2m189[0m |               <p className="text-sm opacity-90">다양한 서비스와 설정을 확인하세요</p>
+ [2m190[0m |             </div>
+ [2m191[0m |             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+ [2m192[0m |               <span className="text-2xl">⚙️</span>
+ [2m193[0m |             </div>
+ [2m194[0m |           </div>
+ [2m195[0m |         </div>
+ [2m196[0m | 
+ [2m197[0m |         {/* 메인 콘텐츠 */}
+ [2m198[0m |         <div className="p-4">
+ [2m199[0m |           {/* 사용자 정보 카드 */}
+ [2m200[0m |           {!authLoading && authChecked && user ? (
+ [2m201[0m |             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m202[0m |               <div className="flex items-center space-x-4">
+ [2m203[0m |                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+ [2m204[0m |                   <span className="text-xl">👤</span>
+ [2m205[0m |                 </div>
+ [2m206[0m |                 <div className="flex-1">
+ [2m207[0m |                   <div className="font-semibold text-gray-900">{user.name}님</div>
+ [2m208[0m |                   <div className="text-sm text-gray-600">
+ [2m209[0m |                     {user.is_admin ? '🔧 관리자' : 
+ [2m210[0m |                      user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
+ [2m211[0m |                   </div>
+ [2m212[0m |                   {/* 디버깅 정보 */}
+ [2m213[0m |                   <div className="text-xs text-gray-400 mt-1">
+ [2m214[0m |                     Debug: is_admin={String(user.is_admin)} ({typeof user.is_admin}), tier={user.membership_tier}
+ [2m215[0m |                   </div>
+ [2m216[0m |                 </div>
+ [2m217[0m |                 <div className="text-right">
+ [2m218[0m |                   <div className="text-sm text-gray-500">포인트</div>
+ [2m219[0m |                   <div className="font-semibold text-blue-600">0P</div>
+ [2m220[0m |                 </div>
+ [2m221[0m |               </div>
+ [2m222[0m |             </div>
+ [2m223[0m |           ) : (
+ [2m224[0m |             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m225[0m |               <div className="text-center">
+ [2m226[0m |                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+ [2m227[0m |                   <span className="text-xl">👤</span>
+ [2m228[0m |                 </div>
+ [2m229[0m |                 <div className="font-semibold text-gray-900 mb-2">게스트 사용자</div>
+ [2m230[0m |                 <button 
+ [2m231[0m |                   onClick={() => router.push('/login')}
+ [2m232[0m |                   className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+ [2m233[0m |                 >
+ [2m234[0m |                   로그인하기
+ [2m235[0m |                 </button>
+ [2m236[0m |               </div>
+ [2m237[0m |             </div>
+ [2m238[0m |           )}
+ [2m239[0m | 
+ [2m240[0m | 
+ [2m241[0m | 
+ [2m242[0m | 
+ [2m243[0m |           {/* 매매전략 가이드 카드 */}
+ [2m244[0m |           <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg p-4 mb-6 text-white cursor-pointer hover:shadow-xl transition-shadow"
+ [2m245[0m |                onClick={() => setShowStrategyModal(true)}>
+ [2m246[0m |             <div className="flex items-center justify-between">
+ [2m247[0m |               <div className="flex items-center space-x-3">
+ [2m248[0m |                 <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+ [2m249[0m |                   <span className="text-2xl">📈</span>
+ [2m250[0m |                 </div>
+ [2m251[0m |                 <div>
+ [2m252[0m |                   <h3 className="font-bold text-lg mb-1">매매전략 가이드</h3>
+ [2m253[0m |                   <p className="text-sm opacity-90">검증된 매매 전략으로 수익 극대화</p>
+ [2m254[0m |                 </div>
+ [2m255[0m |               </div>
+ [2m256[0m |               <div className="flex items-center space-x-2">
+ [2m257[0m |                 <span className="text-sm opacity-90">자세히 보기</span>
+ [2m258[0m |                 <span className="text-xl">→</span>
+ [2m259[0m |               </div>
+ [2m260[0m |             </div>
+ [2m261[0m |             <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+ [2m262[0m |               <div className="bg-white bg-opacity-20 rounded-lg p-2">
+ [2m263[0m |                 <div className="font-semibold">익절</div>
+ [2m264[0m |                 <div className="text-xs opacity-90">+3% 도달 시</div>
+ [2m265[0m |               </div>
+ [2m266[0m |               <div className="bg-white bg-opacity-20 rounded-lg p-2">
+ [2m267[0m |                 <div className="font-semibold">손절</div>
+ [2m268[0m |                 <div className="text-xs opacity-90">-7% (5일 후)</div>
+ [2m269[0m |               </div>
+ [2m270[0m |               <div className="bg-white bg-opacity-20 rounded-lg p-2">
+ [2m271[0m |                 <div className="font-semibold">승률</div>
+ [2m272[0m |                 <div className="text-xs opacity-90">62.5%</div>
+ [2m273[0m |               </div>
+ [2m274[0m |             </div>
+ [2m275[0m |           </div>
+ [2m276[0m | 
+ [2m277[0m |           {/* 투자 활용법 가이드 */}
+ [2m278[0m |           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m279[0m |             <h3 className="font-semibold text-gray-900 mb-4">투자 활용법</h3>
+ [2m280[0m |             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ [2m281[0m |               <div className="bg-blue-50 rounded-lg p-4">
+ [2m282[0m |                 <div className="flex items-center space-x-2 mb-2">
+ [2m283[0m |                   <span className="text-xl">🔍</span>
+ [2m284[0m |                   <h4 className="font-semibold text-gray-800">어떤 종목을 찾나요?</h4>
+ [2m285[0m |                 </div>
+ [2m286[0m |                 <p className="text-sm text-gray-600 font-medium">📈 상승 초입 단계의 종목들</p>
+ [2m287[0m |                 <p className="text-xs text-gray-500 mt-1">• 하락이 끝나고 막 오르기 시작하는 종목</p>
+ [2m288[0m |                 <p className="text-xs text-gray-500">• 거래량이 늘어나며 관심받기 시작하는 종목</p>
+ [2m289[0m |                 <p className="text-xs text-blue-600 mt-2 font-medium">💡 상승 초기에 발견해서 수익 기회 제공</p>
+ [2m290[0m |               </div>
+ [2m291[0m |               <div className="bg-green-50 rounded-lg p-4">
+ [2m292[0m |                 <div className="flex items-center space-x-2 mb-2">
+ [2m293[0m |                   <span className="text-xl">💰</span>
+ [2m294[0m |                   <h4 className="font-semibold text-gray-800">어떻게 투자하나요?</h4>
+ [2m295[0m |                 </div>
+ [2m296[0m |                 <p className="text-sm text-gray-600 font-medium">🎯 단기 스윙 투자 (1주일 내외)</p>
+ [2m297[0m |                 <p className="text-xs text-gray-500 mt-1">• 상승 초입에서 매수 → 상승 후 매도</p>
+ [2m298[0m |                 <p className="text-xs text-gray-500">• 목표: 5~10% 수익, 손절: -5% 이하</p>
+ [2m299[0m |                 <p className="text-xs text-gray-500">• 욕심내지 말고 적당한 수익에서 매도</p>
+ [2m300[0m |                 <div className="mt-2 p-2 bg-green-100 rounded">
+ [2m301[0m |                   <p className="text-xs text-green-700 font-medium">💡 핵심: 상승 파도를 타고 적당히 내리기</p>
+ [2m302[0m |                 </div>
+ [2m303[0m |                 <p className="text-xs text-red-500 mt-2 font-medium">⚠️ 투자는 본인 책임, 신중한 판단 필요</p>
+ [2m304[0m |               </div>
+ [2m305[0m |             </div>
+ [2m306[0m |           </div>
+ [2m307[0m | 
+ [2m308[0m |           {/* 준비중인 기능 */}
+ [2m309[0m |           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m310[0m |             <h3 className="font-semibold text-gray-900 mb-4">준비중인 기능</h3>
+ [2m311[0m |             <div className="bg-orange-50 rounded-lg p-4">
+ [2m312[0m |               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+ [2m313[0m |                 <div>
+ [2m314[0m |                   <h5 className="font-medium text-orange-700 mb-2">📱 알림 서비스</h5>
+ [2m315[0m |                   <ul className="space-y-1 text-orange-600">
+ [2m316[0m |                     <li>• <strong>카카오톡 알림톡</strong>: 스캔 결과 자동 알림</li>
+ [2m317[0m |                     <li>• <strong>푸시 알림</strong>: 모바일 앱 알림</li>
+ [2m318[0m |                     <li>• <strong>이메일 알림</strong>: 상세 분석 리포트</li>
+ [2m319[0m |                   </ul>
+ [2m320[0m |                 </div>
+ [2m321[0m |                 <div>
+ [2m322[0m |                   <h5 className="font-medium text-orange-700 mb-2">💼 관심종목 관리</h5>
+ [2m323[0m |                   <ul className="space-y-1 text-orange-600">
+ [2m324[0m |                     <li>• <strong>관심종목 등록</strong>: 스캔 결과에서 바로 등록</li>
+ [2m325[0m |                     <li>• <strong>관심종목 목록</strong>: 등록한 종목 관리</li>
+ [2m326[0m |                     <li>• <strong>알림 설정</strong>: 관심종목 변동 알림</li>
+ [2m327[0m |                   </ul>
+ [2m328[0m |                 </div>
+ [2m329[0m |                 <div>
+ [2m330[0m |                   <h5 className="font-medium text-orange-700 mb-2">📊 고급 분석</h5>
+ [2m331[0m |                   <ul className="space-y-1 text-orange-600">
+ [2m332[0m |                     <li>• <strong>상세 차트</strong>: 기술적 분석 도구</li>
+ [2m333[0m |                     <li>• <strong>기업정보</strong>: 재무제표 및 뉴스</li>
+ [2m334[0m |                     <li>• <strong>종목분석</strong>: 단일 종목 상세 분석</li>
+ [2m335[0m |                   </ul>
+ [2m336[0m |                 </div>
+ [2m337[0m |               </div>
+ [2m338[0m |               <div className="mt-4 p-3 bg-orange-100 rounded-lg">
+ [2m339[0m |                 <p className="text-sm text-orange-700">
+ [2m340[0m |                   <strong>💡 안내:</strong> 모든 기능은 순차적으로 출시될 예정입니다. 
+ [2m341[0m |                   먼저 기본 스캔 서비스를 이용해보시고, 추가 기능 출시 소식을 기다려주세요!
+ [2m342[0m |                 </p>
+ [2m343[0m |               </div>
+ [2m344[0m |             </div>
+ [2m345[0m |           </div>
+ [2m346[0m | 
+ [2m347[0m |           {/* 계정 관리 */}
+ [2m348[0m |           {!authLoading && authChecked && user && (
+ [2m349[0m |             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m350[0m |               <h3 className="font-semibold text-gray-900 mb-4">계정 관리</h3>
+ [2m351[0m |               <div className="space-y-3">
+ [2m352[0m |                 <button 
+ [2m353[0m |                   onClick={handleLogout}
+ [2m354[0m |                   className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+ [2m355[0m |                 >
+ [2m356[0m |                   <div className="flex items-center space-x-3">
+ [2m357[0m |                     <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+ [2m358[0m |                       <span className="text-sm">🚪</span>
+ [2m359[0m |                     </div>
+ [2m360[0m |                     <span className="text-gray-700">로그아웃</span>
+ [2m361[0m |                   </div>
+ [2m362[0m |                   <span className="text-gray-400">›</span>
+ [2m363[0m |                 </button>
+ [2m364[0m |               </div>
+ [2m365[0m |             </div>
+ [2m366[0m |           )}
+ [2m367[0m |         </div>
+ [2m368[0m | 
+ [2m369[0m |         {/* 하단 네비게이션 */}
+ [2m370[0m |         <div className="fixed bottom-0 left-0 right-0 bg-black text-white">
+ [2m371[0m |           <div className="flex items-center justify-around py-2">
+ [2m372[0m |             <button 
+ [2m373[0m |               className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m374[0m |               onClick={() => router.push('/customer-scanner')}
+ [2m375[0m |             >
+ [2m376[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m377[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+ [2m378[0m |               </svg>
+ [2m379[0m |               <span className="text-xs">추천종목</span>
+ [2m380[0m |             </button>
+ [2m381[0m |             <button 
+ [2m382[0m |               className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m383[0m |               onClick={() => router.push('/stock-analysis')}
+ [2m384[0m |             >
+ [2m385[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m386[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+ [2m387[0m |               </svg>
+ [2m388[0m |               <span className="text-xs">종목분석</span>
+ [2m389[0m |             </button>
+ [2m390[0m |             <button 
+ [2m391[0m |               className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m392[0m |               onClick={() => router.push('/portfolio')}
+ [2m393[0m |             >
+ [2m394[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m395[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+ [2m396[0m |               </svg>
+ [2m397[0m |               <span className="text-xs">나의투자종목</span>
+ [2m398[0m |             </button>
+ [2m399[0m |             {user?.is_admin && (
+ [2m400[0m |               <button 
+ [2m401[0m |                 className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m402[0m |                 onClick={() => router.push('/admin')}
+ [2m403[0m |               >
+ [2m404[0m |                 <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m405[0m |                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+ [2m406[0m |                 </svg>
+ [2m407[0m |                 <span className="text-xs">관리자</span>
+ [2m408[0m |               </button>
+ [2m409[0m |             )}
+ [2m410[0m |             <button 
+ [2m411[0m |               className="flex flex-col items-center py-2 bg-gray-700"
+ [2m412[0m |               onClick={() => router.push('/more')}
+ [2m413[0m |             >
+ [2m414[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m415[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+ [2m416[0m |               </svg>
+ [2m417[0m |               <span className="text-xs">더보기</span>
+ [2m418[0m |             </button>
+ [2m419[0m |           </div>
+ [2m420[0m |         </div>
+ [2m421[0m | 
+ [2m422[0m |         {/* 하단 네비게이션 공간 확보 */}
+ [2m423[0m |         <div className="h-20"></div>
+ [2m424[0m |       </div>
+ [2m425[0m | 
+ [2m426[0m |       {/* 매매전략 가이드 모달 */}
+ [2m427[0m |       {showStrategyModal && (
+ [2m428[0m |         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+ [2m429[0m |              onClick={() => setShowStrategyModal(false)}>
+ [2m430[0m |           <div className="bg-white rounded-lg max-w-4xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col shadow-xl"
+ [2m431[0m |                onClick={(e) => e.stopPropagation()}>
+ [2m432[0m |             {/* 모달 헤더 */}
+ [2m433[0m |             <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 flex items-center justify-between flex-shrink-0">
+ [2m434[0m |               <h2 className="text-xl font-bold">매매전략 가이드</h2>
+ [2m435[0m |               <button 
+ [2m436[0m |                 onClick={() => setShowStrategyModal(false)}
+ [2m437[0m |                 className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+ [2m438[0m |                 aria-label="모달 닫기"
+ [2m439[0m |               >
+ [2m440[0m |                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m441[0m |                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+ [2m442[0m |                 </svg>
+ [2m443[0m |               </button>
+ [2m444[0m |             </div>
+ [2m445[0m |             
+ [2m446[0m |             {/* 모달 콘텐츠 - 스크롤 가능 영역 (모바일 최적화) */}
+ [2m447[0m |             <div 
+ [2m448[0m |               className="flex-1 overflow-y-auto p-6 min-h-0" 
+ [2m449[0m |               style={{ 
+ [2m450[0m |                 maxHeight: 'calc(90vh - 160px)',
+ [2m451[0m |                 WebkitOverflowScrolling: 'touch' // iOS 부드러운 스크롤
+ [2m452[0m |               }}
+ [2m453[0m |             >
+ [2m454[0m |               {strategyContent ? (
+ [2m455[0m |                 <div 
+ [2m456[0m |                   className="prose max-w-none"
+ [2m457[0m |                   dangerouslySetInnerHTML={{ __html: strategyContent }}
+ [2m458[0m |                 />
+ [2m459[0m |               ) : (
+ [2m460[0m |                 <div className="text-center py-8">
+ [2m461[0m |                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+ [2m462[0m |                   <p className="text-gray-500 mt-2">가이드를 불러오는 중...</p>
+ [2m463[0m |                 </div>
+ [2m464[0m |               )}
+ [2m465[0m |             </div>
+ [2m466[0m |             
+ [2m467[0m |             {/* 모달 푸터 */}
+ [2m468[0m |             <div className="border-t p-4 bg-gray-50 flex-shrink-0">
+ [2m469[0m |               <button
+ [2m470[0m |                 onClick={() => setShowStrategyModal(false)}
+ [2m471[0m |                 className="w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition-colors font-medium min-h-[44px]"
+ [2m472[0m |                 aria-label="모달 닫기"
+ [2m473[0m |               >
+ [2m474[0m |                 닫기
+ [2m475[0m |               </button>
+ [2m476[0m |             </div>
+ [2m477[0m |           </div>
+ [2m478[0m |         </div>
+ [2m479[0m |       )}
+ [2m480[0m |     </>
+ [2m481[0m |   );
+ [2m482[0m | }
+ [2m483[0m | 
+ [2m484[0m | import fs from 'fs';
+     : [33;1m       ^|[0m
+     :         [33;1m`-- [33;1m`fs` redefined here[0m[0m
+ [2m485[0m | import path from 'path';
+ [2m486[0m | 
+ [2m487[0m | export async function getServerSideProps() {
+     `----
+
+  [31mx[0m the name `path` is defined multiple times
+     ,-[[36;1;4m/Users/rexsmac/workspace/stock-finder/frontend/pages/more.js[0m:4:1]
+ [2m  4[0m | import Head from 'next/head';
+ [2m  5[0m | import Header from '../components/Header';
+ [2m  6[0m | import fs from 'fs';
+ [2m  7[0m | import path from 'path';
+     : [31;1m       ^^|^[0m
+     :          [31;1m`-- [31;1mprevious definition of `path` here[0m[0m
+ [2m  8[0m | 
+ [2m  9[0m | export default function More({ strategyGuideMarkdown }) {
+ [2m 10[0m |   const router = useRouter();
+ [2m 11[0m |   const { isAuthenticated, user, loading: authLoading, authChecked, logout } = useAuth();
+ [2m 12[0m |   const [mounted, setMounted] = useState(false);
+ [2m 13[0m |   const [showStrategyModal, setShowStrategyModal] = useState(false);
+ [2m 14[0m |   const [strategyContent, setStrategyContent] = useState('');
+ [2m 15[0m | 
+ [2m 16[0m |   useEffect(() => {
+ [2m 17[0m |     setMounted(true);
+ [2m 18[0m |   }, []);
+ [2m 19[0m | 
+ [2m 20[0m |   // 모달 열림 시 배경 스크롤 방지 (모바일)
+ [2m 21[0m |   useEffect(() => {
+ [2m 22[0m |     if (showStrategyModal) {
+ [2m 23[0m |       document.body.style.overflow = 'hidden';
+ [2m 24[0m |       return () => {
+ [2m 25[0m |         document.body.style.overflow = 'unset';
+ [2m 26[0m |       };
+ [2m 27[0m |     }
+ [2m 28[0m |   }, [showStrategyModal]);
+ [2m 29[0m | 
+ [2m 30[0m |   useEffect(() => {
+ [2m 31[0m |     if (showStrategyModal && !strategyContent && strategyGuideMarkdown) {
+ [2m 32[0m |       // 마크다운 파일 파싱 (클라이언트 사이드에서만 실행)
+ [2m 33[0m |       const parseMarkdown = async () => {
+ [2m 34[0m |         try {
+ [2m 35[0m |           // DOMPurify를 동적으로 import (클라이언트 사이드에서만)
+ [2m 36[0m |           const DOMPurify = (await import('isomorphic-dompurify')).default;
+ [2m 37[0m |           
+ [2m 38[0m |           const text = strategyGuideMarkdown;
+ [2m 39[0m |           
+ [2m 40[0m |           // 라인 단위로 처리
+ [2m 41[0m |           const lines = text.split('\n');
+ [2m 42[0m |           let html = '';
+ [2m 43[0m |           let inList = false;
+ [2m 44[0m |           let listType = '';
+ [2m 45[0m |           
+ [2m 46[0m |           for (let i = 0; i < lines.length; i++) {
+ [2m 47[0m |             const line = lines[i];
+ [2m 48[0m |             const trimmed = line.trim();
+ [2m 49[0m |             
+ [2m 50[0m |             // 빈 줄 처리
+ [2m 51[0m |             if (!trimmed) {
+ [2m 52[0m |               if (inList) {
+ [2m 53[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 54[0m |                 inList = false;
+ [2m 55[0m |               }
+ [2m 56[0m |               html += '\n';
+ [2m 57[0m |               continue;
+ [2m 58[0m |             }
+ [2m 59[0m |             
+ [2m 60[0m |             // 헤더 처리
+ [2m 61[0m |             if (trimmed.startsWith('# ')) {
+ [2m 62[0m |               if (inList) {
+ [2m 63[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 64[0m |                 inList = false;
+ [2m 65[0m |               }
+ [2m 66[0m |               html += `<h1 class="text-2xl font-bold mb-4 mt-6">${trimmed.substring(2)}</h1>`;
+ [2m 67[0m |             } else if (trimmed.startsWith('## ')) {
+ [2m 68[0m |               if (inList) {
+ [2m 69[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 70[0m |                 inList = false;
+ [2m 71[0m |               }
+ [2m 72[0m |               html += `<h2 class="text-xl font-semibold mt-6 mb-3 text-gray-800">${trimmed.substring(3)}</h2>`;
+ [2m 73[0m |             } else if (trimmed.startsWith('### ')) {
+ [2m 74[0m |               if (inList) {
+ [2m 75[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 76[0m |                 inList = false;
+ [2m 77[0m |               }
+ [2m 78[0m |               html += `<h3 class="text-lg font-medium mt-5 mb-2 text-gray-700">${trimmed.substring(4)}</h3>`;
+ [2m 79[0m |             } else if (trimmed.startsWith('#### ')) {
+ [2m 80[0m |               if (inList) {
+ [2m 81[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 82[0m |                 inList = false;
+ [2m 83[0m |               }
+ [2m 84[0m |               html += `<h4 class="text-base font-medium mt-4 mb-2 text-gray-700">${trimmed.substring(5)}</h4>`;
+ [2m 85[0m |             } else if (trimmed === '---') {
+ [2m 86[0m |               if (inList) {
+ [2m 87[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m 88[0m |                 inList = false;
+ [2m 89[0m |               }
+ [2m 90[0m |               html += '<hr class="my-6 border-gray-300">';
+ [2m 91[0m |             } else if (trimmed.match(/^- /)) {
+ [2m 92[0m |               // 리스트 항목
+ [2m 93[0m |               if (!inList || listType !== 'ul') {
+ [2m 94[0m |                 if (inList) html += '</ol>';
+ [2m 95[0m |                 html += '<ul class="list-disc mb-4 ml-6 space-y-1">';
+ [2m 96[0m |                 inList = true;
+ [2m 97[0m |                 listType = 'ul';
+ [2m 98[0m |               }
+ [2m 99[0m |               const content = trimmed.substring(2);
+ [2m100[0m |               // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+ [2m101[0m |               let listContent = content
+ [2m102[0m |                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+ [2m103[0m |                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+ [2m104[0m |               html += `<li class="text-gray-700">${listContent}</li>`;
+ [2m105[0m |             } else if (trimmed.match(/^\d+\. /)) {
+ [2m106[0m |               // 번호 리스트
+ [2m107[0m |               if (!inList || listType !== 'ol') {
+ [2m108[0m |                 if (inList) html += '</ul>';
+ [2m109[0m |                 html += '<ol class="list-decimal mb-4 ml-6 space-y-1">';
+ [2m110[0m |                 inList = true;
+ [2m111[0m |                 listType = 'ol';
+ [2m112[0m |               }
+ [2m113[0m |               const content = trimmed.replace(/^\d+\. /, '');
+ [2m114[0m |               // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+ [2m115[0m |               let listContent = content
+ [2m116[0m |                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+ [2m117[0m |                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
+ [2m118[0m |               html += `<li class="text-gray-700">${listContent}</li>`;
+ [2m119[0m |             } else {
+ [2m120[0m |               // 일반 문단
+ [2m121[0m |               if (inList) {
+ [2m122[0m |                 html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m123[0m |                 inList = false;
+ [2m124[0m |               }
+ [2m125[0m |               // 링크를 먼저 처리 (URL이 그대로 보이는 문제 방지)
+ [2m126[0m |               let paraContent = trimmed
+ [2m127[0m |                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1</a>')
+ [2m128[0m |                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+ [2m129[0m |                 .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+ [2m130[0m |                 .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>');
+ [2m131[0m |               html += `<p class="mb-3 text-gray-700 leading-relaxed">${paraContent}</p>`;
+ [2m132[0m |             }
+ [2m133[0m |           }
+ [2m134[0m |           
+ [2m135[0m |           // 리스트가 끝나지 않았다면 닫기
+ [2m136[0m |           if (inList) {
+ [2m137[0m |             html += listType === 'ul' ? '</ul>' : '</ol>';
+ [2m138[0m |           }
+ [2m139[0m |           
+ [2m140[0m |           // XSS 방지를 위한 DOMPurify 적용
+ [2m141[0m |           const sanitizedHtml = DOMPurify.sanitize(html, {
+ [2m142[0m |             ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'code', 'a', 'hr'],
+ [2m143[0m |             ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+ [2m144[0m |             ALLOW_DATA_ATTR: false
+ [2m145[0m |           });
+ [2m146[0m |           
+ [2m147[0m |           setStrategyContent(sanitizedHtml);
+ [2m148[0m |         } catch (err) {
+ [2m149[0m |           console.error('가이드 로드 실패:', err);
+ [2m150[0m |           setStrategyContent('<p class="text-red-500">가이드를 불러올 수 없습니다.</p>');
+ [2m151[0m |         }
+ [2m152[0m |       };
+ [2m153[0m |       
+ [2m154[0m |       loadAndParseMarkdown();
+ [2m155[0m |     }
+ [2m156[0m |   }, [showStrategyModal]);
+ [2m157[0m | 
+ [2m158[0m |   const handleLogout = async () => {
+ [2m159[0m |     if (user && logout) {
+ [2m160[0m |       try {
+ [2m161[0m |         await logout();
+ [2m162[0m |         router.push('/customer-scanner');
+ [2m163[0m |       } catch (error) {
+ [2m164[0m |         console.error('로그아웃 중 오류:', error);
+ [2m165[0m |         router.push('/customer-scanner');
+ [2m166[0m |       }
+ [2m167[0m |     }
+ [2m168[0m |   };
+ [2m169[0m | 
+ [2m170[0m |   if (!mounted) {
+ [2m171[0m |     return null;
+ [2m172[0m |   }
+ [2m173[0m | 
+ [2m174[0m |   return (
+ [2m175[0m |     <>
+ [2m176[0m |       <Head>
+ [2m177[0m |         <title>더보기 - 스톡인사이트</title>
+ [2m178[0m |         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ [2m179[0m |       </Head>
+ [2m180[0m | 
+ [2m181[0m |       <div className="min-h-screen bg-gray-50">
+ [2m182[0m |         <Header />
+ [2m183[0m | 
+ [2m184[0m |         {/* 정보 배너 */}
+ [2m185[0m |         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+ [2m186[0m |           <div className="flex items-center justify-between">
+ [2m187[0m |             <div>
+ [2m188[0m |               <h2 className="text-lg font-semibold">더보기</h2>
+ [2m189[0m |               <p className="text-sm opacity-90">다양한 서비스와 설정을 확인하세요</p>
+ [2m190[0m |             </div>
+ [2m191[0m |             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+ [2m192[0m |               <span className="text-2xl">⚙️</span>
+ [2m193[0m |             </div>
+ [2m194[0m |           </div>
+ [2m195[0m |         </div>
+ [2m196[0m | 
+ [2m197[0m |         {/* 메인 콘텐츠 */}
+ [2m198[0m |         <div className="p-4">
+ [2m199[0m |           {/* 사용자 정보 카드 */}
+ [2m200[0m |           {!authLoading && authChecked && user ? (
+ [2m201[0m |             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m202[0m |               <div className="flex items-center space-x-4">
+ [2m203[0m |                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+ [2m204[0m |                   <span className="text-xl">👤</span>
+ [2m205[0m |                 </div>
+ [2m206[0m |                 <div className="flex-1">
+ [2m207[0m |                   <div className="font-semibold text-gray-900">{user.name}님</div>
+ [2m208[0m |                   <div className="text-sm text-gray-600">
+ [2m209[0m |                     {user.is_admin ? '🔧 관리자' : 
+ [2m210[0m |                      user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
+ [2m211[0m |                   </div>
+ [2m212[0m |                   {/* 디버깅 정보 */}
+ [2m213[0m |                   <div className="text-xs text-gray-400 mt-1">
+ [2m214[0m |                     Debug: is_admin={String(user.is_admin)} ({typeof user.is_admin}), tier={user.membership_tier}
+ [2m215[0m |                   </div>
+ [2m216[0m |                 </div>
+ [2m217[0m |                 <div className="text-right">
+ [2m218[0m |                   <div className="text-sm text-gray-500">포인트</div>
+ [2m219[0m |                   <div className="font-semibold text-blue-600">0P</div>
+ [2m220[0m |                 </div>
+ [2m221[0m |               </div>
+ [2m222[0m |             </div>
+ [2m223[0m |           ) : (
+ [2m224[0m |             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m225[0m |               <div className="text-center">
+ [2m226[0m |                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+ [2m227[0m |                   <span className="text-xl">👤</span>
+ [2m228[0m |                 </div>
+ [2m229[0m |                 <div className="font-semibold text-gray-900 mb-2">게스트 사용자</div>
+ [2m230[0m |                 <button 
+ [2m231[0m |                   onClick={() => router.push('/login')}
+ [2m232[0m |                   className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+ [2m233[0m |                 >
+ [2m234[0m |                   로그인하기
+ [2m235[0m |                 </button>
+ [2m236[0m |               </div>
+ [2m237[0m |             </div>
+ [2m238[0m |           )}
+ [2m239[0m | 
+ [2m240[0m | 
+ [2m241[0m | 
+ [2m242[0m | 
+ [2m243[0m |           {/* 매매전략 가이드 카드 */}
+ [2m244[0m |           <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg p-4 mb-6 text-white cursor-pointer hover:shadow-xl transition-shadow"
+ [2m245[0m |                onClick={() => setShowStrategyModal(true)}>
+ [2m246[0m |             <div className="flex items-center justify-between">
+ [2m247[0m |               <div className="flex items-center space-x-3">
+ [2m248[0m |                 <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+ [2m249[0m |                   <span className="text-2xl">📈</span>
+ [2m250[0m |                 </div>
+ [2m251[0m |                 <div>
+ [2m252[0m |                   <h3 className="font-bold text-lg mb-1">매매전략 가이드</h3>
+ [2m253[0m |                   <p className="text-sm opacity-90">검증된 매매 전략으로 수익 극대화</p>
+ [2m254[0m |                 </div>
+ [2m255[0m |               </div>
+ [2m256[0m |               <div className="flex items-center space-x-2">
+ [2m257[0m |                 <span className="text-sm opacity-90">자세히 보기</span>
+ [2m258[0m |                 <span className="text-xl">→</span>
+ [2m259[0m |               </div>
+ [2m260[0m |             </div>
+ [2m261[0m |             <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+ [2m262[0m |               <div className="bg-white bg-opacity-20 rounded-lg p-2">
+ [2m263[0m |                 <div className="font-semibold">익절</div>
+ [2m264[0m |                 <div className="text-xs opacity-90">+3% 도달 시</div>
+ [2m265[0m |               </div>
+ [2m266[0m |               <div className="bg-white bg-opacity-20 rounded-lg p-2">
+ [2m267[0m |                 <div className="font-semibold">손절</div>
+ [2m268[0m |                 <div className="text-xs opacity-90">-7% (5일 후)</div>
+ [2m269[0m |               </div>
+ [2m270[0m |               <div className="bg-white bg-opacity-20 rounded-lg p-2">
+ [2m271[0m |                 <div className="font-semibold">승률</div>
+ [2m272[0m |                 <div className="text-xs opacity-90">62.5%</div>
+ [2m273[0m |               </div>
+ [2m274[0m |             </div>
+ [2m275[0m |           </div>
+ [2m276[0m | 
+ [2m277[0m |           {/* 투자 활용법 가이드 */}
+ [2m278[0m |           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m279[0m |             <h3 className="font-semibold text-gray-900 mb-4">투자 활용법</h3>
+ [2m280[0m |             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ [2m281[0m |               <div className="bg-blue-50 rounded-lg p-4">
+ [2m282[0m |                 <div className="flex items-center space-x-2 mb-2">
+ [2m283[0m |                   <span className="text-xl">🔍</span>
+ [2m284[0m |                   <h4 className="font-semibold text-gray-800">어떤 종목을 찾나요?</h4>
+ [2m285[0m |                 </div>
+ [2m286[0m |                 <p className="text-sm text-gray-600 font-medium">📈 상승 초입 단계의 종목들</p>
+ [2m287[0m |                 <p className="text-xs text-gray-500 mt-1">• 하락이 끝나고 막 오르기 시작하는 종목</p>
+ [2m288[0m |                 <p className="text-xs text-gray-500">• 거래량이 늘어나며 관심받기 시작하는 종목</p>
+ [2m289[0m |                 <p className="text-xs text-blue-600 mt-2 font-medium">💡 상승 초기에 발견해서 수익 기회 제공</p>
+ [2m290[0m |               </div>
+ [2m291[0m |               <div className="bg-green-50 rounded-lg p-4">
+ [2m292[0m |                 <div className="flex items-center space-x-2 mb-2">
+ [2m293[0m |                   <span className="text-xl">💰</span>
+ [2m294[0m |                   <h4 className="font-semibold text-gray-800">어떻게 투자하나요?</h4>
+ [2m295[0m |                 </div>
+ [2m296[0m |                 <p className="text-sm text-gray-600 font-medium">🎯 단기 스윙 투자 (1주일 내외)</p>
+ [2m297[0m |                 <p className="text-xs text-gray-500 mt-1">• 상승 초입에서 매수 → 상승 후 매도</p>
+ [2m298[0m |                 <p className="text-xs text-gray-500">• 목표: 5~10% 수익, 손절: -5% 이하</p>
+ [2m299[0m |                 <p className="text-xs text-gray-500">• 욕심내지 말고 적당한 수익에서 매도</p>
+ [2m300[0m |                 <div className="mt-2 p-2 bg-green-100 rounded">
+ [2m301[0m |                   <p className="text-xs text-green-700 font-medium">💡 핵심: 상승 파도를 타고 적당히 내리기</p>
+ [2m302[0m |                 </div>
+ [2m303[0m |                 <p className="text-xs text-red-500 mt-2 font-medium">⚠️ 투자는 본인 책임, 신중한 판단 필요</p>
+ [2m304[0m |               </div>
+ [2m305[0m |             </div>
+ [2m306[0m |           </div>
+ [2m307[0m | 
+ [2m308[0m |           {/* 준비중인 기능 */}
+ [2m309[0m |           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m310[0m |             <h3 className="font-semibold text-gray-900 mb-4">준비중인 기능</h3>
+ [2m311[0m |             <div className="bg-orange-50 rounded-lg p-4">
+ [2m312[0m |               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+ [2m313[0m |                 <div>
+ [2m314[0m |                   <h5 className="font-medium text-orange-700 mb-2">📱 알림 서비스</h5>
+ [2m315[0m |                   <ul className="space-y-1 text-orange-600">
+ [2m316[0m |                     <li>• <strong>카카오톡 알림톡</strong>: 스캔 결과 자동 알림</li>
+ [2m317[0m |                     <li>• <strong>푸시 알림</strong>: 모바일 앱 알림</li>
+ [2m318[0m |                     <li>• <strong>이메일 알림</strong>: 상세 분석 리포트</li>
+ [2m319[0m |                   </ul>
+ [2m320[0m |                 </div>
+ [2m321[0m |                 <div>
+ [2m322[0m |                   <h5 className="font-medium text-orange-700 mb-2">💼 관심종목 관리</h5>
+ [2m323[0m |                   <ul className="space-y-1 text-orange-600">
+ [2m324[0m |                     <li>• <strong>관심종목 등록</strong>: 스캔 결과에서 바로 등록</li>
+ [2m325[0m |                     <li>• <strong>관심종목 목록</strong>: 등록한 종목 관리</li>
+ [2m326[0m |                     <li>• <strong>알림 설정</strong>: 관심종목 변동 알림</li>
+ [2m327[0m |                   </ul>
+ [2m328[0m |                 </div>
+ [2m329[0m |                 <div>
+ [2m330[0m |                   <h5 className="font-medium text-orange-700 mb-2">📊 고급 분석</h5>
+ [2m331[0m |                   <ul className="space-y-1 text-orange-600">
+ [2m332[0m |                     <li>• <strong>상세 차트</strong>: 기술적 분석 도구</li>
+ [2m333[0m |                     <li>• <strong>기업정보</strong>: 재무제표 및 뉴스</li>
+ [2m334[0m |                     <li>• <strong>종목분석</strong>: 단일 종목 상세 분석</li>
+ [2m335[0m |                   </ul>
+ [2m336[0m |                 </div>
+ [2m337[0m |               </div>
+ [2m338[0m |               <div className="mt-4 p-3 bg-orange-100 rounded-lg">
+ [2m339[0m |                 <p className="text-sm text-orange-700">
+ [2m340[0m |                   <strong>💡 안내:</strong> 모든 기능은 순차적으로 출시될 예정입니다. 
+ [2m341[0m |                   먼저 기본 스캔 서비스를 이용해보시고, 추가 기능 출시 소식을 기다려주세요!
+ [2m342[0m |                 </p>
+ [2m343[0m |               </div>
+ [2m344[0m |             </div>
+ [2m345[0m |           </div>
+ [2m346[0m | 
+ [2m347[0m |           {/* 계정 관리 */}
+ [2m348[0m |           {!authLoading && authChecked && user && (
+ [2m349[0m |             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+ [2m350[0m |               <h3 className="font-semibold text-gray-900 mb-4">계정 관리</h3>
+ [2m351[0m |               <div className="space-y-3">
+ [2m352[0m |                 <button 
+ [2m353[0m |                   onClick={handleLogout}
+ [2m354[0m |                   className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors"
+ [2m355[0m |                 >
+ [2m356[0m |                   <div className="flex items-center space-x-3">
+ [2m357[0m |                     <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+ [2m358[0m |                       <span className="text-sm">🚪</span>
+ [2m359[0m |                     </div>
+ [2m360[0m |                     <span className="text-gray-700">로그아웃</span>
+ [2m361[0m |                   </div>
+ [2m362[0m |                   <span className="text-gray-400">›</span>
+ [2m363[0m |                 </button>
+ [2m364[0m |               </div>
+ [2m365[0m |             </div>
+ [2m366[0m |           )}
+ [2m367[0m |         </div>
+ [2m368[0m | 
+ [2m369[0m |         {/* 하단 네비게이션 */}
+ [2m370[0m |         <div className="fixed bottom-0 left-0 right-0 bg-black text-white">
+ [2m371[0m |           <div className="flex items-center justify-around py-2">
+ [2m372[0m |             <button 
+ [2m373[0m |               className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m374[0m |               onClick={() => router.push('/customer-scanner')}
+ [2m375[0m |             >
+ [2m376[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m377[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+ [2m378[0m |               </svg>
+ [2m379[0m |               <span className="text-xs">추천종목</span>
+ [2m380[0m |             </button>
+ [2m381[0m |             <button 
+ [2m382[0m |               className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m383[0m |               onClick={() => router.push('/stock-analysis')}
+ [2m384[0m |             >
+ [2m385[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m386[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+ [2m387[0m |               </svg>
+ [2m388[0m |               <span className="text-xs">종목분석</span>
+ [2m389[0m |             </button>
+ [2m390[0m |             <button 
+ [2m391[0m |               className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m392[0m |               onClick={() => router.push('/portfolio')}
+ [2m393[0m |             >
+ [2m394[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m395[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+ [2m396[0m |               </svg>
+ [2m397[0m |               <span className="text-xs">나의투자종목</span>
+ [2m398[0m |             </button>
+ [2m399[0m |             {user?.is_admin && (
+ [2m400[0m |               <button 
+ [2m401[0m |                 className="flex flex-col items-center py-2 hover:bg-gray-800"
+ [2m402[0m |                 onClick={() => router.push('/admin')}
+ [2m403[0m |               >
+ [2m404[0m |                 <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m405[0m |                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+ [2m406[0m |                 </svg>
+ [2m407[0m |                 <span className="text-xs">관리자</span>
+ [2m408[0m |               </button>
+ [2m409[0m |             )}
+ [2m410[0m |             <button 
+ [2m411[0m |               className="flex flex-col items-center py-2 bg-gray-700"
+ [2m412[0m |               onClick={() => router.push('/more')}
+ [2m413[0m |             >
+ [2m414[0m |               <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m415[0m |                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+ [2m416[0m |               </svg>
+ [2m417[0m |               <span className="text-xs">더보기</span>
+ [2m418[0m |             </button>
+ [2m419[0m |           </div>
+ [2m420[0m |         </div>
+ [2m421[0m | 
+ [2m422[0m |         {/* 하단 네비게이션 공간 확보 */}
+ [2m423[0m |         <div className="h-20"></div>
+ [2m424[0m |       </div>
+ [2m425[0m | 
+ [2m426[0m |       {/* 매매전략 가이드 모달 */}
+ [2m427[0m |       {showStrategyModal && (
+ [2m428[0m |         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+ [2m429[0m |              onClick={() => setShowStrategyModal(false)}>
+ [2m430[0m |           <div className="bg-white rounded-lg max-w-4xl w-full my-8 max-h-[calc(100vh-4rem)] flex flex-col shadow-xl"
+ [2m431[0m |                onClick={(e) => e.stopPropagation()}>
+ [2m432[0m |             {/* 모달 헤더 */}
+ [2m433[0m |             <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 flex items-center justify-between flex-shrink-0">
+ [2m434[0m |               <h2 className="text-xl font-bold">매매전략 가이드</h2>
+ [2m435[0m |               <button 
+ [2m436[0m |                 onClick={() => setShowStrategyModal(false)}
+ [2m437[0m |                 className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+ [2m438[0m |                 aria-label="모달 닫기"
+ [2m439[0m |               >
+ [2m440[0m |                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ [2m441[0m |                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+ [2m442[0m |                 </svg>
+ [2m443[0m |               </button>
+ [2m444[0m |             </div>
+ [2m445[0m |             
+ [2m446[0m |             {/* 모달 콘텐츠 - 스크롤 가능 영역 (모바일 최적화) */}
+ [2m447[0m |             <div 
+ [2m448[0m |               className="flex-1 overflow-y-auto p-6 min-h-0" 
+ [2m449[0m |               style={{ 
+ [2m450[0m |                 maxHeight: 'calc(90vh - 160px)',
+ [2m451[0m |                 WebkitOverflowScrolling: 'touch' // iOS 부드러운 스크롤
+ [2m452[0m |               }}
+ [2m453[0m |             >
+ [2m454[0m |               {strategyContent ? (
+ [2m455[0m |                 <div 
+ [2m456[0m |                   className="prose max-w-none"
+ [2m457[0m |                   dangerouslySetInnerHTML={{ __html: strategyContent }}
+ [2m458[0m |                 />
+ [2m459[0m |               ) : (
+ [2m460[0m |                 <div className="text-center py-8">
+ [2m461[0m |                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+ [2m462[0m |                   <p className="text-gray-500 mt-2">가이드를 불러오는 중...</p>
+ [2m463[0m |                 </div>
+ [2m464[0m |               )}
+ [2m465[0m |             </div>
+ [2m466[0m |             
+ [2m467[0m |             {/* 모달 푸터 */}
+ [2m468[0m |             <div className="border-t p-4 bg-gray-50 flex-shrink-0">
+ [2m469[0m |               <button
+ [2m470[0m |                 onClick={() => setShowStrategyModal(false)}
+ [2m471[0m |                 className="w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition-colors font-medium min-h-[44px]"
+ [2m472[0m |                 aria-label="모달 닫기"
+ [2m473[0m |               >
+ [2m474[0m |                 닫기
+ [2m475[0m |               </button>
+ [2m476[0m |             </div>
+ [2m477[0m |           </div>
+ [2m478[0m |         </div>
+ [2m479[0m |       )}
+ [2m480[0m |     </>
+ [2m481[0m |   );
+ [2m482[0m | }
+ [2m483[0m | 
+ [2m484[0m | import fs from 'fs';
+ [2m485[0m | import path from 'path';
+     : [33;1m       ^^|^[0m
+     :          [33;1m`-- [33;1m`path` redefined here[0m[0m
+ [2m486[0m | 
+ [2m487[0m | export async function getServerSideProps() {
+ [2m488[0m |   try {
+     `----
+ ✓ Compiled in 235ms (295 modules)
+ ✓ Compiled in 244ms (295 modules)
