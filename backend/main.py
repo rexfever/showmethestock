@@ -129,7 +129,7 @@ def create_popup_notice_table(cur):
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
 from services.enhanced_report_generator import EnhancedReportGenerator
-from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
+from services.scan_service import get_recurrence_data, execute_scan_with_fallback
 
 # 향상된 보고서 생성기 인스턴스
 report_generator = EnhancedReportGenerator()
