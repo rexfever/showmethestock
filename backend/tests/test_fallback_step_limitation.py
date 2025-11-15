@@ -54,6 +54,7 @@ class TestFallbackStepLimitation(unittest.TestCase):
         config.fallback_enable = True
         config.fallback_target_min_bull = 3
         config.fallback_target_max_bull = 5
+        self.bull_presets = config.get_fallback_profile('bull')['presets']
     
     def tearDown(self):
         """테스트 후 정리"""
@@ -96,7 +97,7 @@ class TestFallbackStepLimitation(unittest.TestCase):
                     {"ticker": "005930", "name": "삼성전자", "score": 10.0},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 9.5},  # 10점 미만
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 10.0},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 10.5},
@@ -129,7 +130,7 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 8.5},
@@ -162,11 +163,11 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 8.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 8.8},
@@ -199,11 +200,11 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 8.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 7.8},  # 8점 미만
@@ -233,18 +234,18 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
             # Step 4 이상은 호출되지 않아야 함
-            elif preset == config.fallback_presets[3]:  # Step 4
+            elif preset == self.bull_presets[3]:  # Step 4
                 self.fail("Step 4가 호출되었습니다! Step 3까지만 호출되어야 합니다.")
-            elif preset == config.fallback_presets[4]:  # Step 5
+            elif preset == self.bull_presets[4]:  # Step 5
                 self.fail("Step 5가 호출되었습니다! Step 3까지만 호출되어야 합니다.")
             return []
         
@@ -266,10 +267,10 @@ class TestFallbackStepLimitation(unittest.TestCase):
         # 호출된 preset 확인
         call_args_list = [call[0][1] for call in mock_scan.call_args_list]
         self.assertIn({}, call_args_list)  # Step 0
-        self.assertIn(config.fallback_presets[1], call_args_list)  # Step 1
-        self.assertIn(config.fallback_presets[2], call_args_list)  # Step 3
-        self.assertNotIn(config.fallback_presets[3], call_args_list)  # Step 4 호출 안 됨
-        self.assertNotIn(config.fallback_presets[4], call_args_list)  # Step 5 호출 안 됨
+        self.assertIn(self.bull_presets[1], call_args_list)  # Step 1
+        self.assertIn(self.bull_presets[2], call_args_list)  # Step 3
+        self.assertNotIn(self.bull_presets[3], call_args_list)  # Step 4 호출 안 됨
+        self.assertNotIn(self.bull_presets[4], call_args_list)  # Step 5 호출 안 됨
     
     @patch('services.scan_service.scan_with_preset')
     def test_step_3_with_exact_target_min(self, mock_scan):
@@ -279,11 +280,11 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 8.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 8.8},
@@ -312,11 +313,11 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 8.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 8.8},  # 2개만 (목표 3개 미달)
@@ -343,11 +344,11 @@ class TestFallbackStepLimitation(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 7.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return []  # 결과 없음
             return []
         

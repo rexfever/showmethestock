@@ -612,8 +612,8 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 match=item["match"],
                 score=item["score"],
                 indicators=IndicatorPayload(
-                    TEMA=item["indicators"]["TEMA"],
-                    DEMA=item["indicators"]["DEMA"],
+                    TEMA20=item["indicators"]["TEMA20"],
+                    DEMA10=item["indicators"]["DEMA10"],
                     MACD_OSC=item["indicators"]["MACD_OSC"],
                     MACD_LINE=item["indicators"]["MACD_LINE"],
                     MACD_SIGNAL=item["indicators"]["MACD_SIGNAL"],

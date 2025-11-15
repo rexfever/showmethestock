@@ -58,6 +58,7 @@ class TestScanServiceComprehensive(unittest.TestCase):
         config.fallback_enable = True
         config.fallback_target_min_bull = 3
         config.fallback_target_max_bull = 5
+        self.bull_presets = config.get_fallback_profile('bull')['presets']
     
     def tearDown(self):
         """테스트 후 정리"""
@@ -88,7 +89,7 @@ class TestScanServiceComprehensive(unittest.TestCase):
         def mock_scan_side_effect(universe, preset, date, market_condition):
             if preset == {}:  # Step 0
                 return []  # Step 0 실패
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 raise Exception("Step 1 스캔 오류")
             return []
         
@@ -110,9 +111,9 @@ class TestScanServiceComprehensive(unittest.TestCase):
         def mock_scan_side_effect(universe, preset, date, market_condition):
             if preset == {}:  # Step 0
                 return []
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return []
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 raise Exception("Step 3 스캔 오류")
             return []
         
@@ -141,7 +142,8 @@ class TestScanServiceComprehensive(unittest.TestCase):
         mock_scan.side_effect = mock_scan_side_effect
         
         # fallback_presets를 임시로 1개만 반환하도록 mock
-        with patch.object(config.__class__, 'fallback_presets', property(lambda self: [{}])):
+        limited_profile = {"target_min": 3, "target_max": 5, "presets": [{}]}
+        with patch.object(config, 'get_fallback_profile', return_value=limited_profile):
             items, chosen_step = execute_scan_with_fallback(
                 self.universe,
                 date="20251114",
@@ -157,8 +159,7 @@ class TestScanServiceComprehensive(unittest.TestCase):
         """fallback_presets 인덱스 오류 테스트 (Step 3)"""
         # fallback_presets가 3개 미만인 경우 시뮬레이션
         # property를 직접 수정할 수 없으므로, 실제로는 코드에서 검증하는지 확인
-        original_presets = config.fallback_presets
-        step1_preset = original_presets[1] if len(original_presets) > 1 else {}
+        step1_preset = self.bull_presets[1] if len(self.bull_presets) > 1 else {}
         
         def mock_scan_side_effect(universe, preset, date, market_condition):
             if preset == {}:  # Step 0
@@ -170,7 +171,8 @@ class TestScanServiceComprehensive(unittest.TestCase):
         mock_scan.side_effect = mock_scan_side_effect
         
         # fallback_presets를 임시로 2개만 반환하도록 mock
-        with patch.object(config.__class__, 'fallback_presets', property(lambda self: [{}, step1_preset])):
+        limited_profile = {"target_min": 3, "target_max": 5, "presets": [{}, step1_preset]}
+        with patch.object(config, 'get_fallback_profile', return_value=limited_profile):
             items, chosen_step = execute_scan_with_fallback(
                 self.universe,
                 date="20251114",
@@ -366,11 +368,11 @@ class TestScanServiceComprehensive(unittest.TestCase):
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 9.5},
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 8.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 8.8},
@@ -502,14 +504,14 @@ class TestScanServiceComprehensive(unittest.TestCase):
             nonlocal step1_items_called
             if preset == {}:  # Step 0
                 return []
-            elif preset == config.fallback_presets[1]:  # Step 1
+            elif preset == self.bull_presets[1]:  # Step 1
                 step1_items_called = True
                 return [
                     {"ticker": "005930", "name": "삼성전자", "score": 8.5},
                     {"ticker": "000660", "name": "SK하이닉스", "score": 8.8},
                     {"ticker": "051910", "name": "LG화학", "score": 7.5},  # 8점 미만
                 ]
-            elif preset == config.fallback_presets[2]:  # Step 3
+            elif preset == self.bull_presets[2]:  # Step 3
                 return []  # Step 3도 호출될 수 있음
             return []
         

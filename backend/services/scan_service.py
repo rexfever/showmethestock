@@ -86,73 +86,11 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
     return recurrence_data
 
 
-def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
-    """스캔 스냅샷 저장"""
-    try:
-        with db_manager.get_cursor(commit=True) as cur_hist:
-            _ensure_scan_rank_table(cur_hist)
-        
-            enhanced_rank = []
-            for it in scan_items:
-                try:
-                    df = api.get_ohlcv(it["ticker"], 2)
-                    if not df.empty:
-                        latest = df.iloc[-1]
-                        prev = df.iloc[-2] if len(df) > 1 else None
-                        change_rate = (latest.close - prev.close) / prev.close if prev is not None and prev.close else 0.0
-                        enhanced_rank.append({
-                            "date": today_as_of,
-                            "code": it["ticker"],
-                            "name": it["name"],
-                            "score": it["score"],
-                            "flags": json.dumps(it["flags"], ensure_ascii=False),
-                            "score_label": it["score_label"],
-                            "close_price": float(latest.close),
-                            "volume": float(latest.volume),
-                            "change_rate": float(change_rate),
-                        })
-                except Exception:
-                    continue
-        
-            cur_hist.execute("DELETE FROM scan_rank WHERE date = %s", (today_as_of,))
-            
-            if not scan_items:
-                print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of}")
-                cur_hist.execute(
-                    """
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
-                     "추천종목 없음", 0.0, 0.0, 0.0)
-                )
-            elif enhanced_rank:
-                cur_hist.executemany("""
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, [
-                    (
-                        r["date"], r["code"], r["name"], r["score"], r["flags"],
-                        r["score_label"], r["close_price"], r["volume"], r["change_rate"]
-                    )
-                    for r in enhanced_rank
-                ])
-            else:
-                print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of}")
-                cur_hist.execute(
-                    """
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
-                     "추천종목 없음", 0.0, 0.0, 0.0)
-                )
-    except Exception as e:
-        print(f"스냅샷 저장 오류: {e}")
+# save_scan_snapshot 함수 제거됨 - main.py::_save_snapshot_db() 사용
 
 
 def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, market_condition=None) -> tuple:
-    """Fallback 로직을 적용한 스캔 실행 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)"""
+    """Fallback 로직을 적용한 스캔 실행 (시장별 프리셋 + 하이브리드 접근)"""
     chosen_step = None
     
     # 급락장 감지 시 추천하지 않음
@@ -160,19 +98,19 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         print(f"🔴 급락장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 추천 종목 없음 반환")
         return [], None
     
-    # 약세장에서도 fallback 활성화하되, 장세별 목표 개수 적용
     use_fallback = config.fallback_enable
+    sentiment = getattr(market_condition, "market_sentiment", "neutral") if market_condition else "neutral"
+    fallback_profile = config.get_fallback_profile(sentiment)
+    target_min = max(1, fallback_profile.get("target_min", config.fallback_target_min))
+    target_max = max(target_min, fallback_profile.get("target_max", config.fallback_target_max))
+    selected_presets = fallback_profile.get("presets") or [{}]
+    if not selected_presets:
+        selected_presets = [{}]
     
-    # 장세별 MIN/MAX 설정 및 검증
-    if market_condition and market_condition.market_sentiment == 'bear':
-        target_min = max(1, config.fallback_target_min_bear)  # 최소 1개
-        target_max = max(target_min, config.fallback_target_max_bear)  # 최소 target_min 이상
-        print(f"⚠️ 약세장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - Fallback 활성화, 목표: {target_min}~{target_max}개")
+    if market_condition:
+        print(f"🧭 장세: {sentiment} (KOSPI: {market_condition.kospi_return:.2f}%), 목표: {target_min}~{target_max}개, 프리셋 수: {len(selected_presets)}")
     else:
-        target_min = max(1, config.fallback_target_min_bull)  # 최소 1개
-        target_max = max(target_min, config.fallback_target_max_bull)  # 최소 target_min 이상
-        if market_condition:
-            print(f"📈 {market_condition.market_sentiment} 장세 (KOSPI: {market_condition.kospi_return:.2f}%) - Fallback 활성화, 목표: {target_min}~{target_max}개")
+        print(f"🧭 장세 정보 없음 - 기본(중립) 프리셋 사용, 목표: {target_min}~{target_max}개")
     
     print(f"🔄 하이브리드 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={use_fallback}")
     
@@ -190,90 +128,90 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         chosen_step = 0  # 기본 조건 사용
         print(f"📊 스캔 결과: {len(items)}개 종목 (10점 이상만, 조건 강화)")
     else:
-        # 통합 Fallback: 점수와 지표를 동시에 Fallback
+        # 통합 Fallback: 점수와 지표를 동시에 Fallback (장세별 프리셋)
         print(f"📊 통합 Fallback 활성화 - 목표: 최소 {target_min}개, 최대 {target_max}개")
         
         final_items = []
         chosen_step = None  # 명확한 초기값
         
-        # Step 0: 기본 조건 (10점 이상만, 지표 완화 없음)
-        print(f"🔄 Step 0: 기본 조건 (10점 이상만)")
+        # Step 0: 기본/장세별 첫 프리셋
+        step0_overrides = selected_presets[0] if selected_presets else {}
+        print(f"🔄 Step 0: 기본 조건 적용 ({'타이트' if not step0_overrides else step0_overrides})")
         try:
-            step0_items = scan_with_preset(universe, {}, date, market_condition)
+            step0_items = scan_with_preset(universe, step0_overrides, date, market_condition)
         except Exception as e:
             print(f"❌ Step 0 스캔 오류: {e}")
             return [], None
         step0_items_10_plus = [item for item in step0_items if item.get("score", 0) >= 10]
-        print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (10점 이상만)")
+        print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (10점 이상)")
         
         if len(step0_items_10_plus) >= target_min:
             chosen_step = 0
             final_items = step0_items_10_plus[:min(config.top_k, target_max)]
-            print(f"✅ Step 0에서 목표 달성: {len(final_items)}개 종목 선택 (10점 이상만)")
+            print(f"✅ Step 0에서 목표 달성: {len(final_items)}개 종목 선택 (10점 이상)")
         else:
-            # Step 1: 지표 완화 Level 1 + 10점 이상
-            print(f"🔄 Step 1: 지표 완화 Level 1 + 10점 이상")
-            try:
-                if len(config.fallback_presets) < 2:
-                    print(f"❌ fallback_presets 인덱스 오류: Step 1 프리셋 없음")
-                    return [], None
-                step1_items = scan_with_preset(universe, config.fallback_presets[1], date, market_condition)
-            except Exception as e:
-                print(f"❌ Step 1 스캔 오류: {e}")
-                return [], None
-            step1_items_10_plus = [item for item in step1_items if item.get("score", 0) >= 10]
-            print(f"📊 Step 1 결과: {len(step1_items_10_plus)}개 종목 (지표 완화 + 10점 이상)")
+            current_items_for_score_fallback = step0_items
             
-            if len(step1_items_10_plus) >= target_min:
-                chosen_step = 1
-                final_items = step1_items_10_plus[:min(config.top_k, target_max)]
-                print(f"✅ Step 1에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 10점 이상)")
-            else:
-                # Step 2: 지표 완화 Level 1 + 8점 이상 (점수 Fallback)
-                # Step 1의 결과를 재사용하여 8점 이상으로 필터링
-                print(f"🔄 Step 2: 지표 완화 Level 1 + 8점 이상")
-                step1_items_8_plus = [item for item in step1_items if item.get("score", 0) >= 8]
-                print(f"📊 Step 2 결과: {len(step1_items_8_plus)}개 종목 (지표 완화 + 8점 이상)")
+            # Step 1: 장세별 두 번째 프리셋 + 10점 이상
+            step1_items = None
+            if len(selected_presets) > 1:
+                print(f"🔄 Step 1: 장세별 지표 완화 + 10점 이상")
+                try:
+                    step1_overrides = selected_presets[1]
+                    step1_items = scan_with_preset(universe, step1_overrides, date, market_condition)
+                except Exception as e:
+                    print(f"❌ Step 1 스캔 오류: {e}")
+                    return [], None
+                step1_items_10_plus = [item for item in step1_items if item.get("score", 0) >= 10]
+                print(f"📊 Step 1 결과: {len(step1_items_10_plus)}개 종목 (지표 완화 + 10점 이상)")
                 
-                if len(step1_items_8_plus) >= target_min:
-                    chosen_step = 2
-                    final_items = step1_items_8_plus[:min(config.top_k, target_max)]
-                    print(f"✅ Step 2에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 8점 이상)")
+                if len(step1_items_10_plus) >= target_min:
+                    chosen_step = 1
+                    final_items = step1_items_10_plus[:min(config.top_k, target_max)]
+                    print(f"✅ Step 1에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 10점 이상)")
                 else:
-                    # Step 3: 지표 추가 완화 + 8점 이상 (Step 3까지만 시도)
-                    print(f"⚠️ Step 2에서 목표 미달 - 지표 추가 완화 시도 (Step 3까지만)")
-                    
-                    # Step 3: 지표 추가 완화 + 8점 이상
-                    print(f"🔄 Step 3: 지표 완화 Level 2 + 8점 이상")
-                    try:
-                        if len(config.fallback_presets) < 3:
-                            print(f"❌ fallback_presets 인덱스 오류: Step 3 프리셋 없음")
-                            final_items = []
-                            chosen_step = None
-                        else:
-                            step3_overrides = config.fallback_presets[2]
-                            print(f"   설정: {step3_overrides}")
-                            step3_items = scan_with_preset(universe, step3_overrides, date, market_condition)
-                            step3_items_8_plus = [item for item in step3_items if item.get("score", 0) >= 8]
-                            print(f"📊 Step 3 결과: {len(step3_items_8_plus)}개 종목 (지표 완화 Level 2 + 8점 이상)")
-                            
-                            if len(step3_items_8_plus) >= target_min:
-                                chosen_step = 3
-                                final_items = step3_items_8_plus[:min(config.top_k, target_max)]
-                                print(f"✅ Step 3에서 목표 달성: {len(final_items)}개 종목 선택")
-                            else:
-                                print(f"❌ Step 3 목표 미달: {len(step3_items_8_plus)} < {target_min}")
-                    except Exception as e:
-                        print(f"❌ Step 3 스캔 오류: {e}")
-                        final_items = []
-                        chosen_step = None
-                    
-                    # Step 3에서도 목표 미달이면 빈 리스트 반환 (Step 7 제거)
-                    if not final_items:
-                        print(f"⚠️ Step 0~3 모두 목표 미달 - 추천 종목 없음 (품질 저하 방지)")
-                        print(f"🔍 디버깅: universe={len(universe)}개, market_condition={market_condition}")
-                        final_items = []
-                        chosen_step = None
+                    current_items_for_score_fallback = step1_items
+            else:
+                print(f"ℹ️ Step 1 프리셋 없음 - Step 0 결과로 점수 Fallback 진행")
+            
+            # Step 2: 현재 데이터 기반 8점 이상 Fallback
+            if not final_items:
+                print(f"🔄 Step 2: 점수 Fallback (8점 이상) 적용")
+                step2_source = step1_items if step1_items is not None else current_items_for_score_fallback
+                step2_candidates = [item for item in (step2_source or []) if item.get("score", 0) >= 8]
+                print(f"📊 Step 2 결과: {len(step2_candidates)}개 종목 (8점 이상)")
+                
+                if len(step2_candidates) >= target_min:
+                    chosen_step = 2
+                    final_items = step2_candidates[:min(config.top_k, target_max)]
+                    print(f"✅ Step 2에서 목표 달성: {len(final_items)}개 종목 선택 (8점 이상)")
+            
+            # Step 3: 장세별 추가 프리셋 (8점 이상, 최대 한 단계)
+            if not final_items and len(selected_presets) > 2:
+                print(f"⚠️ Step 2 목표 미달 - 장세별 Step 3 프리셋 적용")
+                step3_overrides = selected_presets[2]
+                print(f"🔄 Step 3: 추가 프리셋 적용 -> {step3_overrides}")
+                try:
+                    step3_items = scan_with_preset(universe, step3_overrides, date, market_condition)
+                except Exception as e:
+                    print(f"❌ Step 3 스캔 오류: {e}")
+                    step3_items = []
+                
+                step3_items_8_plus = [item for item in step3_items if item.get("score", 0) >= 8]
+                print(f"📊 Step 3 결과: {len(step3_items_8_plus)}개 종목 (8점 이상)")
+                
+                if len(step3_items_8_plus) >= target_min:
+                    chosen_step = 3
+                    final_items = step3_items_8_plus[:min(config.top_k, target_max)]
+                    print(f"✅ Step 3에서 목표 달성: {len(final_items)}개 종목 선택")
+                else:
+                    print(f"❌ Step 3 목표 미달: {len(step3_items_8_plus)} < {target_min}")
+            
+            if not final_items:
+                print(f"⚠️ 모든 프리셋 적용 후에도 목표 미달 - 추천 종목 없음")
+                print(f"🔍 디버깅: universe={len(universe)}개, market_condition={market_condition}")
+                final_items = []
+                chosen_step = None
         
         items = final_items
     

@@ -16,8 +16,8 @@ class TestModels:
     def test_scan_item_creation(self):
         """ScanItem 모델 생성 테스트"""
         indicators = IndicatorPayload(
-            TEMA=50000.0,
-            DEMA=51000.0,
+            TEMA20=50000.0,
+            DEMA10=51000.0,
             MACD_OSC=100.0,
             MACD_LINE=200.0,
             MACD_SIGNAL=100.0,
@@ -68,14 +68,14 @@ class TestModels:
         assert scan_item.name == "삼성전자"
         assert scan_item.match is True
         assert scan_item.score == 8.0
-        assert scan_item.indicators.TEMA == 50000.0
+        assert scan_item.indicators.TEMA20 == 50000.0
         assert scan_item.trend.TEMA20_SLOPE20 == 100.0
         assert scan_item.flags.cross is True
     
     def test_scan_response_creation(self):
         """ScanResponse 모델 생성 테스트"""
         indicators = IndicatorPayload(
-            TEMA=50000.0, DEMA=51000.0, MACD_OSC=100.0,
+            TEMA20=50000.0, DEMA10=51000.0, MACD_OSC=100.0,
             MACD_LINE=200.0, MACD_SIGNAL=100.0, RSI_TEMA=60.0,
             RSI_DEMA=65.0, OBV=1000000.0, VOL=1000000,
             VOL_MA5=900000.0, close=52000.0
@@ -193,8 +193,8 @@ class TestModels:
         """IndicatorPayload 유효성 검증 테스트"""
         # 정상적인 데이터
         indicators = IndicatorPayload(
-            TEMA=50000.0,
-            DEMA=51000.0,
+            TEMA20=50000.0,
+            DEMA10=51000.0,
             MACD_OSC=100.0,
             MACD_LINE=200.0,
             MACD_SIGNAL=100.0,
@@ -206,7 +206,7 @@ class TestModels:
             close=52000.0
         )
         
-        assert indicators.TEMA == 50000.0
+        assert indicators.TEMA20 == 50000.0
         assert indicators.RSI_TEMA == 60.0
         assert indicators.VOL == 1000000
     

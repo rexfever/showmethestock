@@ -187,23 +187,62 @@ class Config:
             "above_cnt5": self.score_w_above_cnt,
         }
     
-    # 단계별 완화 프리셋 (상수 테이블)
+    # 단계별 완화 프리셋 (중립 기준 - 기존 호환용)
     @property
     def fallback_presets(self) -> list:
         return [
-            # step 0: current strict (현 설정 그대로 사용)
             {},
-            # step 1: 신호 및 거래량 약간 완화 (현재 강화된 파라미터 고려)
-            {"min_signals": 3, "vol_ma5_mult": 2.0},  # 완화 (현재 5/2.2 → 3/2.0)
-            # step 2: 추가 완화
-            {"min_signals": 2, "vol_ma5_mult": 1.8},  # 더 완화
-            # step 3: 거래량 현실적 완화
-            {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1},  # 거래량 현실적 완화
-            # step 4: 갭/이격 범위 완화
-            {"min_signals": 2, "vol_ma5_mult": 1.5, "gap_max": 0.025, "ext_from_tema20_max": 0.025},  # 갭/이격 완화
-            # step 5: 최종 현실적 완화 (DEMA 슬로프도 완화)
-            {"min_signals": 1, "vol_ma5_mult": 1.3, "require_dema_slope": "optional"},  # 최종 완화
+            {"min_signals": 3, "vol_ma5_mult": 2.0},
+            {"min_signals": 2, "vol_ma5_mult": 1.8},
+            {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1},
+            {"min_signals": 2, "vol_ma5_mult": 1.5, "gap_max": 0.025, "ext_from_tema20_max": 0.025},
+            {"min_signals": 1, "vol_ma5_mult": 1.3, "require_dema_slope": "optional"},
         ]
+
+    @property
+    def fallback_profiles(self) -> dict:
+        """장세별 Fallback 프리셋"""
+        neutral_profile = {
+            "target_min": self.fallback_target_min,
+            "target_max": self.fallback_target_max,
+            "presets": self.fallback_presets,
+        }
+        bull_profile = {
+            "target_min": self.fallback_target_min_bull,
+            "target_max": self.fallback_target_max_bull,
+            "presets": [
+                {},
+                {"min_signals": 3, "vol_ma5_mult": 2.0},
+                {"min_signals": 2, "vol_ma5_mult": 1.8},
+                {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.05},
+                {"min_signals": 2, "vol_ma5_mult": 1.4, "gap_max": 0.02, "ext_from_tema20_max": 0.02},
+                {"min_signals": 1, "vol_ma5_mult": 1.25, "gap_max": 0.025, "ext_from_tema20_max": 0.025, "require_dema_slope": "optional"},
+            ],
+        }
+        bear_profile = {
+            "target_min": self.fallback_target_min_bear,
+            "target_max": self.fallback_target_max_bear,
+            "presets": [
+                {},
+                {"min_signals": 3, "vol_ma5_mult": 2.2},
+                {"min_signals": 3, "vol_ma5_mult": 2.0, "gap_max": 0.012, "ext_from_tema20_max": 0.012},
+                {"min_signals": 2, "vol_ma5_mult": 1.8, "vol_ma20_mult": 1.1},
+                {"min_signals": 2, "vol_ma5_mult": 1.6, "gap_max": 0.02, "ext_from_tema20_max": 0.02},
+                {"min_signals": 1, "vol_ma5_mult": 1.4, "require_dema_slope": "optional"},
+            ],
+        }
+        return {
+            "bull": bull_profile,
+            "neutral": neutral_profile,
+            "bear": bear_profile,
+            "crash": {"target_min": 0, "target_max": 0, "presets": []},
+        }
+
+    def get_fallback_profile(self, sentiment: str) -> dict:
+        """장세별 Fallback Profile 조회"""
+        sentiment = (sentiment or "neutral").lower()
+        profiles = self.fallback_profiles
+        return profiles.get(sentiment, profiles["neutral"])
 
 
 config = Config()

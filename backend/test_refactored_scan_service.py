@@ -125,12 +125,12 @@ class TestRefactoredScanService:
         assert scan_items[0].ticker == "005930"
         assert scan_items[0].name == "삼성전자"
         assert scan_items[0].score == 8.0
-        assert scan_items[0].indicators.TEMA == 50000.0
+        assert scan_items[0].indicators.TEMA20 == 50000.0
     
     def test_create_scan_response(self):
         """ScanResponse 생성 함수 테스트"""
         indicators = IndicatorPayload(
-            TEMA=50000.0, DEMA=51000.0, MACD_OSC=100.0,
+            TEMA20=50000.0, DEMA10=51000.0, MACD_OSC=100.0,
             MACD_LINE=200.0, MACD_SIGNAL=100.0, RSI_TEMA=60.0,
             RSI_DEMA=65.0, OBV=1000000.0, VOL=1000000,
             VOL_MA5=900000.0, close=52000.0

@@ -4,8 +4,8 @@ from datetime import datetime
 
 
 class IndicatorPayload(BaseModel):
-    TEMA: float
-    DEMA: float
+    TEMA20: float  # TEMA20 (20일 삼중지수이동평균)
+    DEMA10: float  # DEMA10 (10일 이중지수이동평균)
     MACD_OSC: float
     MACD_LINE: float
     MACD_SIGNAL: float

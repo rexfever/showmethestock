@@ -24,6 +24,7 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
     df["TEMA20"] = tema_smooth(close, 20)
     df["DEMA10"] = dema_smooth(close, 10)
+    df["EMA60"] = close.ewm(span=60, adjust=False).mean()  # 장기 추세 필터
     macd_line, signal_line, osc = macd(close, 12, 26, 9)
     df["MACD_OSC"] = osc
     df["MACD_LINE"] = macd_line
@@ -121,6 +122,11 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stoc
     if overheat:
         return False, 0, 4   # 즉시 제외
 
+    # ----- 3선 시스템: 장기 추세 필터 (EMA60) -----
+    # 장기 상승 추세가 아니면 제외
+    if cur.close < cur.EMA60:
+        return False, 0, 4
+    
     # ----- 교차 갭 품질 & 추격 이격 제한 -----
     gap_now = (cur.TEMA20 - cur.DEMA10) / cur.close if cur.close else 0.0
     ext_pct = (cur.close - cur.TEMA20) / cur.TEMA20 if cur.TEMA20 else 0.0
@@ -254,6 +260,16 @@ def score_conditions(df: pd.DataFrame) -> tuple:
             "match": False,
             "price": round(float(cur.close), 0),
             "min_price": config.min_price
+        }
+
+    # ----- 3선 시스템: 장기 추세 필터 (EMA60) -----
+    # 장기 상승 추세가 아니면 제외
+    if cur.close < cur.EMA60:
+        return 0, {
+            "label": "장기하락추세",
+            "match": False,
+            "close": round(float(cur.close), 0),
+            "ema60": round(float(cur.EMA60), 0)
         }
 
     # ----- 하드 제외: 과열 -----
@@ -579,8 +595,8 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
             "match": matched,
             "score": score,
             "indicators": {
-                "TEMA": cur.TEMA20,
-                "DEMA": cur.DEMA10,
+                "TEMA20": cur.TEMA20,
+                "DEMA10": cur.DEMA10,
                 "MACD_OSC": cur.MACD_OSC,
                 "MACD_LINE": cur.MACD_LINE,
                 "MACD_SIGNAL": cur.MACD_SIGNAL,
