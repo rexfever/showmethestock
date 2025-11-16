@@ -3096,14 +3096,43 @@ async def get_popup_notice_status():
             # 날짜 범위 확인
             if is_enabled and start_date and end_date:
                 from datetime import datetime
+                import pytz
                 try:
-                    start_dt = datetime.strptime(start_date, "%Y%m%d")
-                    end_dt = datetime.strptime(end_date, "%Y%m%d")
-                    now = datetime.now()
+                    # 현재 날짜 (KST)
+                    kst = pytz.timezone('Asia/Seoul')
+                    now_date = datetime.now(kst).date()
                     
-                    if now < start_dt or now > end_dt:
+                    # start_date와 end_date 처리
+                    if hasattr(start_date, 'date'):
+                        # datetime 객체인 경우
+                        start_date_only = start_date.date()
+                        end_date_only = end_date.date()
+                    elif isinstance(start_date, str):
+                        if len(start_date) > 10:
+                            # "2025-11-15 00:00:00+09:00" 형식
+                            start_dt = datetime.fromisoformat(start_date.replace('+09', '+09:00'))
+                            end_dt = datetime.fromisoformat(end_date.replace('+09', '+09:00'))
+                            start_date_only = start_dt.date()
+                            end_date_only = end_dt.date()
+                        else:
+                            # YYYYMMDD 형식
+                            start_dt = datetime.strptime(str(start_date), "%Y%m%d")
+                            end_dt = datetime.strptime(str(end_date), "%Y%m%d")
+                            start_date_only = start_dt.date()
+                            end_date_only = end_dt.date()
+                    else:
+                        # 기타 형식
+                        start_date_only = datetime.strptime(str(start_date), "%Y%m%d").date()
+                        end_date_only = datetime.strptime(str(end_date), "%Y%m%d").date()
+                    
+                    # 날짜 범위 확인
+                    if now_date < start_date_only or now_date > end_date_only:
                         is_enabled = False
-                except ValueError:
+                        
+                    print(f"📅 팝업 공지 날짜 확인: {now_date} in [{start_date_only}, {end_date_only}] = {is_enabled}")
+                        
+                except (ValueError, TypeError) as e:
+                    print(f"⚠️ 팝업 공지 날짜 파싱 오류: {e}, start_date={start_date}, end_date={end_date}")
                     is_enabled = False
             
             return {
