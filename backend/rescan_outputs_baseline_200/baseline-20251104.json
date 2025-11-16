@@ -1,0 +1,16 @@
+{
+  "date": "20251104",
+  "market_sentiment": "neutral",
+  "baseline_config": {
+    "min_signals": 3,
+    "vol_ma5_mult": 1.8,
+    "score_level_strong": 10,
+    "score_level_watch": 8
+  },
+  "universe_count": 200,
+  "matched_count": 0,
+  "final_count": 0,
+  "all_matched": [],
+  "final_items": [],
+  "enriched_final": []
+}
