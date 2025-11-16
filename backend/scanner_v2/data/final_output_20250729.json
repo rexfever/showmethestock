@@ -1,0 +1,212 @@
+{
+  "date": "20250729",
+  "market_sentiment": "neutral",
+  "swing_candidates": [
+    {
+      "symbol": "000490",
+      "horizon": "swing",
+      "score": 8.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "277810",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001250",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "079370",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "018290",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "068760",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "007390",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "403870",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "039440",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "083450",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "166090",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "036540",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "240810",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "357780",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    }
+  ],
+  "position_candidates": [
+    {
+      "symbol": "001440",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001450",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "140860",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "039200",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000815",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001740",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000140",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001390",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001230",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000640",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001130",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001550",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001120",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000660",
+      "horizon": "position",
+      "score": 4.5,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "196170",
+      "horizon": "position",
+      "score": 4.5,
+      "risk_score": 0.0,
+      "reason": ""
+    }
+  ],
+  "longterm_candidates": []
+}

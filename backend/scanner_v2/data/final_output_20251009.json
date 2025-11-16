@@ -1,0 +1,325 @@
+{
+  "date": "20251009",
+  "market_sentiment": "neutral",
+  "swing_candidates": [
+    {
+      "symbol": "105560",
+      "horizon": "swing",
+      "score": 8.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "010120",
+      "horizon": "swing",
+      "score": 8.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "034020",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "064350",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "007660",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "005380",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "009540",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "032830",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000100",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "487240",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "058470",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "001440",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "009420",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "463050",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "053610",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "005290",
+      "horizon": "swing",
+      "score": 7.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "042660",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "196170",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "233740",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000270",
+      "horizon": "swing",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    }
+  ],
+  "position_candidates": [
+    {
+      "symbol": "042660",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "012450",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "233740",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "009150",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "411060",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "329180",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "381170",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "010140",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "298040",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "009540",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "466920",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "449450",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "003230",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "494670",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "032830",
+      "horizon": "position",
+      "score": 5.0,
+      "risk_score": 0.0,
+      "reason": ""
+    }
+  ],
+  "longterm_candidates": [
+    {
+      "symbol": "229200",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "005380",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000270",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "000810",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "364970",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 0.0,
+      "reason": ""
+    },
+    {
+      "symbol": "069500",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "102110",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "148020",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "498400",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "381180",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    }
+  ]
+}

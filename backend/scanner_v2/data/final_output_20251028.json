@@ -1,0 +1,43 @@
+{
+  "date": "20251028",
+  "market_sentiment": "bear",
+  "swing_candidates": [],
+  "position_candidates": [],
+  "longterm_candidates": [
+    {
+      "symbol": "360750",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "381170",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "379800",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "133690",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    },
+    {
+      "symbol": "379810",
+      "horizon": "longterm",
+      "score": 6.0,
+      "risk_score": 2.0,
+      "reason": ""
+    }
+  ]
+}
