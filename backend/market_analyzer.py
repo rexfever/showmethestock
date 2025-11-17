@@ -511,14 +511,14 @@ class MarketAnalyzer:
                           volatility: float, volume_trend: str) -> Dict:
         """시장 상황에 따른 조건 조정"""
         
-        # 기본값 (Tight Preset)
+        # 기본값 (Tight Preset) - 갭/이격 필터 완화
         base_conditions = {
             'rsi_threshold': 58.0,
             'min_signals': 3,
             'macd_osc_min': 0.0,
             'vol_ma5_mult': 1.8,
-            'gap_max': 0.015,
-            'ext_from_tema20_max': 0.015
+            'gap_max': 0.025,  # 1.5% -> 2.5% (완화)
+            'ext_from_tema20_max': 0.025  # 1.5% -> 2.5% (완화)
         }
         
         # 시장 상황별 조정
@@ -557,14 +557,14 @@ class MarketAnalyzer:
             })
             
         else:  # neutral
-            # 중립장: 기본 조건 유지
+            # 중립장: 기본 조건 유지 (갭/이격 완화)
             base_conditions.update({
                 'rsi_threshold': 58.0,  # 기본값 유지
                 'min_signals': 3,       # 유지
                 'macd_osc_min': 0.0,    # 유지
                 'vol_ma5_mult': 1.6,    # 1.8 -> 1.6
-                'gap_max': 0.018,       # 1.5% -> 1.8%
-                'ext_from_tema20_max': 0.018
+                'gap_max': 0.025,       # 2.5% (완화)
+                'ext_from_tema20_max': 0.025
             })
         
         # 변동성 기반 추가 조정 (제한적)
@@ -590,8 +590,8 @@ class MarketAnalyzer:
             'min_signals': 3,
             'macd_osc_min': 0.0,
             'vol_ma5_mult': 1.8,
-            'gap_max': 0.015,
-            'ext_from_tema20_max': 0.015,
+            'gap_max': 0.025,  # 1.5% -> 2.5% (완화)
+            'ext_from_tema20_max': 0.025,  # 1.5% -> 2.5% (완화)
         }
         return MarketCondition(
             date=date,

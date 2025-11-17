@@ -197,10 +197,10 @@ class Config:
             {"min_signals": 3, "vol_ma5_mult": 2.0},  # 완화 (현재 5/2.2 → 3/2.0)
             # step 2: 추가 완화
             {"min_signals": 2, "vol_ma5_mult": 1.8},  # 더 완화
-            # step 3: 거래량 현실적 완화
-            {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1},  # 거래량 현실적 완화
-            # step 4: 갭/이격 범위 완화
-            {"min_signals": 2, "vol_ma5_mult": 1.5, "gap_max": 0.025, "ext_from_tema20_max": 0.025},  # 갭/이격 완화
+            # step 3: 거래량 현실적 완화 + 갭/이격 완화
+            {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1, "gap_max": 0.025, "ext_from_tema20_max": 0.025},  # 거래량 + 갭/이격 완화
+            # step 4: 갭/이격 범위 추가 완화
+            {"min_signals": 2, "vol_ma5_mult": 1.5, "gap_max": 0.030, "ext_from_tema20_max": 0.030},  # 갭/이격 추가 완화
             # step 5: 최종 현실적 완화 (DEMA 슬로프도 완화)
             {"min_signals": 1, "vol_ma5_mult": 1.3, "require_dema_slope": "optional"},  # 최종 완화
         ]
