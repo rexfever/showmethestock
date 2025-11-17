@@ -621,6 +621,24 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
     if preset_overrides:
         print(f"🔧 프리셋 적용: {preset_overrides}")
         apply_preset_to_runtime(preset_overrides)
+        
+        # market_condition에도 프리셋 반영 (동적 조건 우선 사용)
+        if market_condition:
+            from copy import deepcopy
+            market_condition = deepcopy(market_condition)
+            if 'min_signals' in preset_overrides:
+                market_condition.min_signals = preset_overrides['min_signals']
+            if 'vol_ma5_mult' in preset_overrides:
+                market_condition.vol_ma5_mult = preset_overrides['vol_ma5_mult']
+            if 'vol_ma20_mult' in preset_overrides:
+                market_condition.vol_ma20_mult = preset_overrides.get('vol_ma20_mult', market_condition.vol_ma20_mult if hasattr(market_condition, 'vol_ma20_mult') else config.vol_ma20_mult)
+            if 'gap_max' in preset_overrides:
+                market_condition.gap_max = preset_overrides['gap_max']
+            if 'ext_from_tema20_max' in preset_overrides:
+                market_condition.ext_from_tema20_max = preset_overrides['ext_from_tema20_max']
+            if 'require_dema_slope' in preset_overrides:
+                # require_dema_slope는 config에만 적용
+                pass
 
     # 2) 병렬 처리로 스캔 실행 (하드 컷 로직은 기존대로 유지)
     items = []
