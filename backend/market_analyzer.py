@@ -552,19 +552,19 @@ class MarketAnalyzer:
                 'min_signals': 4,       # 3 -> 4
                 'macd_osc_min': 5.0,    # 0 -> 5
                 'vol_ma5_mult': 2.0,    # 1.8 -> 2.0
-                'gap_max': 0.01,        # 1.5% -> 1%
-                'ext_from_tema20_max': 0.01
+                'gap_max': 0.015,       # 1.5% (약세장: 추세 약하므로 갭 엄격)
+                'ext_from_tema20_max': 0.025  # 2.5% (통일: 과매수는 장세 무관)
             })
             
         else:  # neutral
-            # 중립장: 기본 조건 유지 (갭/이격 완화)
+            # 중립장: 기본 조건 유지
             base_conditions.update({
                 'rsi_threshold': 58.0,  # 기본값 유지
                 'min_signals': 3,       # 유지
                 'macd_osc_min': 0.0,    # 유지
                 'vol_ma5_mult': 1.6,    # 1.8 -> 1.6
-                'gap_max': 0.025,       # 2.5% (완화)
-                'ext_from_tema20_max': 0.025
+                'gap_max': 0.025,       # 2.5% (중립장: 기본값)
+                'ext_from_tema20_max': 0.025  # 2.5% (통일: 과매수는 장세 무관)
             })
         
         # 변동성 기반 추가 조정 (제한적)
