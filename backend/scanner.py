@@ -225,7 +225,7 @@ def calculate_risk_score(df: pd.DataFrame) -> tuple:
     return risk_score, risk_flags
 
 
-def score_conditions(df: pd.DataFrame) -> tuple:
+def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
     """조건별 점수 계산 및 근거 플래그 반환.
     Returns: (score:int, flags:Dict[str,bool])
     """
@@ -451,15 +451,21 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         flags["match"] = False  # 제외 종목은 매칭되지 않음
         flags["fallback"] = False  # Fallback 시에도 제외
     
-    # ----- 신호 요건 상향 (MIN_SIGNALS=3) -----
+    # ----- 신호 요건 상향 (동적 MIN_SIGNALS) -----
+    # market_condition이 있으면 동적 조건 사용, 없으면 기본값 사용
+    if market_condition and config.market_analysis_enable:
+        min_signals = market_condition.min_signals
+    else:
+        min_signals = config.min_signals
+    
     signals_true = sum([bool(flags.get("cross", False)), bool(flags.get("vol_expand", False)), 
                        bool(flags.get("macd_ok", False)), bool(flags.get("rsi_ok", False))])
     flags["signals_count"] = signals_true
-    flags["min_signals_required"] = config.min_signals
+    flags["min_signals_required"] = min_signals
     
-    if signals_true < config.min_signals:
+    if signals_true < min_signals:
         flags["match"] = False
-        flags["label"] = f"신호부족({signals_true}/{config.min_signals})"
+        flags["label"] = f"신호부족({signals_true}/{min_signals})"
     
     # 위험도에 따른 점수 조정
     if risk_score > 0:
@@ -564,7 +570,7 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
             return None  # RSI 상한선 초과 종목 즉시 제외
         
         matched, sig_true, sig_total = match_stats(df, market_condition, stock_name)
-        score, flags = score_conditions(df)
+        score, flags = score_conditions(df, market_condition)
         # 새로운 RSI 로직에서는 flags["match"]를 우선 사용
         matched = flags.get("match", bool(matched))
         
