@@ -648,10 +648,13 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
     # 병렬 처리로 성능 개선 (최대 10개 워커)
     max_workers = min(10, len(universe_codes))
     
+    # market_condition이 수정되었으면 수정된 버전 사용
+    final_market_condition = market_condition
+    
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # 각 종목 스캔을 병렬로 실행
         future_to_code = {
-            executor.submit(scan_one_symbol, code, base_date, market_condition): code
+            executor.submit(scan_one_symbol, code, base_date, final_market_condition): code
             for code in universe_codes
         }
         
