@@ -529,8 +529,8 @@ class MarketAnalyzer:
                 'min_signals': 2,       # 3 -> 2
                 'macd_osc_min': -5.0,   # 0 -> -5
                 'vol_ma5_mult': 1.5,    # 1.8 -> 1.5
-                'gap_max': 0.02,        # 1.5% -> 2%
-                'ext_from_tema20_max': 0.02
+                'gap_max': 0.030,       # 2.5% -> 3.0% (강세장 완화)
+                'ext_from_tema20_max': 0.030
             })
             
         elif market_sentiment == 'crash':
