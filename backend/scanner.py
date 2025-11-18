@@ -166,9 +166,22 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stoc
 
     # ----- 신호 요건 상향 (동적 MIN_SIGNALS + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
     # 기존 cond_gc(교차/정렬)와 trend_ok(TEMA/DEMA/OBV slope 등)는 유지
-    signals_true = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
+    
+    # 기본 신호 4개
+    basic_signals = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
+    
+    # 추가 신호 3개 (통과율이 높은 신호들)
+    obv_slope_ok = df.iloc[-1]["OBV_SLOPE20"] > 0.001
+    tema_slope_ok = (df.iloc[-1]["TEMA20_SLOPE20"] > 0.001) and (cur.close > cur.TEMA20)
+    above_ok = above_cnt >= 3
+    
+    additional_signals = sum([bool(obv_slope_ok), bool(tema_slope_ok), bool(above_ok)])
+    
+    # 총 신호 개수 (기본 4개 + 추가 3개 = 최대 7개)
+    signals_true = basic_signals + additional_signals
+    
     if signals_true < min_signals or not trend_ok:
-        return False, signals_true, 3
+        return False, signals_true, 7  # 총 신호 개수 반환
     
     # 최종 매칭: 신호 요건 충족 + 추세
     matched = True
