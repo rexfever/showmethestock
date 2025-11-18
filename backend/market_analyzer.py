@@ -187,10 +187,11 @@ class MarketAnalyzer:
             return self._get_default_condition(date)
     
     def _get_kospi_data(self, date: str) -> Tuple[float, float, Optional[float]]:
-        """KOSPI 지수 데이터 가져오기 - 종가, 변동성, 저가 기준 수익률 반환"""
+        """KOSPI 지수 데이터 가져오기 - 며칠간의 추세를 반영한 종가, 변동성, 저가 기준 수익률 반환"""
         try:
             from kiwoom_api import api
             from main import is_trading_day
+            import numpy as np
             
             # 거래일 체크
             if not is_trading_day(date):
@@ -198,41 +199,83 @@ class MarketAnalyzer:
                 return 0.0, 0.02, None
             
             # KOSPI 200 지수 (069500) 데이터 가져오기
-            # 최근 거래일을 찾기 위해 충분한 데이터 가져오기 (최대 10일)
-            df = api.get_ohlcv("069500", 10, date)
+            # 며칠간의 추세를 분석하기 위해 최근 5일 데이터 사용
+            lookback_days = 5
+            df = api.get_ohlcv("069500", lookback_days, date)
             if df.empty or len(df) < 2:
                 # 데이터가 없으면 기본값 반환
                 return 0.0, 0.02, None
             
-            # 간단한 방법: 마지막 2개 행 사용 (get_ohlcv가 이미 거래일만 반환)
-            # get_ohlcv는 base_dt 기준으로 거래일 데이터만 반환하므로
-            # 마지막 행이 당일, 그 전 행이 전일
-            if len(df) < 2:
-                logger.warning(f"데이터가 부족합니다: {date}")
-                return 0.0, 0.02, None
-            
-            # 마지막 2개 행 사용
+            # 마지막 행이 당일
             current_idx = len(df) - 1
-            prev_idx = len(df) - 2
-            
-            # 전일 종가
-            prev_close = df.iloc[prev_idx]['close']
             current_close = df.iloc[current_idx]['close']
             current_high = df.iloc[current_idx]['high']
             current_low = df.iloc[current_idx]['low']
             
-            # 종가 기준 수익률
-            close_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
+            # 며칠간의 추세 분석
+            # 1. 단기 추세 (최근 3일 평균 수익률)
+            # 2. 중기 추세 (최근 5일 평균 수익률)
+            # 3. 당일 수익률 (전일 대비)
+            
+            # 전일 종가 (당일 수익률 계산용)
+            if len(df) >= 2:
+                prev_close = df.iloc[current_idx - 1]['close']
+                daily_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
+            else:
+                daily_return = 0.0
+                prev_close = current_close
+            
+            # 며칠간의 수익률 계산
+            returns_3d = []  # 최근 3일
+            returns_5d = []  # 최근 5일
+            
+            for i in range(max(0, current_idx - 4), current_idx):
+                if i + 1 < len(df):
+                    prev = df.iloc[i]['close']
+                    curr = df.iloc[i + 1]['close']
+                    if prev > 0:
+                        ret = (curr / prev - 1)
+                        returns_5d.append(ret)
+                        if i >= current_idx - 2:  # 최근 3일
+                            returns_3d.append(ret)
+            
+            # 평균 수익률 계산 (가중 평균: 최근일수록 높은 가중치)
+            if returns_3d:
+                # 최근 3일: 가중치 [0.2, 0.3, 0.5]
+                weights_3d = [0.2, 0.3, 0.5][-len(returns_3d):]
+                weighted_3d = sum(r * w for r, w in zip(returns_3d, weights_3d)) / sum(weights_3d)
+            else:
+                weighted_3d = daily_return
+            
+            if returns_5d:
+                # 최근 5일: 가중치 [0.1, 0.15, 0.2, 0.25, 0.3]
+                weights_5d = [0.1, 0.15, 0.2, 0.25, 0.3][-len(returns_5d):]
+                weighted_5d = sum(r * w for r, w in zip(returns_5d, weights_5d)) / sum(weights_5d)
+            else:
+                weighted_5d = daily_return
+            
+            # 최종 수익률: 단기 추세(50%) + 중기 추세(30%) + 당일(20%) 가중 평균
+            close_return = (weighted_3d * 0.5 + weighted_5d * 0.3 + daily_return * 0.2)
             
             # 저가 기준 수익률 (급락장 판단용)
             low_return = None
             if current_low > 0 and prev_close > 0:
                 low_return = (current_low / prev_close - 1)
             
-            # 변동성 계산 (간단한 ATR 기반)
-            volatility = (current_high - current_low) / current_close if current_close > 0 else 0.02
+            # 변동성 계산 (며칠간의 평균 변동성)
+            volatilities = []
+            for i in range(max(0, current_idx - 4), current_idx + 1):
+                if i < len(df):
+                    high = df.iloc[i]['high']
+                    low = df.iloc[i]['low']
+                    close = df.iloc[i]['close']
+                    if close > 0:
+                        vol = (high - low) / close
+                        volatilities.append(vol)
             
-            logger.info(f"KOSPI 수익률 계산: 전일={prev_close:.2f}, 당일={current_close:.2f}, 수익률={close_return*100:.2f}%")
+            volatility = sum(volatilities) / len(volatilities) if volatilities else 0.02
+            
+            logger.info(f"KOSPI 추세 분석: 당일={daily_return*100:+.2f}%, 3일평균={weighted_3d*100:+.2f}%, 5일평균={weighted_5d*100:+.2f}%, 최종={close_return*100:+.2f}%")
             
             return close_return, volatility, low_return
             
