@@ -87,9 +87,11 @@ class MarketAnalyzer:
             # effective_return 계산 로직 개선
             # 일반적인 장세 판단에는 종가 기준 사용
             # 급락장 판단 시에만 가장 낮은 값 사용
-            if kospi_return < -0.02:  # -2% 미만 (급락 가능성)
+            # 며칠간의 추세를 반영한 kospi_return 사용 (이미 가중 평균으로 계산됨)
+            # 급락장 판단은 추세 반영 수익률 기준으로 판단
+            if kospi_return < -0.025:  # -2.5% 미만 (crash 판단 기준)
                 # 급락장 판단을 위해 가장 낮은 수익률 사용
-                candidates = [kospi_return]
+                candidates = [kospi_return]  # 추세 반영 수익률
                 if kospi_low_return is not None:
                     candidates.append(kospi_low_return)
                 if universe_return is not None:
@@ -98,11 +100,11 @@ class MarketAnalyzer:
                 
                 # 로그 출력
                 if kospi_low_return is not None and kospi_low_return < kospi_return:
-                    logger.info(f"급락장 판단: 저가 기준 사용 - 종가 {kospi_return*100:.2f}%, 저가 {kospi_low_return*100:.2f}%")
+                    logger.info(f"급락장 판단: 저가 기준 사용 - 추세 {kospi_return*100:.2f}%, 저가 {kospi_low_return*100:.2f}%")
                 if universe_return is not None and universe_return < kospi_return:
-                    logger.info(f"급락장 판단: 유니버스 기준 사용 - KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+                    logger.info(f"급락장 판단: 유니버스 기준 사용 - 추세 {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
             else:
-                # 일반적인 경우 종가 기준 사용 (정확성 향상)
+                # 일반적인 경우 추세 반영 수익률 사용
                 effective_return = kospi_return
             
             logger.info(f"KOSPI 종가 수익률: {kospi_return*100:.2f}%, 최종 effective_return: {effective_return*100:.2f}%")
