@@ -142,8 +142,8 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stoc
     cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > 0)
 
     # ---- RSI: 상승 초입 모멘텀 조건 ----
-    # RSI 모멘텀: TEMA > DEMA 또는 수렴 후 상승
-    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > 35)
+    # RSI 모멘텀: TEMA > DEMA 또는 수렴 후 상승 (동적 rsi_threshold 사용)
+    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > rsi_threshold)
     cond_rsi = rsi_momentum
 
     # ---- 거래량: 상승 초입 급증 조건 ----
@@ -370,7 +370,14 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
     details['macd'] = {'ok': bool(macd_ok), 'w': W['macd'], 'gain': W['macd'] if macd_ok else 0}
 
     # 4) RSI: 상승 초입 모멘텀 조건 (TEMA > DEMA 또는 수렴 후 상승)
-    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > 35)
+    # RSI 모멘텀: 동적 rsi_threshold 사용 (market_condition 또는 config에서 가져옴)
+    # market_condition이 있으면 동적 값 사용, 없으면 config 기본값 사용
+    if market_condition and config.market_analysis_enable:
+        rsi_threshold_for_momentum = market_condition.rsi_threshold
+    else:
+        rsi_threshold_for_momentum = config.rsi_threshold
+    
+    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > rsi_threshold_for_momentum)
     rsi_ok = rsi_momentum
     
     flags["rsi_ok"] = bool(rsi_ok)
