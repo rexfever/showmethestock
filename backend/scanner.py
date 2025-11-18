@@ -576,7 +576,8 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         if market_condition and config.market_analysis_enable:
             # 시장 상황에 따라 RSI 상한선도 조정 (rsi_threshold + 여유분)
             # rsi_threshold는 신호 판단용, 상한선은 과매수 방지용이므로 더 높게 설정
-            rsi_upper_limit = market_condition.rsi_threshold + 15.0  # 기본 70 = 57 + 13
+            # 여유분을 15.0 → 25.0으로 증가 (더 많은 종목 통과)
+            rsi_upper_limit = market_condition.rsi_threshold + 25.0  # 기본 70 = 57 + 13 → 82 = 57 + 25
         else:
             rsi_upper_limit = config.rsi_upper_limit
         
