@@ -504,15 +504,31 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
         flags["match"] = True
         flags["fallback"] = False
         
-        # 점수는 순위 매기기용 (레이블만 구분)
+        # 점수는 순위 매기기용 (레이블 + 매매 전략 구분)
         if adjusted_score >= 10:
             flags["label"] = "강한 매수"
+            flags["trading_strategy"] = "스윙"
+            flags["target_profit"] = 0.05  # 5%
+            flags["stop_loss"] = -0.05     # -5%
+            flags["holding_period"] = "3~10일"
         elif adjusted_score >= 8:
             flags["label"] = "매수 후보"
+            flags["trading_strategy"] = "포지션"
+            flags["target_profit"] = 0.10  # 10%
+            flags["stop_loss"] = -0.07     # -7%
+            flags["holding_period"] = "2주~3개월"
         elif adjusted_score >= 6:
             flags["label"] = "관심 종목"
+            flags["trading_strategy"] = "장기"
+            flags["target_profit"] = 0.15  # 15%
+            flags["stop_loss"] = -0.10     # -10%
+            flags["holding_period"] = "3개월 이상"
         else:
             flags["label"] = "후보 종목"
+            flags["trading_strategy"] = "관찰"
+            flags["target_profit"] = None
+            flags["stop_loss"] = None
+            flags["holding_period"] = None
     else:
         # 신호 미충족 = 후보군 아님 (점수와 무관하게 제외)
         flags["label"] = f"신호부족({signals_true}/{min_signals})"
