@@ -203,8 +203,26 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         except Exception as e:
             print(f"❌ Step 0 스캔 오류: {e}")
             return [], None
-        step0_items_10_plus = [item for item in step0_items if item.get("score", 0) >= 10]
-        print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (10점 이상만)")
+        # 신호 충족 시 점수 기준 완화: 10점 → 6점 (신호 충족 종목)
+        # 신호 미충족 시: 기존 10점 기준 유지
+        step0_items_filtered = []
+        for item in step0_items:
+            flags = item.get("flags", {})
+            signals_count = flags.get("signals_count", 0)
+            min_signals = flags.get("min_signals_required", 3)
+            score = item.get("score", 0)
+            adjusted_score = flags.get("adjusted_score_for_signals", score)
+            
+            # 신호 충족 시 6점 이상, 미충족 시 10점 이상
+            if signals_count >= min_signals:
+                if adjusted_score >= 6:
+                    step0_items_filtered.append(item)
+            else:
+                if score >= 10:
+                    step0_items_filtered.append(item)
+        
+        step0_items_10_plus = step0_items_filtered
+        print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (신호충족:6점 이상, 미충족:10점 이상)")
         
         if len(step0_items_10_plus) >= target_min:
             chosen_step = 0
@@ -221,19 +239,48 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
             except Exception as e:
                 print(f"❌ Step 1 스캔 오류: {e}")
                 return [], None
-            step1_items_10_plus = [item for item in step1_items if item.get("score", 0) >= 10]
-            print(f"📊 Step 1 결과: {len(step1_items_10_plus)}개 종목 (지표 완화 + 10점 이상)")
+            # 신호 충족 시 점수 기준 완화: 10점 → 6점 (신호 충족 종목)
+            step1_items_filtered = []
+            for item in step1_items:
+                flags = item.get("flags", {})
+                signals_count = flags.get("signals_count", 0)
+                min_signals = flags.get("min_signals_required", 3)
+                score = item.get("score", 0)
+                adjusted_score = flags.get("adjusted_score_for_signals", score)
+                
+                if signals_count >= min_signals:
+                    if adjusted_score >= 6:
+                        step1_items_filtered.append(item)
+                else:
+                    if score >= 10:
+                        step1_items_filtered.append(item)
+            
+            step1_items_10_plus = step1_items_filtered
+            print(f"📊 Step 1 결과: {len(step1_items_10_plus)}개 종목 (지표 완화 + 신호충족:6점 이상, 미충족:10점 이상)")
             
             if len(step1_items_10_plus) >= target_min:
                 chosen_step = 1
                 final_items = step1_items_10_plus[:min(config.top_k, target_max)]
                 print(f"✅ Step 1에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 10점 이상)")
             else:
-                # Step 2: 지표 완화 Level 1 + 8점 이상 (점수 Fallback)
-                # Step 1의 결과를 재사용하여 8점 이상으로 필터링
-                print(f"🔄 Step 2: 지표 완화 Level 1 + 8점 이상")
-                step1_items_8_plus = [item for item in step1_items if item.get("score", 0) >= 8]
-                print(f"📊 Step 2 결과: {len(step1_items_8_plus)}개 종목 (지표 완화 + 8점 이상)")
+                # Step 2: 지표 완화 Level 1 + 점수 Fallback (신호 충족 시 4점, 미충족 시 8점)
+                print(f"🔄 Step 2: 지표 완화 Level 1 + 점수 Fallback")
+                step1_items_8_plus = []
+                for item in step1_items:
+                    flags = item.get("flags", {})
+                    signals_count = flags.get("signals_count", 0)
+                    min_signals = flags.get("min_signals_required", 3)
+                    score = item.get("score", 0)
+                    adjusted_score = flags.get("adjusted_score_for_signals", score)
+                    
+                    if signals_count >= min_signals:
+                        if adjusted_score >= 4:
+                            step1_items_8_plus.append(item)
+                    else:
+                        if score >= 8:
+                            step1_items_8_plus.append(item)
+                
+                print(f"📊 Step 2 결과: {len(step1_items_8_plus)}개 종목 (지표 완화 + 신호충족:4점 이상, 미충족:8점 이상)")
                 
                 if len(step1_items_8_plus) >= target_min:
                     chosen_step = 2
@@ -254,8 +301,23 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
                             step3_overrides = config.fallback_presets[2]
                             print(f"   설정: {step3_overrides}")
                             step3_items = scan_with_preset(universe, step3_overrides, date, market_condition)
-                            step3_items_8_plus = [item for item in step3_items if item.get("score", 0) >= 8]
-                            print(f"📊 Step 3 결과: {len(step3_items_8_plus)}개 종목 (지표 완화 Level 2 + 8점 이상)")
+                            # Step 3: 신호 충족 시 4점, 미충족 시 8점
+                            step3_items_8_plus = []
+                            for item in step3_items:
+                                flags = item.get("flags", {})
+                                signals_count = flags.get("signals_count", 0)
+                                min_signals = flags.get("min_signals_required", 2)  # Step 3에서는 min_signals가 2로 완화됨
+                                score = item.get("score", 0)
+                                adjusted_score = flags.get("adjusted_score_for_signals", score)
+                                
+                                if signals_count >= min_signals:
+                                    if adjusted_score >= 4:
+                                        step3_items_8_plus.append(item)
+                                else:
+                                    if score >= 8:
+                                        step3_items_8_plus.append(item)
+                            
+                            print(f"📊 Step 3 결과: {len(step3_items_8_plus)}개 종목 (지표 완화 Level 2 + 신호충족:4점 이상, 미충족:8점 이상)")
                             
                             if len(step3_items_8_plus) >= target_min:
                                 chosen_step = 3

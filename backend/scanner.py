@@ -450,27 +450,6 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
         "ext_ok": bool(ext_ok),
     })
     
-    # 레이블링 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)
-    # 10점 이상: 우선 추천
-    # 8-9점: Fallback 시 포함 (10점 이상이 없을 때)
-    # 6점대: 제외 (승률 낮음, 변동성 높음)
-    if score >= 10:
-        flags["label"] = "강한 매수"
-        flags["match"] = True
-        flags["fallback"] = False  # 10점 이상은 Fallback 불필요
-    elif score >= 8:
-        flags["label"] = "매수 후보"
-        flags["match"] = False  # 기본적으로 제외
-        flags["fallback"] = True  # Fallback 시 포함 가능
-    elif score >= 6:
-        flags["label"] = "관심 (제외)"
-        flags["match"] = False  # 6점대는 추천하지 않음 (승률 낮음, 변동성 높음)
-        flags["fallback"] = False  # Fallback 시에도 제외
-    else:
-        flags["label"] = "제외"
-        flags["match"] = False  # 제외 종목은 매칭되지 않음
-        flags["fallback"] = False  # Fallback 시에도 제외
-    
     # ----- 신호 요건 상향 (동적 MIN_SIGNALS) -----
     # market_condition이 있으면 동적 조건 사용, 없으면 기본값 사용
     if market_condition and config.market_analysis_enable:
@@ -501,9 +480,54 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
     flags["signals_additional"] = additional_signals
     flags["min_signals_required"] = min_signals
     
-    if signals_true < min_signals:
-        flags["match"] = False
+    # 신호 충족 여부 확인
+    signals_sufficient = signals_true >= min_signals
+    
+    # 신호 충족 시 점수 기준 완화: 신호가 충족되면 점수 기준을 낮춤
+    # 신호 3개 이상이면 10점 → 6점, 8점 → 4점으로 완화
+    if signals_sufficient:
+        # 신호 충족 시 점수 보너스 추가 (신호 개수에 비례)
+        signal_bonus = max(0, (signals_true - min_signals) * 1)  # 추가 신호당 1점 보너스
+        adjusted_score = score + signal_bonus
+        flags["signal_bonus"] = signal_bonus
+        flags["adjusted_score_for_signals"] = adjusted_score
+    else:
+        adjusted_score = score
+        flags["signal_bonus"] = 0
+        flags["adjusted_score_for_signals"] = score
+    
+    # 레이블링 (신호 충족 시 점수 기준 완화 적용)
+    # 신호 충족 시: 6점 이상이면 match=True, 4점 이상이면 fallback=True
+    # 신호 미충족 시: 기존 기준 유지 (10점, 8점)
+    if signals_sufficient:
+        # 신호 충족 시 점수 기준 완화
+        if adjusted_score >= 6:
+            flags["label"] = "강한 매수" if adjusted_score >= 8 else "매수 후보"
+            flags["match"] = True
+            flags["fallback"] = False
+        elif adjusted_score >= 4:
+            flags["label"] = "매수 후보"
+            flags["match"] = False
+            flags["fallback"] = True  # Fallback 시 포함 가능
+        else:
+            flags["label"] = f"신호충족({signals_true}) 점수부족({adjusted_score:.1f})"
+            flags["match"] = False
+            flags["fallback"] = True  # 신호 충족이면 Fallback 시 포함 가능
+    else:
+        # 신호 미충족 시 기존 기준 유지
         flags["label"] = f"신호부족({signals_true}/{min_signals})"
+        flags["match"] = False
+        flags["fallback"] = False
+        
+        # 신호 미충족이지만 점수는 높은 경우
+        if score >= 10:
+            flags["label"] = "강한 매수 (신호부족)"
+            flags["match"] = True
+            flags["fallback"] = False
+        elif score >= 8:
+            flags["label"] = "매수 후보 (신호부족)"
+            flags["match"] = False
+            flags["fallback"] = True
     
     # 위험도에 따른 점수 조정
     if risk_score > 0:
