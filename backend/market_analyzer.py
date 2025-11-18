@@ -370,12 +370,13 @@ class MarketAnalyzer:
             return None, 0
     
     def _determine_market_sentiment(self, kospi_return: float, volatility: float) -> str:
-        """시장 심리 판단"""
-        if kospi_return > 0.015:  # +1.5% 이상
+        """시장 심리 판단 (며칠간의 추세 반영)"""
+        # 며칠간의 추세를 반영했으므로 기준을 약간 완화
+        if kospi_return > 0.010:  # +1.0% 이상 (완화: 하루 기준 +1.5% → 며칠 추세 +1.0%)
             return 'bull'
-        elif kospi_return < -0.03:  # -3% 미만 (급락장)
+        elif kospi_return < -0.025:  # -2.5% 미만 (완화: 하루 기준 -3% → 며칠 추세 -2.5%)
             return 'crash'
-        elif kospi_return < -0.015:  # -1.5% 미만 (약세장)
+        elif kospi_return < -0.010:  # -1.0% 미만 (완화: 하루 기준 -1.5% → 며칠 추세 -1.0%)
             return 'bear'
         else:
             return 'neutral'
