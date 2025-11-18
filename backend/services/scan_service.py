@@ -216,7 +216,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         # 점수 순으로 정렬 (높은 점수 우선)
         step0_items_filtered.sort(key=lambda x: x.get("score", 0), reverse=True)
         
-                    step0_items_10_plus = step0_items_filtered
+        step0_items_10_plus = step0_items_filtered
         print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (신호 충족만, 점수=순위)")
         
         if len(step0_items_10_plus) >= target_min:
