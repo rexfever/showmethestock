@@ -60,6 +60,15 @@ class MarketAnalyzer:
         if date is None:
             date = datetime.now().strftime('%Y%m%d')
         
+        # 거래일 체크
+        try:
+            from main import is_trading_day
+            if not is_trading_day(date):
+                logger.warning(f"거래일이 아닙니다: {date}, 기본 조건 반환")
+                return self._get_default_condition(date)
+        except Exception as e:
+            logger.warning(f"거래일 체크 실패: {e}")
+        
         # 캐시 확인
         cache_key = f"market_analysis_{date}"
         if cache_key in self._cache:
@@ -176,18 +185,51 @@ class MarketAnalyzer:
         """KOSPI 지수 데이터 가져오기 - 종가, 변동성, 저가 기준 수익률 반환"""
         try:
             from kiwoom_api import api
+            from main import is_trading_day
+            
+            # 거래일 체크
+            if not is_trading_day(date):
+                logger.warning(f"거래일이 아닙니다: {date}, 장세 분석 건너뜀")
+                return 0.0, 0.02, None
             
             # KOSPI 200 지수 (069500) 데이터 가져오기
-            df = api.get_ohlcv("069500", 2, date)
+            # 최근 거래일을 찾기 위해 충분한 데이터 가져오기 (최대 10일)
+            df = api.get_ohlcv("069500", 10, date)
             if df.empty or len(df) < 2:
                 # 데이터가 없으면 기본값 반환
                 return 0.0, 0.02, None
             
+            # 최근 거래일 찾기 (휴일 제외)
+            # 마지막 2개 행이 거래일인지 확인
+            current_idx = len(df) - 1
+            prev_idx = len(df) - 2
+            
+            # 현재 날짜가 거래일이 아니면 이전 거래일 찾기
+            current_date_str = df.index[current_idx].strftime('%Y%m%d') if hasattr(df.index[current_idx], 'strftime') else date
+            if not is_trading_day(current_date_str):
+                # 이전 거래일 찾기
+                for i in range(len(df) - 2, -1, -1):
+                    prev_date_str = df.index[i].strftime('%Y%m%d') if hasattr(df.index[i], 'strftime') else None
+                    if prev_date_str and is_trading_day(prev_date_str):
+                        current_idx = i
+                        break
+            
+            # 전일 거래일 찾기
+            for i in range(current_idx - 1, -1, -1):
+                prev_date_str = df.index[i].strftime('%Y%m%d') if hasattr(df.index[i], 'strftime') else None
+                if prev_date_str and is_trading_day(prev_date_str):
+                    prev_idx = i
+                    break
+            
+            if prev_idx >= current_idx or prev_idx < 0:
+                logger.warning(f"전일 거래일을 찾을 수 없습니다: {date}")
+                return 0.0, 0.02, None
+            
             # 전일 종가
-            prev_close = df.iloc[-2]['close']
-            current_close = df.iloc[-1]['close']
-            current_high = df.iloc[-1]['high']
-            current_low = df.iloc[-1]['low']
+            prev_close = df.iloc[prev_idx]['close']
+            current_close = df.iloc[current_idx]['close']
+            current_high = df.iloc[current_idx]['high']
+            current_low = df.iloc[current_idx]['low']
             
             # 종가 기준 수익률
             close_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
@@ -200,10 +242,14 @@ class MarketAnalyzer:
             # 변동성 계산 (간단한 ATR 기반)
             volatility = (current_high - current_low) / current_close if current_close > 0 else 0.02
             
+            logger.info(f"KOSPI 수익률 계산: 전일={prev_close:.2f}, 당일={current_close:.2f}, 수익률={close_return*100:.2f}%")
+            
             return close_return, volatility, low_return
             
         except Exception as e:
             logger.warning(f"KOSPI 데이터 가져오기 실패: {e}")
+            import traceback
+            logger.warning(traceback.format_exc())
             # 실패 시 기본값 반환
             return 0.0, 0.02, None
     
