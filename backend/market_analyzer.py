@@ -204,31 +204,16 @@ class MarketAnalyzer:
                 # 데이터가 없으면 기본값 반환
                 return 0.0, 0.02, None
             
-            # 최근 거래일 찾기 (휴일 제외)
-            # 마지막 2개 행이 거래일인지 확인
+            # 간단한 방법: 마지막 2개 행 사용 (get_ohlcv가 이미 거래일만 반환)
+            # get_ohlcv는 base_dt 기준으로 거래일 데이터만 반환하므로
+            # 마지막 행이 당일, 그 전 행이 전일
+            if len(df) < 2:
+                logger.warning(f"데이터가 부족합니다: {date}")
+                return 0.0, 0.02, None
+            
+            # 마지막 2개 행 사용
             current_idx = len(df) - 1
             prev_idx = len(df) - 2
-            
-            # 현재 날짜가 거래일이 아니면 이전 거래일 찾기
-            current_date_str = df.index[current_idx].strftime('%Y%m%d') if hasattr(df.index[current_idx], 'strftime') else date
-            if not is_trading_day(current_date_str):
-                # 이전 거래일 찾기
-                for i in range(len(df) - 2, -1, -1):
-                    prev_date_str = df.index[i].strftime('%Y%m%d') if hasattr(df.index[i], 'strftime') else None
-                    if prev_date_str and is_trading_day(prev_date_str):
-                        current_idx = i
-                        break
-            
-            # 전일 거래일 찾기
-            for i in range(current_idx - 1, -1, -1):
-                prev_date_str = df.index[i].strftime('%Y%m%d') if hasattr(df.index[i], 'strftime') else None
-                if prev_date_str and is_trading_day(prev_date_str):
-                    prev_idx = i
-                    break
-            
-            if prev_idx >= current_idx or prev_idx < 0:
-                logger.warning(f"전일 거래일을 찾을 수 없습니다: {date}")
-                return 0.0, 0.02, None
             
             # 전일 종가
             prev_close = df.iloc[prev_idx]['close']
