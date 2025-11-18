@@ -496,9 +496,9 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
         flags["signal_bonus"] = 0
         flags["adjusted_score_for_signals"] = score
     
-    # 레이블링 (신호 충족 = 후보, 점수 = 순위)
-    # 신호 충족 + 추세 조건 충족 = 상승 가능성 있는 후보 (점수 무관하게 매칭)
-    # 점수는 후보군 내에서 순위 매기기용 (높은 점수 우선)
+    # 레이블링 (신호 우선, 점수 = 순위)
+    # 신호 충족 = 무조건 후보군 포함 (점수 무관)
+    # 점수 = 후보군 내에서 순위 매기기용 (높은 점수 우선)
     if signals_sufficient:
         # 신호 충족 = 후보군 (점수와 무관하게 매칭)
         flags["match"] = True
@@ -514,20 +514,11 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
         else:
             flags["label"] = "후보 종목"
     else:
-        # 신호 미충족 = 후보군 아님 (점수 기준으로만 필터링)
+        # 신호 미충족 = 후보군 아님 (점수와 무관하게 제외)
         flags["label"] = f"신호부족({signals_true}/{min_signals})"
         flags["match"] = False
         flags["fallback"] = False
-        
-        # 신호 미충족이지만 점수는 높은 경우 (예외적으로 포함)
-        if score >= 10:
-            flags["label"] = "강한 매수 (신호부족)"
-            flags["match"] = True
-            flags["fallback"] = False
-        elif score >= 8:
-            flags["label"] = "매수 후보 (신호부족)"
-            flags["match"] = False
-            flags["fallback"] = True
+        # 점수가 높아도 신호 미충족이면 제외 (신호 우선 원칙)
     
     # 위험도에 따른 점수 조정
     if risk_score > 0:

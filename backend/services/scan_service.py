@@ -203,28 +203,21 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         except Exception as e:
             print(f"❌ Step 0 스캔 오류: {e}")
             return [], None
-        # 신호 충족 = 후보군 (점수 무관), 점수는 순위 매기기용
-        # 신호 미충족 = 점수 기준 적용 (10점 이상)
+        # 신호 우선 원칙: 신호 충족 = 후보군 (점수 무관), 점수 = 순위 매기기용
         step0_items_filtered = []
         for item in step0_items:
-            flags = item.get("flags", {})
-            signals_count = flags.get("signals_count", 0)
-            min_signals = flags.get("min_signals_required", 3)
-            score = item.get("score", 0)
             matched = item.get("match", False)
             
             # 신호 충족 = 후보군 (점수 무관하게 포함)
-            # 신호 미충족 = 점수 기준 적용 (10점 이상)
-            if matched:  # 신호 충족으로 매칭된 경우
-                step0_items_filtered.append(item)
-            elif score >= 10:  # 신호 미충족이지만 점수 높은 경우
+            # 신호 미충족 = 제외 (점수와 무관)
+            if matched:
                 step0_items_filtered.append(item)
         
         # 점수 순으로 정렬 (높은 점수 우선)
         step0_items_filtered.sort(key=lambda x: x.get("score", 0), reverse=True)
         
-        step0_items_10_plus = step0_items_filtered
-        print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (신호충족:점수 무관, 미충족:10점 이상)")
+                    step0_items_10_plus = step0_items_filtered
+        print(f"📊 Step 0 결과: {len(step0_items_10_plus)}개 종목 (신호 충족만, 점수=순위)")
         
         if len(step0_items_10_plus) >= target_min:
             chosen_step = 0
@@ -241,49 +234,40 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
             except Exception as e:
                 print(f"❌ Step 1 스캔 오류: {e}")
                 return [], None
-            # 신호 충족 = 후보군 (점수 무관), 점수는 순위 매기기용
+            # 신호 우선 원칙: 신호 충족 = 후보군 (점수 무관), 점수 = 순위 매기기용
             step1_items_filtered = []
             for item in step1_items:
-                flags = item.get("flags", {})
-                score = item.get("score", 0)
                 matched = item.get("match", False)
                 
-                if matched:  # 신호 충족으로 매칭된 경우
-                    step1_items_filtered.append(item)
-                elif score >= 10:  # 신호 미충족이지만 점수 높은 경우
+                # 신호 충족 = 후보군 (점수 무관하게 포함)
+                if matched:
                     step1_items_filtered.append(item)
             
             # 점수 순으로 정렬
             step1_items_filtered.sort(key=lambda x: x.get("score", 0), reverse=True)
             
             step1_items_10_plus = step1_items_filtered
-            print(f"📊 Step 1 결과: {len(step1_items_10_plus)}개 종목 (지표 완화 + 신호충족:점수 무관, 미충족:10점 이상)")
+            print(f"📊 Step 1 결과: {len(step1_items_10_plus)}개 종목 (지표 완화 + 신호 충족만, 점수=순위)")
             
             if len(step1_items_10_plus) >= target_min:
                 chosen_step = 1
                 final_items = step1_items_10_plus[:min(config.top_k, target_max)]
                 print(f"✅ Step 1에서 목표 달성: {len(final_items)}개 종목 선택 (지표 완화 + 10점 이상)")
             else:
-                # Step 2: 지표 완화 Level 1 + 점수 Fallback (신호 충족 = 점수 무관, 미충족 = 8점 이상)
-                print(f"🔄 Step 2: 지표 완화 Level 1 + 점수 Fallback")
+                # Step 2: 지표 완화 Level 1 (신호 우선 원칙 유지)
+                print(f"🔄 Step 2: 지표 완화 Level 1 (신호 충족 종목만)")
                 step1_items_8_plus = []
                 for item in step1_items:
-                    flags = item.get("flags", {})
-                    score = item.get("score", 0)
                     matched = item.get("match", False)
-                    fallback = flags.get("fallback", False)
                     
                     # 신호 충족 = 후보군 (점수 무관하게 포함)
-                    # 신호 미충족 = 점수 기준 완화 (8점 이상)
-                    if matched:  # 신호 충족으로 매칭된 경우
-                        step1_items_8_plus.append(item)
-                    elif fallback or score >= 8:  # 신호 미충족이지만 점수 높은 경우
+                    if matched:
                         step1_items_8_plus.append(item)
                 
                 # 점수 순으로 정렬
                 step1_items_8_plus.sort(key=lambda x: x.get("score", 0), reverse=True)
                 
-                print(f"📊 Step 2 결과: {len(step1_items_8_plus)}개 종목 (지표 완화 + 신호충족:점수 무관, 미충족:8점 이상)")
+                print(f"📊 Step 2 결과: {len(step1_items_8_plus)}개 종목 (지표 완화 + 신호 충족만, 점수=순위)")
                 
                 if len(step1_items_8_plus) >= target_min:
                     chosen_step = 2
@@ -322,7 +306,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
                             # 점수 순으로 정렬
                             step3_items_8_plus.sort(key=lambda x: x.get("score", 0), reverse=True)
                             
-                            print(f"📊 Step 3 결과: {len(step3_items_8_plus)}개 종목 (지표 완화 Level 2 + 신호충족:점수 무관, 미충족:8점 이상)")
+                            print(f"📊 Step 3 결과: {len(step3_items_8_plus)}개 종목 (지표 완화 Level 2 + 신호 충족만, 점수=순위)")
                             
                             if len(step3_items_8_plus) >= target_min:
                                 chosen_step = 3
