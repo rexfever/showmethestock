@@ -565,8 +565,16 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
                 change_rate = round(((current_close - prev_close) / prev_close) * 100, 2)
         
         # RSI 상한선 필터링 (과매수 구간 진입 방지)
+        # market_condition이 있으면 동적 조정된 상한선 사용, 없으면 기본값 사용
+        if market_condition and config.market_analysis_enable:
+            # 시장 상황에 따라 RSI 상한선도 조정 (rsi_threshold + 여유분)
+            # rsi_threshold는 신호 판단용, 상한선은 과매수 방지용이므로 더 높게 설정
+            rsi_upper_limit = market_condition.rsi_threshold + 15.0  # 기본 70 = 57 + 13
+        else:
+            rsi_upper_limit = config.rsi_upper_limit
+        
         cur = df.iloc[-1]
-        if cur.RSI_TEMA > config.rsi_upper_limit:
+        if cur.RSI_TEMA > rsi_upper_limit:
             return None  # RSI 상한선 초과 종목 즉시 제외
         
         matched, sig_true, sig_total = match_stats(df, market_condition, stock_name)
