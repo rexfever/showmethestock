@@ -465,9 +465,27 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
     else:
         min_signals = config.min_signals
     
-    signals_true = sum([bool(flags.get("cross", False)), bool(flags.get("vol_expand", False)), 
-                       bool(flags.get("macd_ok", False)), bool(flags.get("rsi_ok", False))])
+    # 신호 개수 계산: 기본 4개 + 추가 신호 (OBV, TEMA slope, above_cnt)
+    # 기본 신호 4개
+    basic_signals = sum([
+        bool(flags.get("cross", False)),      # 골든크로스
+        bool(flags.get("vol_expand", False)),  # 거래량
+        bool(flags.get("macd_ok", False)),    # MACD
+        bool(flags.get("rsi_ok", False))      # RSI
+    ])
+    
+    # 추가 신호 3개 (통과율이 높은 신호들)
+    additional_signals = sum([
+        bool(flags.get("obv_slope_ok", False)),    # OBV 상승 (73% 통과율)
+        bool(flags.get("tema_slope_ok", False)),  # TEMA 상승 (68% 통과율)
+        bool(flags.get("above_cnt5", False))      # 연속 상승 (68% 통과율)
+    ])
+    
+    # 총 신호 개수 (기본 4개 + 추가 3개 = 최대 7개)
+    signals_true = basic_signals + additional_signals
     flags["signals_count"] = signals_true
+    flags["signals_basic"] = basic_signals
+    flags["signals_additional"] = additional_signals
     flags["min_signals_required"] = min_signals
     
     if signals_true < min_signals:
