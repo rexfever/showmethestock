@@ -505,30 +505,92 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
         flags["fallback"] = False
         
         # 점수는 순위 매기기용 (레이블 + 매매 전략 구분)
+        # 전략은 점수 구성(항목 구성)에 따라 결정
+        
+        # 모멘텀 지표 점수 (단기)
+        momentum_score = 0
+        if flags.get("cross"):
+            momentum_score += 3
+        if flags.get("vol_expand"):
+            momentum_score += 2
+        if flags.get("macd_ok"):
+            momentum_score += 1
+        if flags.get("rsi_ok"):
+            momentum_score += 1
+        
+        # 추세 지표 점수 (중장기)
+        trend_score = 0
+        if flags.get("tema_slope_ok"):
+            trend_score += 2
+        if flags.get("obv_slope_ok"):
+            trend_score += 2
+        if flags.get("above_cnt5_ok"):
+            trend_score += 2
+        if flags.get("dema_slope_ok"):
+            trend_score += 2
+        
+        # 점수 구성에 따라 전략 결정
         if adjusted_score >= 10:
             flags["label"] = "강한 매수"
-            flags["trading_strategy"] = "스윙"
-            flags["target_profit"] = 0.05  # 5%
-            flags["stop_loss"] = -0.05     # -5%
-            flags["holding_period"] = "3~10일"
+            # 스윙: 골든크로스 + 거래량 + 모멘텀 지표 중심
+            if flags.get("cross") and flags.get("vol_expand") and momentum_score >= 6:
+                flags["trading_strategy"] = "스윙"
+                flags["target_profit"] = 0.05  # 5%
+                flags["stop_loss"] = -0.05     # -5%
+                flags["holding_period"] = "3~10일"
+            # 포지션: 추세 지표 중심
+            elif trend_score >= 5:
+                flags["trading_strategy"] = "포지션"
+                flags["target_profit"] = 0.10  # 10%
+                flags["stop_loss"] = -0.07     # -7%
+                flags["holding_period"] = "2주~3개월"
+            else:
+                flags["trading_strategy"] = "스윙"  # 기본값
+                flags["target_profit"] = 0.05
+                flags["stop_loss"] = -0.05
+                flags["holding_period"] = "3~10일"
         elif adjusted_score >= 8:
             flags["label"] = "매수 후보"
-            flags["trading_strategy"] = "포지션"
-            flags["target_profit"] = 0.10  # 10%
-            flags["stop_loss"] = -0.07     # -7%
-            flags["holding_period"] = "2주~3개월"
+            # 포지션: 골든크로스 + 추세 지표
+            if flags.get("cross") and trend_score >= 4:
+                flags["trading_strategy"] = "포지션"
+                flags["target_profit"] = 0.10  # 10%
+                flags["stop_loss"] = -0.07     # -7%
+                flags["holding_period"] = "2주~3개월"
+            # 스윙: 거래량 + 모멘텀
+            elif flags.get("vol_expand") and momentum_score >= 5:
+                flags["trading_strategy"] = "스윙"
+                flags["target_profit"] = 0.05  # 5%
+                flags["stop_loss"] = -0.05     # -5%
+                flags["holding_period"] = "3~10일"
+            else:
+                flags["trading_strategy"] = "포지션"  # 기본값
+                flags["target_profit"] = 0.10
+                flags["stop_loss"] = -0.07
+                flags["holding_period"] = "2주~3개월"
         elif adjusted_score >= 6:
             flags["label"] = "관심 종목"
-            flags["trading_strategy"] = "장기"
-            flags["target_profit"] = 0.15  # 15%
-            flags["stop_loss"] = -0.10     # -10%
-            flags["holding_period"] = "3개월 이상"
+            # 장기: 기본 신호 + 추세 지표
+            if trend_score >= 2:
+                flags["trading_strategy"] = "장기"
+                flags["target_profit"] = 0.15  # 15%
+                flags["stop_loss"] = -0.10     # -10%
+                flags["holding_period"] = "3개월 이상"
+            else:
+                flags["trading_strategy"] = "관찰"
+                flags["target_profit"] = None
+                flags["stop_loss"] = None
+                flags["holding_period"] = None
         else:
             flags["label"] = "후보 종목"
             flags["trading_strategy"] = "관찰"
             flags["target_profit"] = None
             flags["stop_loss"] = None
             flags["holding_period"] = None
+        
+        # 디버깅용 정보 추가
+        flags["momentum_score"] = momentum_score
+        flags["trend_score"] = trend_score
     else:
         # 신호 미충족 = 후보군 아님 (점수와 무관하게 제외)
         flags["label"] = f"신호부족({signals_true}/{min_signals})"
