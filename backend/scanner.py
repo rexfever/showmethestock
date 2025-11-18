@@ -496,30 +496,30 @@ def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
         flags["signal_bonus"] = 0
         flags["adjusted_score_for_signals"] = score
     
-    # 레이블링 (신호 충족 시 점수 기준 완화 적용)
-    # 신호 충족 시: 6점 이상이면 match=True, 4점 이상이면 fallback=True
-    # 신호 미충족 시: 기존 기준 유지 (10점, 8점)
+    # 레이블링 (신호 충족 = 후보, 점수 = 순위)
+    # 신호 충족 + 추세 조건 충족 = 상승 가능성 있는 후보 (점수 무관하게 매칭)
+    # 점수는 후보군 내에서 순위 매기기용 (높은 점수 우선)
     if signals_sufficient:
-        # 신호 충족 시 점수 기준 완화
-        if adjusted_score >= 6:
-            flags["label"] = "강한 매수" if adjusted_score >= 8 else "매수 후보"
-            flags["match"] = True
-            flags["fallback"] = False
-        elif adjusted_score >= 4:
+        # 신호 충족 = 후보군 (점수와 무관하게 매칭)
+        flags["match"] = True
+        flags["fallback"] = False
+        
+        # 점수는 순위 매기기용 (레이블만 구분)
+        if adjusted_score >= 10:
+            flags["label"] = "강한 매수"
+        elif adjusted_score >= 8:
             flags["label"] = "매수 후보"
-            flags["match"] = False
-            flags["fallback"] = True  # Fallback 시 포함 가능
+        elif adjusted_score >= 6:
+            flags["label"] = "관심 종목"
         else:
-            flags["label"] = f"신호충족({signals_true}) 점수부족({adjusted_score:.1f})"
-            flags["match"] = False
-            flags["fallback"] = True  # 신호 충족이면 Fallback 시 포함 가능
+            flags["label"] = "후보 종목"
     else:
-        # 신호 미충족 시 기존 기준 유지
+        # 신호 미충족 = 후보군 아님 (점수 기준으로만 필터링)
         flags["label"] = f"신호부족({signals_true}/{min_signals})"
         flags["match"] = False
         flags["fallback"] = False
         
-        # 신호 미충족이지만 점수는 높은 경우
+        # 신호 미충족이지만 점수는 높은 경우 (예외적으로 포함)
         if score >= 10:
             flags["label"] = "강한 매수 (신호부족)"
             flags["match"] = True
