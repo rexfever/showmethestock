@@ -216,7 +216,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         from scanner_settings_manager import get_scanner_version
         current_scanner_version = get_scanner_version()
     except Exception:
-        from config import config
+        # config는 이미 파일 상단에서 import됨
         current_scanner_version = getattr(config, 'scanner_version', 'v1')
     
     # 급락장 감지 시 추천하지 않음
