@@ -1,7 +1,9 @@
 """
-scanner_v2 패키지
-
-기존 v1 스캐너와 완전히 독립적인 신규 스캔 엔진.
+스캐너 V2 - 개선된 스캐너 모듈
 """
 
+from .core.scanner import ScannerV2
+from .core.scanner import ScanResult
+
+__all__ = ['ScannerV2', 'ScanResult']
 

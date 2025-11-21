@@ -148,8 +148,8 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stoc
     cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > 0)
 
     # ---- RSI: 상승 초입 모멘텀 조건 ----
-    # RSI 모멘텀: TEMA > DEMA 또는 수렴 후 상승
-    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > 35)
+    # RSI 모멘텀: TEMA > DEMA 또는 수렴 후 상승 (동적 rsi_threshold 사용)
+    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > rsi_threshold)
     cond_rsi = rsi_momentum
 
     # ---- 거래량: 상승 초입 급증 조건 ----
@@ -172,13 +172,90 @@ def match_stats(df: pd.DataFrame, market_condition: MarketCondition = None, stoc
 
     # ----- 신호 요건 상향 (동적 MIN_SIGNALS + 볼륨 강화 + MACD 강화 + RSI 타이트) -----
     # 기존 cond_gc(교차/정렬)와 trend_ok(TEMA/DEMA/OBV slope 등)는 유지
-    signals_true = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
+    
+    # 기본 신호 4개
+    basic_signals = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
+    
+    # 추가 신호 3개 (통과율이 높은 신호들)
+    obv_slope_ok = df.iloc[-1]["OBV_SLOPE20"] > 0.001
+    tema_slope_ok = (df.iloc[-1]["TEMA20_SLOPE20"] > 0.001) and (cur.close > cur.TEMA20)
+    above_ok = above_cnt >= 3
+    
+    additional_signals = sum([bool(obv_slope_ok), bool(tema_slope_ok), bool(above_ok)])
+    
+    # 총 신호 개수 (기본 4개 + 추가 3개 = 최대 7개)
+    signals_true = basic_signals + additional_signals
+    
     if signals_true < min_signals or not trend_ok:
-        return False, signals_true, 3
+        return False, signals_true, 7  # 총 신호 개수 반환
     
     # 최종 매칭: 신호 요건 충족 + 추세
     matched = True
     return matched, int(signals_true), 4
+
+
+def determine_trading_strategy(flags: dict, adjusted_score: float) -> tuple:
+    """점수 구성에 따라 매매 전략 결정
+    
+    Args:
+        flags: 점수 계산 결과 플래그 딕셔너리
+        adjusted_score: 조정된 점수 (신호 보너스 포함, 위험도 차감 전)
+    
+    Returns:
+        tuple: (전략명, 목표수익률, 손절기준, 보유기간)
+    """
+    # 모멘텀 지표 점수 (단기)
+    momentum_score = 0
+    if flags.get("cross"):
+        momentum_score += 3
+    if flags.get("vol_expand"):
+        momentum_score += 2
+    if flags.get("macd_ok"):
+        momentum_score += 1
+    if flags.get("rsi_ok"):
+        momentum_score += 1
+    
+    # 추세 지표 점수 (중장기)
+    trend_score = 0
+    if flags.get("tema_slope_ok"):
+        trend_score += 2
+    if flags.get("obv_slope_ok"):
+        trend_score += 2
+    if flags.get("above_cnt5_ok"):
+        trend_score += 2
+    if flags.get("dema_slope_ok"):
+        trend_score += 2
+    
+    # 전략 판단
+    if adjusted_score >= 10:
+        # 스윙: 골든크로스 + 거래량 + 모멘텀 지표 중심
+        if flags.get("cross") and flags.get("vol_expand") and momentum_score >= 6:
+            return "스윙", 0.05, -0.05, "3~10일"
+        # 포지션: 추세 지표 중심
+        elif trend_score >= 5:
+            return "포지션", 0.10, -0.07, "2주~3개월"
+        else:
+            return "스윙", 0.05, -0.05, "3~10일"  # 기본값
+    
+    elif adjusted_score >= 8:
+        # 포지션: 골든크로스 + 추세 지표
+        if flags.get("cross") and trend_score >= 4:
+            return "포지션", 0.10, -0.07, "2주~3개월"
+        # 스윙: 거래량 + 모멘텀
+        elif flags.get("vol_expand") and momentum_score >= 5:
+            return "스윙", 0.05, -0.05, "3~10일"
+        else:
+            return "포지션", 0.10, -0.07, "2주~3개월"  # 기본값
+    
+    elif adjusted_score >= 6:
+        # 장기: 기본 신호 + 추세 지표
+        if trend_score >= 2:
+            return "장기", 0.15, -0.10, "3개월 이상"
+        else:
+            return "관찰", None, None, None
+    
+    else:
+        return "관찰", None, None, None
 
 
 def calculate_risk_score(df: pd.DataFrame) -> tuple:
@@ -231,7 +308,7 @@ def calculate_risk_score(df: pd.DataFrame) -> tuple:
     return risk_score, risk_flags
 
 
-def score_conditions(df: pd.DataFrame) -> tuple:
+def score_conditions(df: pd.DataFrame, market_condition=None) -> tuple:
     """조건별 점수 계산 및 근거 플래그 반환.
     Returns: (score:int, flags:Dict[str,bool])
     """
@@ -386,7 +463,14 @@ def score_conditions(df: pd.DataFrame) -> tuple:
     details['macd'] = {'ok': bool(macd_ok), 'w': W['macd'], 'gain': W['macd'] if macd_ok else 0}
 
     # 4) RSI: 상승 초입 모멘텀 조건 (TEMA > DEMA 또는 수렴 후 상승)
-    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > 35)
+    # RSI 모멘텀: 동적 rsi_threshold 사용 (market_condition 또는 config에서 가져옴)
+    # market_condition이 있으면 동적 값 사용, 없으면 config 기본값 사용
+    if market_condition and config.market_analysis_enable:
+        rsi_threshold_for_momentum = market_condition.rsi_threshold
+    else:
+        rsi_threshold_for_momentum = config.rsi_threshold
+    
+    rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > rsi_threshold_for_momentum)
     rsi_ok = rsi_momentum
     
     flags["rsi_ok"] = bool(rsi_ok)
@@ -446,36 +530,113 @@ def score_conditions(df: pd.DataFrame) -> tuple:
         "ext_ok": bool(ext_ok),
     })
     
-    # 레이블링 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)
-    # 10점 이상: 우선 추천
-    # 8-9점: Fallback 시 포함 (10점 이상이 없을 때)
-    # 6점대: 제외 (승률 낮음, 변동성 높음)
-    if score >= 10:
-        flags["label"] = "강한 매수"
-        flags["match"] = True
-        flags["fallback"] = False  # 10점 이상은 Fallback 불필요
-    elif score >= 8:
-        flags["label"] = "매수 후보"
-        flags["match"] = False  # 기본적으로 제외
-        flags["fallback"] = True  # Fallback 시 포함 가능
-    elif score >= 6:
-        flags["label"] = "관심 (제외)"
-        flags["match"] = False  # 6점대는 추천하지 않음 (승률 낮음, 변동성 높음)
-        flags["fallback"] = False  # Fallback 시에도 제외
+    # ----- 신호 요건 상향 (동적 MIN_SIGNALS) -----
+    # market_condition이 있으면 동적 조건 사용, 없으면 기본값 사용
+    if market_condition and config.market_analysis_enable:
+        min_signals = market_condition.min_signals
     else:
-        flags["label"] = "제외"
-        flags["match"] = False  # 제외 종목은 매칭되지 않음
-        flags["fallback"] = False  # Fallback 시에도 제외
+        min_signals = config.min_signals
     
-    # ----- 신호 요건 상향 (MIN_SIGNALS=3) -----
-    signals_true = sum([bool(flags.get("cross", False)), bool(flags.get("vol_expand", False)), 
-                       bool(flags.get("macd_ok", False)), bool(flags.get("rsi_ok", False))])
+    # 신호 개수 계산: 기본 4개 + 추가 신호 (OBV, TEMA slope, above_cnt)
+    # 기본 신호 4개
+    basic_signals = sum([
+        bool(flags.get("cross", False)),      # 골든크로스
+        bool(flags.get("vol_expand", False)),  # 거래량
+        bool(flags.get("macd_ok", False)),    # MACD
+        bool(flags.get("rsi_ok", False))      # RSI
+    ])
+    
+    # 추가 신호 3개 (통과율이 높은 신호들)
+    additional_signals = sum([
+        bool(flags.get("obv_slope_ok", False)),    # OBV 상승 (73% 통과율)
+        bool(flags.get("tema_slope_ok", False)),  # TEMA 상승 (68% 통과율)
+        bool(flags.get("above_cnt5", False))      # 연속 상승 (68% 통과율)
+    ])
+    
+    # 총 신호 개수 (기본 4개 + 추가 3개 = 최대 7개)
+    signals_true = basic_signals + additional_signals
     flags["signals_count"] = signals_true
-    flags["min_signals_required"] = config.min_signals
+    flags["signals_basic"] = basic_signals
+    flags["signals_additional"] = additional_signals
+    flags["min_signals_required"] = min_signals
     
-    if signals_true < config.min_signals:
+    # 신호 충족 여부 확인
+    signals_sufficient = signals_true >= min_signals
+    
+    # 신호 충족 시 점수 기준 완화: 신호가 충족되면 점수 기준을 낮춤
+    # 신호 3개 이상이면 10점 → 6점, 8점 → 4점으로 완화
+    if signals_sufficient:
+        # 신호 충족 시 점수 보너스 추가 (신호 개수에 비례)
+        signal_bonus = max(0, (signals_true - min_signals) * 1)  # 추가 신호당 1점 보너스
+        adjusted_score = score + signal_bonus
+        flags["signal_bonus"] = signal_bonus
+        flags["adjusted_score_for_signals"] = adjusted_score
+    else:
+        adjusted_score = score
+        flags["signal_bonus"] = 0
+        flags["adjusted_score_for_signals"] = score
+    
+    # 레이블링 (신호 우선, 점수 = 순위)
+    # 신호 충족 = 무조건 후보군 포함 (점수 무관)
+    # 점수 = 후보군 내에서 순위 매기기용 (높은 점수 우선)
+    if signals_sufficient:
+        # 신호 충족 = 후보군 (점수와 무관하게 매칭)
+        flags["match"] = True
+        flags["fallback"] = False
+        
+        # 점수는 순위 매기기용 (레이블 + 매매 전략 구분)
+        # 전략은 점수 구성(항목 구성)에 따라 결정
+        
+        # 모멘텀 지표 점수 (단기) - 디버깅용
+        momentum_score = 0
+        if flags.get("cross"):
+            momentum_score += 3
+        if flags.get("vol_expand"):
+            momentum_score += 2
+        if flags.get("macd_ok"):
+            momentum_score += 1
+        if flags.get("rsi_ok"):
+            momentum_score += 1
+        
+        # 추세 지표 점수 (중장기) - 디버깅용
+        trend_score = 0
+        if flags.get("tema_slope_ok"):
+            trend_score += 2
+        if flags.get("obv_slope_ok"):
+            trend_score += 2
+        if flags.get("above_cnt5_ok"):
+            trend_score += 2
+        if flags.get("dema_slope_ok"):
+            trend_score += 2
+        
+        # 점수 구성에 따라 전략 결정
+        strategy, target_profit, stop_loss, holding_period = determine_trading_strategy(flags, adjusted_score)
+        
+        # 레이블 설정
+        if adjusted_score >= 10:
+            flags["label"] = "강한 매수"
+        elif adjusted_score >= 8:
+            flags["label"] = "매수 후보"
+        elif adjusted_score >= 6:
+            flags["label"] = "관심 종목"
+        else:
+            flags["label"] = "후보 종목"
+        
+        # 전략 정보 설정
+        flags["trading_strategy"] = strategy
+        flags["target_profit"] = target_profit
+        flags["stop_loss"] = stop_loss
+        flags["holding_period"] = holding_period
+        
+        # 디버깅용 정보 추가
+        flags["momentum_score"] = momentum_score
+        flags["trend_score"] = trend_score
+    else:
+        # 신호 미충족 = 후보군 아님 (점수와 무관하게 제외)
+        flags["label"] = f"신호부족({signals_true}/{min_signals})"
         flags["match"] = False
-        flags["label"] = f"신호부족({signals_true}/{config.min_signals})"
+        flags["fallback"] = False
+        # 점수가 높아도 신호 미충족이면 제외 (신호 우선 원칙)
     
     # 위험도에 따른 점수 조정
     if risk_score > 0:
@@ -575,12 +736,21 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
                 change_rate = round(((current_close - prev_close) / prev_close) * 100, 2)
         
         # RSI 상한선 필터링 (과매수 구간 진입 방지)
+        # market_condition이 있으면 동적 조정된 상한선 사용, 없으면 기본값 사용
+        if market_condition and config.market_analysis_enable:
+            # 시장 상황에 따라 RSI 상한선도 조정 (rsi_threshold + 여유분)
+            # rsi_threshold는 신호 판단용, 상한선은 과매수 방지용이므로 더 높게 설정
+            # 여유분을 15.0 → 25.0으로 증가 (더 많은 종목 통과)
+            rsi_upper_limit = market_condition.rsi_threshold + 25.0  # 기본 70 = 57 + 13 → 82 = 57 + 25
+        else:
+            rsi_upper_limit = config.rsi_upper_limit
+        
         cur = df.iloc[-1]
-        if cur.RSI_TEMA > config.rsi_upper_limit:
+        if cur.RSI_TEMA > rsi_upper_limit:
             return None  # RSI 상한선 초과 종목 즉시 제외
         
         matched, sig_true, sig_total = match_stats(df, market_condition, stock_name)
-        score, flags = score_conditions(df)
+        score, flags = score_conditions(df, market_condition)
         # 새로운 RSI 로직에서는 flags["match"]를 우선 사용
         matched = flags.get("match", bool(matched))
         
@@ -631,6 +801,24 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
     if preset_overrides:
         print(f"🔧 프리셋 적용: {preset_overrides}")
         apply_preset_to_runtime(preset_overrides)
+        
+        # market_condition에도 프리셋 반영 (동적 조건 우선 사용)
+        if market_condition:
+            from copy import deepcopy
+            market_condition = deepcopy(market_condition)
+            if 'min_signals' in preset_overrides:
+                market_condition.min_signals = preset_overrides['min_signals']
+            if 'vol_ma5_mult' in preset_overrides:
+                market_condition.vol_ma5_mult = preset_overrides['vol_ma5_mult']
+            if 'vol_ma20_mult' in preset_overrides:
+                market_condition.vol_ma20_mult = preset_overrides.get('vol_ma20_mult', market_condition.vol_ma20_mult if hasattr(market_condition, 'vol_ma20_mult') else config.vol_ma20_mult)
+            if 'gap_max' in preset_overrides:
+                market_condition.gap_max = preset_overrides['gap_max']
+            if 'ext_from_tema20_max' in preset_overrides:
+                market_condition.ext_from_tema20_max = preset_overrides['ext_from_tema20_max']
+            if 'require_dema_slope' in preset_overrides:
+                # require_dema_slope는 config에만 적용
+                pass
 
     # 2) 병렬 처리로 스캔 실행 (하드 컷 로직은 기존대로 유지)
     items = []
@@ -640,10 +828,13 @@ def scan_with_preset(universe_codes: List[str], preset_overrides: dict, base_dat
     # 병렬 처리로 성능 개선 (최대 10개 워커)
     max_workers = min(10, len(universe_codes))
     
+    # market_condition이 수정되었으면 수정된 버전 사용
+    final_market_condition = market_condition
+    
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # 각 종목 스캔을 병렬로 실행
         future_to_code = {
-            executor.submit(scan_one_symbol, code, base_date, market_condition): code
+            executor.submit(scan_one_symbol, code, base_date, final_market_condition): code
             for code in universe_codes
         }
         

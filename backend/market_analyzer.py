@@ -60,6 +60,15 @@ class MarketAnalyzer:
         if date is None:
             date = datetime.now().strftime('%Y%m%d')
         
+        # 거래일 체크
+        try:
+            from main import is_trading_day
+            if not is_trading_day(date):
+                logger.warning(f"거래일이 아닙니다: {date}, 기본 조건 반환")
+                return self._get_default_condition(date)
+        except Exception as e:
+            logger.warning(f"거래일 체크 실패: {e}")
+        
         # 캐시 확인
         cache_key = f"market_analysis_{date}"
         if cache_key in self._cache:
@@ -75,23 +84,30 @@ class MarketAnalyzer:
             # 유니버스 전체 종목 분석 (급락장 판단용)
             universe_return, sample_size = self._get_universe_return(date)
             
-            # 급락장 판단을 위해 가장 낮은 수익률 사용
-            # 후보: KOSPI 종가, KOSPI 저가, 유니버스 평균
-            candidates = [kospi_return]
-            if kospi_low_return is not None:
-                candidates.append(kospi_low_return)
-            if universe_return is not None:
-                candidates.append(universe_return)
+            # effective_return 계산 로직 개선
+            # 일반적인 장세 판단에는 종가 기준 사용
+            # 급락장 판단 시에만 가장 낮은 값 사용
+            # 며칠간의 추세를 반영한 kospi_return 사용 (이미 가중 평균으로 계산됨)
+            # 급락장 판단은 추세 반영 수익률 기준으로 판단
+            if kospi_return < -0.025:  # -2.5% 미만 (crash 판단 기준)
+                # 급락장 판단을 위해 가장 낮은 수익률 사용
+                candidates = [kospi_return]  # 추세 반영 수익률
+                if kospi_low_return is not None:
+                    candidates.append(kospi_low_return)
+                if universe_return is not None:
+                    candidates.append(universe_return)
+                effective_return = min(candidates)
+                
+                # 로그 출력
+                if kospi_low_return is not None and kospi_low_return < kospi_return:
+                    logger.info(f"급락장 판단: 저가 기준 사용 - 추세 {kospi_return*100:.2f}%, 저가 {kospi_low_return*100:.2f}%")
+                if universe_return is not None and universe_return < kospi_return:
+                    logger.info(f"급락장 판단: 유니버스 기준 사용 - 추세 {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+            else:
+                # 일반적인 경우 추세 반영 수익률 사용
+                effective_return = kospi_return
             
-            # 가장 낮은 값 사용
-            effective_return = min(candidates)
-            
-            # 로그 출력
-            if kospi_low_return is not None and kospi_low_return < kospi_return:
-                logger.info(f"저가 기준 사용: 종가 {kospi_return*100:.2f}%, 저가 {kospi_low_return*100:.2f}%")
-            if universe_return is not None and universe_return < kospi_return:
-                logger.info(f"유니버스 기준 사용: KOSPI {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
-            logger.info(f"최종 effective_return: {effective_return*100:.2f}%")
+            logger.info(f"KOSPI 종가 수익률: {kospi_return*100:.2f}%, 최종 effective_return: {effective_return*100:.2f}%")
             
             # 시장 상황 판단
             market_sentiment = self._determine_market_sentiment(effective_return, volatility)
@@ -173,37 +189,102 @@ class MarketAnalyzer:
             return self._get_default_condition(date)
     
     def _get_kospi_data(self, date: str) -> Tuple[float, float, Optional[float]]:
-        """KOSPI 지수 데이터 가져오기 - 종가, 변동성, 저가 기준 수익률 반환"""
+        """KOSPI 지수 데이터 가져오기 - 며칠간의 추세를 반영한 종가, 변동성, 저가 기준 수익률 반환"""
         try:
             from kiwoom_api import api
+            from main import is_trading_day
+            import numpy as np
+            
+            # 거래일 체크
+            if not is_trading_day(date):
+                logger.warning(f"거래일이 아닙니다: {date}, 장세 분석 건너뜀")
+                return 0.0, 0.02, None
             
             # KOSPI 200 지수 (069500) 데이터 가져오기
-            df = api.get_ohlcv("069500", 2, date)
+            # 며칠간의 추세를 분석하기 위해 최근 5일 데이터 사용
+            lookback_days = 5
+            df = api.get_ohlcv("069500", lookback_days, date)
             if df.empty or len(df) < 2:
                 # 데이터가 없으면 기본값 반환
                 return 0.0, 0.02, None
             
-            # 전일 종가
-            prev_close = df.iloc[-2]['close']
-            current_close = df.iloc[-1]['close']
-            current_high = df.iloc[-1]['high']
-            current_low = df.iloc[-1]['low']
+            # 마지막 행이 당일
+            current_idx = len(df) - 1
+            current_close = df.iloc[current_idx]['close']
+            current_high = df.iloc[current_idx]['high']
+            current_low = df.iloc[current_idx]['low']
             
-            # 종가 기준 수익률
-            close_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
+            # 며칠간의 추세 분석
+            # 1. 단기 추세 (최근 3일 평균 수익률)
+            # 2. 중기 추세 (최근 5일 평균 수익률)
+            # 3. 당일 수익률 (전일 대비)
+            
+            # 전일 종가 (당일 수익률 계산용)
+            if len(df) >= 2:
+                prev_close = df.iloc[current_idx - 1]['close']
+                daily_return = (current_close / prev_close - 1) if prev_close > 0 else 0.0
+            else:
+                daily_return = 0.0
+                prev_close = current_close
+            
+            # 며칠간의 수익률 계산
+            returns_3d = []  # 최근 3일
+            returns_5d = []  # 최근 5일
+            
+            for i in range(max(0, current_idx - 4), current_idx):
+                if i + 1 < len(df):
+                    prev = df.iloc[i]['close']
+                    curr = df.iloc[i + 1]['close']
+                    if prev > 0:
+                        ret = (curr / prev - 1)
+                        returns_5d.append(ret)
+                        if i >= current_idx - 2:  # 최근 3일
+                            returns_3d.append(ret)
+            
+            # 평균 수익률 계산 (가중 평균: 최근일수록 높은 가중치)
+            if returns_3d:
+                # 최근 3일: 가중치 [0.2, 0.3, 0.5]
+                weights_3d = [0.2, 0.3, 0.5][-len(returns_3d):]
+                weighted_3d = sum(r * w for r, w in zip(returns_3d, weights_3d)) / sum(weights_3d)
+            else:
+                weighted_3d = daily_return
+            
+            if returns_5d:
+                # 최근 5일: 가중치 [0.1, 0.15, 0.2, 0.25, 0.3]
+                weights_5d = [0.1, 0.15, 0.2, 0.25, 0.3][-len(returns_5d):]
+                weighted_5d = sum(r * w for r, w in zip(returns_5d, weights_5d)) / sum(weights_5d)
+            else:
+                weighted_5d = daily_return
+            
+            # 최종 수익률: 단기 추세(50%) + 중기 추세(30%) + 당일(20%) 가중 평균
+            close_return = (weighted_3d * 0.5 + weighted_5d * 0.3 + daily_return * 0.2)
             
             # 저가 기준 수익률 (급락장 판단용)
             low_return = None
             if current_low > 0 and prev_close > 0:
                 low_return = (current_low / prev_close - 1)
             
-            # 변동성 계산 (간단한 ATR 기반)
-            volatility = (current_high - current_low) / current_close if current_close > 0 else 0.02
+            # 변동성 계산 (며칠간의 평균 변동성)
+            volatilities = []
+            for i in range(max(0, current_idx - 4), current_idx + 1):
+                if i < len(df):
+                    high = df.iloc[i]['high']
+                    low = df.iloc[i]['low']
+                    close = df.iloc[i]['close']
+                    if close > 0:
+                        vol = (high - low) / close
+                        volatilities.append(vol)
+            
+            volatility = sum(volatilities) / len(volatilities) if volatilities else 0.02
+            
+            logger.info(f"KOSPI 추세 분석: 당일={daily_return*100:+.2f}%, 3일평균={weighted_3d*100:+.2f}%, 5일평균={weighted_5d*100:+.2f}%, 최종={close_return*100:+.2f}%")
             
             return close_return, volatility, low_return
             
         except Exception as e:
             logger.warning(f"KOSPI 데이터 가져오기 실패: {e}")
+            import traceback
+            logger.warning(traceback.format_exc())
             # 실패 시 기본값 반환
             return 0.0, 0.02, None
     
@@ -291,12 +372,13 @@ class MarketAnalyzer:
             return None, 0
     
     def _determine_market_sentiment(self, kospi_return: float, volatility: float) -> str:
-        """시장 심리 판단"""
-        if kospi_return > 0.015:  # +1.5% 이상
+        """시장 심리 판단 (며칠간의 추세 반영)"""
+        # 며칠간의 추세를 반영했으므로 기준을 약간 완화
+        if kospi_return > 0.010:  # +1.0% 이상 (완화: 하루 기준 +1.5% → 며칠 추세 +1.0%)
             return 'bull'
-        elif kospi_return < -0.03:  # -3% 미만 (급락장)
+        elif kospi_return < -0.025:  # -2.5% 미만 (완화: 하루 기준 -3% → 며칠 추세 -2.5%)
             return 'crash'
-        elif kospi_return < -0.015:  # -1.5% 미만 (약세장)
+        elif kospi_return < -0.010:  # -1.0% 미만 (완화: 하루 기준 -1.5% → 며칠 추세 -1.0%)
             return 'bear'
         else:
             return 'neutral'
@@ -511,14 +593,14 @@ class MarketAnalyzer:
                           volatility: float, volume_trend: str) -> Dict:
         """시장 상황에 따른 조건 조정"""
         
-        # 기본값 (Tight Preset)
+        # 기본값 (Tight Preset) - 갭/이격 필터 완화
         base_conditions = {
             'rsi_threshold': 58.0,
             'min_signals': 3,
             'macd_osc_min': 0.0,
             'vol_ma5_mult': 1.8,
-            'gap_max': 0.015,
-            'ext_from_tema20_max': 0.015
+            'gap_max': 0.025,  # 1.5% -> 2.5% (완화)
+            'ext_from_tema20_max': 0.025  # 1.5% -> 2.5% (완화)
         }
         
         # 시장 상황별 조정
@@ -529,8 +611,8 @@ class MarketAnalyzer:
                 'min_signals': 2,       # 3 -> 2
                 'macd_osc_min': -5.0,   # 0 -> -5
                 'vol_ma5_mult': 1.5,    # 1.8 -> 1.5
-                'gap_max': 0.02,        # 1.5% -> 2%
-                'ext_from_tema20_max': 0.02
+                'gap_max': 0.030,       # 3.0% (강세장: 추세 강하므로 갭 완화)
+                'ext_from_tema20_max': 0.025  # 2.5% (통일: 과매수는 장세 무관)
             })
             
         elif market_sentiment == 'crash':
@@ -552,8 +634,8 @@ class MarketAnalyzer:
                 'min_signals': 4,       # 3 -> 4
                 'macd_osc_min': 5.0,    # 0 -> 5
                 'vol_ma5_mult': 2.0,    # 1.8 -> 2.0
-                'gap_max': 0.01,        # 1.5% -> 1%
-                'ext_from_tema20_max': 0.01
+                'gap_max': 0.015,       # 1.5% (약세장: 추세 약하므로 갭 엄격)
+                'ext_from_tema20_max': 0.025  # 2.5% (통일: 과매수는 장세 무관)
             })
             
         else:  # neutral
@@ -563,8 +645,8 @@ class MarketAnalyzer:
                 'min_signals': 3,       # 유지
                 'macd_osc_min': 0.0,    # 유지
                 'vol_ma5_mult': 1.6,    # 1.8 -> 1.6
-                'gap_max': 0.018,       # 1.5% -> 1.8%
-                'ext_from_tema20_max': 0.018
+                'gap_max': 0.025,       # 2.5% (중립장: 기본값)
+                'ext_from_tema20_max': 0.025  # 2.5% (통일: 과매수는 장세 무관)
             })
         
         # 변동성 기반 추가 조정 (제한적)
@@ -590,8 +672,8 @@ class MarketAnalyzer:
             'min_signals': 3,
             'macd_osc_min': 0.0,
             'vol_ma5_mult': 1.8,
-            'gap_max': 0.015,
-            'ext_from_tema20_max': 0.015,
+            'gap_max': 0.025,  # 1.5% -> 2.5% (완화)
+            'ext_from_tema20_max': 0.025,  # 1.5% -> 2.5% (완화)
         }
         return MarketCondition(
             date=date,

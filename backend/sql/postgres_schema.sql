@@ -74,6 +74,18 @@ CREATE TABLE IF NOT EXISTS popup_notice (
     updated_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS scanner_settings (
+    id          SERIAL PRIMARY KEY,
+    setting_key TEXT NOT NULL UNIQUE,
+    setting_value TEXT NOT NULL,
+    description TEXT,
+    updated_by  TEXT,
+    updated_at  TIMESTAMP DEFAULT NOW(),
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scanner_settings_key ON scanner_settings(setting_key);
+
 CREATE TABLE IF NOT EXISTS market_conditions (
     date                DATE PRIMARY KEY,
     market_sentiment    TEXT NOT NULL,
@@ -136,12 +148,15 @@ CREATE TABLE IF NOT EXISTS scan_rank (
     details             JSONB,
     returns             JSONB,
     recurrence          JSONB,
+    scanner_version     TEXT NOT NULL DEFAULT 'v1',
     created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (date, code)
+    PRIMARY KEY (date, code, scanner_version)
 );
 
 CREATE INDEX IF NOT EXISTS idx_scan_rank_score ON scan_rank(score);
 CREATE INDEX IF NOT EXISTS idx_scan_rank_market ON scan_rank(market);
+CREATE INDEX IF NOT EXISTS idx_scan_rank_scanner_version ON scan_rank(scanner_version);
+CREATE INDEX IF NOT EXISTS idx_scan_rank_date_version ON scan_rank(date, scanner_version);
 
 CREATE TABLE IF NOT EXISTS portfolio (
     id                  BIGSERIAL PRIMARY KEY,

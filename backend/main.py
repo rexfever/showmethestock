@@ -556,8 +556,14 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     
     # 스캔 실행 (정규화된 날짜 YYYYMMDD 형식 사용)
     print(f"📅 스캔 날짜: {today_as_of} (YYYYMMDD 형식)")
-    items, chosen_step = execute_scan_with_fallback(universe, today_as_of, market_condition)
-    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of})")
+    result = execute_scan_with_fallback(universe, today_as_of, market_condition)
+    if len(result) == 3:
+        items, chosen_step, scanner_version = result
+    else:
+        # 하위 호환성: 기존 코드는 2개 값만 반환
+        items, chosen_step = result
+        scanner_version = None  # 자동 감지
+    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of}, 버전: {scanner_version or 'auto'})")
     
     # 수익률 계산 (병렬 처리) - 모든 스캔에 대해 날짜 명시
     returns_data = {}
@@ -716,8 +722,19 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             'rank': enhanced_rank,
         }
         try:
-            _save_snapshot_db(resp.as_of, resp.items, market_condition)
-            print(f"✅ DB 저장 성공: {resp.as_of}")
+            # save_scan_snapshot 사용 (scanner_version 포함)
+            scan_items_dict = [
+                {
+                    'ticker': it.ticker,
+                    'name': it.name,
+                    'score': it.score,
+                    'score_label': it.score_label,
+                    'flags': it.flags.__dict__ if hasattr(it.flags, '__dict__') else {},
+                }
+                for it in scan_items
+            ]
+            save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
+            print(f"✅ DB 저장 성공: {resp.as_of} (버전: {scanner_version or 'auto'})")
         except Exception as e:
             print(f"❌ DB 저장 실패: {e}")
             # 실패해도 API 응답은 반환
@@ -3480,6 +3497,69 @@ async def apply_trend_params(
             "message": "파라미터가 성공적으로 적용되었습니다. 서버 재시작이 필요할 수 있습니다.",
             "changes": changes,
             "backup_path": os.path.basename(backup_path) if os.path.exists(backup_path) else None
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
+@app.get("/admin/scanner-settings")
+async def get_scanner_settings(admin_user: User = Depends(get_admin_user)):
+    """스캐너 설정 조회 (관리자 전용)"""
+    try:
+        from scanner_settings_manager import get_all_scanner_settings
+        settings = get_all_scanner_settings()
+        return {
+            "ok": True,
+            "settings": settings
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/admin/scanner-settings")
+async def update_scanner_settings(
+    settings: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """스캐너 설정 업데이트 (관리자 전용)"""
+    try:
+        from scanner_settings_manager import set_scanner_setting
+        
+        changes = []
+        allowed_keys = ['scanner_version', 'scanner_v2_enabled']
+        
+        for key, value in settings.items():
+            if key not in allowed_keys:
+                continue
+            
+            # 값 검증
+            if key == 'scanner_version':
+                if value not in ['v1', 'v2']:
+                    return {"ok": False, "error": f"scanner_version은 'v1' 또는 'v2'만 가능합니다."}
+            elif key == 'scanner_v2_enabled':
+                if not isinstance(value, bool):
+                    value = str(value).lower() == 'true'
+                value = 'true' if value else 'false'
+            
+            # DB에 저장
+            from scanner_settings_manager import get_scanner_setting
+            old_value = get_scanner_setting(key)
+            success = set_scanner_setting(
+                key, 
+                str(value), 
+                description=f"스캐너 {key} 설정",
+                updated_by=admin_user.email if hasattr(admin_user, 'email') else None
+            )
+            
+            if success:
+                changes.append(f"{key}: {old_value} → {value}")
+        
+        return {
+            "ok": True,
+            "message": "스캐너 설정이 업데이트되었습니다. 다음 스캔부터 적용됩니다.",
+            "changes": changes
         }
     except Exception as e:
         import traceback
