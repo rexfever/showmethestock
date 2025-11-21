@@ -148,12 +148,15 @@ CREATE TABLE IF NOT EXISTS scan_rank (
     details             JSONB,
     returns             JSONB,
     recurrence          JSONB,
+    scanner_version     TEXT NOT NULL DEFAULT 'v1',
     created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (date, code)
+    PRIMARY KEY (date, code, scanner_version)
 );
 
 CREATE INDEX IF NOT EXISTS idx_scan_rank_score ON scan_rank(score);
 CREATE INDEX IF NOT EXISTS idx_scan_rank_market ON scan_rank(market);
+CREATE INDEX IF NOT EXISTS idx_scan_rank_scanner_version ON scan_rank(scanner_version);
+CREATE INDEX IF NOT EXISTS idx_scan_rank_date_version ON scan_rank(date, scanner_version);
 
 CREATE TABLE IF NOT EXISTS portfolio (
     id                  BIGSERIAL PRIMARY KEY,

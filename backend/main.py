@@ -556,8 +556,14 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     
     # 스캔 실행 (정규화된 날짜 YYYYMMDD 형식 사용)
     print(f"📅 스캔 날짜: {today_as_of} (YYYYMMDD 형식)")
-    items, chosen_step = execute_scan_with_fallback(universe, today_as_of, market_condition)
-    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of})")
+    result = execute_scan_with_fallback(universe, today_as_of, market_condition)
+    if len(result) == 3:
+        items, chosen_step, scanner_version = result
+    else:
+        # 하위 호환성: 기존 코드는 2개 값만 반환
+        items, chosen_step = result
+        scanner_version = None  # 자동 감지
+    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of}, 버전: {scanner_version or 'auto'})")
     
     # 수익률 계산 (병렬 처리) - 모든 스캔에 대해 날짜 명시
     returns_data = {}
@@ -716,8 +722,19 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             'rank': enhanced_rank,
         }
         try:
-            _save_snapshot_db(resp.as_of, resp.items, market_condition)
-            print(f"✅ DB 저장 성공: {resp.as_of}")
+            # save_scan_snapshot 사용 (scanner_version 포함)
+            scan_items_dict = [
+                {
+                    'ticker': it.ticker,
+                    'name': it.name,
+                    'score': it.score,
+                    'score_label': it.score_label,
+                    'flags': it.flags.__dict__ if hasattr(it.flags, '__dict__') else {},
+                }
+                for it in scan_items
+            ]
+            save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
+            print(f"✅ DB 저장 성공: {resp.as_of} (버전: {scanner_version or 'auto'})")
         except Exception as e:
             print(f"❌ DB 저장 실패: {e}")
             # 실패해도 API 응답은 반환

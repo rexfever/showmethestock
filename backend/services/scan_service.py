@@ -23,8 +23,24 @@ def _ensure_scan_rank_table(cursor) -> None:
             close_price DOUBLE PRECISION,
             volume DOUBLE PRECISION,
             change_rate DOUBLE PRECISION,
-            PRIMARY KEY (date, code)
+            scanner_version TEXT NOT NULL DEFAULT 'v1',
+            PRIMARY KEY (date, code, scanner_version)
         )
+    """)
+    
+    # 기존 테이블에 scanner_version 컬럼이 없으면 추가 (마이그레이션)
+    cursor.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'scan_rank' AND column_name = 'scanner_version'
+            ) THEN
+                ALTER TABLE scan_rank ADD COLUMN scanner_version TEXT NOT NULL DEFAULT 'v1';
+                ALTER TABLE scan_rank DROP CONSTRAINT IF EXISTS scan_rank_pkey;
+                ALTER TABLE scan_rank ADD CONSTRAINT scan_rank_pkey PRIMARY KEY (date, code, scanner_version);
+            END IF;
+        END $$;
     """)
 
 
@@ -86,9 +102,28 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
     return recurrence_data
 
 
-def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
-    """스캔 스냅샷 저장"""
+def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version: str = None) -> None:
+    """스캔 스냅샷 저장
+    
+    Args:
+        scan_items: 스캔 결과 리스트
+        today_as_of: 스캔 날짜 (YYYYMMDD)
+        scanner_version: 스캐너 버전 (v1 또는 v2), None이면 현재 활성화된 버전 사용
+    """
     try:
+        # 스캐너 버전 결정 (없으면 현재 활성화된 버전 사용)
+        if scanner_version is None:
+            try:
+                from scanner_settings_manager import get_scanner_version
+                scanner_version = get_scanner_version()
+            except Exception:
+                from config import config
+                scanner_version = getattr(config, 'scanner_version', 'v1')
+        
+        # 버전 검증
+        if scanner_version not in ['v1', 'v2']:
+            scanner_version = 'v1'
+        
         with db_manager.get_cursor(commit=True) as cur_hist:
             _ensure_scan_rank_table(cur_hist)
         
@@ -110,55 +145,84 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str) -> None:
                             "close_price": float(latest.close),
                             "volume": float(latest.volume),
                             "change_rate": float(change_rate),
+                            "scanner_version": scanner_version,
                         })
                 except Exception:
                     continue
         
-            cur_hist.execute("DELETE FROM scan_rank WHERE date = %s", (today_as_of,))
+            # 해당 날짜와 버전의 기존 데이터 삭제
+            cur_hist.execute("DELETE FROM scan_rank WHERE date = %s AND scanner_version = %s", 
+                           (today_as_of, scanner_version))
             
             if not scan_items:
-                print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of}")
+                print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of} (버전: {scanner_version})")
                 cur_hist.execute(
                     """
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
-                     "추천종목 없음", 0.0, 0.0, 0.0)
+                     "추천종목 없음", 0.0, 0.0, 0.0, scanner_version)
                 )
             elif enhanced_rank:
                 cur_hist.executemany("""
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     (
                         r["date"], r["code"], r["name"], r["score"], r["flags"],
-                        r["score_label"], r["close_price"], r["volume"], r["change_rate"]
+                        r["score_label"], r["close_price"], r["volume"], r["change_rate"], r["scanner_version"]
                     )
                     for r in enhanced_rank
                 ])
+                print(f"✅ 스캔 결과 저장 완료: {len(enhanced_rank)}개 종목 (날짜: {today_as_of}, 버전: {scanner_version})")
             else:
-                print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of}")
+                print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of} (버전: {scanner_version})")
                 cur_hist.execute(
                     """
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
-                     "추천종목 없음", 0.0, 0.0, 0.0)
+                     "추천종목 없음", 0.0, 0.0, 0.0, scanner_version)
                 )
     except Exception as e:
         print(f"스냅샷 저장 오류: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, market_condition=None) -> tuple:
-    """Fallback 로직을 적용한 스캔 실행 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)"""
+    """Fallback 로직을 적용한 스캔 실행
+    
+    Returns:
+        tuple: (items, chosen_step, scanner_version)
+            - items: 스캔 결과 리스트
+            - chosen_step: 선택된 fallback step
+            - scanner_version: 사용된 스캐너 버전 (v1 또는 v2)
+    """
+    """Fallback 로직을 적용한 스캔 실행 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)
+    
+    Returns:
+        tuple: (items, chosen_step, scanner_version)
+            - items: 스캔 결과 리스트
+            - chosen_step: 선택된 fallback step
+            - scanner_version: 사용된 스캐너 버전 (v1 또는 v2)
+    """
     chosen_step = None
+    
+    # 현재 사용된 스캐너 버전 확인 (함수 시작 시)
+    try:
+        from scanner_settings_manager import get_scanner_version
+        current_scanner_version = get_scanner_version()
+    except Exception:
+        from config import config
+        current_scanner_version = getattr(config, 'scanner_version', 'v1')
     
     # 급락장 감지 시 추천하지 않음
     if market_condition and market_condition.market_sentiment == 'crash':
         print(f"🔴 급락장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 추천 종목 없음 반환")
-        return [], None
+        return [], None, current_scanner_version
     
     # 약세장에서도 fallback 활성화하되, 장세별 목표 개수 적용
     use_fallback = config.fallback_enable
@@ -183,7 +247,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
             items = scan_with_scanner(universe, {}, date, market_condition)
         except Exception as e:
             print(f"❌ 스캔 오류: {e}")
-            return [], None
+            return [], None, current_scanner_version
         # 10점 이상만 필터링
         items_10_plus = [item for item in items if item.get("score", 0) >= 10]
         items = items_10_plus[:config.top_k]
@@ -202,7 +266,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
             step0_items = scan_with_scanner(universe, {}, date, market_condition)
         except Exception as e:
             print(f"❌ Step 0 스캔 오류: {e}")
-            return [], None
+            return [], None, current_scanner_version
         # 신호 우선 원칙: 신호 충족 = 후보군 (점수 무관), 점수 = 순위 매기기용
         step0_items_filtered = []
         for item in step0_items:
@@ -229,11 +293,11 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
             try:
                 if len(config.fallback_presets) < 2:
                     print(f"❌ fallback_presets 인덱스 오류: Step 1 프리셋 없음")
-                    return [], None
+                    return [], None, current_scanner_version
                 step1_items = scan_with_scanner(universe, config.fallback_presets[1], date, market_condition)
             except Exception as e:
                 print(f"❌ Step 1 스캔 오류: {e}")
-                return [], None
+                return [], None, current_scanner_version
             # 신호 우선 원칙: 신호 충족 = 후보군 (점수 무관), 점수 = 순위 매기기용
             step1_items_filtered = []
             for item in step1_items:
