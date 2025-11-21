@@ -74,6 +74,18 @@ CREATE TABLE IF NOT EXISTS popup_notice (
     updated_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS scanner_settings (
+    id          SERIAL PRIMARY KEY,
+    setting_key TEXT NOT NULL UNIQUE,
+    setting_value TEXT NOT NULL,
+    description TEXT,
+    updated_by  TEXT,
+    updated_at  TIMESTAMP DEFAULT NOW(),
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scanner_settings_key ON scanner_settings(setting_key);
+
 CREATE TABLE IF NOT EXISTS market_conditions (
     date                DATE PRIMARY KEY,
     market_sentiment    TEXT NOT NULL,
