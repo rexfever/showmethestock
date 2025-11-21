@@ -3458,6 +3458,69 @@ async def apply_trend_params(
         return {"ok": False, "error": str(e)}
 
 
+@app.get("/admin/scanner-settings")
+async def get_scanner_settings(admin_user: User = Depends(get_admin_user)):
+    """스캐너 설정 조회 (관리자 전용)"""
+    try:
+        from scanner_settings_manager import get_all_scanner_settings
+        settings = get_all_scanner_settings()
+        return {
+            "ok": True,
+            "settings": settings
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/admin/scanner-settings")
+async def update_scanner_settings(
+    settings: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """스캐너 설정 업데이트 (관리자 전용)"""
+    try:
+        from scanner_settings_manager import set_scanner_setting
+        
+        changes = []
+        allowed_keys = ['scanner_version', 'scanner_v2_enabled']
+        
+        for key, value in settings.items():
+            if key not in allowed_keys:
+                continue
+            
+            # 값 검증
+            if key == 'scanner_version':
+                if value not in ['v1', 'v2']:
+                    return {"ok": False, "error": f"scanner_version은 'v1' 또는 'v2'만 가능합니다."}
+            elif key == 'scanner_v2_enabled':
+                if not isinstance(value, bool):
+                    value = str(value).lower() == 'true'
+                value = 'true' if value else 'false'
+            
+            # DB에 저장
+            from scanner_settings_manager import get_scanner_setting
+            old_value = get_scanner_setting(key)
+            success = set_scanner_setting(
+                key, 
+                str(value), 
+                description=f"스캐너 {key} 설정",
+                updated_by=admin_user.email if hasattr(admin_user, 'email') else None
+            )
+            
+            if success:
+                changes.append(f"{key}: {old_value} → {value}")
+        
+        return {
+            "ok": True,
+            "message": "스캐너 설정이 업데이트되었습니다. 다음 스캔부터 적용됩니다.",
+            "changes": changes
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
 @app.post("/clear-cache")
 async def clear_returns_cache():
     """수익률 계산 캐시를 클리어합니다"""

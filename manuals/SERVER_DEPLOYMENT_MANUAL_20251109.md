@@ -6,11 +6,12 @@
 3. [PostgreSQL 관리](#postgresql-관리)
 4. [백엔드 배포](#백엔드-배포)
 5. [프론트엔드 배포](#프론트엔드-배포)
-6. [서비스 관리](#서비스-관리)
-7. [데이터베이스 백업](#데이터베이스-백업)
-8. [모니터링 및 로그](#모니터링-및-로그)
-9. [문제 해결](#문제-해결)
-10. [긴급 대응](#긴급-대응)
+6. [환경 변수(.env) 관리](#환경-변수env-관리)
+7. [서비스 관리](#서비스-관리)
+8. [데이터베이스 백업](#데이터베이스-백업)
+9. [모니터링 및 로그](#모니터링-및-로그)
+10. [문제 해결](#문제-해결)
+11. [긴급 대응](#긴급-대응)
 
 ---
 
@@ -351,6 +352,271 @@ curl http://localhost:3000
 # http://52.79.145.238:3000
 # 또는 도메인 (설정된 경우)
 ```
+
+---
+
+## 환경 변수(.env) 관리
+
+### 1. .env 파일 개요
+
+**중요**: `.env` 파일은 Git에 추적되지 않습니다 (`.gitignore`에 포함됨). 따라서 서버 배포 시 `.env` 파일은 자동으로 변경되지 않으며, 서버에서 직접 관리해야 합니다.
+
+**위치**:
+- 백엔드: `/home/ubuntu/showmethestock/backend/.env`
+- 프론트엔드: `/home/ubuntu/showmethestock/frontend/.env.local`
+
+### 2. .env 파일 확인
+
+```bash
+# 백엔드 .env 확인
+cd /home/ubuntu/showmethestock/backend
+cat .env
+
+# 특정 변수만 확인
+cat .env | grep -E "GAP_MAX|MIN_SIGNALS|DATABASE_URL"
+
+# 프론트엔드 .env 확인
+cd /home/ubuntu/showmethestock/frontend
+cat .env.local
+```
+
+### 3. .env 파일 수정
+
+#### 3.1 수동 수정
+
+```bash
+# 백엔드 .env 편집
+cd /home/ubuntu/showmethestock/backend
+nano .env  # 또는 vi, vim
+
+# 수정 후 서비스 재시작 필수
+sudo systemctl restart stock-finder-backend
+```
+
+#### 3.2 관리자 API를 통한 수정 (일부 변수만)
+
+일부 스캔 관련 파라미터는 관리자 API를 통해 수정할 수 있습니다:
+
+```bash
+# 관리자 API 엔드포인트: /admin/trend-apply
+# 수정 가능한 변수:
+# - MIN_SIGNALS
+# - RSI_UPPER_LIMIT
+# - VOL_MA5_MULT
+# - GAP_MAX
+# - EXT_FROM_TEMA20_MAX
+```
+
+### 4. .env 파일 백업
+
+#### 4.1 수동 백업
+
+```bash
+cd /home/ubuntu/showmethestock/backend
+
+# 백업 생성 (타임스탬프 포함)
+cp .env .env.backup_$(date +%Y%m%d_%H%M%S)
+
+# 백업 파일 목록 확인
+ls -lth .env.backup* | head -10
+```
+
+#### 4.2 자동 백업
+
+관리자 API(`/admin/trend-apply`)를 통해 변경 시 자동으로 백업이 생성됩니다:
+- 형식: `.env.backup.YYYYMMDD_HHMMSS`
+- 위치: `/home/ubuntu/showmethestock/backend/`
+
+### 5. .env 파일 복원
+
+```bash
+cd /home/ubuntu/showmethestock/backend
+
+# 백업 파일 목록 확인
+ls -lth .env.backup* | head -10
+
+# 특정 백업으로 복원
+cp .env.backup_20251119_115145 .env
+
+# 서비스 재시작
+sudo systemctl restart stock-finder-backend
+```
+
+### 6. .env 변경 이력 확인
+
+```bash
+cd /home/ubuntu/showmethestock/backend
+
+# 백업 파일 목록 (시간순)
+ls -lth .env* | head -10
+
+# 특정 변수의 변경 이력 확인
+for f in .env.backup*; do
+    echo "=== $f ==="
+    grep "^GAP_MAX" "$f" 2>/dev/null || echo "없음"
+done
+
+# 파일 수정 시간 확인
+stat .env | grep -E "Modify|Change"
+```
+
+### 7. .env 파일 검증
+
+#### 7.1 중복 변수 확인
+
+```bash
+cd /home/ubuntu/showmethestock/backend
+
+# 중복된 변수 찾기
+cat .env | grep -v "^#" | grep -v "^$" | cut -d'=' -f1 | sort | uniq -d
+
+# 특정 변수의 중복 확인
+grep -n "^GAP_MAX" .env
+```
+
+#### 7.2 필수 변수 확인
+
+```bash
+cd /home/ubuntu/showmethestock/backend
+
+# 필수 변수 목록
+REQUIRED_VARS=(
+    "DATABASE_URL"
+    "DB_ENGINE"
+    "KIWOOM_APP_KEY"
+    "KIWOOM_APP_SECRET"
+    "JWT_SECRET_KEY"
+)
+
+# 필수 변수 존재 여부 확인
+for var in "${REQUIRED_VARS[@]}"; do
+    if grep -q "^${var}=" .env; then
+        echo "✅ $var 존재"
+    else
+        echo "❌ $var 없음"
+    fi
+done
+```
+
+### 8. .env 파일 관리 규칙
+
+#### 8.1 변경 전 필수 사항
+
+1. **항상 백업 생성**
+   ```bash
+   cp .env .env.backup_$(date +%Y%m%d_%H%M%S)
+   ```
+
+2. **변경 사유 주석 추가**
+   ```bash
+   # .env 파일에 주석 추가
+   # 2025-11-19: GAP_MAX 테스트 설정 제거
+   GAP_MAX=0.015
+   ```
+
+3. **변경 후 서비스 재시작**
+   ```bash
+   sudo systemctl restart stock-finder-backend
+   ```
+
+#### 8.2 테스트 설정 관리
+
+- 테스트용 설정은 사용 후 즉시 제거
+- 테스트 설정에는 명확한 주석 추가
+- 예: `# 9월 4일자 테스트를 위한 갭/이격 조건 완화` (사용 후 제거)
+
+#### 8.3 중복 변수 방지
+
+- 동일한 변수가 여러 번 정의되면 마지막 값이 적용됨
+- 변경 전 중복 확인 필수
+- 예: `GAP_MAX=0.015`와 `GAP_MAX=0.0500`이 동시에 있으면 `0.0500`이 적용됨
+
+### 9. .env 파일 문제 해결
+
+#### 9.1 서비스 시작 실패
+
+```bash
+# .env 파일 문법 오류 확인
+cd /home/ubuntu/showmethestock/backend
+
+# 빈 줄이나 특수문자 확인
+cat -A .env | grep -E "^[^#].*[^=]$"
+
+# systemd 로그에서 .env 관련 오류 확인
+sudo journalctl -u stock-finder-backend | grep -i "env\|invalid"
+```
+
+#### 9.2 변수 값이 적용되지 않을 때
+
+```bash
+# 1. .env 파일 확인
+cat .env | grep "GAP_MAX"
+
+# 2. 중복 변수 확인
+grep -n "^GAP_MAX" .env
+
+# 3. 서비스 재시작
+sudo systemctl restart stock-finder-backend
+
+# 4. 환경 변수 로드 확인
+cd /home/ubuntu/showmethestock/backend
+source venv/bin/activate
+python3 -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GAP_MAX'))"
+```
+
+#### 9.3 백업 파일 정리
+
+```bash
+cd /home/ubuntu/showmethestock/backend
+
+# 30일 이상 된 백업 파일 삭제
+find . -name ".env.backup*" -mtime +30 -delete
+
+# 또는 특정 개수만 유지
+ls -t .env.backup* | tail -n +11 | xargs rm -f
+```
+
+### 10. .env 파일 예시
+
+#### 10.1 백엔드 .env 주요 변수
+
+```bash
+# 데이터베이스
+DB_ENGINE=postgres
+DATABASE_URL=postgresql://stockfinder:stockfinder_pass@localhost/stockfinder
+
+# 키움 API
+KIWOOM_APP_KEY=your_app_key
+KIWOOM_APP_SECRET=your_app_secret
+
+# JWT
+JWT_SECRET_KEY=your_jwt_secret
+
+# 스캔 설정
+MIN_SIGNALS=3
+GAP_MAX=0.015
+RSI_THRESHOLD=58
+VOL_MA5_MULT=2.5
+
+# 스캐너 버전 선택
+SCANNER_VERSION=v1
+SCANNER_V2_ENABLED=false
+```
+
+#### 10.2 프론트엔드 .env.local 주요 변수
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=http://52.79.145.238:8010
+NEXT_PUBLIC_KAKAO_CLIENT_ID=your_kakao_client_id
+```
+
+### 11. 주의사항
+
+1. **Git에 커밋하지 않기**: `.env`는 `.gitignore`에 포함되어 있지만, 실수로 커밋하지 않도록 주의
+2. **민감한 정보 보호**: API 키, 비밀번호 등은 절대 공개하지 않기
+3. **로컬과 서버 독립 관리**: 로컬 `.env`와 서버 `.env`는 서로 독립적으로 관리됨
+4. **배포 시 변경 안 됨**: `git pull` 시 `.env` 파일은 자동으로 변경되지 않음
+5. **변경 후 재시작**: `.env` 변경 후 반드시 서비스 재시작 필요
 
 ---
 
@@ -967,5 +1233,5 @@ echo "========================================="
 
 ---
 
-**마지막 업데이트**: 2025년 11월 9일
+**마지막 업데이트**: 2025년 11월 19일
 

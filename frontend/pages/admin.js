@@ -58,6 +58,13 @@ export default function AdminDashboard() {
   // 장세 분석 상태
   const [marketCondition, setMarketCondition] = useState(null);
   const [marketLoading, setMarketLoading] = useState(false);
+  
+  // 스캐너 설정 상태
+  const [scannerSettings, setScannerSettings] = useState({
+    scanner_version: 'v1',
+    scanner_v2_enabled: false
+  });
+  const [scannerLoading, setScannerLoading] = useState(false);
 
   useEffect(() => {
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
@@ -97,6 +104,7 @@ export default function AdminDashboard() {
       fetchScanDates();
       fetchTrendAnalysis();
       fetchMarketCondition();
+      fetchScannerSettings();
     }
   }, [authChecked, authLoading, isAuthenticated, user, router, router.query.analyze]);
 
@@ -146,6 +154,77 @@ export default function AdminDashboard() {
       console.error('장세 분석 조회 실패:', error);
     } finally {
       setMarketLoading(false);
+    }
+  };
+
+  const fetchScannerSettings = async () => {
+    setScannerLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/admin/scanner-settings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && data.settings) {
+          setScannerSettings({
+            scanner_version: data.settings.scanner_version || 'v1',
+            scanner_v2_enabled: data.settings.scanner_v2_enabled === 'true' || data.settings.scanner_v2_enabled === true
+          });
+        }
+      } else if (response.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('스캐너 설정 조회 실패:', error);
+    } finally {
+      setScannerLoading(false);
+    }
+  };
+  
+  const updateScannerSettings = async () => {
+    setScannerLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/admin/scanner-settings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          scanner_version: scannerSettings.scanner_version,
+          scanner_v2_enabled: scannerSettings.scanner_v2_enabled
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok) {
+          alert(data.message || '스캐너 설정이 업데이트되었습니다.');
+        } else {
+          alert(data.error || '설정 업데이트에 실패했습니다.');
+        }
+      } else if (response.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        router.push('/login');
+      } else {
+        const data = await response.json();
+        alert(data.error || '설정 업데이트에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('스캐너 설정 업데이트 실패:', error);
+      alert('설정 업데이트 중 오류가 발생했습니다.');
+    } finally {
+      setScannerLoading(false);
     }
   };
 
@@ -1327,6 +1406,83 @@ export default function AdminDashboard() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {maintenanceLoading ? '저장 중...' : '설정 저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 스캐너 설정 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">스캐너 설정</h2>
+            <p className="text-sm text-gray-600">스캐너 버전을 선택하고 관리합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            {/* 스캐너 버전 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                스캐너 버전
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={scannerSettings.scanner_version}
+                onChange={(e) => setScannerSettings({
+                  ...scannerSettings,
+                  scanner_version: e.target.value
+                })}
+              >
+                <option value="v1">V1 (기본 스캐너)</option>
+                <option value="v2">V2 (개선된 스캐너)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                V2는 최근 개선된 로직(신호 우선 원칙, 멀티데이 트렌드 분석 등)을 포함합니다
+              </p>
+            </div>
+
+            {/* V2 활성화 스위치 */}
+            {scannerSettings.scanner_version === 'v2' && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">V2 활성화</label>
+                  <p className="text-xs text-gray-500">V2를 사용하려면 활성화해야 합니다</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={scannerSettings.scanner_v2_enabled}
+                    onChange={(e) => setScannerSettings({
+                      ...scannerSettings,
+                      scanner_v2_enabled: e.target.checked
+                    })}
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            )}
+
+            {/* 현재 설정 정보 */}
+            <div className="bg-gray-50 rounded-md p-4">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">현재 버전:</span>
+                  <span className="font-medium">{scannerSettings.scanner_version === 'v2' && scannerSettings.scanner_v2_enabled ? 'V2 (활성화됨)' : 'V1'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">적용 시점:</span>
+                  <span className="font-medium text-blue-600">다음 스캔부터 적용</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 저장 버튼 */}
+            <div className="flex justify-end">
+              <button
+                onClick={updateScannerSettings}
+                disabled={scannerLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {scannerLoading ? '저장 중...' : '설정 저장'}
               </button>
             </div>
           </div>

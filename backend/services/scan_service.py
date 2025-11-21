@@ -5,7 +5,7 @@ import json
 import pandas as pd
 from typing import List, Dict, Optional
 from datetime import datetime
-from scanner import scan_with_preset
+from scanner_factory import scan_with_scanner
 from config import config
 from kiwoom_api import api
 from db_manager import db_manager
@@ -180,7 +180,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         # Fallback 비활성화 시 기존 로직 (10점 이상만)
         print(f"📊 Fallback 비활성화 - 시장 상황 기반 조건으로 스캔 (10점 이상만)")
         try:
-            items = scan_with_preset(universe, {}, date, market_condition)
+            items = scan_with_scanner(universe, {}, date, market_condition)
         except Exception as e:
             print(f"❌ 스캔 오류: {e}")
             return [], None
@@ -199,7 +199,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         # Step 0: 기본 조건 (10점 이상만, 지표 완화 없음)
         print(f"🔄 Step 0: 기본 조건 (10점 이상만)")
         try:
-            step0_items = scan_with_preset(universe, {}, date, market_condition)
+            step0_items = scan_with_scanner(universe, {}, date, market_condition)
         except Exception as e:
             print(f"❌ Step 0 스캔 오류: {e}")
             return [], None
@@ -230,7 +230,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
                 if len(config.fallback_presets) < 2:
                     print(f"❌ fallback_presets 인덱스 오류: Step 1 프리셋 없음")
                     return [], None
-                step1_items = scan_with_preset(universe, config.fallback_presets[1], date, market_condition)
+                step1_items = scan_with_scanner(universe, config.fallback_presets[1], date, market_condition)
             except Exception as e:
                 print(f"❌ Step 1 스캔 오류: {e}")
                 return [], None
@@ -287,7 +287,7 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
                         else:
                             step3_overrides = config.fallback_presets[2]
                             print(f"   설정: {step3_overrides}")
-                            step3_items = scan_with_preset(universe, step3_overrides, date, market_condition)
+                            step3_items = scan_with_scanner(universe, step3_overrides, date, market_condition)
                             # Step 3: 신호 충족 = 점수 무관, 미충족 = 8점 이상
                             step3_items_8_plus = []
                             for item in step3_items:

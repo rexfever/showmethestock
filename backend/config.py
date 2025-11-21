@@ -83,6 +83,30 @@ class Config:
     fallback_target_min: int = int(os.getenv("FALLBACK_TARGET_MIN", "3"))  # 기본 최소 개수
     fallback_target_max: int = int(os.getenv("FALLBACK_TARGET_MAX", "5"))  # 기본 최대 개수
     
+    # === 스캐너 버전 선택 ===
+    # DB에서 우선 조회, 없으면 .env에서 읽기
+    _scanner_settings = None
+    
+    @property
+    def scanner_version(self) -> str:
+        """스캐너 버전 (DB 우선, 없으면 .env)"""
+        try:
+            from scanner_settings_manager import get_scanner_version
+            return get_scanner_version()
+        except Exception:
+            # DB 연결 실패 시 .env 사용
+            return os.getenv("SCANNER_VERSION", "v1")
+    
+    @property
+    def scanner_v2_enabled(self) -> bool:
+        """스캐너 V2 활성화 여부 (DB 우선, 없으면 .env)"""
+        try:
+            from scanner_settings_manager import get_scanner_v2_enabled
+            return get_scanner_v2_enabled()
+        except Exception:
+            # DB 연결 실패 시 .env 사용
+            return os.getenv("SCANNER_V2_ENABLED", "false").lower() == "true"
+    
     # === 시장 상황 연동 설정 ===
     market_analysis_enable: bool = os.getenv("MARKET_ANALYSIS_ENABLE", "true").lower() == "true"
     market_analysis_interval: int = int(os.getenv("MARKET_ANALYSIS_INTERVAL", "60"))  # 분 단위
