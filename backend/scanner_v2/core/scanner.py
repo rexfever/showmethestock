@@ -77,8 +77,9 @@ class ScannerV2:
             if not self.filter_engine.apply_hard_filters(df, stock_name, market_condition):
                 return None
             
-            # 5. 지표 계산
-            df = self.indicator_calculator.compute_all(df)
+            # 5. 지표 계산 (V1 지표 계산 사용)
+            from scanner import compute_indicators
+            df = compute_indicators(df)
             df['name'] = stock_name
             
             # 6. 등락률 계산
@@ -156,7 +157,74 @@ class ScannerV2:
         
         # 점수 순으로 정렬
         results.sort(key=lambda x: x.score, reverse=True)
+        
+        # Global Regime v3 기반 horizon cutoff 적용
+        if market_condition:
+            results = self._apply_regime_cutoff(results, market_condition)
+        
         return results
+    
+    def _apply_regime_cutoff(self, results: List[ScanResult], market_condition: MarketCondition) -> List[ScanResult]:
+        """
+        장세별 horizon cutoff 및 max candidates 적용
+        """
+        # v3 final_regime 우선 사용, 없으면 v1 market_sentiment 사용
+        regime = market_condition.final_regime if market_condition.final_regime is not None else market_condition.market_sentiment
+        
+        # 설정 파일에서 cutoff 및 max_candidates 로드
+        try:
+            from .config_regime import REGIME_CUTOFFS, MAX_CANDIDATES
+            cutoffs = REGIME_CUTOFFS
+            max_candidates = MAX_CANDIDATES
+        except ImportError:
+            # fallback to hardcoded values
+            cutoffs = {
+                'bull': {'swing': 6.0, 'position': 4.3, 'longterm': 5.0},
+                'neutral': {'swing': 6.0, 'position': 4.5, 'longterm': 6.0},
+                'bear': {'swing': 999.0, 'position': 5.5, 'longterm': 6.0},
+                'crash': {'swing': 999.0, 'position': 999.0, 'longterm': 999.0}
+            }
+            max_candidates = {'swing': 20, 'position': 15, 'longterm': 20}
+        
+        regime_cutoffs = cutoffs.get(regime, cutoffs['neutral'])
+        
+        # horizon별 필터링
+        filtered_results = {'swing': [], 'position': [], 'longterm': []}
+        
+        for result in results:
+            score = result.score
+            
+            # swing (단기)
+            if score >= regime_cutoffs['swing']:
+                filtered_results['swing'].append(result)
+            
+            # position (중기)
+            if score >= regime_cutoffs['position']:
+                filtered_results['position'].append(result)
+            
+            # longterm (장기)
+            if score >= regime_cutoffs['longterm']:
+                filtered_results['longterm'].append(result)
+        
+        # max candidates 적용
+        for horizon in filtered_results:
+            if len(filtered_results[horizon]) > max_candidates[horizon]:
+                filtered_results[horizon] = filtered_results[horizon][:max_candidates[horizon]]
+        
+        # 통합 결과 (중복 제거)
+        final_results = []
+        seen_tickers = set()
+        
+        # 우선순위: swing > position > longterm
+        for horizon in ['swing', 'position', 'longterm']:
+            for result in filtered_results[horizon]:
+                if result.ticker not in seen_tickers:
+                    final_results.append(result)
+                    seen_tickers.add(result.ticker)
+        
+        print(f"🎯 장세별 필터링 ({regime}): swing={len(filtered_results['swing'])}, position={len(filtered_results['position'])}, longterm={len(filtered_results['longterm'])}, 최종={len(final_results)}개")
+        
+        return final_results
     
     def _calculate_change_rate(self, df: pd.DataFrame) -> float:
         """등락률 계산"""

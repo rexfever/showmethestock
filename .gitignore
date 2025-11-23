@@ -25,3 +25,6 @@ backup_*/
 *.broken
 *.current
 *.pem
+
+# Documentation with sensitive info
+docs/

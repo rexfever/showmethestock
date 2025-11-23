@@ -1,8 +1,17 @@
-# 데이터베이스 백업 스크립트
+# Scripts Directory
 
-이 디렉토리는 서버의 데이터베이스를 백업하기 위한 스크립트들을 포함합니다.
+이 디렉토리는 서버 운영, 데이터베이스 백업, 백필 작업을 위한 스크립트들을 포함합니다.
 
 ## 📁 파일 목록
+
+### 백필 스크립트 ✨ **NEW**
+- `run_backfill.sh` - 특정 기간 백필 실행
+- `verify_backfill.sh` - 백필 데이터 품질 검증
+- `backfill_monthly.sh` - 월별 백필 실행
+- `backfill_range.py` - 여러 월/분기 백필 실행
+- `README_BACKFILL.md` - 백필 사용 가이드
+
+### 데이터베이스 백업 스크립트
 
 ### `backup-database.sh`
 - **용도**: 데이터베이스 파일들을 일단위로 백업
@@ -25,6 +34,25 @@
 - **사용법**: `./manual-backup.sh`
 
 ## 🚀 사용법
+
+### 백필 작업
+```bash
+# 기본 백필
+./run_backfill.sh 2024-01-01 2024-01-31
+
+# 월별 백필
+./backfill_monthly.sh 2024 1
+
+# 범위 백필
+python backfill_range.py --mode monthly --start-year 2024 --start-month 1 --end-year 2024 --end-month 3
+
+# 검증
+./verify_backfill.sh 2024-01-01 2024-01-31
+```
+
+자세한 백필 사용법은 `README_BACKFILL.md`를 참조하세요.
+
+### 데이터베이스 백업
 
 ### 1. 자동 백업 설정 (서버에서)
 ```bash

@@ -125,3 +125,4 @@ SELECT DISTINCT date FROM scan_rank ORDER BY date DESC LIMIT 10;
 
 
 
+

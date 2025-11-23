@@ -11,6 +11,8 @@ import asyncio
 import glob
 import httpx
 import threading
+import traceback
+import pytz
 from contextlib import asynccontextmanager
 
 try:
@@ -32,29 +34,36 @@ from kakao import send_alert, format_scan_message, format_scan_alert_message
 
 # 공통 함수: scan_rank 테이블 생성
 def create_scan_rank_table(cur):
-    """scan_rank 테이블을 최신 스키마로 생성 (중복 방지)"""
+    """scan_rank 테이블을 최신 스키마로 생성 (버전별 구분 지원)"""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS scan_rank(
-            date TEXT NOT NULL, 
-            code TEXT NOT NULL, 
-            name TEXT, 
-            score REAL, 
-            score_label TEXT,
-            current_price REAL,
-            volume INTEGER,
-            change_rate REAL,
-            market TEXT,
-            strategy TEXT,
-            indicators TEXT,
-            trend TEXT,
+            date TEXT NOT NULL,
+            code TEXT NOT NULL,
+            name TEXT,
+            score DOUBLE PRECISION,
             flags TEXT,
-            details TEXT,
-            returns TEXT,
-            recurrence TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            close_price REAL,
-            PRIMARY KEY(date, code)
+            score_label TEXT,
+            close_price DOUBLE PRECISION,
+            volume DOUBLE PRECISION,
+            change_rate DOUBLE PRECISION,
+            scanner_version TEXT NOT NULL DEFAULT 'v1',
+            PRIMARY KEY (date, code, scanner_version)
         )
+    """)
+    
+    # 기존 테이블에 scanner_version 컬럼이 없으면 추가 (마이그레이션)
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'scan_rank' AND column_name = 'scanner_version'
+            ) THEN
+                ALTER TABLE scan_rank ADD COLUMN scanner_version TEXT NOT NULL DEFAULT 'v1';
+                ALTER TABLE scan_rank DROP CONSTRAINT IF EXISTS scan_rank_pkey;
+                ALTER TABLE scan_rank ADD CONSTRAINT scan_rank_pkey PRIMARY KEY (date, code, scanner_version);
+            END IF;
+        END $$;
     """)
 
 # 공통 함수: market_conditions 테이블 생성
@@ -62,7 +71,7 @@ def create_market_conditions_table(cur):
     """market_conditions 테이블 생성 (시장 상황 분석 결과 저장)"""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS market_conditions(
-            date TEXT NOT NULL PRIMARY KEY,
+            date TEXT NOT NULL,
             market_sentiment TEXT NOT NULL,
             sentiment_score NUMERIC(5,2) DEFAULT 0,
             kospi_return REAL,
@@ -76,18 +85,35 @@ def create_market_conditions_table(cur):
             vol_ma5_mult REAL,
             gap_max REAL,
             ext_from_tema20_max REAL,
-            trend_metrics JSONB DEFAULT '{}'::JSONB,
-            breadth_metrics JSONB DEFAULT '{}'::JSONB,
-            flow_metrics JSONB DEFAULT '{}'::JSONB,
-            sector_metrics JSONB DEFAULT '{}'::JSONB,
-            volatility_metrics JSONB DEFAULT '{}'::JSONB,
+            trend_metrics TEXT DEFAULT '{}',
+            breadth_metrics TEXT DEFAULT '{}',
+            flow_metrics TEXT DEFAULT '{}',
+            sector_metrics TEXT DEFAULT '{}',
+            volatility_metrics TEXT DEFAULT '{}',
             foreign_flow_label TEXT,
             volume_trend_label TEXT,
-            adjusted_params JSONB DEFAULT '{}'::JSONB,
+            adjusted_params TEXT DEFAULT '{}',
             analysis_notes TEXT,
+            scanner_version TEXT NOT NULL DEFAULT 'v1',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (date, scanner_version)
         )
+    """)
+    
+    # 기존 테이블에 scanner_version 컬럼이 없으면 추가 (마이그레이션)
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'market_conditions' AND column_name = 'scanner_version'
+            ) THEN
+                ALTER TABLE market_conditions ADD COLUMN scanner_version TEXT NOT NULL DEFAULT 'v1';
+                ALTER TABLE market_conditions DROP CONSTRAINT IF EXISTS market_conditions_pkey;
+                ALTER TABLE market_conditions ADD CONSTRAINT market_conditions_pkey PRIMARY KEY (date, scanner_version);
+            END IF;
+        END $$;
     """)
 
 # 공통 함수: maintenance_settings 테이블 생성
@@ -129,7 +155,7 @@ def create_popup_notice_table(cur):
 # 서비스 모듈 import
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
 from services.enhanced_report_generator import EnhancedReportGenerator
-from services.scan_service import get_recurrence_data, execute_scan_with_fallback
+from services.scan_service import get_recurrence_data, execute_scan_with_fallback, save_scan_snapshot
 
 # 향상된 보고서 생성기 인스턴스
 report_generator = EnhancedReportGenerator()
@@ -291,9 +317,21 @@ def _as_score_flags(f: dict):
         return None
 
 def _db_path() -> str:
+    # 실제 데이터베이스 파일 경로 확인
+    possible_paths = [
+        os.path.join(os.path.dirname(__file__), 'snapshots.db'),
+        os.path.join(os.path.dirname(__file__), '..', 'snapshots.db'),
+        '/Users/rexsmac/workspace/stock-finder/snapshots.db'
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    
+    # 기본 경로 반환 (없으면 생성됨)
     return os.path.join(os.path.dirname(__file__), 'snapshots.db')
 
-def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
+def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None, scanner_version: str = 'v1'):
     try:
         print(f"💾 데이터베이스 저장 시작: {as_of}, {len(items)}개 항목")
         
@@ -305,12 +343,12 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                     cur.execute("""
                         INSERT INTO market_conditions(
                             date, market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
-                            sector_rotation, foreign_flow, institution_flow, volume_trend,
+                            sector_rotation, foreign_flow, volume_trend,
                             min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                             trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                            foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                            foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes, scanner_version
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (date) DO UPDATE SET
+                        ON CONFLICT (date, scanner_version) DO UPDATE SET
                             market_sentiment = EXCLUDED.market_sentiment,
                             sentiment_score = EXCLUDED.sentiment_score,
                             kospi_return = EXCLUDED.kospi_return,
@@ -318,7 +356,6 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                             rsi_threshold = EXCLUDED.rsi_threshold,
                             sector_rotation = EXCLUDED.sector_rotation,
                             foreign_flow = EXCLUDED.foreign_flow,
-                            institution_flow = EXCLUDED.institution_flow,
                             volume_trend = EXCLUDED.volume_trend,
                             min_signals = EXCLUDED.min_signals,
                             macd_osc_min = EXCLUDED.macd_osc_min,
@@ -331,7 +368,6 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                             sector_metrics = EXCLUDED.sector_metrics,
                             volatility_metrics = EXCLUDED.volatility_metrics,
                             foreign_flow_label = EXCLUDED.foreign_flow_label,
-                            institution_flow_label = EXCLUDED.institution_flow_label,
                             volume_trend_label = EXCLUDED.volume_trend_label,
                             adjusted_params = EXCLUDED.adjusted_params,
                             analysis_notes = EXCLUDED.analysis_notes,
@@ -339,45 +375,44 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                     """, (
                         as_of,
                         market_condition.market_sentiment,
-                        market_condition.sentiment_score,
+                        getattr(market_condition, 'sentiment_score', 0.0),
                         market_condition.kospi_return,
                         market_condition.volatility,
                         market_condition.rsi_threshold,
                         market_condition.sector_rotation,
                         market_condition.foreign_flow,
-                        market_condition.institution_flow,
                         market_condition.volume_trend,
                         market_condition.min_signals,
                         market_condition.macd_osc_min,
                         market_condition.vol_ma5_mult,
                         market_condition.gap_max,
                         market_condition.ext_from_tema20_max,
-                        json.dumps(market_condition.trend_metrics) if market_condition.trend_metrics else None,
-                        json.dumps(market_condition.breadth_metrics) if market_condition.breadth_metrics else None,
-                        json.dumps(market_condition.flow_metrics) if market_condition.flow_metrics else None,
-                        json.dumps(market_condition.sector_metrics) if market_condition.sector_metrics else None,
-                        json.dumps(market_condition.volatility_metrics) if market_condition.volatility_metrics else None,
-                        market_condition.foreign_flow_label,
-                        market_condition.institution_flow_label,
-                        market_condition.volume_trend_label,
-                        json.dumps(market_condition.adjusted_params) if market_condition.adjusted_params else None,
-                        market_condition.analysis_notes
+                        json.dumps(getattr(market_condition, 'trend_metrics', {})),
+                        json.dumps(getattr(market_condition, 'breadth_metrics', {})),
+                        json.dumps(getattr(market_condition, 'flow_metrics', {})),
+                        json.dumps(getattr(market_condition, 'sector_metrics', {})),
+                        json.dumps(getattr(market_condition, 'volatility_metrics', {})),
+                        getattr(market_condition, 'foreign_flow_label', market_condition.foreign_flow),
+                        getattr(market_condition, 'volume_trend_label', market_condition.volume_trend),
+                        json.dumps(getattr(market_condition, 'adjusted_params', {})),
+                        getattr(market_condition, 'analysis_notes', ''),
+                        scanner_version
                     ))
-                print(f"✅ 시장 상황 저장 완료: {as_of} ({market_condition.market_sentiment})")
+                print(f"✅ 시장 상황 저장 완료: {as_of} ({market_condition.market_sentiment}, 버전: {scanner_version})")
             except Exception as e:
                 print(f"⚠️ 시장 상황 저장 실패: {e}")
         
         # 스캔 결과가 0개인 경우 NORESULT 레코드 추가
         if not items:
-            print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {as_of}")
+            print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {as_of} (버전: {scanner_version})")
             with db_manager.get_cursor() as cur:
                 create_scan_rank_table(cur)
-                cur.execute("DELETE FROM scan_rank WHERE date = %s", (as_of,))
+                cur.execute("DELETE FROM scan_rank WHERE date = %s AND scanner_version = %s", (as_of, scanner_version))
                 cur.execute("""
                     INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
-                        market, strategy, indicators, trend, flags, details, returns, recurrence, close_price
-                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        market, strategy, indicators, trend, flags, details, returns, recurrence, close_price, scanner_version
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     as_of, "NORESULT", "추천종목 없음", 0.0, "추천종목 없음",
                     0.0, 0, 0.0, "", "",
@@ -387,9 +422,9 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
                     json.dumps({}, ensure_ascii=False),
                     json.dumps({}, ensure_ascii=False),
                     json.dumps({}, ensure_ascii=False),
-                    0.0
+                    0.0, scanner_version
                 ))
-            print(f"✅ NORESULT 저장 완료: {as_of}")
+            print(f"✅ NORESULT 저장 완료: {as_of} (버전: {scanner_version})")
             return
         
         rows = []
@@ -404,9 +439,9 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
             strategy = getattr(it, 'strategy', '') or ''
 
             # JSON 필드들
-            indicators_json = json.dumps(it.indicators.__dict__ if hasattr(it.indicators, '__dict__') else {}, ensure_ascii=False)
-            trend_json = json.dumps(it.trend.__dict__ if hasattr(it.trend, '__dict__') else {}, ensure_ascii=False)
-            flags_json = json.dumps(it.flags.__dict__ if hasattr(it.flags, '__dict__') else {}, ensure_ascii=False)
+            indicators_json = json.dumps(getattr(it.indicators, '__dict__', {}), ensure_ascii=False)
+            trend_json = json.dumps(getattr(it.trend, '__dict__', {}), ensure_ascii=False)
+            flags_json = json.dumps(getattr(it.flags, '__dict__', {}), ensure_ascii=False)
             details_json = json.dumps({}, ensure_ascii=False)  # 기본값
             returns_json = json.dumps({}, ensure_ascii=False)  # 기본값
             recurrence_json = json.dumps({}, ensure_ascii=False)  # 기본값
@@ -422,18 +457,17 @@ def _save_snapshot_db(as_of: str, items: List[ScanItem], market_condition=None):
             with db_manager.get_cursor() as cur:
                 # 테이블 생성 (없으면)
                 create_scan_rank_table(cur)
-                cur.execute("DELETE FROM scan_rank WHERE date = %s", (as_of,))
+                cur.execute("DELETE FROM scan_rank WHERE date = %s AND scanner_version = %s", (as_of, scanner_version))
                 cur.executemany("""
                     INSERT INTO scan_rank(
                         date, code, name, score, score_label, current_price, volume, change_rate, 
-                        market, strategy, indicators, trend, flags, details, returns, recurrence, close_price
-                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """, rows)
+                        market, strategy, indicators, trend, flags, details, returns, recurrence, close_price, scanner_version
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, [(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16], scanner_version) for row in rows])
         
-        print(f"✅ 데이터베이스 저장 완료: {as_of}")
+        print(f"✅ 데이터베이스 저장 완료: {as_of} (버전: {scanner_version})")
     except Exception as e:
         print(f"❌ 데이터베이스 저장 오류: {e}")
-        import traceback
         traceback.print_exc()
 
 def _log_send(to: str, matched_count: int):
@@ -480,7 +514,6 @@ def _init_positions_table():
 
 def is_trading_day(check_date: str = None):
     """거래일인지 확인 (주말과 공휴일 제외)"""
-    import pytz
     import holidays
     
     if check_date:
@@ -556,14 +589,8 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     
     # 스캔 실행 (정규화된 날짜 YYYYMMDD 형식 사용)
     print(f"📅 스캔 날짜: {today_as_of} (YYYYMMDD 형식)")
-    result = execute_scan_with_fallback(universe, today_as_of, market_condition)
-    if len(result) == 3:
-        items, chosen_step, scanner_version = result
-    else:
-        # 하위 호환성: 기존 코드는 2개 값만 반환
-        items, chosen_step = result
-        scanner_version = None  # 자동 감지
-    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of}, 버전: {scanner_version or 'auto'})")
+    items, chosen_step, scanner_version = execute_scan_with_fallback(universe, today_as_of, market_condition)
+    print(f"📈 스캔 완료: {len(items)}개 종목 발견 (날짜: {today_as_of}, 버전: {scanner_version})")
     
     # 수익률 계산 (병렬 처리) - 모든 스캔에 대해 날짜 명시
     returns_data = {}
@@ -729,12 +756,12 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     'name': it.name,
                     'score': it.score,
                     'score_label': it.score_label,
-                    'flags': it.flags.__dict__ if hasattr(it.flags, '__dict__') else {},
+                    'flags': getattr(it.flags, '__dict__', {}),
                 }
                 for it in scan_items
             ]
             save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
-            print(f"✅ DB 저장 성공: {resp.as_of} (버전: {scanner_version or 'auto'})")
+            print(f"✅ DB 저장 성공: {resp.as_of} (버전: {scanner_version})")
         except Exception as e:
             print(f"❌ DB 저장 실패: {e}")
             # 실패해도 API 응답은 반환
@@ -1709,7 +1736,6 @@ async def get_available_scan_dates():
 async def get_scan_by_date(date: str):
     """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)"""
     try:
-        from datetime import datetime
 
         def _row_to_dict(row):
             if isinstance(row, dict):
@@ -1896,7 +1922,6 @@ async def get_scan_by_date(date: str):
 def get_latest_scan_from_db():
     """DB에서 직접 최신 스캔 결과를 조회하는 함수 (SSR용)"""
     try:
-        from datetime import datetime
         
         def _row_to_dict(row):
             if isinstance(row, dict):
@@ -3112,8 +3137,6 @@ async def get_popup_notice_status():
             
             # 날짜 범위 확인
             if is_enabled and start_date and end_date:
-                from datetime import datetime
-                import pytz
                 try:
                     # 현재 날짜 (KST)
                     kst = pytz.timezone('Asia/Seoul')
@@ -3223,7 +3246,6 @@ async def get_maintenance_status():
             
             # 종료 날짜가 설정되어 있고 현재 날짜가 종료 날짜를 지났으면 자동으로 비활성화
             if is_enabled and end_date:
-                from datetime import datetime
                 try:
                     end_datetime = datetime.strptime(end_date, "%Y%m%d")
                     if datetime.now() > end_datetime:
@@ -3338,7 +3360,6 @@ async def get_trend_analysis(admin_user: User = Depends(get_admin_user)):
     """추세 변동 대응 분석 (관리자 전용)"""
     try:
         import sys
-        import os
         # 경로 추가 (trend_adaptive_scanner.py가 backend 디렉토리에 있음)
         backend_dir = os.path.dirname(os.path.abspath(__file__))
         if backend_dir not in sys.path:
@@ -3400,7 +3421,6 @@ async def get_trend_analysis(admin_user: User = Depends(get_admin_user)):
             }
         }
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return {"ok": False, "error": str(e)}
 
@@ -3413,7 +3433,6 @@ async def apply_trend_params(
     """추세 변동 대응 파라미터 적용 (관리자 전용)"""
     try:
         import subprocess
-        import os
         import shutil
         
         # .env 파일 경로
@@ -3499,7 +3518,6 @@ async def apply_trend_params(
             "backup_path": os.path.basename(backup_path) if os.path.exists(backup_path) else None
         }
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return {"ok": False, "error": str(e)}
 
@@ -3562,7 +3580,6 @@ async def update_scanner_settings(
             "changes": changes
         }
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return {"ok": False, "error": str(e)}
 
@@ -3823,9 +3840,6 @@ async def get_yearly_report(year: int):
 async def get_available_reports(report_type: str):
     """사용 가능한 보고서 목록 조회"""
     try:
-        import os
-        import glob
-        
         if report_type not in ["weekly", "monthly", "quarterly", "yearly"]:
             return {
                 "ok": False,
@@ -4105,7 +4119,6 @@ async def get_quarterly_summary(year: int = 2025):
 async def get_recurring_stocks(days: int = 14, min_appearances: int = 2):
     """재등장 종목 정보를 가져옵니다."""
     try:
-        from datetime import datetime, timedelta
         
         end_dt = datetime.now().date()
         start_dt = (datetime.now() - timedelta(days=days)).date()
@@ -4261,7 +4274,6 @@ def get_test_scan_result(scenario: str):
 async def get_market_validation(date: str = None):
     """장세 데이터 검증 결과 조회 (관리자용)"""
     try:
-        from datetime import datetime, timedelta
         
         # 날짜 파라미터 처리
         if date:

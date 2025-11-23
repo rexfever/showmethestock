@@ -193,14 +193,6 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
 
 
 def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, market_condition=None) -> tuple:
-    """Fallback 로직을 적용한 스캔 실행
-    
-    Returns:
-        tuple: (items, chosen_step, scanner_version)
-            - items: 스캔 결과 리스트
-            - chosen_step: 선택된 fallback step
-            - scanner_version: 사용된 스캐너 버전 (v1 또는 v2)
-    """
     """Fallback 로직을 적용한 스캔 실행 (하이브리드 접근: 10점 이상 우선, 없으면 8점 이상 Fallback)
     
     Returns:
@@ -219,24 +211,53 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         # config는 이미 파일 상단에서 import됨
         current_scanner_version = getattr(config, 'scanner_version', 'v1')
     
-    # 급락장 감지 시 추천하지 않음
-    if market_condition and market_condition.market_sentiment == 'crash':
-        print(f"🔴 급락장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - 추천 종목 없음 반환")
+    # v4 장세 분석 시도 (v3 fallback)
+    if market_condition is None:
+        try:
+            from market_analyzer import market_analyzer
+            market_condition = market_analyzer.analyze_market_condition_v4(date, mode="backtest")
+            if market_condition.version == "regime_v4":
+                print(f"📊 Global Regime v4 사용: {market_condition.final_regime} (trend: {market_condition.global_trend_score:.2f}, risk: {market_condition.global_risk_score:.2f})")
+            elif market_condition.version == "regime_v3":
+                print(f"📊 Global Regime v3 fallback: {market_condition.final_regime} (점수: {market_condition.final_score:.2f})")
+            else:
+                print(f"📊 v1 fallback 사용: {market_condition.market_sentiment}")
+        except Exception as e:
+            print(f"⚠️ 장세 분석 실패, 기본 조건 사용: {e}")
+    
+    # 급락장/crash 감지 시 추천하지 않음
+    crash_detected = False
+    if market_condition:
+        if hasattr(market_condition, 'final_regime') and market_condition.final_regime == 'crash':
+            crash_detected = True
+            print(f"🔴 Global Regime v3 급락장 감지 - 추천 종목 없음 반환")
+        elif market_condition.market_sentiment == 'crash':
+            crash_detected = True
+            kospi_return = getattr(market_condition, 'kospi_return', 0.0)
+            print(f"🔴 급락장 감지 (KOSPI: {kospi_return:.2f}%) - 추천 종목 없음 반환")
+    
+    if crash_detected:
         return [], None, current_scanner_version
     
     # 약세장에서도 fallback 활성화하되, 장세별 목표 개수 적용
     use_fallback = config.fallback_enable
     
-    # 장세별 MIN/MAX 설정 및 검증
-    if market_condition and market_condition.market_sentiment == 'bear':
-        target_min = max(1, config.fallback_target_min_bear)  # 최소 1개
-        target_max = max(target_min, config.fallback_target_max_bear)  # 최소 target_min 이상
-        print(f"⚠️ 약세장 감지 (KOSPI: {market_condition.kospi_return:.2f}%) - Fallback 활성화, 목표: {target_min}~{target_max}개")
+    # 장세별 목표 개수 설정 (v3 final_regime 우선 사용)
+    current_regime = 'neutral'
+    if market_condition:
+        if hasattr(market_condition, 'final_regime') and market_condition.final_regime:
+            current_regime = market_condition.final_regime
+        else:
+            current_regime = market_condition.market_sentiment
+    
+    if current_regime == 'bear':
+        target_min = max(1, config.fallback_target_min_bear)
+        target_max = max(target_min, config.fallback_target_max_bear)
+        print(f"⚠️ {current_regime} 장세 감지 - Fallback 활성화, 목표: {target_min}~{target_max}개")
     else:
-        target_min = max(1, config.fallback_target_min_bull)  # 최소 1개
-        target_max = max(target_min, config.fallback_target_max_bull)  # 최소 target_min 이상
-        if market_condition:
-            print(f"📈 {market_condition.market_sentiment} 장세 (KOSPI: {market_condition.kospi_return:.2f}%) - Fallback 활성화, 목표: {target_min}~{target_max}개")
+        target_min = max(1, config.fallback_target_min_bull)
+        target_max = max(target_min, config.fallback_target_max_bull)
+        print(f"📈 {current_regime} 장세 - Fallback 활성화, 목표: {target_min}~{target_max}개")
     
     print(f"🔄 하이브리드 Fallback 로직 시작: universe={len(universe)}개, fallback_enable={use_fallback}")
     
@@ -393,4 +414,4 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         items = final_items
     
     print(f"🎯 최종 선택: Step {chosen_step}, {len(items)}개 종목")
-    return items, chosen_step
+    return items, chosen_step, current_scanner_version

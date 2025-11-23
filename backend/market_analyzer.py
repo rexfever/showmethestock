@@ -40,6 +40,26 @@ class MarketCondition:
     volume_trend_label: str = ""
     adjusted_params: Dict[str, Any] = field(default_factory=dict)
     analysis_notes: Optional[str] = None
+    
+    # Global Regime v3/v4 필드들
+    final_regime: Optional[str] = None
+    final_score: float = 0.0
+    kr_score: float = 0.0
+    us_prev_score: float = 0.0
+    us_preopen_risk_score: float = 0.0
+    kr_regime: str = ""
+    us_prev_regime: str = ""
+    us_preopen_flag: str = ""
+    intraday_drop: float = 0.0
+    version: str = "regime_v1"  # v1(기존), regime_v3, regime_v4
+    
+    # Global Regime v4 추가 필드들
+    global_trend_score: float = 0.0
+    global_risk_score: float = 0.0
+    kr_trend_score: float = 0.0
+    us_trend_score: float = 0.0
+    kr_risk_score: float = 0.0
+    us_risk_score: float = 0.0
 
 class MarketAnalyzer:
     """시장 상황 분석기"""
@@ -731,6 +751,321 @@ class MarketAnalyzer:
         }
         
         return presets.get(market_sentiment, presets['neutral'])
+
+    def compute_kr_regime_score_v3(self, date: str) -> Dict[str, Any]:
+        """
+        한국 장세 점수 계산 (Global Regime v3)
+        - 기존 analyze_market_condition에서 사용하는 데이터를 재사용
+        - KOSPI200 r1, r5, 20MA 대비 위치, intraday drop 등을 조합
+        """
+        try:
+            # 기존 KOSPI 데이터 가져오기 재사용
+            kospi_return, volatility, kospi_low_return = self._get_kospi_data(date)
+            universe_return, sample_size = self._get_universe_return(date)
+            
+            # intraday drop 계산 (저가 기준)
+            intraday_drop = kospi_low_return if kospi_low_return is not None else kospi_return
+            
+            # 1. Trend Score (-2 ~ +2)
+            kr_trend_score = 0.0
+            if kospi_return > 0.015: kr_trend_score += 1.0
+            if kospi_return > 0.025: kr_trend_score += 1.0
+            if kospi_return < -0.015: kr_trend_score -= 1.0
+            if kospi_return < -0.025: kr_trend_score -= 1.0
+            
+            # 2. Volatility Score (-1 ~ +1)
+            kr_vol_score = 0.0
+            if volatility < 0.02: kr_vol_score += 1.0
+            elif volatility > 0.04: kr_vol_score -= 1.0
+            
+            # 3. Breadth Score (-1 ~ +1) - 유니버스 평균 활용
+            kr_breadth_score = 0.0
+            if universe_return is not None:
+                if universe_return > 0.01: kr_breadth_score += 1.0
+                elif universe_return < -0.01: kr_breadth_score -= 1.0
+            
+            # 4. Intraday Score (-1 ~ +1)
+            kr_intraday_score = 0.0
+            if intraday_drop > -0.01: kr_intraday_score += 1.0
+            elif intraday_drop < -0.025: kr_intraday_score -= 1.0
+            
+            # 총 점수
+            kr_score = kr_trend_score + kr_vol_score + kr_breadth_score + kr_intraday_score
+            
+            # Crash 판단 (우선)
+            if intraday_drop <= -0.025 and kospi_return < -0.02:
+                kr_regime = "crash"
+            elif kr_score >= 2:
+                kr_regime = "bull"
+            elif kr_score <= -2:
+                kr_regime = "bear"
+            else:
+                kr_regime = "neutral"
+            
+            return {
+                "kr_trend_score": kr_trend_score,
+                "kr_vol_score": kr_vol_score,
+                "kr_breadth_score": kr_breadth_score,
+                "kr_intraday_score": kr_intraday_score,
+                "kr_score": kr_score,
+                "kr_regime": kr_regime,
+                "intraday_drop": intraday_drop,
+            }
+            
+        except Exception as e:
+            logger.error(f"한국 장세 점수 계산 실패: {e}")
+            return {
+                "kr_trend_score": 0.0, "kr_vol_score": 0.0,
+                "kr_breadth_score": 0.0, "kr_intraday_score": 0.0,
+                "kr_score": 0.0, "kr_regime": "neutral", "intraday_drop": 0.0
+            }
+    
+    def compute_us_prev_score(self, snapshot: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        미국 전일 장세 점수 계산
+        """
+        # 데이터 검증
+        required_keys = ["spy_r3", "qqq_r3", "spy_r5", "qqq_r5", "vix", "ust10y_change"]
+        if not snapshot.get("valid", False) or not all(key in snapshot for key in required_keys):
+            return {
+                "us_prev_trend_score": 0.0, "us_prev_vol_score": 0.0,
+                "us_prev_macro_score": 0.0, "us_prev_score": 0.0,
+                "us_prev_regime": "neutral"
+            }
+        
+        # Trend Score
+        trend = 0.0
+        spy_r3 = snapshot.get("spy_r3", 0) or 0
+        qqq_r3 = snapshot.get("qqq_r3", 0) or 0
+        spy_r5 = snapshot.get("spy_r5", 0) or 0
+        qqq_r5 = snapshot.get("qqq_r5", 0) or 0
+        
+        if spy_r3 > 0.015: trend += 1.0
+        if qqq_r3 > 0.020: trend += 1.0
+        if spy_r5 < -0.03: trend -= 1.0
+        if qqq_r5 < -0.04: trend -= 1.0
+        
+        # Vol Score
+        vol = 0.0
+        vix = snapshot.get("vix", 20) or 20
+        if vix < 18: vol += 1.0
+        if vix > 30: vol -= 1.0
+        if vix > 35: vol -= 1.0
+        
+        # Macro Score
+        macro = 0.0
+        ust10y_change = snapshot.get("ust10y_change", 0) or 0
+        if ust10y_change > 0.10: macro -= 1.0
+        if ust10y_change < -0.10: macro += 1.0
+        
+        us_prev_score = trend + vol + macro
+        
+        # Regime 결정
+        if vix > 35:
+            us_prev_regime = "crash"
+        elif us_prev_score >= 2:
+            us_prev_regime = "bull"
+        elif us_prev_score <= -2:
+            us_prev_regime = "bear"
+        else:
+            us_prev_regime = "neutral"
+        
+        return {
+            "us_prev_trend_score": trend,
+            "us_prev_vol_score": vol,
+            "us_prev_macro_score": macro,
+            "us_prev_score": us_prev_score,
+            "us_prev_regime": us_prev_regime,
+        }
+    
+    def compute_us_preopen_risk(self, pre: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        미국 pre-open 리스크 점수 계산
+        """
+        if not pre.get("valid", False):
+            return {"us_preopen_risk_score": 0.0, "us_preopen_flag": "none"}
+        
+        risk = 0.0
+        if pre["es_change"] < -0.01: risk += 1.0
+        if pre["es_change"] < -0.02: risk += 1.0
+        if pre["nq_change"] < -0.015: risk += 1.0
+        if pre["nq_change"] < -0.03: risk += 1.0
+        if pre["vix_fut_change"] > 0.05: risk += 1.0
+        if pre["vix_fut_change"] > 0.10: risk += 1.0
+        if pre["usdkrw_change"] > 0.005: risk += 1.0
+        
+        if risk <= 1:
+            flag = "calm"
+        elif risk <= 3:
+            flag = "watch"
+        else:
+            flag = "danger"
+        
+        return {
+            "us_preopen_risk_score": risk,
+            "us_preopen_flag": flag,
+        }
+    
+    def compose_global_regime_v3(self, kr: Dict[str, Any], us_prev: Dict[str, Any], 
+                                us_preopen: Dict[str, Any], mode: str = "backtest") -> Dict[str, Any]:
+        """
+        글로벌 레짐 조합 함수
+        """
+        base_score = 0.6 * kr["kr_score"] + 0.4 * us_prev["us_prev_score"]
+        
+        risk_penalty = 0.0
+        if us_preopen.get("us_preopen_flag") == "watch":
+            risk_penalty += 0.5
+        elif us_preopen.get("us_preopen_flag") == "danger":
+            risk_penalty += 1.0
+        
+        final_score = base_score - risk_penalty
+        
+        # Crash 우선 규칙
+        if us_prev["us_prev_regime"] == "crash":
+            final_regime = "crash"
+        elif kr["kr_regime"] == "crash":
+            final_regime = "crash"
+        elif mode == "live" and us_preopen.get("us_preopen_flag") == "danger":
+            final_regime = "crash"
+        elif final_score >= 2.0:
+            final_regime = "bull"
+        elif final_score <= -2.0:
+            final_regime = "bear"
+        else:
+            final_regime = "neutral"
+        
+        return {
+            "final_score": final_score,
+            "final_regime": final_regime,
+        }
+    
+    def analyze_market_condition_v3(self, date: Optional[str] = None, mode: str = "backtest") -> MarketCondition:
+        """
+        Global Regime Model v3 장세 분석
+        """
+        if date is None:
+            date = datetime.now().strftime('%Y%m%d')
+        
+        try:
+            # 미국 데이터 로드
+            from services.us_market_data import get_us_prev_snapshot, get_us_preopen_snapshot
+            
+            us_prev_snapshot = get_us_prev_snapshot(date)
+            us_prev_scores = self.compute_us_prev_score(us_prev_snapshot)
+            
+            # 한국 데이터 계산
+            kr_scores = self.compute_kr_regime_score_v3(date)
+            
+            # Pre-open 리스크 (live 모드에서만)
+            if mode == "live":
+                pre_snapshot = get_us_preopen_snapshot(date)
+                us_preopen_scores = self.compute_us_preopen_risk(pre_snapshot)
+            else:
+                us_preopen_scores = {"us_preopen_risk_score": 0.0, "us_preopen_flag": "none"}
+            
+            # 글로벌 레짐 조합
+            global_regime = self.compose_global_regime_v3(kr_scores, us_prev_scores, us_preopen_scores, mode)
+            
+            # 기존 분석도 실행 (호환성)
+            base_condition = self.analyze_market_condition(date)
+            
+            # v3 필드 업데이트
+            base_condition.final_regime = global_regime["final_regime"]
+            base_condition.final_score = global_regime["final_score"]
+            base_condition.kr_score = kr_scores["kr_score"]
+            base_condition.us_prev_score = us_prev_scores["us_prev_score"]
+            base_condition.us_preopen_risk_score = us_preopen_scores["us_preopen_risk_score"]
+            base_condition.kr_regime = kr_scores["kr_regime"]
+            base_condition.us_prev_regime = us_prev_scores["us_prev_regime"]
+            base_condition.us_preopen_flag = us_preopen_scores["us_preopen_flag"]
+            base_condition.intraday_drop = kr_scores["intraday_drop"]
+            base_condition.version = "regime_v3"
+            
+            # DB 저장
+            try:
+                from services.regime_storage import upsert_regime
+                regime_data = {
+                    'final_regime': global_regime["final_regime"],
+                    'kr_regime': kr_scores["kr_regime"],
+                    'us_prev_regime': us_prev_scores["us_prev_regime"],
+                    'us_preopen_flag': us_preopen_scores["us_preopen_flag"],
+                    'us_metrics': us_prev_snapshot,
+                    'kr_metrics': kr_scores,
+                    'us_preopen_metrics': us_preopen_scores
+                }
+                upsert_regime(date, regime_data)
+            except Exception as db_error:
+                logger.warning(f"DB 저장 실패, 계속 진행: {db_error}")
+                # DB 저장 실패해도 분석 결과는 반환
+            
+            logger.info(f"Global Regime v3 분석 완료: {date} -> {global_regime['final_regime']} (점수: {global_regime['final_score']:.2f})")
+            return base_condition
+            
+        except Exception as e:
+            logger.error(f"Global Regime v3 분석 실패: {e}")
+            # Fallback to v1
+            base_condition = self.analyze_market_condition(date)
+            base_condition.version = "regime_v1"
+            return base_condition
+    
+    def analyze_market_condition_v4(self, date: Optional[str] = None, mode: str = "backtest") -> MarketCondition:
+        """
+        Global Regime Model v4 장세 분석 (미국 선물 데이터 포함)
+        """
+        if date is None:
+            date = datetime.now().strftime('%Y%m%d')
+        
+        try:
+            from scanner_v2.regime_v4 import analyze_regime_v4
+            from services.regime_storage import upsert_regime
+            
+            # v4 분석 실행
+            v4_result = analyze_regime_v4(date)
+            
+            # 기존 분석도 실행 (호환성)
+            base_condition = self.analyze_market_condition(date)
+            
+            # v4 필드 업데이트
+            base_condition.final_regime = v4_result["final_regime"]
+            base_condition.final_score = v4_result["final_score"]
+            base_condition.kr_score = v4_result["kr_trend_score"]
+            base_condition.us_prev_score = v4_result["us_trend_score"]
+            base_condition.kr_regime = v4_result["kr_regime"]
+            base_condition.us_prev_regime = v4_result["us_prev_regime"]
+            base_condition.global_trend_score = v4_result["global_trend_score"]
+            base_condition.global_risk_score = v4_result["global_risk_score"]
+            base_condition.kr_trend_score = v4_result["kr_trend_score"]
+            base_condition.us_trend_score = v4_result["us_trend_score"]
+            base_condition.kr_risk_score = v4_result["kr_risk_score"]
+            base_condition.us_risk_score = v4_result["us_risk_score"]
+            base_condition.version = "regime_v4"
+            
+            # DB 저장
+            try:
+                regime_data = {
+                    'final_regime': v4_result["final_regime"],
+                    'kr_regime': v4_result["kr_regime"],
+                    'us_prev_regime': v4_result["us_prev_regime"],
+                    'global_trend_score': v4_result["global_trend_score"],
+                    'global_risk_score': v4_result["global_risk_score"],
+                    'kr_trend_score': v4_result["kr_trend_score"],
+                    'us_trend_score': v4_result["us_trend_score"],
+                    'kr_risk_score': v4_result["kr_risk_score"],
+                    'us_risk_score': v4_result["us_risk_score"],
+                    'version': 'regime_v4'
+                }
+                upsert_regime(date, regime_data)
+            except Exception as db_error:
+                logger.warning(f"DB 저장 실패, 계속 진행: {db_error}")
+            
+            logger.info(f"Global Regime v4 분석 완료: {date} -> {v4_result['final_regime']} (trend: {v4_result['global_trend_score']:.2f}, risk: {v4_result['global_risk_score']:.2f})")
+            return base_condition
+            
+        except Exception as e:
+            logger.error(f"Global Regime v4 분석 실패: {e}")
+            # Fallback to v3
+            return self.analyze_market_condition_v3(date, mode)
 
 # 전역 인스턴스
 market_analyzer = MarketAnalyzer()

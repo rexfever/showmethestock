@@ -137,3 +137,4 @@ rows.append((normalized_date, ...))
 
 
 
+

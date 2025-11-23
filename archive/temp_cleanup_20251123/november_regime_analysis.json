@@ -1,0 +1,215 @@
+{
+  "generated_at": "2025-11-23T14:03:19.152471",
+  "period": "2025년 11월",
+  "total_days": 20,
+  "regime_summary": {
+    "bull": 0,
+    "neutral": 11,
+    "bear": 1,
+    "crash": 8
+  },
+  "regime_changes": 7,
+  "agreement_rate": 20.0,
+  "daily_results": [
+    {
+      "date": "20251103",
+      "final_regime": "neutral",
+      "kr_regime": "bull",
+      "us_regime": "neutral",
+      "final_score": 1.4,
+      "kr_score": 3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251104",
+      "final_regime": "neutral",
+      "kr_regime": "neutral",
+      "us_regime": "neutral",
+      "final_score": -1.0,
+      "kr_score": -1.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251105",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251106",
+      "final_regime": "neutral",
+      "kr_regime": "neutral",
+      "us_regime": "neutral",
+      "final_score": 0.19999999999999996,
+      "kr_score": 1.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251107",
+      "final_regime": "neutral",
+      "kr_regime": "bear",
+      "us_regime": "neutral",
+      "final_score": -1.6,
+      "kr_score": -2.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251110",
+      "final_regime": "neutral",
+      "kr_regime": "bull",
+      "us_regime": "neutral",
+      "final_score": 0.7999999999999999,
+      "kr_score": 2.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251111",
+      "final_regime": "neutral",
+      "kr_regime": "neutral",
+      "us_regime": "neutral",
+      "final_score": 0.6,
+      "kr_score": 1.0,
+      "us_score": 0.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251112",
+      "final_regime": "neutral",
+      "kr_regime": "bull",
+      "us_regime": "neutral",
+      "final_score": 1.2,
+      "kr_score": 2.0,
+      "us_score": 0.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251113",
+      "final_regime": "neutral",
+      "kr_regime": "bull",
+      "us_regime": "neutral",
+      "final_score": 0.7999999999999999,
+      "kr_score": 2.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251114",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251117",
+      "final_regime": "neutral",
+      "kr_regime": "bull",
+      "us_regime": "neutral",
+      "final_score": 0.7999999999999999,
+      "kr_score": 2.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251118",
+      "final_regime": "bear",
+      "kr_regime": "bear",
+      "us_regime": "bear",
+      "final_score": -3.0,
+      "kr_score": -3.0,
+      "us_score": -3.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251119",
+      "final_regime": "neutral",
+      "kr_regime": "neutral",
+      "us_regime": "bear",
+      "final_score": -1.4,
+      "kr_score": -1.0,
+      "us_score": -2.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251120",
+      "final_regime": "neutral",
+      "kr_regime": "bull",
+      "us_regime": "neutral",
+      "final_score": 0.7999999999999999,
+      "kr_score": 2.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251121",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251124",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251125",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251126",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251127",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -2.1999999999999997,
+      "kr_score": -3.0,
+      "us_score": -1.0,
+      "version": "regime_v3"
+    },
+    {
+      "date": "20251128",
+      "final_regime": "crash",
+      "kr_regime": "crash",
+      "us_regime": "neutral",
+      "final_score": -1.7999999999999998,
+      "kr_score": -3.0,
+      "us_score": 0.0,
+      "version": "regime_v3"
+    }
+  ]
+}

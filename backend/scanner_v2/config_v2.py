@@ -28,6 +28,7 @@ class ScannerV2Config:
     min_signals: int = int(_get_env_with_fallback("SCANNER_V2_MIN_SIGNALS", "MIN_SIGNALS", "3"))
     macd_osc_min: float = float(_get_env_with_fallback("SCANNER_V2_MACD_OSC_MIN", "MACD_OSC_MIN", "0.0"))
     rsi_threshold: float = float(_get_env_with_fallback("SCANNER_V2_RSI_THRESHOLD", "RSI_THRESHOLD", "58"))
+    rsi_upper_limit: float = float(_get_env_with_fallback("SCANNER_V2_RSI_UPPER_LIMIT", "RSI_UPPER_LIMIT", "83"))
     rsi_upper_limit_offset: float = float(os.getenv("SCANNER_V2_RSI_UPPER_LIMIT_OFFSET", "25.0"))  # V2 전용
     
     # === 갭/이격 필터 ===
@@ -54,6 +55,13 @@ class ScannerV2Config:
     
     # === 위험도 필터 ===
     risk_score_threshold: int = int(_get_env_with_fallback("SCANNER_V2_RISK_SCORE_THRESHOLD", "RISK_SCORE_THRESHOLD", "4"))
+    
+    # === 데이터 설정 ===
+    ohlcv_count: int = int(_get_env_with_fallback("SCANNER_V2_OHLCV_COUNT", "OHLCV_COUNT", "120"))
+    
+    # === 기타 V1 호환성 ===
+    rsi_setup_min: float = float(_get_env_with_fallback("SCANNER_V2_RSI_SETUP_MIN", "RSI_SETUP_MIN", "57"))
+    market_analysis_enable: bool = _get_env_with_fallback("SCANNER_V2_MARKET_ANALYSIS_ENABLE", "MARKET_ANALYSIS_ENABLE", "true").lower() == "true"
     
     # === 점수 가중치 ===
     score_w_cross: int = int(_get_env_with_fallback("SCANNER_V2_SCORE_W_CROSS", "SCORE_W_CROSS", "3"))

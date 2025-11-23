@@ -7,3 +7,4 @@ from .core.scanner import ScanResult
 
 __all__ = ['ScannerV2', 'ScanResult']
 
+
