@@ -19,7 +19,7 @@ class KiwoomAPI:
         self._name_to_code: Dict[str, str] = {}
         # OHLCV 캐시: {(code, count, base_dt): (df, timestamp)}
         self._ohlcv_cache: Dict[Tuple[str, int, Optional[str]], Tuple[pd.DataFrame, float]] = {}
-        self._cache_ttl = 300  # 5분 (초)
+        self._cache_ttl = 300  # 기본 5분 (초) - 상황에 따라 동적으로 계산됨
         self._cache_maxsize = 1000  # 최대 캐시 항목 수
         # 모의 데이터 세트는 항상 준비 (실패 시 폴백용)
         self._mock_kospi = [
@@ -254,6 +254,48 @@ class KiwoomAPI:
         """캐시 키 생성"""
         return (code, count, base_dt)
     
+    def _calculate_ttl(self, base_dt: Optional[str]) -> int:
+        """상황에 맞는 TTL 계산
+        
+        - 과거 날짜: 1년 (변경되지 않음)
+        - 장중: 1분 (실시간성 필요)
+        - 장 마감 후: 24시간 (다음 거래일까지)
+        """
+        if base_dt:
+            try:
+                from datetime import datetime
+                base_date = datetime.strptime(base_dt, "%Y%m%d").date()
+                now_date = datetime.now().date()
+                if base_date < now_date:
+                    # 과거 날짜: 1년 캐싱
+                    return 365 * 24 * 3600
+            except:
+                pass
+        
+        # 현재 날짜: 장중 여부에 따라
+        if self._is_market_open():
+            return 60  # 장중: 1분
+        else:
+            return 24 * 3600  # 장 마감 후: 24시간
+    
+    def _is_market_open(self) -> bool:
+        """장중 여부 확인 (09:00 ~ 15:30, 평일만)"""
+        from datetime import datetime
+        import pytz
+        
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        
+        # 주말 제외
+        if now.weekday() >= 5:  # 토요일(5), 일요일(6)
+            return False
+        
+        hour = now.hour
+        minute = now.minute
+        
+        # 장중: 09:00 ~ 15:30
+        return (9 <= hour < 15) or (hour == 15 and minute <= 30)
+    
     def _get_cached_ohlcv(self, code: str, count: int, base_dt: Optional[str]) -> Optional[pd.DataFrame]:
         """캐시에서 OHLCV 데이터 조회"""
         cache_key = self._get_cache_key(code, count, base_dt)
@@ -263,8 +305,11 @@ class KiwoomAPI:
         
         cached_df, timestamp = self._ohlcv_cache[cache_key]
         
+        # 동적 TTL 계산
+        ttl = self._calculate_ttl(base_dt)
+        
         # TTL 확인
-        if time.time() - timestamp > self._cache_ttl:
+        if time.time() - timestamp > ttl:
             del self._ohlcv_cache[cache_key]
             return None
         
