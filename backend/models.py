@@ -84,6 +84,9 @@ class ScanItem(BaseModel):
     recurrence: Optional[dict] = None
     # 수익률 정보 (과거 스캔 검증용)
     returns: Optional[dict] = None
+    # 현재가 및 등락률 (프론트엔드 호환성)
+    current_price: Optional[float] = None
+    change_rate: Optional[float] = None
 
 
 class ScanResponse(BaseModel):

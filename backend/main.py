@@ -642,6 +642,8 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 details={**item["flags"].get("details", {}), "close": item["indicators"]["close"], "recurrence": recurrence},
                 strategy=item["strategy"],
                 returns=returns,
+                current_price=item["indicators"]["close"],  # 현재가
+                change_rate=cr,  # 등락률
             )
             scan_items.append(scan_item)
         except Exception as e:
