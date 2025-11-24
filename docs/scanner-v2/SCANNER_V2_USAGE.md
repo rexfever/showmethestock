@@ -13,17 +13,48 @@
 
 ## 설정 방법
 
-### 1. 환경 변수 설정
+### 1. DB 기반 설정 관리 (권장)
 
-`.env` 파일에 다음 설정 추가:
+스캐너 버전은 **DB에서 관리**됩니다. 관리자 UI 또는 API를 통해 설정할 수 있습니다.
+
+#### 관리자 UI 사용
+
+1. 관리자 페이지 접속: `/admin`
+2. "스캐너 설정" 섹션에서 버전 선택
+3. V1 또는 V2 선택
+4. 저장
+
+#### API 사용
+
+**설정 조회:**
+```bash
+GET /admin/scanner-settings
+Authorization: Bearer <admin_token>
+```
+
+**설정 업데이트:**
+```bash
+POST /admin/scanner-settings
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "scanner_version": "v2",
+  "scanner_v2_enabled": true
+}
+```
+
+### 2. 환경 변수 설정 (Fallback)
+
+DB 설정이 없거나 DB 연결 실패 시 `.env` 파일의 설정을 사용합니다:
 
 ```bash
-# 스캐너 버전 선택
+# 스캐너 버전 선택 (DB 우선, 없으면 .env 사용)
 SCANNER_VERSION=v2
 SCANNER_V2_ENABLED=true
 ```
 
-### 2. 스캐너 V2 설정 (선택사항)
+### 3. 스캐너 V2 설정 (선택사항)
 
 **중요**: 스캐너 V2는 **V1 설정을 기본으로 공유**합니다. V2 전용 설정(`SCANNER_V2_` 접두사)이 없으면 V1 설정을 자동으로 사용합니다.
 
@@ -48,11 +79,12 @@ SCANNER_V2_MIN_SIGNALS=4  # V2만 4개 필요
 ```
 
 **설정 우선순위:**
-1. `SCANNER_V2_*` (V2 전용) - 최우선
-2. `*` (V1 설정) - Fallback
-3. 기본값 - 최종 Fallback
+1. **DB 설정** (`scanner_settings` 테이블) - 최우선
+2. `SCANNER_V2_*` (V2 전용 환경 변수)
+3. `*` (V1 설정 환경 변수) - Fallback
+4. 기본값 - 최종 Fallback
 
-자세한 내용은 `docs/scanner-v2/CONFIG_SHARING.md`를 참고하세요.
+자세한 내용은 `docs/scanner-v2/CONFIG_SHARING.md`와 `docs/database/SCANNER_SETTINGS_TABLE.md`를 참고하세요.
 
 ## 사용 방법
 
@@ -80,25 +112,53 @@ results = scanner.scan(universe, date, market_condition)
 
 ### V1 → V2 전환
 
+**방법 1: 관리자 UI 사용 (권장)**
+1. 관리자 페이지 접속: `/admin`
+2. "스캐너 설정" 섹션에서 "V2" 선택
+3. 저장
+4. 즉시 반영 (서버 재시작 불필요)
+
+**방법 2: API 사용**
+```bash
+POST /admin/scanner-settings
+{
+  "scanner_version": "v2",
+  "scanner_v2_enabled": true
+}
+```
+
+**방법 3: .env 파일 사용 (Fallback)**
 1. `.env` 파일 수정:
    ```bash
    SCANNER_VERSION=v2
    SCANNER_V2_ENABLED=true
    ```
-
-2. 스캐너 V2 전용 설정 추가 (선택사항)
-
-3. 서버 재시작
+2. 서버 재시작
 
 ### V2 → V1 전환
 
+**방법 1: 관리자 UI 사용 (권장)**
+1. 관리자 페이지 접속: `/admin`
+2. "스캐너 설정" 섹션에서 "V1" 선택
+3. 저장
+4. 즉시 반영 (서버 재시작 불필요)
+
+**방법 2: API 사용**
+```bash
+POST /admin/scanner-settings
+{
+  "scanner_version": "v1",
+  "scanner_v2_enabled": false
+}
+```
+
+**방법 3: .env 파일 사용 (Fallback)**
 1. `.env` 파일 수정:
    ```bash
    SCANNER_VERSION=v1
    # 또는
    SCANNER_V2_ENABLED=false
    ```
-
 2. 서버 재시작
 
 ## 설정 분리

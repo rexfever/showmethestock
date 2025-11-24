@@ -51,8 +51,32 @@
 - `scan_logic_analysis.md` - 스캔 로직 분석
 - `db_migration_plan.md` - 데이터베이스 마이그레이션 계획
 
+### 📁 database/ - 데이터베이스 스키마
+데이터베이스 테이블 스키마 및 관리 문서
+
+- `SCANNER_SETTINGS_TABLE.md` - 스캐너 설정 테이블
+- `POPUP_NOTICE_TABLE.md` - 팝업 공지 테이블
+- `SCAN_RANK_TABLE.md` - 스캔 결과 테이블
+
+### 📁 deployment/ - 배포 관련
+배포 체크리스트 및 가이드
+
+- `DEPLOYMENT_CHECKLIST_SCANNER_V2.md` - 스캐너 V2 배포 체크리스트
+
+### 📁 scanner-v2/ - 스캐너 V2 관련
+스캐너 V2 설계 및 사용 가이드
+
+- `SCANNER_V2_DESIGN.md` - 스캐너 V2 설계 문서
+- `SCANNER_V2_USAGE.md` - 스캐너 V2 사용 가이드
+- `V1_VS_V2_COMPARISON.md` - V1과 V2 비교
+- `CONFIG_SHARING.md` - 설정 공유 정책
+
 ### 📁 other/ - 기타 문서
 기타 문서들
+
+### 📄 루트 문서
+- `SCAN_LOGIC_IMPROVEMENTS_SUMMARY.md` - 스캔 로직 개선 요약
+- `API_ENDPOINTS.md` - API 엔드포인트 문서
 
 ---
 
@@ -72,5 +96,5 @@
 
 ---
 
-**마지막 업데이트**: 2025년 11월 14일
+**마지막 업데이트**: 2025년 11월 24일
 

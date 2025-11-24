@@ -15,7 +15,7 @@
 - `users`: 로그인/소셜 사용자 정보  
   - `AUTOINCREMENT`, `TEXT` 기반 타임스탬프, boolean 필드는 `BOOLEAN DEFAULT 0`
 - `subscriptions`, `payments`: 정규 FK 제약 선언(`FOREIGN KEY`)  
-- `scan_rank`: 일자·종목별 스캔 결과 (복합 PK `PRIMARY KEY(date, code)`)
+- `scan_rank`: 일자·종목별 스캔 결과 (복합 PK `PRIMARY KEY(date, code, scanner_version)`)
 - `positions`, `positions_old`, `send_logs`, `popup_notice`, `maintenance_settings`, `market_conditions`, `scan_rank_backup`
 - 모든 날짜/시간 필드가 `TEXT` 혹은 `TIMESTAMP` 문자열로 저장되고 있음
 - BOOLEAN은 0/1로 저장되며 SQLite에서는 캐스팅 없이 사용됨
@@ -39,7 +39,7 @@
 | PK | `INTEGER PRIMARY KEY AUTOINCREMENT` | `SERIAL` / `BIGSERIAL` | 시퀀스 자동 생성 확인 |
 | 날짜·시간 | `TEXT DEFAULT CURRENT_TIMESTAMP` | `TIMESTAMP WITH TIME ZONE DEFAULT NOW()` | 기존 데이터 `YYYY-MM-DD` 등 문자열 → 날짜 변환 필요 |
 | 불리언 | `BOOLEAN DEFAULT 0/1` | `BOOLEAN DEFAULT FALSE/TRUE` | 데이터 로드시 `0/1` → `false/true` 변환 |
-| 복합 PK (`scan_rank`) | `PRIMARY KEY(date, code)` | 동일하게 유지 | 다만 `date`를 `DATE` 타입으로 변경 권장 |
+| 복합 PK (`scan_rank`) | `PRIMARY KEY(date, code, scanner_version)` | `scanner_version` 컬럼 추가 | V1과 V2 스캔 결과를 별도로 저장 |
 | FK 제약 | 선언되어 있으나 SQLite에서 느슨하게 동작 | PostgreSQL에서 강제 | 기존 데이터 무결성 검증 필요 |
 | 텍스트 | `TEXT` | `TEXT` 또는 `VARCHAR(n)` | 길이 제한 필요한 필드는 재검토 |
 | JSON 칼럼 | 문자열(JSON) 저장 | `JSONB` 고려 | `indicators`, `details`, `returns` 등 JSON 문자열 가능성 |
