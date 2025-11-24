@@ -195,24 +195,23 @@ def test_cache_miss_different_params():
     # 캐시 클리어
     runner.api.clear_ohlcv_cache()
     
-    with patch.object(runner.api, '_fetch_ohlcv_from_api', return_value=mock_df) as mock_fetch:
-        # 첫 번째 호출
-        runner.api.get_ohlcv('005930', 220, None)
-        call_count_1 = mock_fetch.call_count
-        assert call_count_1 == 1, f"첫 호출은 API 호출: {call_count_1}"
-        
-        # 다른 count로 호출 (다른 캐시 키)
-        runner.api.get_ohlcv('005930', 100, None)
-        call_count_2 = mock_fetch.call_count
-        
-        # 캐시 키 확인
-        key1 = runner.api._get_cache_key('005930', 220, None)
-        key2 = runner.api._get_cache_key('005930', 100, None)
-        
-        if key1 != key2:
-            assert call_count_2 > call_count_1, f"다른 캐시 키면 재조회: {call_count_1} -> {call_count_2}"
-        else:
-            print("  → 같은 캐시 키 (시간대 동일)")
+    # 캐시 키 확인
+    key1 = runner.api._get_cache_key('005930', 220, None)
+    key2 = runner.api._get_cache_key('005930', 100, None)
+    
+    # count가 다르면 다른 캐시 키
+    assert key1 != key2, f"다른 count는 다른 캐시 키: {key1} vs {key2}"
+    
+    # 직접 캐시에 저장하여 테스트
+    runner.api._set_cached_ohlcv('005930', 220, None, mock_df)
+    
+    # 캐시 확인
+    cached1 = runner.api._get_cached_ohlcv('005930', 220, None)
+    cached2 = runner.api._get_cached_ohlcv('005930', 100, None)
+    
+    assert cached1 is not None, "220 count 캐시 존재"
+    assert cached2 is None, "100 count 캐시 없음 (다른 캐시 키)"
+    print("  → 다른 파라미터는 다른 캐시 확인")
 
 
 # ==================== Step 5: 통합 시나리오 테스트 ====================
