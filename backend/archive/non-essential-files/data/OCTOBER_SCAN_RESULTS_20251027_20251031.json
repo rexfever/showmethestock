@@ -1,0 +1,37 @@
+[
+  {
+    "date": "20251027",
+    "matched_count": 0,
+    "items": [],
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /scan?date=20251027&save_snapshot=True&kospi_limit=200&kosdaq_limit=200 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1069d4920>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+  },
+  {
+    "date": "20251028",
+    "matched_count": 0,
+    "items": [],
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /scan?date=20251028&save_snapshot=True&kospi_limit=200&kosdaq_limit=200 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106e6b020>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+  },
+  {
+    "date": "20251029",
+    "matched_count": 0,
+    "items": [],
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /scan?date=20251029&save_snapshot=True&kospi_limit=200&kosdaq_limit=200 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106e6b7d0>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+  },
+  {
+    "date": "20251030",
+    "matched_count": 0,
+    "items": [],
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /scan?date=20251030&save_snapshot=True&kospi_limit=200&kosdaq_limit=200 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106e6bf80>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+  },
+  {
+    "date": "20251031",
+    "matched_count": 0,
+    "items": [],
+    "success": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8010): Max retries exceeded with url: /scan?date=20251031&save_snapshot=True&kospi_limit=200&kosdaq_limit=200 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106eb0770>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+  }
+]
