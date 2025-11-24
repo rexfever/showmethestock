@@ -293,7 +293,36 @@ class KiwoomAPI:
         if self._is_market_open():
             return 60  # 장중: 1분
         else:
-            return 24 * 3600  # 장 마감 후: 24시간
+            # 장 마감 후: 다음 거래일 시작 전까지
+            return self._get_ttl_until_next_trading_day()
+    
+    def _get_ttl_until_next_trading_day(self) -> int:
+        """다음 거래일 시작 전까지의 TTL 계산"""
+        from datetime import datetime, timedelta
+        import pytz
+        import holidays
+        
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        
+        # 다음 거래일 찾기
+        next_date = now.date() + timedelta(days=1)
+        kr_holidays = holidays.SouthKorea()
+        
+        # 주말과 공휴일 제외
+        while next_date.weekday() >= 5 or next_date in kr_holidays:
+            next_date += timedelta(days=1)
+        
+        # 다음 거래일 09:00까지의 시간 계산
+        next_trading_day_start = KST.localize(
+            datetime.combine(next_date, datetime.min.time().replace(hour=9))
+        )
+        
+        # 현재 시간부터 다음 거래일 09:00까지의 초
+        ttl_seconds = int((next_trading_day_start - now).total_seconds())
+        
+        # 최소 1시간, 최대 72시간 (주말 건너뛰는 경우)
+        return max(3600, min(ttl_seconds, 72 * 3600))
     
     def _is_market_open(self) -> bool:
         """장중 여부 확인 (09:00 ~ 15:30, 평일만)"""
