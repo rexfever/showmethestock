@@ -1759,7 +1759,13 @@ async def get_scan_by_date(date: str):
             score_label = data.get("score_label")
             current_price = data.get("current_price")
             volume = data.get("volume")
-            change_rate = data.get("change_rate")
+            # change_rate 정규화: 소수로 저장된 경우 퍼센트로 변환 (절댓값이 1보다 작으면 소수로 간주)
+            change_rate_raw = data.get("change_rate") or 0.0
+            change_rate = float(change_rate_raw)
+            if abs(change_rate) < 1.0 and change_rate != 0.0:
+                # 소수로 저장된 경우 퍼센트로 변환
+                change_rate = change_rate * 100
+            change_rate = round(change_rate, 2)  # 퍼센트로 정규화, 소수점 2자리
             market = data.get("market")
             strategy = data.get("strategy")
             
@@ -1969,6 +1975,13 @@ def get_latest_scan_from_db():
             returns = data.get("returns")
             recurrence = data.get("recurrence")
             
+            # change_rate 정규화: 소수로 저장된 경우 퍼센트로 변환 (절댓값이 1보다 작으면 소수로 간주)
+            change_rate_raw = data.get("change_rate") or 0.0
+            change_rate = float(change_rate_raw)
+            if abs(change_rate) < 1.0 and change_rate != 0.0:
+                # 소수로 저장된 경우 퍼센트로 변환
+                change_rate = change_rate * 100
+            
             item = {
                 "ticker": data.get("code"),
                 "name": data.get("name"),
@@ -1976,7 +1989,7 @@ def get_latest_scan_from_db():
                 "score_label": data.get("score_label"),
                 "current_price": data.get("current_price"),
                 "volume": data.get("volume"),
-                "change_rate": data.get("change_rate"),
+                "change_rate": round(change_rate, 2),  # 퍼센트로 정규화, 소수점 2자리
                 "market": data.get("market"),
                 "strategy": data.get("strategy"),
                 "indicators": json.loads(indicators) if isinstance(indicators, str) and indicators else (indicators or {}),
