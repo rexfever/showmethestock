@@ -32,10 +32,10 @@ from kakao import send_alert, format_scan_message, format_scan_alert_message
 
 # 공통 함수: scan_rank 테이블 생성
 def create_scan_rank_table(cur):
-    """scan_rank 테이블을 최신 스키마로 생성 (중복 방지)"""
+    """scan_rank 테이블을 최신 스키마로 생성 (실제 DB 스키마와 일치: DATE 타입 사용)"""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS scan_rank(
-            date TEXT NOT NULL, 
+            date DATE NOT NULL, 
             code TEXT NOT NULL, 
             name TEXT, 
             score REAL, 
@@ -53,7 +53,8 @@ def create_scan_rank_table(cur):
             recurrence TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             close_price REAL,
-            PRIMARY KEY(date, code)
+            scanner_version TEXT NOT NULL DEFAULT 'v1',
+            PRIMARY KEY(date, code, scanner_version)
         )
     """)
 
@@ -112,17 +113,17 @@ def create_maintenance_settings_table(cur):
         """)
 
 def create_popup_notice_table(cur):
-    """popup_notice 테이블 생성"""
+    """popup_notice 테이블 생성 (실제 DB 스키마와 일치)"""
     cur.execute("""
         CREATE TABLE IF NOT EXISTS popup_notice(
-            id SERIAL PRIMARY KEY,
-            is_enabled BOOLEAN DEFAULT FALSE,
+            id BIGSERIAL PRIMARY KEY,
+            is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
             title TEXT NOT NULL,
             message TEXT NOT NULL,
-            start_date TEXT NOT NULL,
-            end_date TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW(),
-            updated_at TIMESTAMP DEFAULT NOW()
+            start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+            end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
         )
     """)
 
@@ -1728,16 +1729,17 @@ async def get_scan_by_date(date: str):
         except ValueError:
             return {"ok": False, "error": "날짜 형식이 올바르지 않습니다. YYYYMMDD 형식을 사용해주세요."}
         
-        target_date = datetime.strptime(formatted_date, "%Y%m%d").date()
+        from date_helper import yyyymmdd_to_date
+        target_date = yyyymmdd_to_date(formatted_date)
         
         with db_manager.get_cursor(commit=False) as cur:
             cur.execute("""
                 SELECT code, name, score, score_label, close_price AS current_price, volume,
                        change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
                 FROM scan_rank
-                WHERE date = %s OR date = %s
+                WHERE date = %s
                 ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
-            """, (target_date, formatted_date))
+            """, (target_date,))
             rows = cur.fetchall()
         
         if not rows:
@@ -3084,6 +3086,12 @@ async def update_popup_notice(
 ):
     """팝업 공지 설정 업데이트"""
     try:
+        from date_helper import yyyymmdd_to_timestamp
+        
+        # YYYYMMDD 문자열을 TIMESTAMP WITH TIME ZONE으로 변환
+        start_dt = yyyymmdd_to_timestamp(notice.start_date, hour=0, minute=0, second=0)
+        end_dt = yyyymmdd_to_timestamp(notice.end_date, hour=23, minute=59, second=59)
+        
         with db_manager.get_connection() as conn:
             cur = conn.cursor()
             create_popup_notice_table(cur)
@@ -3095,11 +3103,16 @@ async def update_popup_notice(
                 notice.is_enabled,
                 notice.title,
                 notice.message,
-                notice.start_date,
-                notice.end_date
+                start_dt,
+                end_dt
             ))
             conn.commit()
         return {"message": "팝업 공지 설정이 업데이트되었습니다."}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"날짜 형식 오류: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -3110,6 +3123,8 @@ async def update_popup_notice(
 async def get_popup_notice_status():
     """팝업 공지 상태 조회 (공개 API)"""
     try:
+        from date_helper import timestamp_to_yyyymmdd
+        
         with db_manager.get_cursor() as cur:
             create_popup_notice_table(cur)
             cur.execute("""
@@ -3122,46 +3137,23 @@ async def get_popup_notice_status():
             is_enabled = bool(row[0])
             title = row[1]
             message = row[2]
-            start_date_raw = row[3]
-            end_date_raw = row[4]
+            start_date_raw = row[3]  # TIMESTAMP WITH TIME ZONE 객체
+            end_date_raw = row[4]    # TIMESTAMP WITH TIME ZONE 객체
             
-            # 날짜 형식 변환 (TIMESTAMP 객체 또는 문자열을 YYYYMMDD 형식으로)
-            start_date = None
-            end_date = None
+            # TIMESTAMP 객체를 YYYYMMDD 문자열로 변환
+            start_date = timestamp_to_yyyymmdd(start_date_raw) if start_date_raw else None
+            end_date = timestamp_to_yyyymmdd(end_date_raw) if end_date_raw else None
             
-            if start_date_raw:
-                if hasattr(start_date_raw, 'strftime'):
-                    # datetime 객체인 경우
-                    start_date = start_date_raw.strftime('%Y%m%d')
-                elif isinstance(start_date_raw, str):
-                    # 문자열인 경우 정규화
-                    start_date = normalize_date(start_date_raw)
-                else:
-                    start_date = str(start_date_raw)
-            
-            if end_date_raw:
-                if hasattr(end_date_raw, 'strftime'):
-                    # datetime 객체인 경우
-                    end_date = end_date_raw.strftime('%Y%m%d')
-                elif isinstance(end_date_raw, str):
-                    # 문자열인 경우 정규화
-                    end_date = normalize_date(end_date_raw)
-                else:
-                    end_date = str(end_date_raw)
-            
-            # 날짜 범위 확인
+            # 날짜 범위 확인 (KST 기준 날짜만 비교)
             if is_enabled and start_date and end_date:
                 try:
-                    # YYYYMMDD 형식의 문자열을 datetime으로 변환 (timezone-naive)
-                    start_dt = datetime.strptime(start_date, "%Y%m%d")
-                    end_dt = datetime.strptime(end_date, "%Y%m%d")
+                    from date_helper import yyyymmdd_to_date
+                    start_date_obj = yyyymmdd_to_date(start_date)
+                    end_date_obj = yyyymmdd_to_date(end_date)
+                    now_date = get_kst_now().date()
                     
-                    # 현재 날짜를 timezone-naive로 변환
-                    now = get_kst_now()
-                    now_date_naive = datetime(now.year, now.month, now.day)
-                    
-                    # 날짜 범위 확인 (날짜만 비교)
-                    if now_date_naive < start_dt or now_date_naive > end_dt:
+                    # 날짜 범위 확인
+                    if now_date < start_date_obj or now_date > end_date_obj:
                         is_enabled = False
                 except (ValueError, AttributeError, TypeError) as e:
                     # 날짜 파싱 실패 시 로그 출력 (디버깅용)
@@ -3184,6 +3176,7 @@ async def get_popup_notice_status():
                 "end_date": ""
             }
     except Exception as e:
+        print(f"⚠️ 팝업 공지 조회 오류: {e}")
         return {
             "is_enabled": False,
             "title": "",

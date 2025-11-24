@@ -12,9 +12,10 @@ from db_manager import db_manager
 
 
 def _ensure_scan_rank_table(cursor) -> None:
+    """scan_rank 테이블 생성 (실제 DB 스키마와 일치: DATE 타입 사용)"""
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS scan_rank(
-            date TEXT NOT NULL,
+            date DATE NOT NULL,
             code TEXT NOT NULL,
             name TEXT,
             score DOUBLE PRECISION,
@@ -52,6 +53,8 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
         return recurrence_data
     
     try:
+        from date_helper import yyyymmdd_to_date, timestamp_to_yyyymmdd
+        
         with db_manager.get_cursor(commit=False) as cur_hist:
             _ensure_scan_rank_table(cur_hist)
             cur_hist.execute("""
@@ -62,9 +65,32 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
             """, (tickers,))
             rows = cur_hist.fetchall()
         
+        # today_as_of를 date 객체로 변환 (비교용)
+        today_date_obj = yyyymmdd_to_date(today_as_of)
+        
         # 결과를 종목별로 그룹화
         for ticker in tickers:
-            prev_dates = [str(row["date"]) for row in rows if row["code"] == ticker and str(row["date"]) < today_as_of]
+            prev_dates = []
+            for row in rows:
+                if row["code"] == ticker:
+                    row_date = row["date"]
+                    # date 객체인 경우 그대로 비교, 문자열인 경우 변환
+                    if isinstance(row_date, str):
+                        try:
+                            row_date_obj = yyyymmdd_to_date(row_date)
+                        except ValueError:
+                            continue
+                    elif hasattr(row_date, 'date'):
+                        row_date_obj = row_date.date()
+                    else:
+                        row_date_obj = row_date
+                    
+                    if row_date_obj < today_date_obj:
+                        # date 객체를 YYYYMMDD 문자열로 변환
+                        if hasattr(row_date, 'strftime'):
+                            prev_dates.append(row_date.strftime('%Y%m%d'))
+                        else:
+                            prev_dates.append(str(row_date))
             if prev_dates:
                 last_as_of = prev_dates[0]
                 first_as_of = prev_dates[-1]
@@ -111,6 +137,11 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
         scanner_version: 스캐너 버전 (v1 또는 v2), None이면 현재 활성화된 버전 사용
     """
     try:
+        from date_helper import yyyymmdd_to_date
+        
+        # YYYYMMDD 문자열을 date 객체로 변환
+        date_obj = yyyymmdd_to_date(today_as_of)
+        
         # 스캐너 버전 결정 (없으면 현재 활성화된 버전 사용)
         if scanner_version is None:
             try:
@@ -137,7 +168,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                         # 등락률을 퍼센트로 계산 (scanner.py와 일관성 유지)
                         change_rate = ((latest.close - prev.close) / prev.close * 100) if prev is not None and prev.close > 0 else 0.0
                         enhanced_rank.append({
-                            "date": today_as_of,
+                            "date": date_obj,  # date 객체 사용
                             "code": it["ticker"],
                             "name": it["name"],
                             "score": it["score"],
@@ -151,9 +182,9 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 except Exception:
                     continue
         
-            # 해당 날짜와 버전의 기존 데이터 삭제
+            # 해당 날짜와 버전의 기존 데이터 삭제 (date 객체 사용)
             cur_hist.execute("DELETE FROM scan_rank WHERE date = %s AND scanner_version = %s", 
-                           (today_as_of, scanner_version))
+                           (date_obj, scanner_version))
             
             if not scan_items:
                 print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of} (버전: {scanner_version})")
@@ -162,7 +193,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                     INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
+                    (date_obj, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
                      "추천종목 없음", 0.0, 0.0, 0.0, scanner_version)
                 )
             elif enhanced_rank:
@@ -184,7 +215,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                     INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (today_as_of, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
+                    (date_obj, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
                      "추천종목 없음", 0.0, 0.0, 0.0, scanner_version)
                 )
     except Exception as e:
