@@ -295,11 +295,18 @@ class KiwoomAPI:
             except:
                 pass
         
-        # 현재 날짜: 장중 여부에 따라
-        if self._is_market_open():
-            return 60  # 장중: 1분
+        # 현재 날짜: 시간대에 따라
+        from datetime import datetime
+        import pytz
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        hour = now.hour
+        
+        # 08:00 ~ 20:00: 애프터마켓 포함, 주가 변동 가능
+        if 8 <= hour < 20:
+            return 60  # 1분
+        # 20:00 ~ 08:00: 데이터 변경 없음
         else:
-            # 장 마감 후: 다음 거래일 시작 전까지
             return self._get_ttl_until_next_trading_day()
     
     def _get_ttl_until_next_trading_day(self) -> int:
