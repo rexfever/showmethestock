@@ -305,8 +305,20 @@ class KiwoomAPI:
         
         cached_df, timestamp = self._ohlcv_cache[cache_key]
         
-        # 동적 TTL 계산
-        ttl = self._calculate_ttl(base_dt)
+        # base_dt가 None인 경우, DataFrame의 실제 날짜 확인
+        actual_date = base_dt
+        if actual_date is None and not cached_df.empty and 'date' in cached_df.columns:
+            try:
+                # DataFrame의 마지막 날짜 추출
+                last_date_str = str(cached_df.iloc[-1]['date'])
+                # YYYYMMDD 형식인지 확인
+                if len(last_date_str) == 8 and last_date_str.isdigit():
+                    actual_date = last_date_str
+            except:
+                pass
+        
+        # 실제 날짜를 사용하여 TTL 계산
+        ttl = self._calculate_ttl(actual_date)
         
         # TTL 확인
         if time.time() - timestamp > ttl:
