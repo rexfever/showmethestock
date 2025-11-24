@@ -94,14 +94,20 @@ if USE_POSTGRES:
 
         @staticmethod
         def _convert_value(value: Any) -> Any:
+            """값 변환 (PostgreSQL용)
+            
+            Note: date와 datetime 객체는 변환하지 않고 그대로 전달합니다.
+            psycopg가 자동으로 PostgreSQL 타입으로 변환합니다.
+            """
             if value is None:
                 return None
             if isinstance(value, bool):
                 return value
-            if isinstance(value, datetime):
-                return value.strftime("%Y-%m-%d %H:%M:%S")
-            if isinstance(value, date):
-                return value.strftime("%Y%m%d")
+            # date와 datetime은 변환하지 않고 그대로 전달 (psycopg가 자동 처리)
+            # if isinstance(value, datetime):
+            #     return value.strftime("%Y-%m-%d %H:%M:%S")  # 제거: psycopg가 자동 처리
+            # if isinstance(value, date):
+            #     return value.strftime("%Y%m%d")  # 제거: psycopg가 자동 처리
             if isinstance(value, Decimal):
                 return float(value)
             if isinstance(value, (dict, list)):
