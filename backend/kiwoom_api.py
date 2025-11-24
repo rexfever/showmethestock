@@ -17,8 +17,9 @@ class KiwoomAPI:
         self.auth = KiwoomAuth()
         self._code_to_name: Dict[str, str] = {}
         self._name_to_code: Dict[str, str] = {}
-        # OHLCV 캐시: {(code, count, base_dt): (df, timestamp)}
-        self._ohlcv_cache: Dict[Tuple[str, int, Optional[str]], Tuple[pd.DataFrame, float]] = {}
+        # OHLCV 캐시: {(code, count, base_dt, hour_key): (df, timestamp)}
+        # hour_key: 장중일 때만 시간대 구분 (예: "15:00"), 장 마감 후는 None
+        self._ohlcv_cache: Dict[Tuple[str, int, Optional[str], Optional[str]], Tuple[pd.DataFrame, float]] = {}
         self._cache_ttl = 300  # 기본 5분 (초) - 상황에 따라 동적으로 계산됨
         self._cache_maxsize = 1000  # 최대 캐시 항목 수
         # 모의 데이터 세트는 항상 준비 (실패 시 폴백용)
@@ -250,9 +251,25 @@ class KiwoomAPI:
                     break
                 next_key = h.get("next-key")
 
-    def _get_cache_key(self, code: str, count: int, base_dt: Optional[str]) -> Tuple[str, int, Optional[str]]:
-        """캐시 키 생성"""
-        return (code, count, base_dt)
+    def _get_cache_key(self, code: str, count: int, base_dt: Optional[str]) -> Tuple[str, int, Optional[str], Optional[str]]:
+        """캐시 키 생성
+        
+        base_dt가 None인 경우, 시간대별로 구분하여 캐싱
+        - 장중: 시간별 구분 (실시간성 필요)
+        - 장 마감 후: 당일로 통합 (데이터 변경 없음)
+        """
+        # base_dt가 None이고 장중인 경우, 시간대별 구분
+        if base_dt is None and self._is_market_open():
+            # 장중: 시간별 구분 (예: "15:00", "15:30")
+            from datetime import datetime
+            import pytz
+            KST = pytz.timezone('Asia/Seoul')
+            now = datetime.now(KST)
+            hour_key = f"{now.hour:02d}:{now.minute // 10 * 10:02d}"  # 10분 단위
+            return (code, count, base_dt, hour_key)
+        
+        # 장 마감 후 또는 base_dt가 명시된 경우: 날짜만 사용
+        return (code, count, base_dt, None)
     
     def _calculate_ttl(self, base_dt: Optional[str]) -> int:
         """상황에 맞는 TTL 계산
@@ -356,7 +373,7 @@ class KiwoomAPI:
             # 특정 종목의 모든 캐시 항목 제거
             keys_to_remove = [
                 key for key in self._ohlcv_cache.keys()
-                if key[0] == code
+                if key[0] == code  # key[0] = code
             ]
             for key in keys_to_remove:
                 del self._ohlcv_cache[key]
