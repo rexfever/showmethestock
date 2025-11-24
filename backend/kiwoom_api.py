@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple
 import requests
 import pandas as pd
 import numpy as np
@@ -17,6 +17,10 @@ class KiwoomAPI:
         self.auth = KiwoomAuth()
         self._code_to_name: Dict[str, str] = {}
         self._name_to_code: Dict[str, str] = {}
+        # OHLCV 캐시: {(code, count, base_dt): (df, timestamp)}
+        self._ohlcv_cache: Dict[Tuple[str, int, Optional[str]], Tuple[pd.DataFrame, float]] = {}
+        self._cache_ttl = 300  # 5분 (초)
+        self._cache_maxsize = 1000  # 최대 캐시 항목 수
         # 모의 데이터 세트는 항상 준비 (실패 시 폴백용)
         self._mock_kospi = [
             "005930",  # 삼성전자
@@ -246,12 +250,102 @@ class KiwoomAPI:
                     break
                 next_key = h.get("next-key")
 
+    def _get_cache_key(self, code: str, count: int, base_dt: Optional[str]) -> Tuple[str, int, Optional[str]]:
+        """캐시 키 생성"""
+        return (code, count, base_dt)
+    
+    def _get_cached_ohlcv(self, code: str, count: int, base_dt: Optional[str]) -> Optional[pd.DataFrame]:
+        """캐시에서 OHLCV 데이터 조회"""
+        cache_key = self._get_cache_key(code, count, base_dt)
+        
+        if cache_key not in self._ohlcv_cache:
+            return None
+        
+        cached_df, timestamp = self._ohlcv_cache[cache_key]
+        
+        # TTL 확인
+        if time.time() - timestamp > self._cache_ttl:
+            del self._ohlcv_cache[cache_key]
+            return None
+        
+        # 복사본 반환 (원본 데이터 보호)
+        return cached_df.copy()
+    
+    def _set_cached_ohlcv(self, code: str, count: int, base_dt: Optional[str], df: pd.DataFrame) -> None:
+        """OHLCV 데이터를 캐시에 저장"""
+        if df.empty:
+            return
+        
+        cache_key = self._get_cache_key(code, count, base_dt)
+        
+        # 캐시 크기 제한 (LRU 방식)
+        if len(self._ohlcv_cache) >= self._cache_maxsize:
+            # 가장 오래된 항목 제거
+            oldest_key = min(self._ohlcv_cache.items(), key=lambda x: x[1][1])[0]
+            del self._ohlcv_cache[oldest_key]
+        
+        # 캐시 저장 (복사본 저장)
+        self._ohlcv_cache[cache_key] = (df.copy(), time.time())
+    
+    def clear_ohlcv_cache(self, code: str = None) -> None:
+        """OHLCV 캐시 클리어
+        
+        Args:
+            code: 특정 종목 코드 (None이면 전체 캐시 클리어)
+        """
+        if code is None:
+            self._ohlcv_cache.clear()
+        else:
+            # 특정 종목의 모든 캐시 항목 제거
+            keys_to_remove = [
+                key for key in self._ohlcv_cache.keys()
+                if key[0] == code
+            ]
+            for key in keys_to_remove:
+                del self._ohlcv_cache[key]
+    
+    def get_ohlcv_cache_stats(self) -> Dict:
+        """캐시 통계 반환"""
+        current_time = time.time()
+        valid_count = sum(
+            1 for _, (_, timestamp) in self._ohlcv_cache.items()
+            if current_time - timestamp <= self._cache_ttl
+        )
+        expired_count = len(self._ohlcv_cache) - valid_count
+        
+        return {
+            "total": len(self._ohlcv_cache),
+            "valid": valid_count,
+            "expired": expired_count,
+            "maxsize": self._cache_maxsize,
+            "ttl": self._cache_ttl
+        }
+    
     def get_ohlcv(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
         """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환
         base_dt가 지정되면 해당 기준일을 마지막 행으로 하는 시계열을 우선 시도한다(YYYYMMDD).
+        
+        캐싱 적용: 같은 (code, count, base_dt) 조합은 5분간 캐시에서 반환
         """
+        # 캐시 확인
+        cached_df = self._get_cached_ohlcv(code, count, base_dt)
+        if cached_df is not None:
+            return cached_df
+        
+        # 캐시 미스: API 호출
         if self.force_mock:
-            return self._gen_mock_ohlcv(code, count, base_dt)
+            df = self._gen_mock_ohlcv(code, count, base_dt)
+        else:
+            df = self._fetch_ohlcv_from_api(code, count, base_dt)
+        
+        # 캐시 저장
+        if not df.empty:
+            self._set_cached_ohlcv(code, count, base_dt, df)
+        
+        return df
+    
+    def _fetch_ohlcv_from_api(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
+        """API에서 OHLCV 데이터를 직접 가져오기 (캐싱 없음)"""
         api_id = config.kiwoom_tr_ohlcv_id
         path = config.kiwoom_tr_ohlcv_path
         # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
