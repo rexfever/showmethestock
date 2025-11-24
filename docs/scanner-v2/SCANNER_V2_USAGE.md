@@ -141,6 +141,6 @@ results = scanner.scan(universe, date, market_condition)
 
 ## 참고
 
-- 스캐너 V2 설계 문서: `backend/docs/scanner-v2/SCANNER_V2_DESIGN.md`
-- 스캔 로직 개선 사항: `backend/docs/SCAN_LOGIC_IMPROVEMENTS_SUMMARY.md`
+- 스캐너 V2 설계 문서: `docs/scanner-v2/SCANNER_V2_DESIGN.md`
+- 스캔 로직 개선 사항: `docs/SCAN_LOGIC_IMPROVEMENTS_SUMMARY.md`
 

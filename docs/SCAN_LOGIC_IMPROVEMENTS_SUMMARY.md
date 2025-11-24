@@ -326,10 +326,10 @@ def determine_trading_strategy(flags, adjusted_score):
 - `backend/market_analyzer.py`: 멀티데이 트렌드 분석
 
 ### 문서 파일
-- `backend/docs/strategy/SIGNAL_FIRST_PRIORITY.md`: 신호 우선 원칙 상세
-- `backend/docs/analysis/MULTI_DAY_TREND_ANALYSIS.md`: 멀티데이 트렌드 분석 상세
-- `backend/docs/strategy/STRATEGY_BY_SCORE_COMPOSITION.md`: 전략 분류 상세
-- `backend/docs/work-logs/WORK_SUMMARY_20251117.md`: 작업 요약
+- `docs/strategy/SIGNAL_FIRST_PRIORITY.md`: 신호 우선 원칙 상세
+- `docs/analysis/MULTI_DAY_TREND_ANALYSIS.md`: 멀티데이 트렌드 분석 상세
+- `docs/strategy/STRATEGY_BY_SCORE_COMPOSITION.md`: 전략 분류 상세
+- `docs/work-logs/WORK_SUMMARY_20251117.md`: 작업 요약
 
 ---
 
@@ -359,6 +359,6 @@ def determine_trading_strategy(flags, adjusted_score):
 ## 📝 참고
 
 - 모든 변경 사항은 GitHub에 커밋 및 푸시 완료
-- 문서는 `backend/docs/` 디렉토리에 정리
+- 문서는 `docs/` 디렉토리에 정리
 - 코드 리뷰 및 테스트 완료
 

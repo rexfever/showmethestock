@@ -105,7 +105,7 @@ else:
 ### 관련 파일
 
 - `backend/market_analyzer.py`: `_get_kospi_data` 함수 개선
-- `backend/docs/analysis/MULTI_DAY_TREND_ANALYSIS.md`: 상세 문서
+- `docs/analysis/MULTI_DAY_TREND_ANALYSIS.md`: 상세 문서
 
 ---
 
@@ -221,7 +221,7 @@ if matched:  # 신호 충족만 포함
 
 - `backend/scanner.py`: `score_conditions` 함수 수정
 - `backend/services/scan_service.py`: 모든 Step의 필터링 로직 수정
-- `backend/docs/strategy/SIGNAL_FIRST_PRIORITY.md`: 상세 문서
+- `docs/strategy/SIGNAL_FIRST_PRIORITY.md`: 상세 문서
 
 ---
 
@@ -248,8 +248,8 @@ if matched:  # 신호 충족만 포함
 
 ### 생성된 문서
 
-- `backend/docs/analysis/MULTI_DAY_TREND_ANALYSIS.md`: 며칠간 추세 분석 문서
-- `backend/docs/strategy/SIGNAL_FIRST_PRIORITY.md`: 신호 우선 원칙 문서
+- `docs/analysis/MULTI_DAY_TREND_ANALYSIS.md`: 며칠간 추세 분석 문서
+- `docs/strategy/SIGNAL_FIRST_PRIORITY.md`: 신호 우선 원칙 문서
 - `backend/MARKET_ANALYSIS_ACCURACY_ISSUE.md`: 장세 분석 정확성 문제 문서
 
 ---
@@ -277,6 +277,6 @@ if matched:  # 신호 충족만 포함
 ## 📝 참고
 
 - 모든 변경 사항은 GitHub에 커밋 및 푸시 완료
-- 문서는 `backend/docs/` 디렉토리에 정리
+- 문서는 `docs/` 디렉토리에 정리
 - 코드 리뷰 및 테스트 완료
 
