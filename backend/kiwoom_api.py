@@ -255,20 +255,26 @@ class KiwoomAPI:
         """캐시 키 생성
         
         base_dt가 None인 경우, 시간대별로 구분하여 캐싱
-        - 장중: 시간별 구분 (실시간성 필요)
-        - 장 마감 후: 당일로 통합 (데이터 변경 없음)
+        - 08:00 ~ 20:00: 시간별 구분 (애프터마켓 포함, 주가 변동 가능)
+        - 20:00 ~ 08:00: 당일로 통합 (데이터 변경 없음)
         """
-        # base_dt가 None이고 장중인 경우, 시간대별 구분
-        if base_dt is None and self._is_market_open():
-            # 장중: 시간별 구분 (예: "15:00", "15:30")
+        # base_dt가 None인 경우
+        if base_dt is None:
             from datetime import datetime
             import pytz
             KST = pytz.timezone('Asia/Seoul')
             now = datetime.now(KST)
-            hour_key = f"{now.hour:02d}:{now.minute // 10 * 10:02d}"  # 10분 단위
-            return (code, count, base_dt, hour_key)
+            hour = now.hour
+            
+            # 08:00 ~ 20:00: 시간대별 구분 (애프터마켓 포함)
+            if 8 <= hour < 20:
+                hour_key = f"{now.hour:02d}:{now.minute // 10 * 10:02d}"  # 10분 단위
+                return (code, count, base_dt, hour_key)
+            # 20:00 ~ 08:00: 당일로 통합
+            else:
+                return (code, count, base_dt, None)
         
-        # 장 마감 후 또는 base_dt가 명시된 경우: 날짜만 사용
+        # base_dt가 명시된 경우: 날짜만 사용
         return (code, count, base_dt, None)
     
     def _calculate_ttl(self, base_dt: Optional[str]) -> int:
@@ -347,6 +353,18 @@ class KiwoomAPI:
         
         # 장중: 09:00 ~ 15:30
         return (9 <= hour < 15) or (hour == 15 and minute <= 30)
+    
+    def _is_aftermarket_hours(self) -> bool:
+        """애프터마켓 시간대 확인 (08:00 ~ 20:00)"""
+        from datetime import datetime
+        import pytz
+        
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        hour = now.hour
+        
+        # 애프터마켓: 08:00 ~ 20:00 (장전 시간외 + 장중 + 장후 시간외)
+        return 8 <= hour < 20
     
     def _get_cached_ohlcv(self, code: str, count: int, base_dt: Optional[str]) -> Optional[pd.DataFrame]:
         """캐시에서 OHLCV 데이터 조회"""
