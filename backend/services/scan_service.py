@@ -134,7 +134,8 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                     if not df.empty:
                         latest = df.iloc[-1]
                         prev = df.iloc[-2] if len(df) > 1 else None
-                        change_rate = (latest.close - prev.close) / prev.close if prev is not None and prev.close else 0.0
+                        # 등락률을 퍼센트로 계산 (scanner.py와 일관성 유지)
+                        change_rate = ((latest.close - prev.close) / prev.close * 100) if prev is not None and prev.close > 0 else 0.0
                         enhanced_rank.append({
                             "date": today_as_of,
                             "code": it["ticker"],
@@ -144,7 +145,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                             "score_label": it["score_label"],
                             "close_price": float(latest.close),
                             "volume": float(latest.volume),
-                            "change_rate": float(change_rate),
+                            "change_rate": round(float(change_rate), 2),  # 퍼센트로 저장, 소수점 2자리
                             "scanner_version": scanner_version,
                         })
                 except Exception:
