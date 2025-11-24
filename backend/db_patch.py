@@ -115,8 +115,17 @@ if USE_POSTGRES:
             return value
 
         def _convert_row(self, row):
+            """행 변환 (PostgreSQL용)
+            
+            Note: PostgreSQL에서 조회한 date/datetime은 이미 Python 객체로 변환되어 있으므로
+            추가 변환이 필요 없습니다. psycopg가 자동으로 처리합니다.
+            Decimal, dict, list 등은 여전히 변환이 필요할 수 있으므로 _convert_value를 사용합니다.
+            """
             if row is None:
                 return None
+            # PostgreSQL에서 조회한 값은 이미 적절한 Python 타입으로 변환되어 있음
+            # date/datetime 객체는 그대로 반환 (추가 변환 불필요)
+            # Decimal, dict, list 등은 여전히 변환 필요
             return tuple(self._convert_value(v) for v in row)
 
         def execute(self, query: str, params: Optional[Sequence[Any]] = None):
