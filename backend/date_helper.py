@@ -10,10 +10,21 @@ def normalize_date(date_str):
     if not date_str:
         return get_kst_now().strftime('%Y%m%d')
     
+    # 문자열이 아닌 경우 (datetime 객체 등)
+    if not isinstance(date_str, str):
+        if hasattr(date_str, 'strftime'):
+            return date_str.strftime('%Y%m%d')
+        else:
+            date_str = str(date_str)
+    
+    # 이미 YYYYMMDD 형식
     if len(date_str) == 8 and date_str.isdigit():
         return date_str
-    elif len(date_str) == 10 and date_str.count('-') == 2:
-        return date_str.replace('-', '')
+    # YYYY-MM-DD 형식
+    elif len(date_str) >= 10 and date_str.count('-') >= 2:
+        # TIMESTAMP 형식 (2025-11-24 00:00:00+09) 또는 DATE 형식 (2025-11-24)
+        date_part = date_str.split()[0] if ' ' in date_str else date_str
+        return date_part.replace('-', '')
     else:
         raise ValueError(f"잘못된 날짜 형식: {date_str}")
 
