@@ -300,18 +300,24 @@ class KiwoomAPI:
         """다음 거래일 시작 전까지의 TTL 계산"""
         from datetime import datetime, timedelta
         import pytz
-        import holidays
         
         KST = pytz.timezone('Asia/Seoul')
         now = datetime.now(KST)
         
         # 다음 거래일 찾기
         next_date = now.date() + timedelta(days=1)
-        kr_holidays = holidays.SouthKorea()
         
-        # 주말과 공휴일 제외
-        while next_date.weekday() >= 5 or next_date in kr_holidays:
-            next_date += timedelta(days=1)
+        # 공휴일 체크 (holidays 모듈이 있으면 사용)
+        try:
+            import holidays
+            kr_holidays = holidays.SouthKorea()
+            # 주말과 공휴일 제외
+            while next_date.weekday() >= 5 or next_date in kr_holidays:
+                next_date += timedelta(days=1)
+        except ImportError:
+            # holidays 모듈이 없으면 주말만 체크
+            while next_date.weekday() >= 5:
+                next_date += timedelta(days=1)
         
         # 다음 거래일 09:00까지의 시간 계산
         next_trading_day_start = KST.localize(
