@@ -3107,25 +3107,48 @@ async def get_popup_notice_status():
             is_enabled = bool(row[0])
             title = row[1]
             message = row[2]
-            start_date = row[3]
-            end_date = row[4]
+            start_date_raw = row[3]
+            end_date_raw = row[4]
+            
+            # 날짜 형식 변환 (TIMESTAMP 객체 또는 문자열을 YYYYMMDD 형식으로)
+            start_date = None
+            end_date = None
+            
+            if start_date_raw:
+                if hasattr(start_date_raw, 'strftime'):
+                    # datetime 객체인 경우
+                    start_date = start_date_raw.strftime('%Y%m%d')
+                elif isinstance(start_date_raw, str):
+                    # 문자열인 경우 정규화
+                    start_date = normalize_date(start_date_raw)
+                else:
+                    start_date = str(start_date_raw)
+            
+            if end_date_raw:
+                if hasattr(end_date_raw, 'strftime'):
+                    # datetime 객체인 경우
+                    end_date = end_date_raw.strftime('%Y%m%d')
+                elif isinstance(end_date_raw, str):
+                    # 문자열인 경우 정규화
+                    end_date = normalize_date(end_date_raw)
+                else:
+                    end_date = str(end_date_raw)
             
             # 날짜 범위 확인
             if is_enabled and start_date and end_date:
-                from datetime import datetime
                 try:
-                    # 날짜 형식 정규화 (YYYYMMDD 형식으로 변환)
-                    start_date_normalized = normalize_date(start_date) if isinstance(start_date, str) else start_date
-                    end_date_normalized = normalize_date(end_date) if isinstance(end_date, str) else end_date
+                    # YYYYMMDD 형식의 문자열을 datetime으로 변환 (timezone-naive)
+                    start_dt = datetime.strptime(start_date, "%Y%m%d")
+                    end_dt = datetime.strptime(end_date, "%Y%m%d")
                     
-                    start_dt = datetime.strptime(start_date_normalized, "%Y%m%d")
-                    end_dt = datetime.strptime(end_date_normalized, "%Y%m%d")
+                    # 현재 날짜를 timezone-naive로 변환
                     now = get_kst_now()
-                    now_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                    now_date_naive = datetime(now.year, now.month, now.day)
                     
-                    if now_date < start_dt or now_date > end_dt:
+                    # 날짜 범위 확인 (날짜만 비교)
+                    if now_date_naive < start_dt or now_date_naive > end_dt:
                         is_enabled = False
-                except (ValueError, AttributeError) as e:
+                except (ValueError, AttributeError, TypeError) as e:
                     # 날짜 파싱 실패 시 로그 출력 (디버깅용)
                     print(f"⚠️ 팝업 공지 날짜 파싱 실패: start_date={start_date}, end_date={end_date}, error={e}")
                     is_enabled = False
@@ -3134,8 +3157,8 @@ async def get_popup_notice_status():
                 "is_enabled": is_enabled,
                 "title": title,
                 "message": message,
-                "start_date": start_date,
-                "end_date": end_date
+                "start_date": start_date or "",
+                "end_date": end_date or ""
             }
         else:
             return {
