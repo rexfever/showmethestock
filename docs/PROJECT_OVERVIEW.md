@@ -192,11 +192,12 @@ showmethestock/
 
 ## 문제 해결
 
-### 일반적인 문제
+### 종합 가이드
+- [문제 해결 가이드](./TROUBLESHOOTING_GUIDE.md) - 모든 문제 해결 방법 통합
+
+### 세부 가이드
 - [로컬 개발 메뉴얼 - 문제 해결](./deployment/LOCAL_DEVELOPMENT_SETUP.md#문제-해결)
 - [서버 운영 메뉴얼 - 문제 해결](./deployment/SERVER_OPERATION_MANUAL.md#문제-해결)
-
-### DB 문제
 - [DB 접속 및 작업 방법](./deployment/LOCAL_DEVELOPMENT_SETUP.md#데이터베이스-접속-및-작업)
 
 ## 참고

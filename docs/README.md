@@ -65,6 +65,9 @@
 - `SERVER_OPERATION_MANUAL.md` - 서버 작업 메뉴얼 (최신화)
 - `DEPLOYMENT_CHECKLIST_SCANNER_V2.md` - 스캐너 V2 배포 체크리스트
 
+### 🔧 문제 해결
+- `TROUBLESHOOTING_GUIDE.md` - 종합 문제 해결 가이드
+
 ### 📁 scanner-v2/ - 스캐너 V2 관련
 스캐너 V2 설계 및 사용 가이드
 
