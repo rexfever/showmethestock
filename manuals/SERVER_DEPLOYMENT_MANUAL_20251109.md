@@ -1,4 +1,4 @@
-# 서버 배포 및 운영 메뉴얼 (2025-11-09)
+# 서버 배포 및 운영 메뉴얼 (2025-11-24 최신화)
 
 ## 📋 목차
 1. [서버 정보](#서버-정보)
@@ -48,7 +48,7 @@
 ```
 
 ### 서비스 포트
-- **백엔드 (FastAPI)**: 8000
+- **백엔드 (FastAPI)**: 8010
 - **프론트엔드 (Next.js)**: 3000
 - **Nginx**: 80, 443
 - **PostgreSQL**: 5432 (localhost only)
@@ -239,10 +239,15 @@ pip list | grep psycopg
 cd /home/ubuntu/showmethestock/backend
 
 # 새로운 SQL 파일이 있다면 적용
-psql -U stockfinder -d stockfinder -f sql/create_market_analysis_validation.sql
+sudo -u postgres psql stockfinder -f sql/add_scanner_settings.sql
+sudo -u postgres psql stockfinder -f sql/add_scanner_version_to_scan_rank.sql
 
 # 또는 특정 마이그레이션 스크립트 실행
 python migrations/extend_market_conditions.py
+
+# 마이그레이션 확인
+sudo -u postgres psql stockfinder -c "\dt scanner_settings"
+sudo -u postgres psql stockfinder -c "\d scan_rank" | grep scanner_version
 ```
 
 ### 5. 백엔드 서비스 재시작
@@ -268,16 +273,20 @@ sudo journalctl -u stock-finder-backend -f
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8010/health
 
 # 예상 응답:
-# {"status":"ok","timestamp":"2025-11-09T..."}
+# {"status":"ok","timestamp":"2025-11-24T..."}
 
 # 최신 스캔 데이터 확인
-curl http://localhost:8000/latest-scan | jq '.ok'
+curl http://localhost:8010/latest-scan | jq '.ok'
+
+# 스캐너 설정 확인 (관리자 토큰 필요)
+curl -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+     http://localhost:8010/admin/scanner-settings | jq '.'
 
 # 장세 분석 검증 데이터 확인
-curl "http://localhost:8000/admin/market-validation?date=20251109" | jq '.'
+curl "http://localhost:8010/admin/market-validation?date=20251124" | jq '.'
 ```
 
 ---
@@ -598,10 +607,12 @@ GAP_MAX=0.015
 RSI_THRESHOLD=58
 VOL_MA5_MULT=2.5
 
-# 스캐너 버전 선택
+# 스캐너 버전 선택 (DB 우선, 없으면 .env 사용)
 SCANNER_VERSION=v1
 SCANNER_V2_ENABLED=false
 ```
+
+**중요**: 스캐너 버전은 **DB에서 우선 관리**됩니다 (`scanner_settings` 테이블). `.env` 파일은 DB 설정이 없을 때만 사용됩니다.
 
 #### 10.2 프론트엔드 .env.local 주요 변수
 
@@ -609,6 +620,8 @@ SCANNER_V2_ENABLED=false
 NEXT_PUBLIC_BACKEND_URL=http://52.79.145.238:8010
 NEXT_PUBLIC_KAKAO_CLIENT_ID=your_kakao_client_id
 ```
+
+**주의**: 백엔드 포트는 8010입니다 (8000 아님).
 
 ### 11. 주의사항
 
@@ -637,13 +650,15 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/showmethestock/backend
 Environment="PATH=/home/ubuntu/showmethestock/backend/venv/bin"
 EnvironmentFile=/home/ubuntu/showmethestock/backend/.env
-ExecStart=/home/ubuntu/showmethestock/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+ExecStart=/home/ubuntu/showmethestock/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8010
 Restart=always
 RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+**주의**: 포트는 8010입니다 (8000 아님).
 
 ### 프론트엔드 서비스 파일
 
@@ -800,7 +815,7 @@ df -h
 du -sh /home/ubuntu/showmethestock/*
 
 # 네트워크 연결 상태
-netstat -tulpn | grep -E '8000|3000|5432'
+netstat -tulpn | grep -E '8010|3000|5432'
 
 # 프로세스 확인
 ps aux | grep -E 'uvicorn|node|postgres'
@@ -1088,7 +1103,7 @@ npm run build
 sudo systemctl restart stock-finder-frontend
 
 # 5. 동작 확인
-curl http://localhost:8000/health
+curl http://localhost:8010/health
 curl http://localhost:3000
 ```
 
@@ -1148,7 +1163,7 @@ echo ""
 
 echo "2. 백엔드 상태:"
 sudo systemctl is-active stock-finder-backend && echo "✅ 실행 중" || echo "❌ 중지됨"
-curl -s http://localhost:8000/health > /dev/null && echo "✅ API 응답 정상" || echo "❌ API 응답 없음"
+curl -s http://localhost:8010/health > /dev/null && echo "✅ API 응답 정상" || echo "❌ API 응답 없음"
 echo ""
 
 echo "3. 프론트엔드 상태:"
@@ -1204,7 +1219,7 @@ echo "✅ 프론트엔드 재시작 완료"
 # 4. 동작 확인
 echo "4. 동작 확인 중..."
 sleep 5
-curl -s http://localhost:8000/health > /dev/null && echo "✅ 백엔드 정상" || echo "❌ 백엔드 오류"
+curl -s http://localhost:8010/health > /dev/null && echo "✅ 백엔드 정상" || echo "❌ 백엔드 오류"
 curl -s http://localhost:3000 > /dev/null && echo "✅ 프론트엔드 정상" || echo "❌ 프론트엔드 오류"
 
 echo "========================================="
@@ -1233,5 +1248,34 @@ echo "========================================="
 
 ---
 
-**마지막 업데이트**: 2025년 11월 19일
+---
+
+## 최신 변경사항 (2025-11-24)
+
+### 주요 업데이트
+
+1. **백엔드 포트 변경**: 8000 → 8010
+2. **Scanner V2 배포**: DB 기반 설정 관리 추가
+3. **scan_rank 테이블**: `scanner_version` 컬럼 추가 (V1/V2 결과 분리 저장)
+4. **scanner_settings 테이블**: 스캐너 버전 DB 관리
+5. **날짜 처리 개선**: DATE/TIMESTAMP 타입 통일, db_patch.py 단순화
+6. **OHLCV 캐싱**: 애프터마켓 시간대(08:00~20:00) 고려한 동적 TTL
+
+### 배포 시 주의사항
+
+1. **DB 마이그레이션 필수**:
+   - `scanner_settings` 테이블 생성
+   - `scan_rank` 테이블에 `scanner_version` 컬럼 추가
+
+2. **.env 파일 관리**:
+   - 배포 시 `.env` 파일은 자동으로 변경되지 않음
+   - 스캐너 버전은 DB에서 관리 (`.env`는 fallback)
+
+3. **포트 확인**:
+   - 백엔드: 8010 (8000 아님)
+   - 프론트엔드: 3000
+
+---
+
+**마지막 업데이트**: 2025년 11월 24일
 
