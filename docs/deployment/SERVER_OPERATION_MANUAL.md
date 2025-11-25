@@ -117,6 +117,103 @@ sudo -u postgres psql -d stockfinder -c "\d scan_rank"
 sudo -u postgres psql -d stockfinder -c "\d scanner_settings"
 ```
 
+### 3. 데이터베이스 작업
+
+#### 데이터 조회
+
+```bash
+# 최근 스캔 결과 조회
+sudo -u postgres psql -d stockfinder -c "
+SELECT date, code, name, score, scanner_version 
+FROM scan_rank 
+ORDER BY date DESC, score DESC 
+LIMIT 10;
+"
+
+# 특정 날짜 스캔 결과
+sudo -u postgres psql -d stockfinder -c "
+SELECT * FROM scan_rank 
+WHERE date = '2025-11-24' 
+ORDER BY score DESC;
+"
+
+# Scanner 설정 확인
+sudo -u postgres psql -d stockfinder -c "SELECT * FROM scanner_settings;"
+
+# 사용자 수 확인
+sudo -u postgres psql -d stockfinder -c "SELECT COUNT(*) FROM users;"
+```
+
+#### 데이터 수정
+
+```bash
+# Scanner 버전 변경
+sudo -u postgres psql -d stockfinder -c "
+UPDATE scanner_settings 
+SET setting_value = 'v2', updated_at = NOW() 
+WHERE setting_key = 'scanner_version';
+"
+
+# Scanner V2 활성화
+sudo -u postgres psql -d stockfinder -c "
+UPDATE scanner_settings 
+SET setting_value = 'true', updated_at = NOW() 
+WHERE setting_key = 'scanner_v2_enabled';
+"
+```
+
+#### 데이터 삭제
+
+```bash
+# 특정 날짜 스캔 결과 삭제
+sudo -u postgres psql -d stockfinder -c "
+DELETE FROM scan_rank WHERE date = '2025-11-24';
+"
+
+# 특정 종목 스캔 결과 삭제
+sudo -u postgres psql -d stockfinder -c "
+DELETE FROM scan_rank WHERE code = '005930';
+"
+```
+
+#### 통계 조회
+
+```bash
+# 날짜별 스캔 결과 개수
+sudo -u postgres psql -d stockfinder -c "
+SELECT date, COUNT(*) as count, scanner_version
+FROM scan_rank
+GROUP BY date, scanner_version
+ORDER BY date DESC
+LIMIT 10;
+"
+
+# 테이블 크기 확인
+sudo -u postgres psql -d stockfinder -c "
+SELECT 
+    tablename,
+    pg_size_pretty(pg_total_relation_size('public.'||tablename)) AS size
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size('public.'||tablename) DESC;
+"
+```
+
+### 4. 대화형 psql 사용
+
+```bash
+# PostgreSQL 대화형 모드 접속
+sudo -u postgres psql -d stockfinder
+
+# 대화형 모드에서 사용 가능한 명령어:
+# \dt          - 테이블 목록
+# \d table     - 테이블 구조
+# \l           - 데이터베이스 목록
+# \q           - 종료
+# \?           - 도움말
+# \h SELECT    - SQL 명령어 도움말
+```
+
 ---
 
 ## 백엔드 배포

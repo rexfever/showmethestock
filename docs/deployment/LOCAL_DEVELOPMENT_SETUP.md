@@ -582,6 +582,212 @@ chmod 755 cache/ohlcv
 
 ---
 
+## 데이터베이스 접속 및 작업
+
+### 1. 로컬 DB 접속
+
+#### macOS
+
+```bash
+# PostgreSQL 접속
+/usr/local/opt/postgresql@16/bin/psql -d stockfinder
+
+# 또는 postgres 사용자로 접속
+/usr/local/opt/postgresql@16/bin/psql -U postgres -d stockfinder
+```
+
+#### Ubuntu/Linux
+
+```bash
+# PostgreSQL 접속
+sudo -u postgres psql -d stockfinder
+
+# 또는 직접 접속
+psql -U postgres -d stockfinder
+```
+
+### 2. 기본 작업 명령어
+
+#### 테이블 목록 확인
+
+```sql
+-- 모든 테이블 목록
+\dt
+
+-- 특정 테이블 상세 정보
+\d scan_rank
+\d scanner_settings
+\d users
+```
+
+#### 데이터 조회
+
+```sql
+-- 사용자 수 확인
+SELECT COUNT(*) FROM users;
+
+-- 최근 스캔 결과 조회
+SELECT date, code, name, score, scanner_version 
+FROM scan_rank 
+ORDER BY date DESC, score DESC 
+LIMIT 10;
+
+-- 특정 날짜 스캔 결과
+SELECT * FROM scan_rank 
+WHERE date = '2025-11-24' 
+ORDER BY score DESC;
+
+-- Scanner 설정 확인
+SELECT * FROM scanner_settings;
+```
+
+#### 데이터 수정
+
+```sql
+-- Scanner 버전 변경
+UPDATE scanner_settings 
+SET setting_value = 'v2', updated_at = NOW() 
+WHERE setting_key = 'scanner_version';
+
+-- Scanner V2 활성화
+UPDATE scanner_settings 
+SET setting_value = 'true', updated_at = NOW() 
+WHERE setting_key = 'scanner_v2_enabled';
+```
+
+#### 데이터 삭제
+
+```sql
+-- 특정 날짜 스캔 결과 삭제
+DELETE FROM scan_rank WHERE date = '2025-11-24';
+
+-- 특정 종목 스캔 결과 삭제
+DELETE FROM scan_rank WHERE code = '005930';
+```
+
+### 3. 유용한 쿼리 예시
+
+#### 스캔 결과 통계
+
+```sql
+-- 날짜별 스캔 결과 개수
+SELECT date, COUNT(*) as count, scanner_version
+FROM scan_rank
+GROUP BY date, scanner_version
+ORDER BY date DESC;
+
+-- 종목별 등장 횟수
+SELECT code, name, COUNT(*) as appearance_count
+FROM scan_rank
+GROUP BY code, name
+ORDER BY appearance_count DESC
+LIMIT 20;
+
+-- 평균 점수 확인
+SELECT 
+    date,
+    AVG(score) as avg_score,
+    MAX(score) as max_score,
+    MIN(score) as min_score,
+    COUNT(*) as count
+FROM scan_rank
+WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY date
+ORDER BY date DESC;
+```
+
+#### 테이블 크기 확인
+
+```sql
+-- 테이블별 데이터 개수
+SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
+    pg_total_relation_size(schemaname||'.'||tablename) AS size_bytes
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+```
+
+#### 인덱스 확인
+
+```sql
+-- 테이블의 인덱스 목록
+SELECT 
+    tablename,
+    indexname,
+    indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+```
+
+### 4. psql 유용한 명령어
+
+```sql
+-- 도움말
+\?
+
+-- SQL 명령어 도움말
+\h SELECT
+\h UPDATE
+\h DELETE
+
+-- 테이블 목록
+\dt
+
+-- 테이블 구조
+\d+ scan_rank
+
+-- 데이터베이스 목록
+\l
+
+-- 현재 데이터베이스
+SELECT current_database();
+
+-- 현재 사용자
+SELECT current_user;
+
+-- 쿼리 결과를 파일로 저장
+\o /tmp/scan_results.txt
+SELECT * FROM scan_rank WHERE date = '2025-11-24';
+\o
+
+-- 파일에서 SQL 실행
+\i /path/to/script.sql
+
+-- 종료
+\q
+```
+
+### 5. 백업 및 복원
+
+#### 로컬 DB 백업
+
+```bash
+# 전체 데이터베이스 백업
+/usr/local/opt/postgresql@16/bin/pg_dump -d stockfinder > backup_$(date +%Y%m%d).sql
+
+# 특정 테이블만 백업
+/usr/local/opt/postgresql@16/bin/pg_dump -d stockfinder -t scan_rank > scan_rank_backup.sql
+
+# 압축 백업
+/usr/local/opt/postgresql@16/bin/pg_dump -d stockfinder | gzip > backup_$(date +%Y%m%d).sql.gz
+```
+
+#### 로컬 DB 복원
+
+```bash
+# SQL 파일로 복원
+/usr/local/opt/postgresql@16/bin/psql -d stockfinder < backup_20251124.sql
+
+# 압축 파일 복원
+gunzip < backup_20251124.sql.gz | /usr/local/opt/postgresql@16/bin/psql -d stockfinder
+```
+
+---
+
 ## 추가 도구 및 팁
 
 ### 1. PostgreSQL GUI 도구
