@@ -77,6 +77,7 @@
 기타 문서들
 
 ### 📄 루트 문서
+- `PROJECT_OVERVIEW.md` - 프로젝트 개요 및 아키텍처 (시작하기)
 - `SCAN_LOGIC_IMPROVEMENTS_SUMMARY.md` - 스캔 로직 개선 요약
 - `API_ENDPOINTS.md` - API 엔드포인트 문서
 
