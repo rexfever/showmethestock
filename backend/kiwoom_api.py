@@ -795,6 +795,159 @@ class KiwoomAPI:
                 pass
             return {"error": str(e)}
 
+    def get_overseas_ohlcv(self, symbol: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
+        """해외주식 일봉 OHLCV 조회 (미국 주식/ETF/지수)"""
+        if self.force_mock:
+            return self._gen_mock_overseas_ohlcv(symbol, count, base_dt)
+        
+        try:
+            # 해외주식 일봉 조회 API (예: ka10082)
+            api_id = getattr(config, 'kiwoom_tr_overseas_ohlcv_id', 'ka10082')
+            path = getattr(config, 'kiwoom_tr_overseas_ohlcv_path', '/api/dostk/overseas')
+            
+            # 미국 주식 심볼 매핑
+            symbol_map = {
+                'SPY': 'SPY',
+                'QQQ': 'QQQ', 
+                '^VIX': 'VIX',
+                'VIX': 'VIX',
+                '^TNX': 'TNX',
+                'TNX': 'TNX',
+                'ES=F': 'ES',
+                'NQ=F': 'NQ',
+                'VX=F': 'VX',
+                'KRW=X': 'USDKRW'
+            }
+            
+            overseas_symbol = symbol_map.get(symbol, symbol)
+            
+            payload = {
+                'symbol': overseas_symbol,
+                'market': 'US',  # 미국 시장
+                'period': 'D',   # 일봉
+                'count': str(count)
+            }
+            
+            if base_dt:
+                payload['end_date'] = base_dt
+            
+            data = self._post(api_id, path, payload)
+            
+            # 응답 데이터 파싱
+            rows = data.get('output', []) or data.get('data', []) or data.get('list', [])
+            
+            if not rows:
+                return pd.DataFrame()
+            
+            df_data = []
+            for row in rows:
+                df_data.append({
+                    'date': row.get('date') or row.get('dt') or row.get('trade_date'),
+                    'open': float(row.get('open') or row.get('open_price') or 0),
+                    'high': float(row.get('high') or row.get('high_price') or 0),
+                    'low': float(row.get('low') or row.get('low_price') or 0),
+                    'close': float(row.get('close') or row.get('close_price') or 0),
+                    'volume': int(row.get('volume') or row.get('trade_volume') or 0)
+                })
+            
+            df = pd.DataFrame(df_data)
+            
+            if df.empty:
+                return df
+            
+            # 유효 데이터 필터링
+            df = df[(df['close'] > 0) & (df['volume'] > 0)]
+            
+            # 날짜 정렬
+            df = df.sort_values('date').reset_index(drop=True).tail(count)
+            
+            return df
+            
+        except Exception as e:
+            # API 실패 시 모의 데이터로 fallback
+            return self._gen_mock_overseas_ohlcv(symbol, count, base_dt)
+    
+    def _gen_mock_overseas_ohlcv(self, symbol: str, count: int, base_dt: str = None) -> pd.DataFrame:
+        """해외주식 모의 데이터 생성"""
+        import numpy as np
+        
+        # 시드 설정
+        seed = hash(symbol) % 1000
+        np.random.seed(seed)
+        
+        # 기준 날짜 설정
+        if base_dt:
+            try:
+                end_date = pd.to_datetime(base_dt, format='%Y%m%d').normalize()
+            except:
+                end_date = pd.Timestamp.today().normalize()
+        else:
+            end_date = pd.Timestamp.today().normalize()
+        
+        # 영업일 기준 날짜 생성
+        dates = pd.bdate_range(end=end_date, periods=count)
+        
+        # 심볼별 기본 가격 및 특성
+        symbol_config = {
+            'SPY': {'base_price': 450.0, 'volatility': 0.015, 'trend': 0.0005},
+            'QQQ': {'base_price': 380.0, 'volatility': 0.020, 'trend': 0.0008},
+            '^VIX': {'base_price': 20.0, 'volatility': 0.05, 'trend': -0.001, 'mean_revert': True},
+            'VIX': {'base_price': 20.0, 'volatility': 0.05, 'trend': -0.001, 'mean_revert': True},
+            '^TNX': {'base_price': 4.5, 'volatility': 0.02, 'trend': 0.0002},
+            'TNX': {'base_price': 4.5, 'volatility': 0.02, 'trend': 0.0002},
+            'ES=F': {'base_price': 4500.0, 'volatility': 0.018, 'trend': 0.0005},
+            'NQ=F': {'base_price': 15000.0, 'volatility': 0.022, 'trend': 0.0008},
+            'VX=F': {'base_price': 20.0, 'volatility': 0.05, 'trend': -0.001, 'mean_revert': True},
+            'KRW=X': {'base_price': 1300.0, 'volatility': 0.008, 'trend': 0.0001}
+        }
+        
+        config = symbol_config.get(symbol, {'base_price': 100.0, 'volatility': 0.015, 'trend': 0.0})
+        
+        # 가격 시계열 생성
+        returns = np.random.normal(config['trend'], config['volatility'], len(dates))
+        
+        # VIX 계열은 평균 회귀 특성 적용
+        if config.get('mean_revert'):
+            for i in range(1, len(returns)):
+                current_price = config['base_price'] * np.exp(returns[:i].sum())
+                if current_price > 35:  # VIX 35 이상에서 하락 압력
+                    returns[i] = -abs(returns[i])
+                elif current_price < 12:  # VIX 12 이하에서 상승 압력
+                    returns[i] = abs(returns[i])
+        
+        # 누적 수익률로 가격 계산
+        prices = config['base_price'] * np.exp(np.cumsum(returns))
+        
+        # OHLCV 데이터 생성
+        data = []
+        for i, (date, close) in enumerate(zip(dates, prices)):
+            daily_vol = np.random.uniform(0.005, 0.02)
+            high = close * (1 + daily_vol)
+            low = close * (1 - daily_vol)
+            open_price = close * (1 + np.random.uniform(-0.01, 0.01))
+            
+            # 거래량 (심볼별 차등)
+            if 'VIX' in symbol or 'VX' in symbol:
+                volume = int(np.random.uniform(50000, 500000))  # VIX는 거래량 적음
+            elif symbol in ['SPY', 'QQQ']:
+                volume = int(np.random.uniform(10000000, 100000000))  # ETF는 거래량 많음
+            else:
+                volume = int(np.random.uniform(1000000, 10000000))
+            
+            data.append({
+                'date': date.strftime('%Y%m%d'),
+                'open': round(open_price, 2),
+                'high': round(high, 2),
+                'low': round(low, 2),
+                'close': round(close, 2),
+                'volume': volume
+            })
+        
+        df = pd.DataFrame(data)
+        df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
+        
+        return df
+
     def get_stock_name(self, code: str) -> str:
         """코드→이름 매핑 (캐시 우선). 실패 시 코드 그대로 반환"""
         if code in self._code_to_name:

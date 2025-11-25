@@ -1,0 +1,255 @@
+{
+  "generated_at": "2025-11-23T10:50:32.894606",
+  "period": "2025년 11월",
+  "total_days": 20,
+  "sentiment_summary": {
+    "bull": 5,
+    "neutral": 4,
+    "bear": 11,
+    "crash": 0
+  },
+  "statistics": {
+    "avg_return": -0.007733744823486097,
+    "max_return": 0.023379074463918827,
+    "min_return": -0.024139779955443377,
+    "avg_volatility": 0.025350708094370837,
+    "max_volatility": 0.03667761699102413,
+    "min_volatility": 0.020159145417954688
+  },
+  "sector_rotation": {
+    "tech": 5,
+    "value": 14,
+    "mixed": 1
+  },
+  "foreign_flow": {
+    "buy": 4,
+    "sell": 10,
+    "neutral": 6
+  },
+  "volume_trend": {
+    "normal": 17,
+    "high": 3
+  },
+  "daily_details": [
+    {
+      "date": "20251103",
+      "sentiment": "bull",
+      "kospi_return": 0.023379074463918827,
+      "volatility": 0.020503188212666744,
+      "rsi_threshold": 65.0,
+      "min_signals": 2,
+      "sector_rotation": "tech",
+      "foreign_flow": "buy",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251104",
+      "sentiment": "neutral",
+      "kospi_return": -0.007563774463002902,
+      "volatility": 0.02392439889756732,
+      "rsi_threshold": 58.0,
+      "min_signals": 3,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "high"
+    },
+    {
+      "date": "20251105",
+      "sentiment": "bear",
+      "kospi_return": -0.021773748180987384,
+      "volatility": 0.02943337299856843,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "tech",
+      "foreign_flow": "neutral",
+      "volume_trend": "high"
+    },
+    {
+      "date": "20251106",
+      "sentiment": "neutral",
+      "kospi_return": -0.0044547612278393305,
+      "volatility": 0.0324457369626341,
+      "rsi_threshold": 58.0,
+      "min_signals": 3,
+      "sector_rotation": "value",
+      "foreign_flow": "neutral",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251107",
+      "sentiment": "bear",
+      "kospi_return": -0.012815187119705102,
+      "volatility": 0.036641938068930215,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "mixed",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251110",
+      "sentiment": "bull",
+      "kospi_return": 0.012804523020042174,
+      "volatility": 0.03630791440246177,
+      "rsi_threshold": 65.0,
+      "min_signals": 2,
+      "sector_rotation": "value",
+      "foreign_flow": "buy",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251111",
+      "sentiment": "bull",
+      "kospi_return": 0.013083259913873492,
+      "volatility": 0.03667761699102413,
+      "rsi_threshold": 65.0,
+      "min_signals": 2,
+      "sector_rotation": "tech",
+      "foreign_flow": "neutral",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251112",
+      "sentiment": "bull",
+      "kospi_return": 0.010038051062032169,
+      "volatility": 0.030501174826758782,
+      "rsi_threshold": 65.0,
+      "min_signals": 2,
+      "sector_rotation": "value",
+      "foreign_flow": "neutral",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251113",
+      "sentiment": "neutral",
+      "kospi_return": 0.007780796070217983,
+      "volatility": 0.026999134536173086,
+      "rsi_threshold": 58.0,
+      "min_signals": 3,
+      "sector_rotation": "value",
+      "foreign_flow": "neutral",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251114",
+      "sentiment": "bear",
+      "kospi_return": -0.024139779955443377,
+      "volatility": 0.02348890879954597,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251117",
+      "sentiment": "neutral",
+      "kospi_return": 0.0021491814197280926,
+      "volatility": 0.020277570648170366,
+      "rsi_threshold": 58.0,
+      "min_signals": 3,
+      "sector_rotation": "tech",
+      "foreign_flow": "buy",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251118",
+      "sentiment": "bear",
+      "kospi_return": -0.017207400827942913,
+      "volatility": 0.020159145417954688,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251119",
+      "sentiment": "bear",
+      "kospi_return": -0.014012583768575566,
+      "volatility": 0.022290234995095776,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "neutral",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251120",
+      "sentiment": "bull",
+      "kospi_return": 0.010115457042148019,
+      "volatility": 0.022385725701755718,
+      "rsi_threshold": 65.0,
+      "min_signals": 2,
+      "sector_rotation": "tech",
+      "foreign_flow": "buy",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251121",
+      "sentiment": "bear",
+      "kospi_return": -0.022009667319697685,
+      "volatility": 0.020829683404684954,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251124",
+      "sentiment": "bear",
+      "kospi_return": -0.022009667319697685,
+      "volatility": 0.020829683404684954,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251125",
+      "sentiment": "bear",
+      "kospi_return": -0.022009667319697685,
+      "volatility": 0.020829683404684954,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "high"
+    },
+    {
+      "date": "20251126",
+      "sentiment": "bear",
+      "kospi_return": -0.022009667319697685,
+      "volatility": 0.020829683404684954,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251127",
+      "sentiment": "bear",
+      "kospi_return": -0.022009667319697685,
+      "volatility": 0.020829683404684954,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    },
+    {
+      "date": "20251128",
+      "sentiment": "bear",
+      "kospi_return": -0.022009667319697685,
+      "volatility": 0.020829683404684954,
+      "rsi_threshold": 45.0,
+      "min_signals": 4,
+      "sector_rotation": "value",
+      "foreign_flow": "sell",
+      "volume_trend": "normal"
+    }
+  ]
+}

@@ -34,8 +34,8 @@ class TestUserFriendlyAnalysis(unittest.TestCase):
         
         # Mock 지표 데이터 - 직접 속성 설정
         self.mock_indicators = Mock()
-        self.mock_indicators.TEMA = 100000.0
-        self.mock_indicators.DEMA = 95000.0
+        self.mock_indicators.TEMA20 = 100000.0
+        self.mock_indicators.DEMA10 = 95000.0
         self.mock_indicators.MACD_OSC = 500.0
         self.mock_indicators.RSI_TEMA = 65.0
         self.mock_indicators.RSI_DEMA = 60.0
