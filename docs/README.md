@@ -32,6 +32,7 @@
 매매 전략 분석, 개선 방안, 승률 개선 등
 
 - `REGIME_ANALYSIS.md` - 레짐 분석 가이드 (Global Regime Analyzer v4)
+- `REGIME_VERSION_SELECTION.md` - 레짐 분석 버전 선택 가이드
 - `STRATEGY_IMPROVEMENT_ANALYSIS.md` - 전략 개선 분석
 - `TRADING_STRATEGY_APPLICATION_GUIDE.md` - 매매 전략 적용 가이드
 - `WIN_RATE_IMPROVEMENT_PLAN.md` - 승률 개선 계획

@@ -21,7 +21,8 @@
 
 ### 3. 시장 분석
 - **장세 분석**: KOSPI 수익률 기반 시장 상황 판단
-- **레짐 분석**: Global Regime Analyzer v4를 통한 한국/미국 시장 중기 추세 및 리스크 분석
+- **레짐 분석**: Global Regime Analyzer v1/v3/v4를 통한 한국/미국 시장 중기 추세 및 리스크 분석
+- **버전 선택**: DB에서 레짐 분석 버전 선택 가능 (v1, v3, v4)
 - **동적 조건**: 시장 상황에 따른 필터 조건 자동 조정
 - **Fallback 로직**: 결과가 부족할 때 단계적으로 조건 완화
 
@@ -137,7 +138,10 @@ showmethestock/
 - `SCANNER_V2_ENABLED`: V2 활성화 여부
 
 ### DB 설정
-- `scanner_settings` 테이블에서 스캐너 버전 관리
+- `scanner_settings` 테이블에서 스캐너 버전 및 레짐 분석 버전 관리
+  - `scanner_version`: v1 또는 v2
+  - `scanner_v2_enabled`: true 또는 false
+  - `regime_version`: v1, v3, 또는 v4
 - `.env` 파일은 fallback으로 사용
 
 ## 빠른 시작
