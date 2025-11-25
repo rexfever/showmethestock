@@ -107,6 +107,16 @@ class Config:
             # DB 연결 실패 시 .env 사용
             return os.getenv("SCANNER_V2_ENABLED", "false").lower() == "true"
     
+    @property
+    def regime_version(self) -> str:
+        """레짐 분석 버전 (DB 우선, 없으면 .env)"""
+        try:
+            from scanner_settings_manager import get_regime_version
+            return get_regime_version()
+        except Exception:
+            # DB 연결 실패 시 .env 사용
+            return os.getenv("REGIME_VERSION", "v1")
+    
     # === 시장 상황 연동 설정 ===
     market_analysis_enable: bool = os.getenv("MARKET_ANALYSIS_ENABLE", "true").lower() == "true"
     market_analysis_interval: int = int(os.getenv("MARKET_ANALYSIS_INTERVAL", "60"))  # 분 단위

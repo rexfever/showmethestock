@@ -107,6 +107,14 @@ ON CONFLICT (setting_key) DO UPDATE SET
 - **가능한 값**: `true`, `false`
 - **기본값**: `false`
 
+### regime_version
+- **설명**: 레짐 분석 버전
+- **가능한 값**: `v1`, `v3`, `v4`
+  - `v1`: 기본 장세 분석 (KOSPI 수익률 기반)
+  - `v3`: Global Regime v3 (한국/미국 시장 분석)
+  - `v4`: Global Regime v4 (한국/미국 시장 + 리스크 분석)
+- **기본값**: `v1`
+
 ## 사용 패턴
 
 ### 설정 읽기 우선순위

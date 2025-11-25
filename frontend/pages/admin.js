@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   // 스캐너 설정 상태
   const [scannerSettings, setScannerSettings] = useState({
     scanner_version: 'v1',
+    regime_version: 'v1',
     scanner_v2_enabled: false
   });
   const [scannerLoading, setScannerLoading] = useState(false);
@@ -174,6 +175,7 @@ export default function AdminDashboard() {
         if (data.ok && data.settings) {
           setScannerSettings({
             scanner_version: data.settings.scanner_version || 'v1',
+            regime_version: data.settings.regime_version || 'v1',
             scanner_v2_enabled: data.settings.scanner_v2_enabled === 'true' || data.settings.scanner_v2_enabled === true
           });
         }
@@ -202,7 +204,8 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify({
           scanner_version: scannerSettings.scanner_version,
-          scanner_v2_enabled: scannerSettings.scanner_v2_enabled
+          scanner_v2_enabled: scannerSettings.scanner_v2_enabled,
+          regime_version: scannerSettings.regime_version || 'v1'
         })
       });
       
@@ -1439,6 +1442,28 @@ export default function AdminDashboard() {
               </p>
             </div>
 
+            {/* 레짐 분석 버전 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                레짐 분석 버전
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={scannerSettings.regime_version || 'v1'}
+                onChange={(e) => setScannerSettings({
+                  ...scannerSettings,
+                  regime_version: e.target.value
+                })}
+              >
+                <option value="v1">V1 (기본 장세 분석)</option>
+                <option value="v3">V3 (Global Regime v3)</option>
+                <option value="v4">V4 (Global Regime v4)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                시장 상황 분석 방법을 선택합니다. V4는 한국/미국 시장 + 리스크 분석을 포함합니다
+              </p>
+            </div>
+
             {/* V2 활성화 스위치 */}
             {scannerSettings.scanner_version === 'v2' && (
               <div className="flex items-center justify-between">
@@ -1465,8 +1490,12 @@ export default function AdminDashboard() {
             <div className="bg-gray-50 rounded-md p-4">
               <div className="text-sm space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">현재 버전:</span>
+                  <span className="text-gray-600">스캐너 버전:</span>
                   <span className="font-medium">{scannerSettings.scanner_version === 'v2' && scannerSettings.scanner_v2_enabled ? 'V2 (활성화됨)' : 'V1'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">레짐 분석 버전:</span>
+                  <span className="font-medium">{scannerSettings.regime_version || 'v1'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">적용 시점:</span>

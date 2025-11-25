@@ -34,6 +34,13 @@ def create_scanner_settings_table(cur):
             INSERT INTO scanner_settings (setting_key, setting_value, description)
             VALUES ('scanner_v2_enabled', 'false', '스캐너 V2 활성화 여부')
         """)
+    
+    cur.execute("SELECT COUNT(*) FROM scanner_settings WHERE setting_key = 'regime_version'")
+    if cur.fetchone()[0] == 0:
+        cur.execute("""
+            INSERT INTO scanner_settings (setting_key, setting_value, description)
+            VALUES ('regime_version', 'v1', '레짐 분석 버전 (v1, v3, v4)')
+        """)
 
 
 def get_scanner_setting(key: str, default: str = None) -> Optional[str]:
@@ -137,4 +144,15 @@ def get_scanner_v2_enabled() -> bool:
     # DB에 없으면 .env에서 읽기
     import os
     return os.getenv("SCANNER_V2_ENABLED", "false").lower() == "true"
+
+
+def get_regime_version() -> str:
+    """레짐 분석 버전 조회 (DB 우선, 없으면 .env)"""
+    db_value = get_scanner_setting('regime_version')
+    if db_value:
+        return db_value
+    
+    # DB에 없으면 .env에서 읽기
+    import os
+    return os.getenv("REGIME_VERSION", "v1")
 

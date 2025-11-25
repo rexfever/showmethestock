@@ -82,10 +82,26 @@ def run_market_analysis():
         # 오늘 날짜 (YYYYMMDD 형식)
         today = datetime.now().strftime('%Y%m%d')
         
-        # 장세 분석 실행
-        market_condition = market_analyzer.analyze_market_condition(today)
+        # 레짐 버전 가져오기
+        try:
+            from config import config
+            regime_version = getattr(config, 'regime_version', 'v1')
+        except Exception:
+            regime_version = 'v1'
         
-        logger.info(f"📊 장세 분석 완료: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+        # 장세 분석 실행 (레짐 버전 자동 선택)
+        market_condition = market_analyzer.analyze_market_condition(today, regime_version=regime_version)
+        
+        # 레짐 버전에 따른 로그 출력
+        if hasattr(market_condition, 'version'):
+            if market_condition.version == 'regime_v4':
+                logger.info(f"📊 Global Regime v4 분석 완료: {market_condition.final_regime} (trend: {market_condition.global_trend_score:.2f}, risk: {market_condition.global_risk_score:.2f})")
+            elif market_condition.version == 'regime_v3':
+                logger.info(f"📊 Global Regime v3 분석 완료: {market_condition.final_regime} (점수: {market_condition.final_score:.2f})")
+            else:
+                logger.info(f"📊 장세 분석 v1 완료: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+        else:
+            logger.info(f"📊 장세 분석 완료: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
         
         # DB에 저장
         with db_manager.get_cursor(commit=True) as cur:

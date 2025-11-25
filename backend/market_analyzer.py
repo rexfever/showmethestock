@@ -75,8 +75,39 @@ class MarketAnalyzer:
         self._cache.clear()
         logger.info("시장 분석 캐시 클리어됨")
         
-    def analyze_market_condition(self, date: str = None) -> MarketCondition:
-        """시장 상황 분석"""
+    def analyze_market_condition(self, date: str = None, regime_version: str = None) -> MarketCondition:
+        """
+        시장 상황 분석 (레짐 버전에 따라 자동 선택)
+        
+        Args:
+            date: 분석 날짜 (YYYYMMDD)
+            regime_version: 레짐 분석 버전 (v1, v3, v4). None이면 config에서 읽음
+        
+        Returns:
+            MarketCondition 객체
+        """
+        if date is None:
+            date = datetime.now().strftime('%Y%m%d')
+        
+        # 레짐 버전 결정
+        if regime_version is None:
+            try:
+                from config import config
+                regime_version = getattr(config, 'regime_version', 'v1')
+            except Exception:
+                regime_version = 'v1'
+        
+        # 레짐 버전에 따라 적절한 메서드 호출
+        if regime_version == 'v4':
+            return self.analyze_market_condition_v4(date, mode="production")
+        elif regime_version == 'v3':
+            return self.analyze_market_condition_v3(date, mode="production")
+        else:
+            # v1 (기본 장세 분석)
+            return self._analyze_market_condition_v1(date)
+    
+    def _analyze_market_condition_v1(self, date: str = None) -> MarketCondition:
+        """시장 상황 분석 v1 (기본 장세 분석)"""
         if date is None:
             date = datetime.now().strftime('%Y%m%d')
         

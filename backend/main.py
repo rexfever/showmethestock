@@ -548,10 +548,21 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     market_condition = None
     if config.market_analysis_enable:
         try:
-            # 캐시 클리어 후 새로 분석
+            # 캐시 클리어 후 새로 분석 (레짐 버전 자동 선택)
             market_analyzer.clear_cache()
-            market_condition = market_analyzer.analyze_market_condition(today_as_of)
-            print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+            regime_version = getattr(config, 'regime_version', 'v1')
+            market_condition = market_analyzer.analyze_market_condition(today_as_of, regime_version=regime_version)
+            
+            # 레짐 버전에 따른 로그 출력
+            if hasattr(market_condition, 'version'):
+                if market_condition.version == 'regime_v4':
+                    print(f"📊 Global Regime v4: {market_condition.final_regime} (trend: {market_condition.global_trend_score:.2f}, risk: {market_condition.global_risk_score:.2f})")
+                elif market_condition.version == 'regime_v3':
+                    print(f"📊 Global Regime v3: {market_condition.final_regime} (점수: {market_condition.final_score:.2f})")
+                else:
+                    print(f"📊 시장 상황 분석 v1: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+            else:
+                print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
         except Exception as e:
             print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
     
@@ -3537,7 +3548,7 @@ async def update_scanner_settings(
         from scanner_settings_manager import set_scanner_setting
         
         changes = []
-        allowed_keys = ['scanner_version', 'scanner_v2_enabled']
+        allowed_keys = ['scanner_version', 'scanner_v2_enabled', 'regime_version']
         
         for key, value in settings.items():
             if key not in allowed_keys:
@@ -3547,6 +3558,9 @@ async def update_scanner_settings(
             if key == 'scanner_version':
                 if value not in ['v1', 'v2']:
                     return {"ok": False, "error": f"scanner_version은 'v1' 또는 'v2'만 가능합니다."}
+            elif key == 'regime_version':
+                if value not in ['v1', 'v3', 'v4']:
+                    return {"ok": False, "error": f"regime_version은 'v1', 'v3', 또는 'v4'만 가능합니다."}
             elif key == 'scanner_v2_enabled':
                 if not isinstance(value, bool):
                     value = str(value).lower() == 'true'
