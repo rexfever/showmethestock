@@ -5,6 +5,8 @@ from typing import List, Dict, Optional, Tuple
 import requests
 import pandas as pd
 import numpy as np
+import pickle
+from pathlib import Path
 
 from auth import KiwoomAuth
 from config import config
@@ -22,6 +24,11 @@ class KiwoomAPI:
         self._ohlcv_cache: Dict[Tuple[str, int, Optional[str], Optional[str]], Tuple[pd.DataFrame, float]] = {}
         self._cache_ttl = 300  # 기본 5분 (초) - 상황에 따라 동적으로 계산됨
         self._cache_maxsize = 1000  # 최대 캐시 항목 수
+        
+        # 디스크 캐시 설정
+        self._disk_cache_dir = Path("cache/ohlcv")
+        self._disk_cache_dir.mkdir(parents=True, exist_ok=True)
+        self._disk_cache_enabled = True  # 디스크 캐시 활성화 여부
         # 모의 데이터 세트는 항상 준비 (실패 시 폴백용)
         self._mock_kospi = [
             "005930",  # 삼성전자
@@ -427,6 +434,7 @@ class KiwoomAPI:
         Args:
             code: 특정 종목 코드 (None이면 전체 캐시 클리어)
         """
+        # 메모리 캐시 클리어
         if code is None:
             self._ohlcv_cache.clear()
         else:
@@ -437,6 +445,17 @@ class KiwoomAPI:
             ]
             for key in keys_to_remove:
                 del self._ohlcv_cache[key]
+        
+        # 디스크 캐시 클리어
+        if code is None:
+            # 전체 디스크 캐시 삭제
+            for cache_file in self._disk_cache_dir.glob("*.pkl"):
+                cache_file.unlink()
+        else:
+            # 특정 종목의 디스크 캐시 삭제
+            pattern = f"{code}_*.pkl"
+            for cache_file in self._disk_cache_dir.glob(pattern):
+                cache_file.unlink()
     
     def get_ohlcv_cache_stats(self) -> Dict:
         """캐시 통계 반환"""
@@ -447,36 +466,160 @@ class KiwoomAPI:
         )
         expired_count = len(self._ohlcv_cache) - valid_count
         
-        return {
+        # 디스크 캐시 통계
+        disk_cache_files = list(self._disk_cache_dir.glob("*.pkl")) if self._disk_cache_enabled else []
+        disk_cache_size = sum(f.stat().st_size for f in disk_cache_files) if disk_cache_files else 0
+        
+        # 기존 형식 유지 (하위 호환성)
+        stats = {
             "total": len(self._ohlcv_cache),
             "valid": valid_count,
             "expired": expired_count,
             "maxsize": self._cache_maxsize,
-            "ttl": self._cache_ttl
+            "ttl": self._cache_ttl,
+            # 디스크 캐시 정보 추가
+            "disk": {
+                "enabled": self._disk_cache_enabled,
+                "total_files": len(disk_cache_files),
+                "total_size_bytes": disk_cache_size,
+                "total_size_mb": round(disk_cache_size / (1024 * 1024), 2),
+                "cache_dir": str(self._disk_cache_dir)
+            }
         }
+        
+        return stats
     
     def get_ohlcv(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
         """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환
         base_dt가 지정되면 해당 기준일을 마지막 행으로 하는 시계열을 우선 시도한다(YYYYMMDD).
         
-        캐싱 적용: 같은 (code, count, base_dt) 조합은 5분간 캐시에서 반환
+        캐싱 적용:
+        - 메모리 캐시 우선 확인
+        - base_dt가 있는 경우 디스크 캐시 확인
+        - 캐시 미스 시 API 호출 후 메모리 + 디스크 저장
         """
-        # 캐시 확인
+        # 1. 메모리 캐시 확인
         cached_df = self._get_cached_ohlcv(code, count, base_dt)
         if cached_df is not None:
             return cached_df
         
-        # 캐시 미스: API 호출
+        # 2. 디스크 캐시 확인 (base_dt가 있는 경우만)
+        if base_dt and self._disk_cache_enabled:
+            cached_df = self._load_from_disk_cache(code, count, base_dt)
+            if cached_df is not None:
+                # 메모리 캐시에도 저장
+                self._set_cached_ohlcv(code, count, base_dt, cached_df)
+                return cached_df
+        
+        # 3. 캐시 미스: API 호출
         if self.force_mock:
             df = self._gen_mock_ohlcv(code, count, base_dt)
         else:
             df = self._fetch_ohlcv_from_api(code, count, base_dt)
         
-        # 캐시 저장
+        # 4. 캐시 저장 (메모리 + 디스크)
         if not df.empty:
             self._set_cached_ohlcv(code, count, base_dt, df)
+            # base_dt가 있는 경우 디스크에도 저장 (과거 날짜)
+            if base_dt and self._disk_cache_enabled:
+                self._save_to_disk_cache(code, count, base_dt, df)
         
         return df
+    
+    def _get_disk_cache_file_path(self, code: str, count: int, base_dt: str) -> Path:
+        """디스크 캐시 파일 경로 생성
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+            base_dt: 기준일 (YYYYMMDD)
+        
+        Returns:
+            캐시 파일 경로
+        """
+        # 파일명: {code}_{count}_{base_dt}.pkl
+        filename = f"{code}_{count}_{base_dt}.pkl"
+        return self._disk_cache_dir / filename
+    
+    def _load_from_disk_cache(self, code: str, count: int, base_dt: str) -> Optional[pd.DataFrame]:
+        """디스크 캐시에서 OHLCV 데이터 로드
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+            base_dt: 기준일 (YYYYMMDD)
+        
+        Returns:
+            DataFrame 또는 None (캐시 없음/만료)
+        """
+        if not self._disk_cache_enabled:
+            return None
+        
+        cache_file = self._get_disk_cache_file_path(code, count, base_dt)
+        
+        if not cache_file.exists():
+            return None
+        
+        try:
+            # 파일에서 로드
+            with open(cache_file, 'rb') as f:
+                cached_data = pickle.load(f)
+                df, timestamp = cached_data
+            
+            # TTL 확인 (과거 날짜는 1년)
+            ttl = self._calculate_ttl(base_dt)
+            if time.time() - timestamp > ttl:
+                # 만료된 캐시 삭제
+                cache_file.unlink()
+                return None
+            
+            # 복사본 반환
+            return df.copy()
+        except Exception as e:
+            # 로드 실패 시 파일 삭제
+            try:
+                cache_file.unlink()
+            except:
+                pass
+            return None
+    
+    def _save_to_disk_cache(self, code: str, count: int, base_dt: str, df: pd.DataFrame) -> None:
+        """디스크 캐시에 OHLCV 데이터 저장
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+            base_dt: 기준일 (YYYYMMDD)
+            df: DataFrame
+        """
+        if not self._disk_cache_enabled or df.empty:
+            return
+        
+        # base_dt가 과거 날짜인 경우만 디스크 캐시 저장
+        try:
+            from datetime import datetime
+            base_date = datetime.strptime(base_dt, "%Y%m%d").date()
+            now_date = datetime.now().date()
+            
+            # 현재 날짜 또는 미래 날짜는 디스크 캐시 저장 안 함
+            if base_date >= now_date:
+                return
+        except:
+            # 날짜 파싱 실패 시 저장 안 함
+            return
+        
+        cache_file = self._get_disk_cache_file_path(code, count, base_dt)
+        
+        try:
+            # 디렉토리 생성 (이미 있지만 안전을 위해)
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # 파일에 저장
+            with open(cache_file, 'wb') as f:
+                pickle.dump((df.copy(), time.time()), f)
+        except Exception:
+            # 저장 실패해도 계속 진행 (디스크 문제 등)
+            pass
     
     def _fetch_ohlcv_from_api(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
         """API에서 OHLCV 데이터를 직접 가져오기 (캐싱 없음)"""
