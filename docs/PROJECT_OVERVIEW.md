@@ -21,6 +21,7 @@
 
 ### 3. 시장 분석
 - **장세 분석**: KOSPI 수익률 기반 시장 상황 판단
+- **레짐 분석**: Global Regime Analyzer v4를 통한 한국/미국 시장 중기 추세 및 리스크 분석
 - **동적 조건**: 시장 상황에 따른 필터 조건 자동 조정
 - **Fallback 로직**: 결과가 부족할 때 단계적으로 조건 완화
 
@@ -164,6 +165,7 @@ showmethestock/
 - [Scanner V2 사용 가이드](./scanner-v2/SCANNER_V2_USAGE.md)
 - [Scanner V2 설계](./scanner-v2/SCANNER_V2_DESIGN.md)
 - [V1 vs V2 비교](./scanner-v2/V1_VS_V2_COMPARISON.md)
+- [레짐 분석 가이드](./strategy/REGIME_ANALYSIS.md)
 
 ### 데이터베이스
 - [스캐너 설정 테이블](./database/SCANNER_SETTINGS_TABLE.md)
