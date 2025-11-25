@@ -118,18 +118,24 @@ WHERE setting_key = 'regime_version';
 - 빠른 분석이 필요한 경우
 - 글로벌 시장 데이터가 없는 경우
 - 단순한 장세 판단만 필요한 경우
+- 시스템 안정성이 최우선인 경우
 
 ### V3 사용 권장
 
 - 글로벌 시장을 고려해야 하는 경우
-- 리스크 분석이 불필요한 경우
+- 단기 매매 중심인 경우
 - V4 데이터 요구사항을 충족하지 못하는 경우
+- 리스크 분석이 덜 중요한 경우
 
-### V4 사용 권장 (기본 권장)
+### V4 사용 권장 (기본 권장) ⭐
 
+- **대부분의 경우 기본 권장**
 - 가장 정확한 시장 상황 분석이 필요한 경우
 - 리스크 관리가 중요한 경우
+- 중장기 투자 전략인 경우
 - 한국/미국 시장 데이터가 모두 있는 경우
+
+> **참고**: V4는 데이터가 없으면 자동으로 V3 또는 V1으로 fallback되므로 안전하게 사용할 수 있습니다.
 
 ## Scanner 버전과의 조합
 
@@ -166,6 +172,7 @@ WHERE setting_key = 'regime_version';
 ## 관련 문서
 
 - [레짐 분석 가이드](./REGIME_ANALYSIS.md)
+- [레짐 버전 선택 권장사항](./REGIME_VERSION_RECOMMENDATION.md) - **상세 권장사항 참조**
 - [Scanner V2 사용 가이드](../scanner-v2/SCANNER_V2_USAGE.md)
 - [스캐너 설정 테이블](../database/SCANNER_SETTINGS_TABLE.md)
 - [프로젝트 개요](../PROJECT_OVERVIEW.md)
