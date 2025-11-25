@@ -49,6 +49,46 @@ def get_trading_days(start_date: str, end_date: str) -> List[str]:
     return trading_days
 
 
+def get_nth_trading_day(start_date: str, n: int) -> Optional[str]:
+    """
+    시작일부터 N번째 거래일 반환
+    
+    Args:
+        start_date: 시작 날짜 (YYYYMMDD)
+        n: N번째 거래일 (1 = 다음 거래일, 2 = 다다음 거래일, ...)
+    
+    Returns:
+        N번째 거래일 (YYYYMMDD), 찾지 못하면 None
+    """
+    if n <= 0:
+        return start_date
+    
+    start_dt = datetime.strptime(start_date, "%Y%m%d")
+    kr_holidays = holidays.SouthKorea(years=range(start_dt.year, start_dt.year + 2))
+    
+    # 충분한 범위까지 거래일 찾기 (최대 30일 후까지)
+    end_dt = start_dt + timedelta(days=max(n * 2 + 10, 30))
+    
+    trading_days = []
+    current = start_dt
+    while current <= end_dt and len(trading_days) < n:
+        # 주말 체크
+        if current.weekday() < 5:  # 월~금
+            # 공휴일 체크
+            if current.date() not in kr_holidays:
+                trading_days.append(current.strftime("%Y%m%d"))
+        current += timedelta(days=1)
+    
+    # N번째 거래일 반환 (인덱스는 0부터 시작하므로 n-1)
+    if len(trading_days) >= n:
+        return trading_days[n - 1]
+    elif trading_days:
+        # N번째를 찾지 못했지만 마지막 거래일 반환
+        return trading_days[-1]
+    else:
+        return None
+
+
 def get_universe(kospi_limit: int = None, kosdaq_limit: int = None, date: str = None) -> List[str]:
     """유니버스 종목 리스트 가져오기"""
     kp = kospi_limit or config.universe_kospi
@@ -199,13 +239,21 @@ def analyze_performance(scan_results: List[Dict], days_after: int = 5) -> Dict:
         days_after: 몇 일 후 가격으로 성과 측정할지
     
     Returns:
-        성과 분석 결과
+        성과 분석 결과 (에러 통계 포함)
     """
     if not scan_results:
         return {
             "total_scans": 0,
             "total_items": 0,
-            "performance": {}
+            "analyzed_dates": 0,
+            "overall_avg_return": 0,
+            "overall_win_rate": 0,
+            "performance_by_date": {},
+            "errors": {
+                "date_errors": [],
+                "item_errors": [],
+                "total_item_errors": 0
+            }
         }
     
     total_scans = len([r for r in scan_results if r.get("success")])
@@ -213,6 +261,11 @@ def analyze_performance(scan_results: List[Dict], days_after: int = 5) -> Dict:
     
     # 날짜별 성과 분석
     performance_by_date = {}
+    error_stats = {
+        "date_errors": [],  # 날짜별 에러
+        "item_errors": [],  # 종목별 에러 (최대 100개)
+        "total_item_errors": 0  # 전체 종목 에러 수
+    }
     
     for result in scan_results:
         if not result.get("success") or not result.get("items"):
@@ -221,36 +274,70 @@ def analyze_performance(scan_results: List[Dict], days_after: int = 5) -> Dict:
         date = result["date"]
         items = result["items"]
         
-        # N일 후 가격 조회
+        # N일 후 가격 조회 (정확한 거래일 찾기)
         try:
-            target_date = datetime.strptime(date, "%Y%m%d") + timedelta(days=days_after)
-            target_date_str = target_date.strftime("%Y%m%d")
-            
-            # 거래일 조정
-            trading_days = get_trading_days(date, target_date_str)
-            if trading_days:
-                target_date_str = trading_days[-1] if len(trading_days) > 1 else date
-            else:
+            # N번째 거래일 찾기 (days_after일 후의 거래일)
+            target_date_str = get_nth_trading_day(date, days_after)
+            if not target_date_str:
+                # 거래일을 찾지 못한 경우 원래 날짜 사용
                 target_date_str = date
+                error_stats["date_errors"].append({
+                    "date": date,
+                    "error": f"{days_after}일 후 거래일을 찾지 못함"
+                })
             
             performance_data = []
+            item_errors_for_date = []
+            
             for item in items:
                 code = item.get("ticker") or item.get("code")
                 if not code:
+                    item_errors_for_date.append({
+                        "code": "UNKNOWN",
+                        "error": "종목 코드 없음"
+                    })
+                    error_stats["total_item_errors"] += 1
                     continue
                 
                 try:
                     # 스캔 당일 가격
                     scan_price = item.get("current_price") or item.get("close_price")
                     if not scan_price:
+                        item_errors_for_date.append({
+                            "code": code,
+                            "error": "가격 정보 없음"
+                        })
+                        error_stats["total_item_errors"] += 1
                         continue
                     
-                    # N일 후 가격
-                    df = api.get_ohlcv(code, 1, target_date_str)
+                    # N일 후 가격 조회 (base_dt 명시적 사용, 캐시 활용)
+                    # base_dt를 지정하여 해당 날짜 기준 데이터 조회
+                    df = api.get_ohlcv(code, count=1, base_dt=target_date_str)
                     if df.empty:
-                        continue
+                        # 캐시에서 찾지 못한 경우, 더 많은 데이터 조회 시도
+                        df = api.get_ohlcv(code, count=10, base_dt=target_date_str)
+                        if df.empty:
+                            item_errors_for_date.append({
+                                "code": code,
+                                "error": f"{target_date_str} OHLCV 데이터 없음"
+                            })
+                            error_stats["total_item_errors"] += 1
+                            continue
                     
-                    future_price = df.iloc[-1]['close']
+                    # base_dt가 지정된 경우, 해당 날짜의 데이터가 있는지 확인
+                    if 'date' in df.columns:
+                        # 날짜 컬럼이 있는 경우, target_date_str과 일치하는 행 찾기
+                        df['date_str'] = pd.to_datetime(df['date']).dt.strftime('%Y%m%d')
+                        target_df = df[df['date_str'] == target_date_str]
+                        if not target_df.empty:
+                            future_price = float(target_df.iloc[-1]['close'])
+                        else:
+                            # 정확한 날짜가 없으면 마지막 행 사용
+                            future_price = float(df.iloc[-1]['close'])
+                    else:
+                        # 날짜 컬럼이 없으면 마지막 행 사용
+                        future_price = float(df.iloc[-1]['close'])
+                    
                     return_pct = (future_price / scan_price - 1) * 100
                     
                     performance_data.append({
@@ -263,7 +350,22 @@ def analyze_performance(scan_results: List[Dict], days_after: int = 5) -> Dict:
                         "strategy": item.get("strategy", "관찰")
                     })
                 except Exception as e:
+                    # 종목별 에러 추적 (최대 100개)
+                    if len(error_stats["item_errors"]) < 100:
+                        error_stats["item_errors"].append({
+                            "date": date,
+                            "code": code,
+                            "error": str(e)
+                        })
+                    error_stats["total_item_errors"] += 1
                     continue
+            
+            # 날짜별 에러 기록
+            if item_errors_for_date:
+                error_stats["date_errors"].append({
+                    "date": date,
+                    "item_errors": item_errors_for_date[:10]  # 최대 10개만
+                })
             
             if performance_data:
                 avg_return = sum(p["return_pct"] for p in performance_data) / len(performance_data)
@@ -276,7 +378,10 @@ def analyze_performance(scan_results: List[Dict], days_after: int = 5) -> Dict:
                     "items": performance_data
                 }
         except Exception as e:
-            print(f"  ⚠️ {date} 성과 분석 실패: {e}")
+            error_stats["date_errors"].append({
+                "date": date,
+                "error": str(e)
+            })
             continue
     
     # 전체 통계
@@ -293,7 +398,8 @@ def analyze_performance(scan_results: List[Dict], days_after: int = 5) -> Dict:
         "analyzed_dates": len(performance_by_date),
         "overall_avg_return": overall_avg_return,
         "overall_win_rate": overall_win_rate,
-        "performance_by_date": performance_by_date
+        "performance_by_date": performance_by_date,
+        "errors": error_stats
     }
 
 
@@ -327,6 +433,18 @@ def print_summary(scan_results: List[Dict], performance: Dict):
             print(f"  {r['date']}: {r.get('error', 'Unknown error')}")
         if len(failed) > 5:
             print(f"  ... 외 {len(failed) - 5}개")
+    
+    # 에러 통계 표시
+    if performance.get('errors'):
+        errors = performance['errors']
+        if errors.get('date_errors') or errors.get('item_errors'):
+            print(f"\n⚠️ 에러 통계:")
+            print(f"  날짜별 에러: {len(errors.get('date_errors', []))}개")
+            print(f"  종목별 에러: {errors.get('total_item_errors', 0)}개")
+            if errors.get('date_errors'):
+                print(f"  날짜별 에러 상세 (최대 5개):")
+                for err in errors['date_errors'][:5]:
+                    print(f"    {err.get('date', 'UNKNOWN')}: {err.get('error', 'Unknown')}")
 
 
 def save_results(scan_results: List[Dict], performance: Dict, output_dir: str = "backtest_results"):
@@ -488,6 +606,22 @@ def main():
     
     # 결과 출력
     print_summary(scan_results, performance)
+    
+    # 캐시 상태 확인 (종료)
+    if not args.no_cache and cache_stats_before:
+        cache_stats_after = api.get_ohlcv_cache_stats()
+        print(f"\n📦 OHLCV 캐시 상태 (종료):")
+        print(f"  메모리: {cache_stats_after.get('memory', {}).get('hits', 0)} hits, "
+              f"{cache_stats_after.get('memory', {}).get('misses', 0)} misses")
+        print(f"  디스크: {cache_stats_after.get('disk', {}).get('files', 0)} 파일, "
+              f"{cache_stats_after.get('disk', {}).get('size_mb', 0):.2f} MB")
+        
+        # 캐시 히트율 계산
+        mem_hits = cache_stats_after.get('memory', {}).get('hits', 0)
+        mem_misses = cache_stats_after.get('memory', {}).get('misses', 0)
+        if mem_hits + mem_misses > 0:
+            hit_rate = mem_hits / (mem_hits + mem_misses) * 100
+            print(f"  캐시 히트율: {hit_rate:.2f}%")
     
     # 결과 저장
     if args.save_results:
