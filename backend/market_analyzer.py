@@ -224,6 +224,7 @@ class MarketAnalyzer:
                 volume_trend_label=volume_trend or "normal",
                 adjusted_params=dict(adjusted_conditions),
                 analysis_notes=f"effective={effective_return:.4f}, vol={volatility:.4f}, sample={sample_size}",
+                version="regime_v1",  # v1 기본 장세 분석
                 **adjusted_conditions
             )
             
