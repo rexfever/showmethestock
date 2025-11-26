@@ -624,23 +624,27 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             # 키움 API에서 가져온 등락률 사용
             cr = item["indicators"].get("change_rate", 0.0)
 
+            # V1과 V2 호환성: TEMA20 (V1) 또는 TEMA (V2)
+            tema_value = item["indicators"].get("TEMA") or item["indicators"].get("TEMA20", 0.0)
+            dema_value = item["indicators"].get("DEMA") or item["indicators"].get("DEMA10", 0.0)
+            
             scan_item = ScanItem(
                 ticker=ticker,
                 name=item["name"],
                 match=item["match"],
                 score=item["score"],
                 indicators=IndicatorPayload(
-                    TEMA=item["indicators"]["TEMA"],
-                    DEMA=item["indicators"]["DEMA"],
-                    MACD_OSC=item["indicators"]["MACD_OSC"],
-                    MACD_LINE=item["indicators"]["MACD_LINE"],
-                    MACD_SIGNAL=item["indicators"]["MACD_SIGNAL"],
-                    RSI_TEMA=item["indicators"]["RSI_TEMA"],
-                    RSI_DEMA=item["indicators"]["RSI_DEMA"],
-                    OBV=item["indicators"]["OBV"],
-                    VOL=item["indicators"]["VOL"],
-                    VOL_MA5=item["indicators"]["VOL_MA5"],
-                    close=item["indicators"]["close"],
+                    TEMA=tema_value,
+                    DEMA=dema_value,
+                    MACD_OSC=item["indicators"].get("MACD_OSC", 0.0),
+                    MACD_LINE=item["indicators"].get("MACD_LINE", 0.0),
+                    MACD_SIGNAL=item["indicators"].get("MACD_SIGNAL", 0.0),
+                    RSI_TEMA=item["indicators"].get("RSI_TEMA", 0.0),
+                    RSI_DEMA=item["indicators"].get("RSI_DEMA", 0.0),
+                    OBV=item["indicators"].get("OBV", 0.0),
+                    VOL=item["indicators"].get("VOL", 0),
+                    VOL_MA5=item["indicators"].get("VOL_MA5", 0.0),
+                    close=item["indicators"].get("close", 0.0),
                     change_rate=cr,
                 ),
                 trend=TrendPayload(
