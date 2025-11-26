@@ -246,6 +246,27 @@ class MarketAnalyzer:
             # 기본값 반환
             return self._get_default_condition(date)
     
+    def _get_daily_return_raw(self, date: str) -> Optional[float]:
+        """당일 수익률만 가져오기 (가중 평균 전 원본 값)"""
+        try:
+            from kiwoom_api import api
+            from main import is_trading_day
+            
+            if not is_trading_day(date):
+                return None
+            
+            df = api.get_ohlcv("069500", 2, date)
+            if df.empty or len(df) < 2:
+                return None
+            
+            prev_close = df.iloc[-2]['close']
+            curr_close = df.iloc[-1]['close']
+            if prev_close > 0:
+                return (curr_close / prev_close - 1)
+            return None
+        except Exception:
+            return None
+    
     def _get_kospi_data(self, date: str) -> Tuple[float, float, Optional[float]]:
         """KOSPI 지수 데이터 가져오기 - 며칠간의 추세를 반영한 종가, 변동성, 저가 기준 수익률 반환"""
         try:
