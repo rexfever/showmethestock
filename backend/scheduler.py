@@ -18,13 +18,13 @@ def get_notification_recipients():
     try:
         # 데이터베이스에서 알림 수신 동의한 사용자 조회
         with db_manager.get_cursor(commit=False) as cursor:
-        cursor.execute("""
+            cursor.execute("""
                 SELECT phone
                 FROM users
                 WHERE notification_enabled = TRUE
                   AND phone IS NOT NULL
                   AND phone != ''
-        """)
+            """)
             rows = cursor.fetchall()
         
         recipients = [row["phone"] for row in rows if row.get("phone")]
