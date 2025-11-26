@@ -136,10 +136,12 @@ class MarketAnalyzer:
             universe_return, sample_size = self._get_universe_return(date)
             
             # effective_return 계산 로직 개선
-            # 일반적인 장세 판단에는 종가 기준 사용
-            # 급락장 판단 시에만 가장 낮은 값 사용
-            # 며칠간의 추세를 반영한 kospi_return 사용 (이미 가중 평균으로 계산됨)
-            # 급락장 판단은 추세 반영 수익률 기준으로 판단
+            # 당일 수익률이 크게 변동한 경우(±2% 이상) 당일 수익률 우선 사용
+            # 며칠간의 추세를 반영한 kospi_return은 가중 평균으로 계산됨
+            # 당일 수익률 가져오기 (가중 평균 전 원본 값)
+            daily_return_raw = self._get_daily_return_raw(date)
+            
+            # effective_return 계산 로직
             if kospi_return < -0.025:  # -2.5% 미만 (crash 판단 기준)
                 # 급락장 판단을 위해 가장 낮은 수익률 사용
                 candidates = [kospi_return]  # 추세 반영 수익률
@@ -154,6 +156,10 @@ class MarketAnalyzer:
                     logger.info(f"급락장 판단: 저가 기준 사용 - 추세 {kospi_return*100:.2f}%, 저가 {kospi_low_return*100:.2f}%")
                 if universe_return is not None and universe_return < kospi_return:
                     logger.info(f"급락장 판단: 유니버스 기준 사용 - 추세 {kospi_return*100:.2f}%, 유니버스 평균 {universe_return*100:.2f}%")
+            elif daily_return_raw is not None and abs(daily_return_raw) >= 0.02:  # ±2% 이상 변동
+                # 큰 변동일 때는 당일 수익률 우선 사용 (가중 평균보다 정확)
+                effective_return = daily_return_raw
+                logger.info(f"큰 변동 감지: 당일 수익률 사용 - 당일 {daily_return_raw*100:.2f}%, 가중평균 {kospi_return*100:.2f}%")
             else:
                 # 일반적인 경우 추세 반영 수익률 사용
                 effective_return = kospi_return
