@@ -752,6 +752,78 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 for it in scan_items
             ]
             save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
+            
+            # 시장 상황도 함께 저장
+            if market_condition:
+                try:
+                    from main import create_market_conditions_table
+                    with db_manager.get_cursor() as cur:
+                        create_market_conditions_table(cur)
+                        cur.execute("""
+                            INSERT INTO market_conditions(
+                                date, market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                                sector_rotation, foreign_flow, institution_flow, volume_trend,
+                                min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                                trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                                foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (date) DO UPDATE SET
+                                market_sentiment = EXCLUDED.market_sentiment,
+                                sentiment_score = EXCLUDED.sentiment_score,
+                                kospi_return = EXCLUDED.kospi_return,
+                                volatility = EXCLUDED.volatility,
+                                rsi_threshold = EXCLUDED.rsi_threshold,
+                                sector_rotation = EXCLUDED.sector_rotation,
+                                foreign_flow = EXCLUDED.foreign_flow,
+                                institution_flow = EXCLUDED.institution_flow,
+                                volume_trend = EXCLUDED.volume_trend,
+                                min_signals = EXCLUDED.min_signals,
+                                macd_osc_min = EXCLUDED.macd_osc_min,
+                                vol_ma5_mult = EXCLUDED.vol_ma5_mult,
+                                gap_max = EXCLUDED.gap_max,
+                                ext_from_tema20_max = EXCLUDED.ext_from_tema20_max,
+                                trend_metrics = EXCLUDED.trend_metrics,
+                                breadth_metrics = EXCLUDED.breadth_metrics,
+                                flow_metrics = EXCLUDED.flow_metrics,
+                                sector_metrics = EXCLUDED.sector_metrics,
+                                volatility_metrics = EXCLUDED.volatility_metrics,
+                                foreign_flow_label = EXCLUDED.foreign_flow_label,
+                                institution_flow_label = EXCLUDED.institution_flow_label,
+                                volume_trend_label = EXCLUDED.volume_trend_label,
+                                adjusted_params = EXCLUDED.adjusted_params,
+                                analysis_notes = EXCLUDED.analysis_notes,
+                                updated_at = NOW()
+                        """, (
+                            resp.as_of,
+                            market_condition.market_sentiment,
+                            market_condition.sentiment_score,
+                            market_condition.kospi_return,
+                            market_condition.volatility,
+                            market_condition.rsi_threshold,
+                            market_condition.sector_rotation,
+                            market_condition.foreign_flow,
+                            market_condition.institution_flow,
+                            market_condition.volume_trend,
+                            market_condition.min_signals,
+                            market_condition.macd_osc_min,
+                            market_condition.vol_ma5_mult,
+                            market_condition.gap_max,
+                            market_condition.ext_from_tema20_max,
+                            json.dumps(market_condition.trend_metrics) if market_condition.trend_metrics else None,
+                            json.dumps(market_condition.breadth_metrics) if market_condition.breadth_metrics else None,
+                            json.dumps(market_condition.flow_metrics) if market_condition.flow_metrics else None,
+                            json.dumps(market_condition.sector_metrics) if market_condition.sector_metrics else None,
+                            json.dumps(market_condition.volatility_metrics) if market_condition.volatility_metrics else None,
+                            market_condition.foreign_flow_label,
+                            market_condition.institution_flow_label,
+                            market_condition.volume_trend_label,
+                            json.dumps(market_condition.adjusted_params) if market_condition.adjusted_params else None,
+                            market_condition.analysis_notes
+                        ))
+                    print(f"✅ 시장 상황 저장 완료: {resp.as_of} ({market_condition.market_sentiment}, {market_condition.kospi_return*100:.2f}%)")
+                except Exception as e:
+                    print(f"⚠️ 시장 상황 저장 실패: {e}")
+            
             print(f"✅ DB 저장 성공: {resp.as_of} (버전: {scanner_version or 'auto'})")
         except Exception as e:
             print(f"❌ DB 저장 실패: {e}")
