@@ -1082,8 +1082,8 @@ class MarketAnalyzer:
             # v4 분석 실행
             v4_result = analyze_regime_v4(date)
             
-            # 기존 분석도 실행 (호환성)
-            base_condition = self.analyze_market_condition(date)
+            # 기존 v1 분석 실행 (kospi_return 등 기본 정보를 위해)
+            base_condition = self._analyze_market_condition_v1(date)
             
             # v4 필드 업데이트
             base_condition.final_regime = v4_result["final_regime"]
