@@ -129,7 +129,8 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/latest-scan`, {
+      // V1 페이지는 항상 V1 데이터만 요청
+      const response = await fetch(`${base}/latest-scan?scanner_version=v1`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -639,13 +640,14 @@ export async function getServerSideProps() {
     const config = getConfig();
     const base = config.backendUrl;
     
-    console.log('SSR: Fetching from', `${base}/latest-scan`);
+    // V1 페이지는 항상 V1 데이터만 요청
+    console.log('SSR: Fetching from', `${base}/latest-scan?scanner_version=v1`);
     
     // Next.js 서버 측 fetch는 timeout 옵션을 지원하지 않으므로 제거
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
     
-    const response = await fetch(`${base}/latest-scan`, {
+    const response = await fetch(`${base}/latest-scan?scanner_version=v1`, {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',

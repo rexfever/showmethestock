@@ -187,6 +187,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
+    authLoading: loading, // Header 컴포넌트 호환성
     authChecked,
     login,
     logout,

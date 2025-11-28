@@ -1,0 +1,817 @@
+📅 총 224개 날짜를 처리합니다.
+
+📊 총 224개 날짜의 레짐 정보를 v4로 업데이트 시작...
+캐시 사용: 예
+배치 크기: 20
+
+[1/224] 20251128 분석 중... 장세 데이터 upsert 실패 (20251128): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[2/224] 20251127 분석 중... 장세 데이터 upsert 실패 (20251127): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[3/224] 20251126 분석 중... 장세 데이터 upsert 실패 (20251126): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[4/224] 20251125 분석 중... 장세 데이터 upsert 실패 (20251125): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[5/224] 20251124 분석 중... 장세 데이터 upsert 실패 (20251124): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[6/224] 20251121 분석 중... 장세 데이터 upsert 실패 (20251121): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[7/224] 20251120 분석 중... 장세 데이터 upsert 실패 (20251120): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[8/224] 20251119 분석 중... 장세 데이터 upsert 실패 (20251119): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[9/224] 20251118 분석 중... 장세 데이터 upsert 실패 (20251118): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[10/224] 20251117 분석 중... 장세 데이터 upsert 실패 (20251117): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[11/224] 20251114 분석 중... 장세 데이터 upsert 실패 (20251114): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[12/224] 20251113 분석 중... 장세 데이터 upsert 실패 (20251113): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[13/224] 20251112 분석 중... 장세 데이터 upsert 실패 (20251112): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[14/224] 20251111 분석 중... 장세 데이터 upsert 실패 (20251111): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[15/224] 20251110 분석 중... 장세 데이터 upsert 실패 (20251110): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[16/224] 20251107 분석 중... 장세 데이터 upsert 실패 (20251107): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[17/224] 20251106 분석 중... 장세 데이터 upsert 실패 (20251106): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[18/224] 20251105 분석 중... 장세 데이터 upsert 실패 (20251105): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[19/224] 20251104 분석 중... 장세 데이터 upsert 실패 (20251104): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[20/224] 20251103 분석 중... 장세 데이터 upsert 실패 (20251103): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 20/224 (성공: 20, 실패: 0, 건너뜀: 0)
+
+[21/224] 20251031 분석 중... 장세 데이터 upsert 실패 (20251031): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[22/224] 20251030 분석 중... 장세 데이터 upsert 실패 (20251030): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[23/224] 20251029 분석 중... 장세 데이터 upsert 실패 (20251029): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[24/224] 20251028 분석 중... 장세 데이터 upsert 실패 (20251028): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[25/224] 20251027 분석 중... 장세 데이터 upsert 실패 (20251027): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[26/224] 20251024 분석 중... 장세 데이터 upsert 실패 (20251024): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[27/224] 20251023 분석 중... 장세 데이터 upsert 실패 (20251023): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[28/224] 20251022 분석 중... 장세 데이터 upsert 실패 (20251022): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[29/224] 20251021 분석 중... 장세 데이터 upsert 실패 (20251021): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[30/224] 20251020 분석 중... 장세 데이터 upsert 실패 (20251020): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[31/224] 20251017 분석 중... 장세 데이터 upsert 실패 (20251017): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[32/224] 20251016 분석 중... 장세 데이터 upsert 실패 (20251016): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[33/224] 20251015 분석 중... 장세 데이터 upsert 실패 (20251015): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[34/224] 20251014 분석 중... 장세 데이터 upsert 실패 (20251014): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[35/224] 20251013 분석 중... 장세 데이터 upsert 실패 (20251013): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[36/224] 20251010 분석 중... 장세 데이터 upsert 실패 (20251010): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[37/224] 20251002 분석 중... 장세 데이터 upsert 실패 (20251002): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[38/224] 20251001 분석 중... 장세 데이터 upsert 실패 (20251001): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[39/224] 20250930 분석 중... 장세 데이터 upsert 실패 (20250930): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[40/224] 20250929 분석 중... 장세 데이터 upsert 실패 (20250929): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 40/224 (성공: 40, 실패: 0, 건너뜀: 0)
+
+[41/224] 20250926 분석 중... 장세 데이터 upsert 실패 (20250926): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[42/224] 20250925 분석 중... 장세 데이터 upsert 실패 (20250925): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[43/224] 20250924 분석 중... 장세 데이터 upsert 실패 (20250924): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[44/224] 20250923 분석 중... 장세 데이터 upsert 실패 (20250923): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[45/224] 20250922 분석 중... 장세 데이터 upsert 실패 (20250922): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[46/224] 20250919 분석 중... 장세 데이터 upsert 실패 (20250919): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[47/224] 20250918 분석 중... 장세 데이터 upsert 실패 (20250918): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[48/224] 20250917 분석 중... 장세 데이터 upsert 실패 (20250917): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[49/224] 20250916 분석 중... 장세 데이터 upsert 실패 (20250916): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[50/224] 20250915 분석 중... 장세 데이터 upsert 실패 (20250915): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[51/224] 20250912 분석 중... 장세 데이터 upsert 실패 (20250912): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[52/224] 20250911 분석 중... 장세 데이터 upsert 실패 (20250911): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[53/224] 20250910 분석 중... 장세 데이터 upsert 실패 (20250910): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[54/224] 20250909 분석 중... 장세 데이터 upsert 실패 (20250909): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[55/224] 20250908 분석 중... 장세 데이터 upsert 실패 (20250908): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[56/224] 20250905 분석 중... 장세 데이터 upsert 실패 (20250905): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[57/224] 20250904 분석 중... 장세 데이터 upsert 실패 (20250904): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[58/224] 20250903 분석 중... 장세 데이터 upsert 실패 (20250903): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[59/224] 20250902 분석 중... 장세 데이터 upsert 실패 (20250902): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[60/224] 20250901 분석 중... 장세 데이터 upsert 실패 (20250901): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 60/224 (성공: 60, 실패: 0, 건너뜀: 0)
+
+[61/224] 20250829 분석 중... 장세 데이터 upsert 실패 (20250829): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[62/224] 20250828 분석 중... 장세 데이터 upsert 실패 (20250828): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[63/224] 20250827 분석 중... 장세 데이터 upsert 실패 (20250827): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[64/224] 20250826 분석 중... 장세 데이터 upsert 실패 (20250826): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[65/224] 20250825 분석 중... 장세 데이터 upsert 실패 (20250825): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[66/224] 20250822 분석 중... 장세 데이터 upsert 실패 (20250822): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[67/224] 20250821 분석 중... 장세 데이터 upsert 실패 (20250821): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[68/224] 20250820 분석 중... 장세 데이터 upsert 실패 (20250820): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[69/224] 20250819 분석 중... 장세 데이터 upsert 실패 (20250819): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[70/224] 20250818 분석 중... 장세 데이터 upsert 실패 (20250818): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[71/224] 20250814 분석 중... 장세 데이터 upsert 실패 (20250814): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[72/224] 20250813 분석 중... 장세 데이터 upsert 실패 (20250813): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[73/224] 20250812 분석 중... 장세 데이터 upsert 실패 (20250812): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[74/224] 20250811 분석 중... 장세 데이터 upsert 실패 (20250811): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[75/224] 20250808 분석 중... 장세 데이터 upsert 실패 (20250808): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[76/224] 20250807 분석 중... 장세 데이터 upsert 실패 (20250807): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[77/224] 20250806 분석 중... 장세 데이터 upsert 실패 (20250806): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[78/224] 20250805 분석 중... 장세 데이터 upsert 실패 (20250805): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[79/224] 20250804 분석 중... 장세 데이터 upsert 실패 (20250804): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[80/224] 20250801 분석 중... 장세 데이터 upsert 실패 (20250801): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 80/224 (성공: 80, 실패: 0, 건너뜀: 0)
+
+[81/224] 20250731 분석 중... 장세 데이터 upsert 실패 (20250731): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[82/224] 20250730 분석 중... 장세 데이터 upsert 실패 (20250730): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[83/224] 20250729 분석 중... 장세 데이터 upsert 실패 (20250729): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[84/224] 20250728 분석 중... 장세 데이터 upsert 실패 (20250728): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[85/224] 20250725 분석 중... 장세 데이터 upsert 실패 (20250725): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[86/224] 20250724 분석 중... 장세 데이터 upsert 실패 (20250724): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[87/224] 20250723 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[88/224] 20250722 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[89/224] 20250721 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[90/224] 20250718 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[91/224] 20250717 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[92/224] 20250716 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[93/224] 20250715 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[94/224] 20250714 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[95/224] 20250711 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[96/224] 20250710 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[97/224] 20250709 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[98/224] 20250708 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[99/224] 20250707 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[100/224] 20250704 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 100/224 (성공: 100, 실패: 0, 건너뜀: 0)
+
+[101/224] 20250703 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[102/224] 20250702 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[103/224] 20250701 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[104/224] 20250630 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[105/224] 20250627 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[106/224] 20250626 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[107/224] 20250625 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[108/224] 20250624 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[109/224] 20250623 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[110/224] 20250620 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[111/224] 20250619 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[112/224] 20250618 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[113/224] 20250617 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[114/224] 20250616 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[115/224] 20250613 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[116/224] 20250612 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[117/224] 20250611 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[118/224] 20250610 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[119/224] 20250609 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[120/224] 20250605 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 120/224 (성공: 120, 실패: 0, 건너뜀: 0)
+
+[121/224] 20250604 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[122/224] 20250603 분석 중... 거래일이 아닙니다: 20250603, 기본 조건 반환
+거래일 체크 실패: MarketCondition.__init__() missing 1 required positional argument: 'institution_flow'
+거래일이 아닙니다: 20250603, 장세 분석 건너뜀
+✅ neutral (trend: 1.40, risk: 0.00)
+[123/224] 20250602 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[124/224] 20250530 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[125/224] 20250529 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[126/224] 20250528 분석 중... ✅ neutral (trend: 1.40, risk: 0.00)
+[127/224] 20250527 분석 중...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           장세 데이터 upsert 실패 (20250203): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[206/224] 20250131 분석 중... 장세 데이터 upsert 실패 (20250131): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[207/224] 20250127 분석 중... 거래일이 아닙니다: 20250127, 기본 조건 반환
+거래일 체크 실패: MarketCondition.__init__() missing 1 required positional argument: 'institution_flow'
+거래일이 아닙니다: 20250127, 장세 분석 건너뜀
+장세 데이터 upsert 실패 (20250127): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[208/224] 20250124 분석 중... 장세 데이터 upsert 실패 (20250124): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[209/224] 20250123 분석 중... 장세 데이터 upsert 실패 (20250123): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[210/224] 20250122 분석 중... 장세 데이터 upsert 실패 (20250122): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[211/224] 20250121 분석 중... 장세 데이터 upsert 실패 (20250121): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[212/224] 20250120 분석 중... 장세 데이터 upsert 실패 (20250120): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[213/224] 20250117 분석 중... 장세 데이터 upsert 실패 (20250117): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[214/224] 20250116 분석 중... 장세 데이터 upsert 실패 (20250116): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[215/224] 20250115 분석 중... 장세 데이터 upsert 실패 (20250115): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[216/224] 20250114 분석 중... 장세 데이터 upsert 실패 (20250114): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[217/224] 20250113 분석 중... 장세 데이터 upsert 실패 (20250113): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[218/224] 20250110 분석 중... 장세 데이터 upsert 실패 (20250110): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[219/224] 20250109 분석 중... 장세 데이터 upsert 실패 (20250109): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[220/224] 20250108 분석 중... 장세 데이터 upsert 실패 (20250108): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+
+  진행 상황: 220/224 (성공: 220, 실패: 0, 건너뜀: 0)
+
+[221/224] 20250107 분석 중... 장세 데이터 upsert 실패 (20250107): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[222/224] 20250106 분석 중... 장세 데이터 upsert 실패 (20250106): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[223/224] 20250103 분석 중... 장세 데이터 upsert 실패 (20250103): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+[224/224] 20250102 분석 중... 장세 데이터 upsert 실패 (20250102): relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+DB 저장 실패, 계속 진행: relation "market_regime_daily" does not exist
+LINE 2:                     INSERT INTO market_regime_daily (
+                                        ^
+✅ neutral (trend: 1.40, risk: 0.00)
+
+📊 완료: 성공 224개, 실패 0개, 건너뜀 0개

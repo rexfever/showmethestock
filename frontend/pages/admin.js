@@ -66,6 +66,13 @@ export default function AdminDashboard() {
     scanner_v2_enabled: false
   });
   const [scannerLoading, setScannerLoading] = useState(false);
+  
+  // 바텀메뉴 링크 설정 상태
+  const [bottomNavLink, setBottomNavLink] = useState({
+    link_type: 'v1'  // 'v1' 또는 'v2'
+  });
+  const [bottomNavLinkLoading, setBottomNavLinkLoading] = useState(false);
+  const [scannerLink, setScannerLink] = useState('/customer-scanner'); // 동적 스캐너 링크
 
   useEffect(() => {
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
@@ -92,8 +99,26 @@ export default function AdminDashboard() {
     );
     
     if (!isAdmin) {
+      // 동적 스캐너 링크를 먼저 가져온 후 리다이렉트
+      const redirectToScanner = async () => {
+        try {
+          const config = getConfig();
+          const base = config.backendUrl;
+          const response = await fetch(`${base}/bottom-nav-link`);
+          if (response.ok) {
+            const data = await response.json();
+            const linkUrl = data.link_url || '/customer-scanner';
+            router.push(linkUrl);
+          } else {
+            router.push('/customer-scanner');
+          }
+        } catch (error) {
+          console.error('스캐너 링크 조회 실패:', error);
+          router.push('/customer-scanner');
+        }
+      };
       alert('관리자 권한이 필요합니다.');
-      router.push('/customer-scanner');
+      redirectToScanner();
       return;
     }
     
@@ -106,8 +131,65 @@ export default function AdminDashboard() {
       fetchTrendAnalysis();
       fetchMarketCondition();
       fetchScannerSettings();
+      fetchBottomNavLink();
     }
-  }, [authChecked, authLoading, isAuthenticated, user, router, router.query.analyze]);
+  }, [authChecked, authLoading, isAuthenticated, router, token]);
+
+  const fetchBottomNavLink = async () => {
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-link`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBottomNavLink({
+          link_type: data.link_type || 'v1'
+        });
+        // 동적 스캐너 링크 설정
+        const linkUrl = data.link_url || (data.link_type === 'v2' ? '/v2/scanner-v2' : '/customer-scanner');
+        setScannerLink(linkUrl);
+      }
+    } catch (error) {
+      console.error('바텀메뉴 링크 설정 조회 실패:', error);
+      // 에러 시 기본값 사용
+      setScannerLink('/customer-scanner');
+    }
+  };
+
+  const updateBottomNavLink = async () => {
+    setBottomNavLinkLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-link`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ link_type: bottomNavLink.link_type }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message || '바텀메뉴 링크 설정이 저장되었습니다.');
+        // 설정 다시 불러오기
+        fetchBottomNavLink();
+      } else {
+        const data = await response.json();
+        alert(`저장 실패: ${data.detail || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error('바텀메뉴 링크 설정 저장 실패:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setBottomNavLinkLoading(false);
+    }
+  };
 
   const fetchTrendAnalysis = async () => {
     setTrendLoading(true);
@@ -818,7 +900,7 @@ export default function AdminDashboard() {
             <p className="mt-2 text-gray-600">사용자 관리 및 시스템 통계</p>
           </div>
           <button
-            onClick={() => router.push('/customer-scanner')}
+            onClick={() => router.push(scannerLink)}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-700 border border-gray-300 rounded-md"
           >
             메인으로 돌아가기
@@ -1440,6 +1522,10 @@ export default function AdminDashboard() {
               <p className="text-xs text-gray-500 mt-1">
                 V2는 최근 개선된 로직(신호 우선 원칙, 멀티데이 트렌드 분석 등)을 포함합니다
               </p>
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                💡 <strong>버전 전환 안내:</strong> 버전을 변경하면 다음 스캔부터 적용됩니다. 
+                V2는 매매 가이드(목표 수익률, 손절, 보유기간)를 제공합니다.
+              </div>
             </div>
 
             {/* 레짐 분석 버전 선택 */}
@@ -1512,6 +1598,62 @@ export default function AdminDashboard() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {scannerLoading ? '저장 중...' : '설정 저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 바텀메뉴 링크 설정 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">바텀메뉴 링크 설정</h2>
+            <p className="text-sm text-gray-600">바텀메뉴의 "추천종목" 버튼이 연결될 화면을 설정합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            {/* 링크 타입 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                추천종목 링크
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={bottomNavLink.link_type}
+                onChange={(e) => setBottomNavLink({
+                  ...bottomNavLink,
+                  link_type: e.target.value
+                })}
+              >
+                <option value="v1">V1 화면 (/customer-scanner)</option>
+                <option value="v2">V2 화면 (/v2/scanner-v2)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                V1: 기존 스캐너 화면 | V2: 인피니티 스크롤 스캐너 화면
+              </p>
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                💡 <strong>설정 안내:</strong> 변경 사항은 즉시 적용됩니다. 사용자가 바텀메뉴의 "추천종목" 버튼을 클릭하면 선택한 화면으로 이동합니다.
+              </div>
+            </div>
+
+            {/* 현재 설정 정보 */}
+            <div className="bg-gray-50 rounded-md p-4">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">현재 링크:</span>
+                  <span className="font-medium">
+                    {bottomNavLink.link_type === 'v1' ? 'V1 화면 (/customer-scanner)' : 'V2 화면 (/v2/scanner-v2)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 저장 버튼 */}
+            <div className="flex justify-end">
+              <button
+                onClick={updateBottomNavLink}
+                disabled={bottomNavLinkLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bottomNavLinkLoading ? '저장 중...' : '설정 저장'}
               </button>
             </div>
           </div>

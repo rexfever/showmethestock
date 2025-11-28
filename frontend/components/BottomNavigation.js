@@ -1,9 +1,32 @@
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import getConfig from '../config';
 
 export default function BottomNavigation() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [scannerLink, setScannerLink] = useState('/customer-scanner');
+
+  useEffect(() => {
+    // 바텀메뉴 링크 설정 가져오기
+    const fetchBottomNavLink = async () => {
+      try {
+        const config = getConfig();
+        const base = config.backendUrl;
+        const response = await fetch(`${base}/bottom-nav-link`);
+        if (response.ok) {
+          const data = await response.json();
+          setScannerLink(data.link_url || '/customer-scanner');
+        }
+      } catch (error) {
+        console.error('바텀메뉴 링크 설정 조회 실패:', error);
+        // 에러 시 기본값 사용
+        setScannerLink('/customer-scanner');
+      }
+    };
+    fetchBottomNavLink();
+  }, []);
 
   return (
     <>
@@ -12,7 +35,7 @@ export default function BottomNavigation() {
         <div className="flex justify-around items-center py-2">
           <button 
             className="flex flex-col items-center py-2 hover:bg-gray-800"
-            onClick={() => router.push('/customer-scanner')}
+            onClick={() => router.push(scannerLink)}
           >
             <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -27,15 +50,6 @@ export default function BottomNavigation() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <span className="text-xs">종목분석</span>
-          </button>
-          <button 
-            className="flex flex-col items-center py-2 hover:bg-gray-800"
-            onClick={() => router.push('/portfolio')}
-          >
-            <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <span className="text-xs">나의투자종목</span>
           </button>
           {user?.is_admin && (
             <button 

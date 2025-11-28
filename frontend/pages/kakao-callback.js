@@ -64,7 +64,7 @@ export default function KakaoCallback() {
           
           setStatus('로그인 성공! 메인 페이지로 이동합니다.');
           setTimeout(() => {
-            router.push('/customer-scanner');
+            router.push('/v2/scanner-v2');
           }, 2000);
         } else {
           setStatus('로그인 처리 중 오류가 발생했습니다.');

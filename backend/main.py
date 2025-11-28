@@ -693,6 +693,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         score_level_watch=config.score_level_watch,
         require_dema_slope=getattr(config, 'require_dema_slope', 'required'),
         market_guide=market_guide,
+        scanner_version=scanner_version or getattr(config, 'scanner_version', 'v1'),  # DB 설정 기반 버전 정보
     )
     if save_snapshot:
         # 스냅샷에는 핵심 메타/랭킹만 저장(용량 절약)
@@ -1796,8 +1797,13 @@ async def get_available_scan_dates():
 
 
 @app.get("/scan-by-date/{date}")
-async def get_scan_by_date(date: str):
-    """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)"""
+async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
+    """특정 날짜의 스캔 결과를 가져옵니다. (YYYYMMDD 형식)
+    
+    Args:
+        date: 날짜 (YYYYMMDD 형식)
+        scanner_version: 스캐너 버전 ('v1' 또는 'v2'). None이면 DB 설정 사용
+    """
     try:
         from datetime import datetime
 
@@ -1819,14 +1825,53 @@ async def get_scan_by_date(date: str):
         from date_helper import yyyymmdd_to_date
         target_date = yyyymmdd_to_date(formatted_date)
         
+        # 스캐너 버전 결정: 파라미터 > DB 설정 > 기본값
+        if scanner_version and scanner_version in ['v1', 'v2']:
+            target_scanner_version = scanner_version
+        else:
+            # DB 설정에서 읽기
+            try:
+                from scanner_settings_manager import get_scanner_version
+                target_scanner_version = get_scanner_version()
+            except Exception:
+                from config import config
+                target_scanner_version = getattr(config, 'scanner_version', 'v1')
+        
         with db_manager.get_cursor(commit=False) as cur:
+            # 먼저 해당 날짜에 요청한 버전의 데이터가 있는지 확인
+            cur.execute("""
+                SELECT DISTINCT scanner_version
+                FROM scan_rank
+                WHERE date = %s AND scanner_version = %s
+                LIMIT 1
+            """, (target_date, target_scanner_version))
+            version_row = cur.fetchone()
+            
+            # 요청한 버전이 없으면 해당 날짜의 다른 버전 확인
+            if not version_row:
+                cur.execute("""
+                    SELECT DISTINCT scanner_version
+                    FROM scan_rank
+                    WHERE date = %s
+                    ORDER BY scanner_version DESC
+                    LIMIT 1
+                """, (target_date,))
+                version_row = cur.fetchone()
+            
+            detected_version = target_scanner_version
+            if version_row:
+                if isinstance(version_row, dict):
+                    detected_version = version_row.get("scanner_version", target_scanner_version)
+                else:
+                    detected_version = version_row[0] if version_row[0] else target_scanner_version
+            
             cur.execute("""
                 SELECT code, name, score, score_label, close_price AS current_price, volume,
                        change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
                 FROM scan_rank
-                WHERE date = %s
+                WHERE date = %s AND scanner_version = %s
                 ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
-            """, (target_date,))
+            """, (target_date, detected_version))
             rows = cur.fetchall()
         
         if not rows:
@@ -1858,12 +1903,19 @@ async def get_scan_by_date(date: str):
             market = data.get("market")
             strategy = data.get("strategy")
             
+            # 추천일 종가 (recommended_price) - DB의 close_price 사용
+            recommended_price = current_price  # close_price가 current_price로 매핑됨
+            
+            # 수익률 계산
             try:
                 returns_info = calculate_returns(code, formatted_date)
                 current_return = returns_info.get('current_return', 0)
                 max_return = returns_info.get('max_return', 0)
                 min_return = returns_info.get('min_return', 0)
                 days_elapsed = returns_info.get('days_elapsed', 0)
+                # calculate_returns에서 반환한 scan_price가 더 정확할 수 있음
+                if returns_info and returns_info.get('scan_price'):
+                    recommended_price = returns_info.get('scan_price')
             except Exception:
                 current_return = 0
                 max_return = 0
@@ -1890,6 +1942,10 @@ async def get_scan_by_date(date: str):
                     "min_return": min_return,
                     "days_elapsed": days_elapsed
                 },
+                # V2 UI를 위한 추가 필드
+                "recommended_price": recommended_price,
+                "recommended_date": formatted_date,
+                "current_return": current_return,  # 편의를 위해 최상위 레벨에도 추가
                 "recurrence": json.loads(recurrence_raw) if isinstance(recurrence_raw, str) and recurrence_raw else (recurrence_raw or {})
             }
             items.append(item)
@@ -1898,6 +1954,26 @@ async def get_scan_by_date(date: str):
         market_condition = None
         try:
             with db_manager.get_cursor(commit=False) as cur_mc:
+                # market_conditions.date는 TEXT 타입이므로 문자열 형식으로 변환
+                # target_date는 DATE 타입, formatted_date는 YYYYMMDD 문자열
+                def normalize_date_for_market_conditions(date_val):
+                    if not date_val:
+                        return None
+                    # DATE 타입이면 문자열로 변환
+                    if hasattr(date_val, 'strftime'):
+                        return date_val.strftime('%Y-%m-%d')
+                    # 문자열이면 YYYY-MM-DD 형식으로 정규화
+                    date_str = str(date_val)
+                    if len(date_str) == 8 and '-' not in date_str:
+                        return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                    elif '-' in date_str:
+                        return date_str
+                    else:
+                        return date_str
+                
+                query_date1 = normalize_date_for_market_conditions(target_date)
+                query_date2 = normalize_date_for_market_conditions(formatted_date)
+                
                 cur_mc.execute("""
                     SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
                            sector_rotation, foreign_flow, volume_trend,
@@ -1905,7 +1981,7 @@ async def get_scan_by_date(date: str):
                            trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
                            foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
                     FROM market_conditions WHERE date = %s OR date = %s
-                """, (target_date, formatted_date))
+                """, (query_date1, query_date2))
                 row_mc = cur_mc.fetchone()
             
             if row_mc:
@@ -1978,7 +2054,8 @@ async def get_scan_by_date(date: str):
             "rsi_period": 14,
             "rsi_threshold": 57.0,
             "items": items,
-            "market_condition": market_condition
+            "market_condition": market_condition,
+            "scanner_version": detected_version
         }
         data["enhanced_items"] = items
         
@@ -1990,8 +2067,12 @@ async def get_scan_by_date(date: str):
 
 # 기존 스냅샷 파일 관련 함수들은 제거됨 - DB만 사용
 
-def get_latest_scan_from_db():
-    """DB에서 직접 최신 스캔 결과를 조회하는 함수 (SSR용)"""
+def get_latest_scan_from_db(scanner_version: Optional[str] = None):
+    """DB에서 직접 최신 스캔 결과를 조회하는 함수 (SSR용)
+    
+    Args:
+        scanner_version: 스캐너 버전 ('v1' 또는 'v2'). None이면 DB 설정 사용
+    """
     try:
         from datetime import datetime
         
@@ -2005,20 +2086,54 @@ def get_latest_scan_from_db():
                 row
             )}
         
+        # 스캐너 버전 결정: 파라미터 > DB 설정 > 기본값
+        if scanner_version and scanner_version in ['v1', 'v2']:
+            target_scanner_version = scanner_version
+        else:
+            # DB 설정에서 읽기
+            try:
+                from scanner_settings_manager import get_scanner_version
+                target_scanner_version = get_scanner_version()
+            except Exception:
+                from config import config
+                target_scanner_version = getattr(config, 'scanner_version', 'v1')
+        
+        # 요청한 스캐너 버전으로 최신 스캔 찾기 (우선)
         with db_manager.get_cursor(commit=False) as cur:
             cur.execute("""
-                SELECT date
+                SELECT date, scanner_version
                 FROM scan_rank
-                WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'
+                WHERE scanner_version = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
                 ORDER BY date DESC
                 LIMIT 1
-            """)
+            """, (target_scanner_version,))
             latest_row = cur.fetchone()
+        
+        # 요청한 버전으로 찾지 못하면 다른 버전으로 찾기 (fallback)
+        if not latest_row:
+            with db_manager.get_cursor(commit=False) as cur:
+                cur.execute("""
+                    SELECT date, scanner_version
+                    FROM scan_rank
+                    WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'
+                    ORDER BY date DESC, scanner_version DESC
+                    LIMIT 1
+                """)
+                latest_row = cur.fetchone()
         
         if not latest_row:
             return {"ok": False, "error": "올바른 스캔 결과가 없습니다."}
         
-        raw_date = latest_row.get("date") if isinstance(latest_row, dict) else latest_row[0]
+        if isinstance(latest_row, dict):
+            raw_date = latest_row.get("date")
+            detected_version = latest_row.get("scanner_version", target_scanner_version)
+        else:
+            raw_date = latest_row[0]
+            detected_version = latest_row[1] if len(latest_row) > 1 else target_scanner_version
+        
+        # 최종적으로 요청한 버전 사용 (우선순위)
+        final_version = target_scanner_version if detected_version == target_scanner_version else detected_version
+        
         if not raw_date:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
@@ -2046,9 +2161,9 @@ def get_latest_scan_from_db():
                        returns,
                        recurrence
                 FROM scan_rank
-                WHERE date = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                WHERE date = %s AND scanner_version = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
                 ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
-            """, (raw_date,))
+            """, (raw_date, final_version))
             rows = cur.fetchall()
         
         if not rows:
@@ -2106,14 +2221,51 @@ def get_latest_scan_from_db():
         market_condition = None
         try:
             with db_manager.get_cursor(commit=False) as cur_mc:
+                # market_conditions.date는 TEXT 타입이므로 문자열 형식으로 변환
+                if isinstance(raw_date, str):
+                    # 이미 문자열이면 YYYY-MM-DD 형식으로 정규화
+                    if len(raw_date) == 8 and '-' not in raw_date:
+                        # YYYYMMDD 형식
+                        query_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
+                    elif '-' in raw_date:
+                        # 이미 YYYY-MM-DD 형식
+                        query_date = raw_date
+                    else:
+                        query_date = raw_date
+                else:
+                    # DATE 타입이면 문자열로 변환 (YYYY-MM-DD)
+                    if hasattr(raw_date, 'strftime'):
+                        query_date = raw_date.strftime('%Y-%m-%d')
+                    else:
+                        query_date = str(raw_date)
+                
+                # institution_flow 컬럼 존재 여부 확인
                 cur_mc.execute("""
-                    SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
-                           sector_rotation, foreign_flow, institution_flow, volume_trend,
-                           min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
-                           trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                           foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
-                    FROM market_conditions WHERE date = %s
-                """, (raw_date,))
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'market_conditions' AND column_name = 'institution_flow'
+                """)
+                has_institution_flow = cur_mc.fetchone() is not None
+                
+                # 동적으로 컬럼 선택
+                if has_institution_flow:
+                    cur_mc.execute("""
+                        SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                               sector_rotation, foreign_flow, institution_flow, volume_trend,
+                               min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                               trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                               foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                        FROM market_conditions WHERE date = %s
+                    """, (query_date,))
+                else:
+                    cur_mc.execute("""
+                        SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                               sector_rotation, foreign_flow, NULL as institution_flow, volume_trend,
+                               min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                               trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                               foreign_flow_label, NULL as institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                        FROM market_conditions WHERE date = %s
+                    """, (query_date,))
                 row_mc = cur_mc.fetchone()
             
             if row_mc:
@@ -2217,7 +2369,8 @@ def get_latest_scan_from_db():
             "rsi_threshold": market_condition.rsi_threshold if market_condition else 57.0,
             "items": items,
             "market_guide": market_guide,
-            "market_condition": market_condition_dict
+            "market_condition": market_condition_dict,
+            "scanner_version": final_version  # 현재 DB 설정 버전 사용
         }
         data["enhanced_items"] = items
         
@@ -2227,10 +2380,14 @@ def get_latest_scan_from_db():
         return {"ok": False, "error": f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}"}
 
 @app.get("/latest-scan")
-async def get_latest_scan():
-    """최신 스캔 결과를 가져옵니다. DB에서 직접 조회하여 빠른 응답을 제공합니다."""
+async def get_latest_scan(scanner_version: Optional[str] = None):
+    """최신 스캔 결과를 가져옵니다. DB에서 직접 조회하여 빠른 응답을 제공합니다.
+    
+    Args:
+        scanner_version: 스캐너 버전 ('v1' 또는 'v2'). None이면 DB 설정 사용
+    """
     # DB 직접 조회 함수 사용 (성능 최적화)
-    return get_latest_scan_from_db()
+    return get_latest_scan_from_db(scanner_version=scanner_version)
 
 
 # 인증 관련 라우터들
@@ -3599,6 +3756,80 @@ async def apply_trend_params(
         traceback.print_exc()
         return {"ok": False, "error": str(e)}
 
+
+@app.get("/admin/bottom-nav-link")
+async def get_bottom_nav_link(admin_user: User = Depends(get_admin_user)):
+    """바텀메뉴 추천종목 링크 설정 조회"""
+    try:
+        from scanner_settings_manager import get_scanner_setting
+        link_type = get_scanner_setting('bottom_nav_scanner_link', 'v1')
+        return {
+            "link_type": link_type,  # 'v1' 또는 'v2'
+            "link_url": "/customer-scanner" if link_type == "v1" else "/v2/scanner-v2"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"바텀메뉴 링크 설정 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/admin/bottom-nav-link")
+async def update_bottom_nav_link(
+    request: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """바텀메뉴 추천종목 링크 설정 업데이트"""
+    try:
+        link_type = request.get('link_type') if isinstance(request, dict) else request
+        if not link_type or link_type not in ['v1', 'v2']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="link_type은 'v1' 또는 'v2'여야 합니다."
+            )
+        
+        from scanner_settings_manager import set_scanner_setting
+        success = set_scanner_setting(
+            'bottom_nav_scanner_link',
+            link_type,
+            description='바텀메뉴 추천종목 링크 타입 (v1: /customer-scanner, v2: /v2/scanner-v2)',
+            updated_by=admin_user.email if admin_user else None
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="바텀메뉴 링크 설정 저장에 실패했습니다."
+            )
+        
+        return {
+            "message": "바텀메뉴 링크 설정이 업데이트되었습니다.",
+            "link_type": link_type,
+            "link_url": "/customer-scanner" if link_type == "v1" else "/v2/scanner-v2"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"바텀메뉴 링크 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/bottom-nav-link")
+async def get_bottom_nav_link_public():
+    """바텀메뉴 추천종목 링크 조회 (공개 API)"""
+    try:
+        from scanner_settings_manager import get_scanner_setting
+        link_type = get_scanner_setting('bottom_nav_scanner_link', 'v1')
+        return {
+            "link_type": link_type,
+            "link_url": "/customer-scanner" if link_type == "v1" else "/v2/scanner-v2"
+        }
+    except Exception as e:
+        # 에러 발생 시 기본값 반환
+        return {
+            "link_type": "v1",
+            "link_url": "/customer-scanner"
+        }
 
 @app.get("/admin/scanner-settings")
 async def get_scanner_settings(admin_user: User = Depends(get_admin_user)):

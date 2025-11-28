@@ -44,7 +44,7 @@ export default function HomePage() {
               </h1>
               <p className="text-lg mb-8 opacity-90">AI 기반 주식 스캐너</p>
               <button
-                onClick={() => router.push('/customer-scanner')}
+                onClick={() => router.push('/v2/scanner-v2')}
                 className="inline-block text-white px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 hover:transform hover:-translate-y-0.5"
                 style={{
                   background: '#ff6b6b',
@@ -95,7 +95,7 @@ export default function HomePage() {
               </h1>
               <p className="text-xl mb-10 opacity-90">AI 기반 주식 스캐너로 투자 기회를 발견하세요</p>
               <button
-                onClick={() => router.push('/customer-scanner')}
+                onClick={() => router.push('/v2/scanner-v2')}
                 className="inline-block text-white px-10 py-4 rounded-full font-bold text-xl transition-all duration-300 hover:transform hover:-translate-y-0.5"
                 style={{
                   background: '#ff6b6b',

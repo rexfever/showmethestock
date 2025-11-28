@@ -128,8 +128,8 @@ export default function Login() {
           localStorage.setItem('token', data.access_token);
           localStorage.setItem('user', JSON.stringify(data.user));
           
-          // 메인 페이지로 이동
-          router.push('/customer-scanner');
+          // 메인 페이지로 이동 (V2)
+          router.push('/v2/scanner-v2');
         } else {
           setError(data.detail || '로그인에 실패했습니다.');
         }

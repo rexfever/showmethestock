@@ -37,20 +37,20 @@ class Scorer:
                 return 0, {"label": "유동성부족", "match": False}
         
         # 가격 하한
-        if cur.close < self.config.min_price:
+        if cur.get("close", 0) < self.config.min_price:
             return 0, {"label": "저가종목", "match": False}
         
         # 과열
         overheat = (
-            (cur.RSI_TEMA >= self.config.overheat_rsi_tema) and
-            (cur.VOL_MA5 and cur.volume >= self.config.overheat_vol_mult * cur.VOL_MA5)
+            (cur.get("RSI_TEMA", 0) >= self.config.overheat_rsi_tema) and
+            (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= self.config.overheat_vol_mult * cur.get("VOL_MA5", 0))
         )
         if overheat:
             return 0, {"label": "과열", "match": False}
         
         # 갭/이격
-        gap_now = (cur.TEMA20 - cur.DEMA10) / cur.close if cur.close else 0.0
-        ext_pct = (cur.close - cur.TEMA20) / cur.TEMA20 if cur.TEMA20 else 0.0
+        gap_now = (cur.get("TEMA20", 0) - cur.get("DEMA10", 0)) / cur.get("close", 1) if cur.get("close", 0) else 0.0
+        ext_pct = (cur.get("close", 0) - cur.get("TEMA20", 0)) / cur.get("TEMA20", 1) if cur.get("TEMA20", 0) else 0.0
         
         if market_condition and self.config.market_analysis_enable:
             gap_max = market_condition.gap_max
@@ -68,8 +68,8 @@ class Scorer:
         if self.config.use_atr_filter:
             from indicators import atr
             _atr = atr(df["high"], df["low"], df["close"], 14).iloc[-1]
-            if cur.close:
-                atr_pct = _atr / cur.close
+            if cur.get("close", 0):
+                atr_pct = _atr / cur.get("close", 1)
                 if not (self.config.atr_pct_min <= atr_pct <= self.config.atr_pct_max):
                     return 0, {"label": "변동성부적절", "match": False}
         
@@ -88,7 +88,7 @@ class Scorer:
         W = self._get_weights()
         
         # 1) 골든크로스
-        cross = (cur.TEMA20 > cur.DEMA10) and (prev.TEMA20 <= prev.DEMA10)
+        cross = (cur.get("TEMA20", 0) > cur.get("DEMA10", 0)) and (prev.get("TEMA20", 0) <= prev.get("DEMA10", 0))
         flags["cross"] = bool(cross)
         if cross:
             score += W['cross']
@@ -97,19 +97,19 @@ class Scorer:
         # 2) 거래량
         vol_ma5_mult = getattr(self.config, 'vol_ma5_mult', 2.5)
         vol_ma20_mult = getattr(self.config, 'vol_ma20_mult', 1.2)
-        volx = (cur.VOL_MA5 and cur.volume >= vol_ma5_mult * cur.VOL_MA5) and \
-               (df["volume"].iloc[-20:].mean() > 0 and cur.volume >= vol_ma20_mult * df["volume"].iloc[-20:].mean())
+        volx = (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= vol_ma5_mult * cur.get("VOL_MA5", 0)) and \
+               (df["volume"].iloc[-20:].mean() > 0 and cur.get("volume", 0) >= vol_ma20_mult * df["volume"].iloc[-20:].mean())
         flags["vol_expand"] = bool(volx)
         if volx:
             score += W['volume']
         details['volume'] = {'ok': bool(volx), 'w': W['volume'], 'gain': W['volume'] if volx else 0}
         
         # 3) MACD
-        macd_golden_cross = (cur.MACD_LINE > cur.MACD_SIGNAL) and (prev.MACD_LINE <= prev.MACD_SIGNAL)
-        macd_line_up = cur.MACD_LINE > cur.MACD_SIGNAL
+        macd_golden_cross = (cur.get("MACD_LINE", 0) > cur.get("MACD_SIGNAL", 0)) and (prev.get("MACD_LINE", 0) <= prev.get("MACD_SIGNAL", 0))
+        macd_line_up = cur.get("MACD_LINE", 0) > cur.get("MACD_SIGNAL", 0)
         market_analysis_enable = getattr(self.config, 'market_analysis_enable', True)
         macd_osc_min = market_condition.macd_osc_min if market_condition and market_analysis_enable else getattr(self.config, 'macd_osc_min', 0.0)
-        macd_osc_ok = cur.MACD_OSC > macd_osc_min
+        macd_osc_ok = cur.get("MACD_OSC", 0) > macd_osc_min
         macd_ok = macd_golden_cross or macd_line_up or macd_osc_ok
         flags["macd_ok"] = bool(macd_ok)
         if macd_ok:
@@ -122,14 +122,14 @@ class Scorer:
         else:
             rsi_threshold = getattr(self.config, 'rsi_threshold', 58)
         
-        rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > rsi_threshold)
+        rsi_momentum = (cur.get("RSI_TEMA", 0) > cur.get("RSI_DEMA", 0)) or (abs(cur.get("RSI_TEMA", 0) - cur.get("RSI_DEMA", 0)) < 3 and cur.get("RSI_TEMA", 0) > rsi_threshold)
         flags["rsi_ok"] = bool(rsi_momentum)
         if rsi_momentum:
             score += W['rsi']
         details['rsi'] = {'ok': bool(rsi_momentum), 'w': W['rsi'], 'gain': W['rsi'] if rsi_momentum else 0}
         
         # 5) 추세 지표
-        tema_slope_ok = (df.iloc[-1]["TEMA20_SLOPE20"] > 0.001) and (cur.close > cur.TEMA20)
+        tema_slope_ok = (df.iloc[-1].get("TEMA20_SLOPE20", 0) > 0.001) and (cur.get("close", 0) > cur.get("TEMA20", 0))
         flags["tema_slope_ok"] = bool(tema_slope_ok)
         if tema_slope_ok:
             score += W['tema_slope']

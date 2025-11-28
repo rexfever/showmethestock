@@ -100,10 +100,11 @@ describe('portfolioService', () => {
 
       expect(fetch).toHaveBeenCalledWith('http://localhost:8010/portfolio/add', {
         method: 'POST',
-        headers: {
+        headers: expect.objectContaining({
           'Authorization': `Bearer ${mockToken}`,
-          'Content-Type': 'application/json'
-        },
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': expect.any(String) // CSRF 토큰은 동적으로 생성됨
+        }),
         body: JSON.stringify({
           ticker: 'AAPL',
           name: 'Apple Inc.',
@@ -186,9 +187,10 @@ describe('portfolioService', () => {
 
       expect(fetch).toHaveBeenCalledWith('http://localhost:8010/portfolio/AAPL', {
         method: 'DELETE',
-        headers: {
+        headers: expect.objectContaining({
           'Authorization': `Bearer ${mockToken}`,
-        },
+          'X-CSRF-Token': expect.any(String) // CSRF 토큰은 동적으로 생성됨
+        })
       });
       expect(result).toEqual(mockResponse);
     });

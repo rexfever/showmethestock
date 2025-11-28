@@ -106,6 +106,8 @@ class ScanResponse(BaseModel):
     require_dema_slope: Optional[str] = None
     # market guide
     market_guide: Optional[dict] = None
+    # scanner version (DB 설정 기반)
+    scanner_version: Optional[str] = None
 
 
 class AnalyzeResponse(BaseModel):

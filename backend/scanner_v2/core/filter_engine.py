@@ -46,7 +46,7 @@ class FilterEngine:
         else:
             rsi_upper_limit = self.config.rsi_upper_limit
         
-        if cur.RSI_TEMA > rsi_upper_limit:
+        if cur.get("RSI_TEMA", 0) > rsi_upper_limit:
             return False
         
         # 4. 유동성 필터
@@ -56,20 +56,20 @@ class FilterEngine:
                 return False
         
         # 5. 가격 하한
-        if cur.close < self.config.min_price:
+        if cur.get("close", 0) < self.config.min_price:
             return False
         
         # 6. 과열 필터
         overheat = (
-            (cur.RSI_TEMA >= self.config.overheat_rsi_tema) and
-            (cur.VOL_MA5 and cur.volume >= self.config.overheat_vol_mult * cur.VOL_MA5)
+            (cur.get("RSI_TEMA", 0) >= self.config.overheat_rsi_tema) and
+            (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= self.config.overheat_vol_mult * cur.get("VOL_MA5", 0))
         )
         if overheat:
             return False
         
         # 7. 갭/이격 필터
-        gap_now = (cur.TEMA20 - cur.DEMA10) / cur.close if cur.close else 0.0
-        ext_pct = (cur.close - cur.TEMA20) / cur.TEMA20 if cur.TEMA20 else 0.0
+        gap_now = (cur.get("TEMA20", 0) - cur.get("DEMA10", 0)) / cur.get("close", 1) if cur.get("close", 0) else 0.0
+        ext_pct = (cur.get("close", 0) - cur.get("TEMA20", 0)) / cur.get("TEMA20", 1) if cur.get("TEMA20", 0) else 0.0
         
         if market_condition and self.market_analysis_enable:
             gap_max = market_condition.gap_max
@@ -86,8 +86,8 @@ class FilterEngine:
         # 8. ATR 필터 (활성화된 경우)
         if getattr(self.config, 'use_atr_filter', False):
             _atr = atr(df["high"], df["low"], df["close"], 14).iloc[-1]
-            if cur.close:
-                atr_pct = _atr / cur.close
+            if cur.get("close", 0):
+                atr_pct = _atr / cur.get("close", 1)
                 atr_min = getattr(self.config, 'atr_pct_min', 0.01)
                 atr_max = getattr(self.config, 'atr_pct_max', 0.04)
                 if not (atr_min <= atr_pct <= atr_max):
@@ -129,24 +129,24 @@ class FilterEngine:
         for i in range(lookback):
             a_prev = df.iloc[-2 - i]
             a_cur = df.iloc[-1 - i]
-            if (a_prev.TEMA20 <= a_prev.DEMA10) and (a_cur.TEMA20 > a_cur.DEMA10):
+            if (a_prev.get("TEMA20", 0) <= a_prev.get("DEMA10", 0)) and (a_cur.get("TEMA20", 0) > a_cur.get("DEMA10", 0)):
                 crossed_recently = True
                 break
         
         above_cnt = int((df["TEMA20"] > df["DEMA10"]).tail(5).sum()) if len(df) >= 5 else 0
         
         # 기본 신호 4개
-        cond_gc = (crossed_recently or (cur.TEMA20 > cur.DEMA10)) and (df.iloc[-1]["TEMA20_SLOPE20"] > 0)
-        cond_macd = (cur.MACD_LINE > cur.MACD_SIGNAL) or (cur.MACD_OSC > 0)
-        rsi_momentum = (cur.RSI_TEMA > cur.RSI_DEMA) or (abs(cur.RSI_TEMA - cur.RSI_DEMA) < 3 and cur.RSI_TEMA > rsi_threshold)
+        cond_gc = (crossed_recently or (cur.get("TEMA20", 0) > cur.get("DEMA10", 0))) and (df.iloc[-1].get("TEMA20_SLOPE20", 0) > 0)
+        cond_macd = (cur.get("MACD_LINE", 0) > cur.get("MACD_SIGNAL", 0)) or (cur.get("MACD_OSC", 0) > 0)
+        rsi_momentum = (cur.get("RSI_TEMA", 0) > cur.get("RSI_DEMA", 0)) or (abs(cur.get("RSI_TEMA", 0) - cur.get("RSI_DEMA", 0)) < 3 and cur.get("RSI_TEMA", 0) > rsi_threshold)
         cond_rsi = rsi_momentum
-        cond_vol = (cur.VOL_MA5 and cur.volume >= vol_ma5_mult * cur.VOL_MA5)
+        cond_vol = (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= vol_ma5_mult * cur.get("VOL_MA5", 0))
         
         basic_signals = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
         
         # 추가 신호 3개
-        obv_slope_ok = df.iloc[-1]["OBV_SLOPE20"] > 0.001
-        tema_slope_ok = (df.iloc[-1]["TEMA20_SLOPE20"] > 0.001) and (cur.close > cur.TEMA20)
+        obv_slope_ok = df.iloc[-1].get("OBV_SLOPE20", 0) > 0.001
+        tema_slope_ok = (df.iloc[-1].get("TEMA20_SLOPE20", 0) > 0.001) and (cur.get("close", 0) > cur.get("TEMA20", 0))
         above_ok = above_cnt >= 3
         
         additional_signals = sum([bool(obv_slope_ok), bool(tema_slope_ok), bool(above_ok)])
