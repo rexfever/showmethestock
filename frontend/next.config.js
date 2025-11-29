@@ -15,6 +15,16 @@ const nextConfig = {
     }
     return config;
   },
+  // 리다이렉트 설정
+  async redirects() {
+    return [
+      {
+        source: '/customer-scanner',
+        destination: '/v2/scanner-v2',
+        permanent: false, // 307 리다이렉트 (임시 리다이렉트)
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
