@@ -20,15 +20,13 @@ def dump_market_conditions(output_file: str):
     print(f"📊 market_conditions 테이블 덤프 중...")
     
     with db_manager.get_cursor(commit=False) as cur:
-        # 모든 컬럼 조회
+        # 모든 컬럼 조회 (실제 테이블 스키마에 맞게)
         cur.execute("""
             SELECT 
-                date, market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                date, market_sentiment, kospi_return, volatility, rsi_threshold,
                 sector_rotation, foreign_flow, volume_trend,
                 min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
-                trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes,
-                created_at, updated_at
+                created_at
             FROM market_conditions
             ORDER BY date DESC
         """)
@@ -41,14 +39,7 @@ def dump_market_conditions(output_file: str):
             record = {}
             for i, col in enumerate(columns):
                 value = row[i]
-                # JSONB 필드는 이미 dict/list이거나 None
-                if value is not None and col in ['trend_metrics', 'breadth_metrics', 'flow_metrics', 
-                                                  'sector_metrics', 'volatility_metrics', 'adjusted_params']:
-                    if isinstance(value, str):
-                        try:
-                            value = json.loads(value)
-                        except:
-                            pass
+                # JSONB 필드는 이미 dict/list이거나 None (현재 테이블에는 JSONB 필드 없음)
                 record[col] = value
             data.append(record)
     

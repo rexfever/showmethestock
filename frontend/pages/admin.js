@@ -604,7 +604,7 @@ export default function AdminDashboard() {
   const handleUserUpdate = async () => {
     try {
       const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
+        ? 'http://localhost:8000' 
         : 'https://sohntech.ai.kr/backend';
 
       const response = await fetch(`${base}/admin/users/${editingUser.id}`, {
@@ -642,7 +642,7 @@ export default function AdminDashboard() {
 
     try {
       const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8010' 
+        ? 'http://localhost:8000' 
         : 'https://sohntech.ai.kr/backend';
 
       const response = await fetch(`${base}/admin/users/${userId}`, {

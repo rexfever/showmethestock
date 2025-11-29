@@ -284,7 +284,7 @@ export default function CustomerScannerMobile({ initialData }) {
 
 export async function getServerSideProps() {
   try {
-    const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8010';
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const response = await fetch(`${base}/latest-scan`);
     const data = await response.json();
     

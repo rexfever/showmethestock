@@ -10,9 +10,38 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def compute_kr_trend_features(df: pd.DataFrame) -> Dict[str, float]:
-    """한국 Trend Feature 계산 (전체 df 기반)"""
-    if df.empty or len(df) < 65:  # 120 -> 65로 완화
+def compute_kr_trend_features(kospi_df: pd.DataFrame, kosdaq_df: pd.DataFrame = None) -> Dict[str, float]:
+    """한국 Trend Feature 계산 (KOSPI + KOSDAQ)"""
+    # KOSPI 기본 feature 계산
+    kospi_features = _compute_single_market_features(kospi_df)
+    
+    # KOSDAQ feature 계산
+    kosdaq_features = _compute_single_market_features(kosdaq_df if kosdaq_df is not None else pd.DataFrame())
+    
+    # 통합 feature (KOSPI 우선, 없으면 KOSDAQ)
+    if not kospi_df.empty:
+        base_features = kospi_features
+    elif kosdaq_df is not None and not kosdaq_df.empty:
+        base_features = kosdaq_features
+    else:
+        base_features = {
+            "R5": 0.0, "R20": 0.0, "R60": 0.0,
+            "DD20": 0.0, "DD60": 0.0,
+            "MA20_SLOPE": 0.0, "MA60_SLOPE": 0.0
+        }
+    
+    # KOSPI와 KOSDAQ 개별 feature 추가
+    return {
+        **base_features,
+        "KOSPI_R20": kospi_features.get("R20", 0.0),
+        "KOSPI_R60": kospi_features.get("R60", 0.0),
+        "KOSDAQ_R20": kosdaq_features.get("R20", 0.0),
+        "KOSDAQ_R60": kosdaq_features.get("R60", 0.0),
+    }
+
+def _compute_single_market_features(df: pd.DataFrame) -> Dict[str, float]:
+    """단일 시장(KOSPI 또는 KOSDAQ)의 Feature 계산"""
+    if df.empty or len(df) < 65:
         return {
             "R5": 0.0, "R20": 0.0, "R60": 0.0,
             "DD20": 0.0, "DD60": 0.0,
@@ -21,7 +50,7 @@ def compute_kr_trend_features(df: pd.DataFrame) -> Dict[str, float]:
     
     close = df['close'].values
     
-    # 수익률 계산
+    # 수익률 계산 (원본 데이터 그대로 사용, 보정 없음)
     R5 = (close[-1] / close[-6] - 1) if len(close) >= 6 else 0.0
     R20 = (close[-1] / close[-21] - 1) if len(close) >= 21 else 0.0
     R60 = (close[-1] / close[-61] - 1) if len(close) >= 61 else 0.0
@@ -58,15 +87,44 @@ def compute_kr_trend_features(df: pd.DataFrame) -> Dict[str, float]:
         "MA20_SLOPE": MA20_SLOPE, "MA60_SLOPE": MA60_SLOPE
     }
 
-def compute_kr_risk_features(df: pd.DataFrame) -> Dict[str, float]:
-    """한국 Risk Feature 계산"""
+def compute_kr_risk_features(df: pd.DataFrame, date: str = None) -> Dict[str, float]:
+    """한국 Risk Feature 계산 (실시간 데이터 보강)"""
     if df.empty:
         return {"intraday_drop": 0.0, "r3": 0.0, "day_range": 0.0}
     
     last_row = df.iloc[-1]
     
-    # intraday drop
+    # intraday drop (일봉 데이터)
     intraday_drop = (last_row['low'] / last_row['open'] - 1) if last_row['open'] > 0 else 0.0
+    
+    # 장중인 경우 실시간 데이터로 보정
+    if date:
+        try:
+            from datetime import datetime
+            import pytz
+            from kiwoom_api import api
+            from main import is_trading_day
+            
+            KST = pytz.timezone('Asia/Seoul')
+            now = datetime.now(KST)
+            hour = now.hour
+            minute = now.minute
+            
+            # 장중 (09:00 ~ 15:30)이고 거래일인 경우
+            if (9 <= hour < 15 or (hour == 15 and minute <= 30)) and is_trading_day(date):
+                # 키움 API로 실시간 ETF 데이터 가져오기
+                realtime_df = api.get_ohlcv("069500", 2, date)
+                if realtime_df is not None and not realtime_df.empty and len(realtime_df) >= 1:
+                    realtime_row = realtime_df.iloc[-1]
+                    if 'open' in realtime_row and 'low' in realtime_row and realtime_row['open'] > 0:
+                        realtime_intraday_drop = (realtime_row['low'] / realtime_row['open'] - 1)
+                        
+                        # 더 낮은 값 사용 (더 보수적, 급락 우선 감지)
+                        if realtime_intraday_drop < intraday_drop:
+                            logger.info(f"⚠️ 실시간 급락 감지: intraday_drop {realtime_intraday_drop*100:.2f}% (일봉: {intraday_drop*100:.2f}%)")
+                            intraday_drop = realtime_intraday_drop
+        except Exception as e:
+            logger.debug(f"실시간 데이터 보정 실패 (무시): {e}")
     
     # 3일 수익률
     r3 = (last_row['close'] / df.iloc[-4]['close'] - 1) if len(df) >= 4 and df.iloc[-4]['close'] > 0 else 0.0
@@ -128,20 +186,36 @@ def compute_us_risk_features(vix_df: pd.DataFrame) -> Dict[str, float]:
     }
 
 def compute_kr_trend_score(feat: Dict[str, float]) -> float:
-    """한국 Trend Score 계산"""
+    """한국 Trend Score 계산 (KOSPI + KOSDAQ)"""
     score = 0.0
     
-    # R20 기준
+    # 기본 R20, R60 (KOSPI 우선 또는 KOSDAQ)
     if feat["R20"] > 0.04:
         score += 1.0
     elif feat["R20"] < -0.04:
         score -= 1.0
     
-    # R60 기준
     if feat["R60"] > 0.08:
         score += 1.0
     elif feat["R60"] < -0.08:
         score -= 1.0
+    
+    # KOSDAQ 추가 고려 (KOSPI와 다를 수 있음)
+    kosdaq_r20 = feat.get("KOSDAQ_R20", 0.0)
+    kosdaq_r60 = feat.get("KOSDAQ_R60", 0.0)
+    
+    # KOSDAQ이 KOSPI와 반대 방향이면 가중치 조정
+    if abs(kosdaq_r20) > 0.04:
+        if kosdaq_r20 > 0.04:
+            score += 0.5  # KOSDAQ도 상승
+        elif kosdaq_r20 < -0.04:
+            score -= 0.5  # KOSDAQ도 하락
+    
+    if abs(kosdaq_r60) > 0.08:
+        if kosdaq_r60 > 0.08:
+            score += 0.5
+        elif kosdaq_r60 < -0.08:
+            score -= 0.5
     
     # DD20 기준
     if feat["DD20"] < -0.05:
@@ -303,17 +377,94 @@ def combine_global_regime_v4(kr_trend: str, us_trend: str, kr_risk: str, us_risk
     }
 
 def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
-    """캐시 직접 사용 (최대 속도)"""
+    """캐시 직접 사용 (최대 속도) - 날짜 필터링 포함"""
     import os
     
-    # 한국 데이터 (pkl 캐시)
-    kr_df = pd.DataFrame()
+    # 날짜 파싱
+    target_date = pd.to_datetime(date, format='%Y%m%d')
+    
+    # 한국 데이터 - 실제 KOSPI 지수 사용 (FinanceDataReader)
+    kospi_df = pd.DataFrame()
+    kosdaq_df = pd.DataFrame()
     try:
-        cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'kospi200_ohlcv.pkl')
-        if os.path.exists(cache_path):
-            kr_df = pd.read_pickle(cache_path)
+        # 실제 KOSPI 지수 데이터 (FinanceDataReader 사용)
+        # 키움 API는 지수 데이터를 직접 조회할 수 없으므로 FinanceDataReader 사용
+        # FinanceDataReader는 실제 KOSPI 지수 데이터를 제공하며 키움 API ETF와 비슷한 값
+        try:
+            import FinanceDataReader as fdr
+            from kiwoom_api import api
+            
+            # 충분한 기간의 데이터 가져오기 (약 1년)
+            start_date = (target_date - pd.Timedelta(days=365)).strftime('%Y-%m-%d')
+            end_date = target_date.strftime('%Y-%m-%d')
+            kospi_df = fdr.DataReader('KS11', start_date, end_date)
+            
+            if not kospi_df.empty:
+                # 컬럼명 소문자로 통일
+                kospi_df.columns = kospi_df.columns.str.lower()
+                # 날짜 필터링: 해당 날짜까지의 데이터만 사용
+                kospi_df = kospi_df[kospi_df.index <= target_date]
+                
+                # 데이터 검증: KOSPI 지수 범위 확인
+                try:
+                    if not kospi_df.empty:
+                        kospi_recent = kospi_df.iloc[-1]['close']
+                        # KOSPI 지수는 보통 2000~4000 범위
+                        if not (2000 <= kospi_recent <= 4000):
+                            logger.warning(f"KOSPI 지수 값이 비정상적: {kospi_recent:.2f} (예상 범위: 2000~4000)")
+                        
+                        # R20 계산하여 비정상적인 변동 확인
+                        if len(kospi_df) >= 21:
+                            close_20d_ago = kospi_df.iloc[-21]['close']
+                            latest_close = kospi_df.iloc[-1]['close']
+                            r20 = (latest_close / close_20d_ago - 1) * 100
+                            
+                            # R20이 10% 이상이면 경고
+                            if abs(r20) > 10:
+                                validation_date = target_date.strftime('%Y%m%d')
+                                logger.warning(f"KOSPI R20이 비정상적으로 큼: {r20:.2f}% (날짜: {validation_date})")
+                except Exception as e:
+                    logger.debug(f"KOSPI 데이터 검증 실패 (무시): {e}")
+                
+                logger.debug(f"FinanceDataReader로 KOSPI 지수 데이터 로드: {len(kospi_df)}개 행")
+        except ImportError:
+            logger.warning("FinanceDataReader가 설치되지 않음. 캐시 사용")
+            # Fallback: 기존 캐시 사용
+            cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'kospi200_ohlcv.pkl')
+            if os.path.exists(cache_path):
+                kospi_df = pd.read_pickle(cache_path)
+                if not kospi_df.empty:
+                    if isinstance(kospi_df.index, pd.DatetimeIndex):
+                        kospi_df = kospi_df[kospi_df.index <= target_date]
+                    elif 'date' in kospi_df.columns:
+                        kospi_df = kospi_df[pd.to_datetime(kospi_df['date']) <= target_date]
+        except Exception as e:
+            logger.warning(f"FinanceDataReader로 KOSPI 지수 데이터 로드 실패: {e}, 캐시 사용")
+            # Fallback: 기존 캐시 사용
+            cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'kospi200_ohlcv.pkl')
+            if os.path.exists(cache_path):
+                kospi_df = pd.read_pickle(cache_path)
+                if not kospi_df.empty:
+                    if isinstance(kospi_df.index, pd.DatetimeIndex):
+                        kospi_df = kospi_df[kospi_df.index <= target_date]
+                    elif 'date' in kospi_df.columns:
+                        kospi_df = kospi_df[pd.to_datetime(kospi_df['date']) <= target_date]
+        
+        # KOSDAQ 데이터 (CSV 캐시)
+        kosdaq_csv = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'ohlcv', '229200.csv')
+        if os.path.exists(kosdaq_csv):
+            kosdaq_df = pd.read_csv(kosdaq_csv, index_col=0, parse_dates=True)
+            # 컬럼명이 이미 소문자이므로 그대로 사용
+            if 'date' in kosdaq_df.columns:
+                kosdaq_df = kosdaq_df.drop(columns=['date'])
+            # 날짜 필터링: 해당 날짜까지의 데이터만 사용
+            if not kosdaq_df.empty:
+                kosdaq_df = kosdaq_df[kosdaq_df.index <= target_date]
     except Exception:
         pass
+    
+    # KOSPI와 KOSDAQ을 합쳐서 KR 데이터로 사용
+    kr_df = kospi_df if not kospi_df.empty else kosdaq_df
     
     # 미국 데이터 (CSV 캐시)
     spy_df = pd.DataFrame()
@@ -328,23 +479,34 @@ def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
         if os.path.exists(spy_path):
             spy_df = pd.read_csv(spy_path, index_col=0, parse_dates=True)
             spy_df = spy_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+            # 날짜 필터링
+            if not spy_df.empty:
+                spy_df = spy_df[spy_df.index <= target_date]
         
         # QQQ
         qqq_path = os.path.join(cache_dir, 'QQQ.csv')
         if os.path.exists(qqq_path):
             qqq_df = pd.read_csv(qqq_path, index_col=0, parse_dates=True)
             qqq_df = qqq_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+            # 날짜 필터링
+            if not qqq_df.empty:
+                qqq_df = qqq_df[qqq_df.index <= target_date]
         
         # VIX
         vix_path = os.path.join(cache_dir, '^VIX.csv')
         if os.path.exists(vix_path):
             vix_df = pd.read_csv(vix_path, index_col=0, parse_dates=True)
             vix_df = vix_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+            # 날짜 필터링
+            if not vix_df.empty:
+                vix_df = vix_df[vix_df.index <= target_date]
     except Exception:
         pass
     
     return {
         "KR": kr_df,
+        "KOSPI": kospi_df,
+        "KOSDAQ": kosdaq_df,
         "SPY": spy_df,
         "QQQ": qqq_df,
         "VIX": vix_df
@@ -357,8 +519,10 @@ def analyze_regime_v4(date: str) -> Dict[str, Any]:
         data = load_full_data(date)
         
         # 2. Feature 계산
-        kr_trend_feat = compute_kr_trend_features(data["KR"])
-        kr_risk_feat = compute_kr_risk_features(data["KR"])
+        kr_trend_feat = compute_kr_trend_features(data["KOSPI"], data["KOSDAQ"])
+        # KR 데이터는 KOSPI 우선, 없으면 KOSDAQ
+        kr_data = data["KOSPI"] if not data["KOSPI"].empty else data["KOSDAQ"]
+        kr_risk_feat = compute_kr_risk_features(kr_data, date)  # date 전달하여 실시간 보정
         us_trend_feat = compute_us_trend_features(data["SPY"], data["QQQ"])
         us_risk_feat = compute_us_risk_features(data["VIX"])
         

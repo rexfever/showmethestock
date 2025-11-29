@@ -12,7 +12,7 @@ import BottomNavigation from '../components/v2/BottomNavigation';
 const getConfig = () => ({
   backendUrl: process.env.NODE_ENV === 'production' 
     ? 'https://sohntech.ai.kr/api' 
-    : 'http://localhost:8010'
+    : 'http://localhost:8000'
 });
 
 export default function Portfolio() {

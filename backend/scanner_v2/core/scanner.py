@@ -73,8 +73,23 @@ class ScannerV2:
             # 3. 종목명 가져오기
             stock_name = api.get_stock_name(code)
             
-            # 4. 하드 필터 적용 (ETF 등)
-            if not self.filter_engine.apply_hard_filters(df, stock_name, market_condition):
+            # 4. 기본 하드 필터 적용 (지표 계산 전 - ETF, 유동성, 가격만)
+            # 인버스 ETF 필터링
+            if any(keyword in stock_name for keyword in self.config.inverse_etf_keywords):
+                return None
+            
+            # 금리/채권 ETF 필터링
+            if any(keyword in stock_name for keyword in self.config.bond_etf_keywords):
+                return None
+            
+            # 유동성 필터 (지표 계산 전)
+            if len(df) >= 20:
+                avg_turnover = (df["close"].iloc[-20:] * df["volume"].iloc[-20:]).mean()
+                if avg_turnover < self.config.min_turnover_krw:
+                    return None
+            
+            # 가격 하한
+            if df.iloc[-1].get("close", 0) < self.config.min_price:
                 return None
             
             # 5. 지표 계산 (V1 지표 계산 사용)
@@ -82,10 +97,14 @@ class ScannerV2:
             df = compute_indicators(df)
             df['name'] = stock_name
             
-            # 6. 등락률 계산
+            # 6. 지표 계산 후 하드 필터 적용 (RSI, 갭/이격, 과열 등)
+            if not self.filter_engine.apply_hard_filters(df, stock_name, market_condition):
+                return None
+            
+            # 7. 등락률 계산
             change_rate = self._calculate_change_rate(df)
             
-            # 7. 소프트 필터 적용 (신호 충족 여부)
+            # 8. 소프트 필터 적용 (신호 충족 여부)
             matched, signals_count, signals_total = self.filter_engine.apply_soft_filters(
                 df, market_condition, stock_name
             )
@@ -93,15 +112,51 @@ class ScannerV2:
             if not matched:
                 return None
             
-            # 8. 점수 계산
+            # 9. 점수 계산
             score, flags = self.scorer.calculate_score(df, market_condition)
             
-            # 9. 전략 결정
+            # 9-1. 시장 분리 신호 시 가산점 적용 (양방향)
+            if market_condition and hasattr(market_condition, 'market_divergence') and market_condition.market_divergence:
+                divergence_type = getattr(market_condition, 'divergence_type', '')
+                try:
+                    # 케이스 1: KOSPI 상승 + KOSDAQ 하락 → KOSPI 종목 가산점
+                    if divergence_type == 'kospi_up_kosdaq_down':
+                        if hasattr(market_condition, 'kospi_universe') and market_condition.kospi_universe:
+                            if code in market_condition.kospi_universe:
+                                score += 1.0
+                                flags['kospi_bonus'] = True
+                        else:
+                            # Fallback: 캐시가 없으면 API 호출
+                            from kiwoom_api import api
+                            kospi_codes = api.get_top_codes('KOSPI', 200)
+                            if code in kospi_codes:
+                                score += 1.0
+                                flags['kospi_bonus'] = True
+                    # 케이스 2: KOSPI 하락 + KOSDAQ 상승 → KOSDAQ 종목 가산점
+                    elif divergence_type == 'kospi_down_kosdaq_up':
+                        if hasattr(market_condition, 'kosdaq_universe') and market_condition.kosdaq_universe:
+                            if code in market_condition.kosdaq_universe:
+                                score += 1.0
+                                flags['kosdaq_bonus'] = True
+                        else:
+                            # Fallback: 캐시가 없으면 API 호출
+                            from kiwoom_api import api
+                            kosdaq_codes = api.get_top_codes('KOSDAQ', 200)
+                            if code in kosdaq_codes:
+                                score += 1.0
+                                flags['kosdaq_bonus'] = True
+                except Exception as e:
+                    # 에러 발생 시 로깅
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.debug(f"가산점 적용 실패: {e}")
+            
+            # 10. 전략 결정
             from .strategy import determine_trading_strategy
             strategy_tuple = determine_trading_strategy(flags, score)
             strategy = strategy_tuple[0] if isinstance(strategy_tuple, tuple) else "관찰"
             
-            # 10. 결과 생성
+            # 11. 결과 생성
             cur = df.iloc[-1]
             return ScanResult(
                 ticker=code,
@@ -167,9 +222,21 @@ class ScannerV2:
     def _apply_regime_cutoff(self, results: List[ScanResult], market_condition: MarketCondition) -> List[ScanResult]:
         """
         장세별 horizon cutoff 및 max candidates 적용
+        
+        v4 구조: midterm_regime을 사용하여 cutoff 결정 (단기 변동에 영향받지 않음)
         """
-        # v3 final_regime 우선 사용, 없으면 v1 market_sentiment 사용
-        regime = market_condition.final_regime if market_condition.final_regime is not None else market_condition.market_sentiment
+        # v4 구조: midterm_regime 우선 사용 (스캔 조건의 핵심)
+        regime = None
+        if market_condition is not None:
+            if getattr(market_condition, "midterm_regime", None):
+                regime = market_condition.midterm_regime
+            elif getattr(market_condition, "final_regime", None):
+                regime = market_condition.final_regime
+            else:
+                regime = getattr(market_condition, "market_sentiment", None)
+        
+        if regime is None:
+            regime = "neutral"
         
         # 설정 파일에서 cutoff 및 max_candidates 로드
         try:
@@ -189,21 +256,27 @@ class ScannerV2:
         regime_cutoffs = cutoffs.get(regime, cutoffs['neutral'])
         
         # horizon별 필터링
+        # v4 구조: (score - risk_score) >= cutoff 기준 사용
         filtered_results = {'swing': [], 'position': [], 'longterm': []}
         
         for result in results:
             score = result.score
+            # risk_score는 flags에서 가져오기 (scorer에서 계산된 값)
+            risk_score = result.flags.get("risk_score", 0) if hasattr(result, 'flags') and result.flags else 0
+            
+            # effective_score = score - risk_score
+            effective_score = (score or 0) - (risk_score or 0)
             
             # swing (단기)
-            if score >= regime_cutoffs['swing']:
+            if effective_score >= regime_cutoffs['swing']:
                 filtered_results['swing'].append(result)
             
             # position (중기)
-            if score >= regime_cutoffs['position']:
+            if effective_score >= regime_cutoffs['position']:
                 filtered_results['position'].append(result)
             
             # longterm (장기)
-            if score >= regime_cutoffs['longterm']:
+            if effective_score >= regime_cutoffs['longterm']:
                 filtered_results['longterm'].append(result)
         
         # max candidates 적용

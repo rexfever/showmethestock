@@ -8,11 +8,11 @@ const getConfig = () => {
     return {
       backendUrl: process.env.NODE_ENV === 'production' 
         ? 'https://sohntech.ai.kr/api' 
-        : 'http://localhost:8010'
+        : 'http://localhost:8000'
     };
   } else {
     return {
-      backendUrl: process.env.BACKEND_URL || 'http://localhost:8010'
+      backendUrl: process.env.BACKEND_URL || 'http://localhost:8000'
     };
   }
 };

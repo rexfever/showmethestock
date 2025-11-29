@@ -29,6 +29,28 @@ class RegimeAnalyzerCached:
             logger.error(f"KOSPI 데이터 조회 실패: {e}")
             return pd.DataFrame()
     
+    def get_kosdaq_data(self, date: str = None) -> pd.DataFrame:
+        """KOSDAQ 데이터 조회 (해당 날짜 기준)"""
+        try:
+            # 캐시 파일 우선 확인
+            import os
+            cache_path = os.path.join(os.path.dirname(__file__), '..', 'data_cache', 'ohlcv', '229200.csv')
+            if os.path.exists(cache_path):
+                df = pd.read_csv(cache_path, index_col=0, parse_dates=True)
+                if date:
+                    target_date = pd.to_datetime(date, format='%Y%m%d')
+                    df = df[df.index <= target_date].tail(30)
+                return df
+            
+            # 캐시 없으면 API 호출
+            from kiwoom_api import api
+            df = api.get_ohlcv("229200", 30, date)  # KOSDAQ 지수 (30일)
+            
+            return df
+        except Exception as e:
+            logger.error(f"KOSDAQ 데이터 조회 실패: {e}")
+            return pd.DataFrame()
+    
     def analyze_regime_v4_cached(self, date: str = None) -> Dict[str, Any]:
         """캐시 기반 레짐 v4 분석"""
         if date is None:
@@ -46,6 +68,7 @@ class RegimeAnalyzerCached:
             
             # 데이터 수집
             df_kospi = self.get_kospi_data(date)
+            df_kosdaq = self.get_kosdaq_data(date)
             df_spy = self.us_data.fetch_data("SPY")
             df_qqq = self.us_data.fetch_data("QQQ")
             df_es = self.us_data.fetch_data("ES=F")
@@ -57,6 +80,8 @@ class RegimeAnalyzerCached:
             target_date = pd.to_datetime(date, format='%Y%m%d')
             
             # 각 데이터프레임을 해당 날짜까지 필터링
+            if not df_kosdaq.empty:
+                df_kosdaq = df_kosdaq[df_kosdaq.index <= target_date].tail(30)
             if not df_spy.empty:
                 df_spy = df_spy[df_spy.index <= target_date].tail(30)
             if not df_qqq.empty:
@@ -70,8 +95,8 @@ class RegimeAnalyzerCached:
             if not df_dxy.empty:
                 df_dxy = df_dxy[df_dxy.index <= target_date].tail(30)
             
-            # 점수 계산
-            kr_result = self._compute_kr_score_v4(df_kospi)
+            # 점수 계산 (KOSPI + KOSDAQ)
+            kr_result = self._compute_kr_score_v4(df_kospi, df_kosdaq)
             us_prev_result = self._compute_us_prev_score_v4(df_spy, df_qqq, df_vix)
             us_futures_result = self._compute_us_futures_score_v4(df_es, df_nq, df_vix, df_dxy)
             
@@ -98,31 +123,60 @@ class RegimeAnalyzerCached:
             logger.error(f"레짐 v4 분석 실패: {e}")
             return self._get_default_result(date)
     
-    def _compute_kr_score_v4(self, df_kospi: pd.DataFrame) -> Dict[str, Any]:
-        """한국 장세 점수 계산 v4"""
-        if df_kospi.empty or len(df_kospi) < 2:
+    def _compute_kr_score_v4(self, df_kospi: pd.DataFrame, df_kosdaq: pd.DataFrame = None) -> Dict[str, Any]:
+        """한국 장세 점수 계산 v4 (KOSPI + KOSDAQ)"""
+        # KOSPI 점수 계산
+        kospi_score = self._compute_single_market_score(df_kospi)
+        
+        # KOSDAQ 점수 계산
+        kosdaq_score = self._compute_single_market_score(df_kosdaq if df_kosdaq is not None else pd.DataFrame())
+        
+        # 통합 점수 (KOSPI 70%, KOSDAQ 30%)
+        if df_kospi.empty and (df_kosdaq is None or df_kosdaq.empty):
             return {"kr_score": -1.0, "kr_regime": "neutral"}
         
+        if df_kospi.empty:
+            # KOSPI 없으면 KOSDAQ만 사용
+            final_score = kosdaq_score["score"]
+        elif df_kosdaq is None or df_kosdaq.empty:
+            # KOSDAQ 없으면 KOSPI만 사용
+            final_score = kospi_score["score"]
+        else:
+            # 둘 다 있으면 가중 평균
+            final_score = 0.7 * kospi_score["score"] + 0.3 * kosdaq_score["score"]
+        
+        # 레짐 결정
+        if final_score >= 2.0:
+            regime = "bull"
+        elif final_score <= -2.0:
+            regime = "bear"
+        else:
+            regime = "neutral"
+        
+        return {"kr_score": final_score, "kr_regime": regime}
+    
+    def _compute_single_market_score(self, df: pd.DataFrame) -> Dict[str, float]:
+        """단일 시장(KOSPI 또는 KOSDAQ)의 점수 계산"""
+        if df.empty or len(df) < 2:
+            return {"score": 0.0}
+        
         try:
-            # 실제 데이터 사용 확인
-            logger.debug(f"KOSPI 데이터: {len(df_kospi)}개, 최신: {df_kospi.iloc[-1]['close']:.0f}")
-            
             # 수익률 계산
-            if len(df_kospi) >= 2:
-                r1 = df_kospi['close'].iloc[-1] / df_kospi['close'].iloc[-2] - 1
+            if len(df) >= 2:
+                r1 = df['close'].iloc[-1] / df['close'].iloc[-2] - 1
             else:
                 r1 = 0.0
             
             # 3일 EMA 변화율
-            if len(df_kospi) >= 4:
-                ema3 = df_kospi['close'].ewm(span=3).mean()
+            if len(df) >= 4:
+                ema3 = df['close'].ewm(span=3).mean()
                 r3 = ema3.iloc[-1] / ema3.iloc[-4] - 1
             else:
                 r3 = 0.0
             
             # 5일 평균 수익률
-            if len(df_kospi) >= 5:
-                r5 = df_kospi['close'].pct_change().tail(5).mean()
+            if len(df) >= 5:
+                r5 = df['close'].pct_change().tail(5).mean()
             else:
                 r5 = 0.0
             
@@ -139,19 +193,11 @@ class RegimeAnalyzerCached:
             if r5 > 0.01: score += 1.0
             elif r5 < -0.01: score -= 1.0
             
-            # 레짐 결정
-            if score >= 2.0:
-                regime = "bull"
-            elif score <= -2.0:
-                regime = "bear"
-            else:
-                regime = "neutral"
-            
-            return {"kr_score": score, "kr_regime": regime}
+            return {"score": score}
             
         except Exception as e:
-            logger.error(f"한국 점수 계산 실패: {e}")
-            return {"kr_score": 0.0, "kr_regime": "neutral"}
+            logger.error(f"단일 시장 점수 계산 실패: {e}")
+            return {"score": 0.0}
     
     def _compute_us_prev_score_v4(self, df_spy: pd.DataFrame, df_qqq: pd.DataFrame, df_vix: pd.DataFrame) -> Dict[str, Any]:
         """미국 전일 장세 점수 계산 v4"""

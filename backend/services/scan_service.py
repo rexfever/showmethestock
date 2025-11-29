@@ -129,10 +129,10 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
 
 
 def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version: str = None) -> None:
-    """스캔 스냅샷 저장
+    """스캔 스냅샷 저장 (returns, recurrence 포함)
     
     Args:
-        scan_items: 스캔 결과 리스트
+        scan_items: 스캔 결과 리스트 (returns, recurrence 포함 가능)
         today_as_of: 스캔 날짜 (YYYYMMDD)
         scanner_version: 스캐너 버전 (v1 또는 v2), None이면 현재 활성화된 버전 사용
     """
@@ -161,25 +161,60 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
             enhanced_rank = []
             for it in scan_items:
                 try:
-                    df = api.get_ohlcv(it["ticker"], 2)
-                    if not df.empty:
-                        latest = df.iloc[-1]
-                        prev = df.iloc[-2] if len(df) > 1 else None
-                        # 등락률을 퍼센트로 계산 (scanner.py와 일관성 유지)
-                        change_rate = ((latest.close - prev.close) / prev.close * 100) if prev is not None and prev.close > 0 else 0.0
+                    # 스캔 결과에 이미 포함된 종가와 등락률 우선 사용
+                    indicators = it.get("indicators", {})
+                    scan_close = indicators.get("close")
+                    scan_change_rate = indicators.get("change_rate")
+                    
+                    # 스캔 결과에 종가와 등락률이 있으면 사용
+                    if scan_close is not None and scan_change_rate is not None:
+                        # volume은 별도로 가져오기 (스캔 결과에 없을 수 있음)
+                        try:
+                            df = api.get_ohlcv(it["ticker"], 1, today_as_of)
+                            volume = float(df.iloc[-1]["volume"]) if not df.empty else 0.0
+                        except Exception:
+                            volume = float(indicators.get("VOL", 0))
+                        
                         enhanced_rank.append({
-                            "date": date_obj,  # date 객체 사용
+                            "date": date_obj,
                             "code": it["ticker"],
                             "name": it["name"],
                             "score": it["score"],
                             "flags": json.dumps(it["flags"], ensure_ascii=False),
                             "score_label": it["score_label"],
-                            "close_price": float(latest.close),
-                            "volume": float(latest.volume),
-                            "change_rate": round(float(change_rate), 2),  # 퍼센트로 저장, 소수점 2자리
+                            "close_price": float(scan_close),
+                            "volume": volume,
+                            "change_rate": round(float(scan_change_rate), 2),  # 퍼센트로 저장, 소수점 2자리
                             "scanner_version": scanner_version,
                         })
-                except Exception:
+                    else:
+                        # 스캔 결과에 없으면 API로 계산 (fallback)
+                        df = api.get_ohlcv(it["ticker"], 2, today_as_of)
+                        if not df.empty:
+                            latest = df.iloc[-1]
+                            prev = df.iloc[-2] if len(df) > 1 else None
+                            # 등락률을 퍼센트로 계산
+                            change_rate = ((latest.close - prev.close) / prev.close * 100) if prev is not None and prev.close > 0 else 0.0
+                            # returns와 recurrence 데이터 포함
+                            returns_data = it.get("returns", {})
+                            recurrence_data = it.get("recurrence", {})
+                            
+                            enhanced_rank.append({
+                                "date": date_obj,
+                                "code": it["ticker"],
+                                "name": it["name"],
+                                "score": it["score"],
+                                "flags": json.dumps(it["flags"], ensure_ascii=False),
+                                "score_label": it["score_label"],
+                                "close_price": float(latest.close),
+                                "volume": float(latest.volume),
+                                "change_rate": round(float(change_rate), 2),
+                                "returns": json.dumps(returns_data, ensure_ascii=False) if returns_data else None,
+                                "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
+                                "scanner_version": scanner_version,
+                            })
+                except Exception as e:
+                    logger.debug(f"스캔 결과 저장 중 오류 ({it.get('ticker', 'unknown')}): {e}")
                     continue
         
             # 해당 날짜와 버전의 기존 데이터 삭제 (date 객체 사용)
@@ -198,12 +233,13 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 )
             elif enhanced_rank:
                 cur_hist.executemany("""
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, returns, recurrence, scanner_version)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     (
                         r["date"], r["code"], r["name"], r["score"], r["flags"],
-                        r["score_label"], r["close_price"], r["volume"], r["change_rate"], r["scanner_version"]
+                        r["score_label"], r["close_price"], r["volume"], r["change_rate"],
+                        r.get("returns"), r.get("recurrence"), r["scanner_version"]
                     )
                     for r in enhanced_rank
                 ])

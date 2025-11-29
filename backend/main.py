@@ -530,12 +530,6 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             detail="오늘은 거래일이 아닙니다. 주말이나 공휴일에는 스캔을 실행할 수 없습니다."
         )
     
-    kp = kospi_limit or config.universe_kospi
-    kd = kosdaq_limit or config.universe_kosdaq
-    kospi = api.get_top_codes('KOSPI', kp)
-    kosdaq = api.get_top_codes('KOSDAQ', kd)
-    universe: List[str] = [*kospi, *kosdaq]
-
     # 미래 날짜 가드: today_as_of가 오늘보다 크면 오늘로 클램프
     try:
         _today = get_kst_now().strftime('%Y%m%d')
@@ -544,7 +538,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
     except Exception:
         pass
     
-    # 시장 상황 분석 (활성화된 경우)
+    # 시장 상황 분석 (활성화된 경우) - 분리 신호 감지를 위해 먼저 실행
     market_condition = None
     if config.market_analysis_enable:
         try:
@@ -565,6 +559,36 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 print(f"📊 시장 상황 분석: {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
         except Exception as e:
             print(f"⚠️ 시장 분석 실패, 기본 조건 사용: {e}")
+    
+    kp = kospi_limit or config.universe_kospi
+    kd = kosdaq_limit or config.universe_kosdaq
+    
+    # 시장 분리 신호에 따라 Universe 비율 조정 (양방향)
+    if market_condition and hasattr(market_condition, 'market_divergence') and market_condition.market_divergence:
+        divergence_type = getattr(market_condition, 'divergence_type', '')
+        if divergence_type == 'kospi_up_kosdaq_down':
+            # KOSPI 상승·KOSDAQ 하락 시 KOSPI 비중 증가
+            adjusted_kp = int(kp * 1.5)  # 100 -> 150
+            adjusted_kd = int(kd * 0.5)  # 100 -> 50
+            print(f"📊 시장 분리 신호 감지 (KOSPI↑ KOSDAQ↓) - Universe 조정: KOSPI {kp}→{adjusted_kp}, KOSDAQ {kd}→{adjusted_kd}")
+            kp = adjusted_kp
+            kd = adjusted_kd
+        elif divergence_type == 'kospi_down_kosdaq_up':
+            # KOSPI 하락·KOSDAQ 상승 시 KOSDAQ 비중 증가
+            adjusted_kp = int(kp * 0.5)  # 100 -> 50
+            adjusted_kd = int(kd * 1.5)  # 100 -> 150
+            print(f"📊 시장 분리 신호 감지 (KOSPI↓ KOSDAQ↑) - Universe 조정: KOSPI {kp}→{adjusted_kp}, KOSDAQ {kd}→{adjusted_kd}")
+            kp = adjusted_kp
+            kd = adjusted_kd
+    
+    kospi = api.get_top_codes('KOSPI', kp)
+    kosdaq = api.get_top_codes('KOSDAQ', kd)
+    universe: List[str] = [*kospi, *kosdaq]
+    
+    # 성능 최적화: market_condition에 KOSPI/KOSDAQ 리스트 저장 (가산점 로직에서 재사용)
+    if market_condition:
+        market_condition.kospi_universe = kospi
+        market_condition.kosdaq_universe = kosdaq
     
     # 스캔 실행 (정규화된 날짜 YYYYMMDD 형식 사용)
     print(f"📅 스캔 날짜: {today_as_of} (YYYYMMDD 형식)")
@@ -1838,17 +1862,38 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 target_scanner_version = getattr(config, 'scanner_version', 'v1')
         
         with db_manager.get_cursor(commit=False) as cur:
-            # 먼저 해당 날짜에 요청한 버전의 데이터가 있는지 확인
+            # 버전 확인과 데이터 조회를 하나의 쿼리로 최적화
             cur.execute("""
-                SELECT DISTINCT scanner_version
+                WITH version_check AS (
+                    SELECT scanner_version
+                    FROM scan_rank
+                    WHERE date = %s AND scanner_version = %s
+                    LIMIT 1
+                ),
+                fallback_version AS (
+                    SELECT scanner_version
+                    FROM scan_rank
+                    WHERE date = %s
+                    ORDER BY scanner_version DESC
+                    LIMIT 1
+                )
+                SELECT code, name, score, score_label, close_price AS current_price, volume,
+                       change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
                 FROM scan_rank
-                WHERE date = %s AND scanner_version = %s
-                LIMIT 1
-            """, (target_date, target_scanner_version))
-            version_row = cur.fetchone()
+                WHERE date = %s 
+                AND scanner_version = COALESCE(
+                    (SELECT scanner_version FROM version_check),
+                    (SELECT scanner_version FROM fallback_version),
+                    %s
+                )
+                ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
+            """, (target_date, target_scanner_version, target_date, target_date, target_scanner_version))
+            rows = cur.fetchall()
             
-            # 요청한 버전이 없으면 해당 날짜의 다른 버전 확인
-            if not version_row:
+            # detected_version 추출 (첫 번째 행에서)
+            detected_version = target_scanner_version
+            if rows:
+                # 실제 사용된 버전 확인을 위해 별도 쿼리 (필요시)
                 cur.execute("""
                     SELECT DISTINCT scanner_version
                     FROM scan_rank
@@ -1857,25 +1902,53 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     LIMIT 1
                 """, (target_date,))
                 version_row = cur.fetchone()
-            
-            detected_version = target_scanner_version
-            if version_row:
-                if isinstance(version_row, dict):
-                    detected_version = version_row.get("scanner_version", target_scanner_version)
-                else:
-                    detected_version = version_row[0] if version_row[0] else target_scanner_version
-            
-            cur.execute("""
-                SELECT code, name, score, score_label, close_price AS current_price, volume,
-                       change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence
-                FROM scan_rank
-                WHERE date = %s AND scanner_version = %s
-                ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
-            """, (target_date, detected_version))
-            rows = cur.fetchall()
+                if version_row:
+                    if isinstance(version_row, dict):
+                        detected_version = version_row.get("scanner_version", target_scanner_version)
+                    else:
+                        detected_version = version_row[0] if version_row[0] else target_scanner_version
         
         if not rows:
             return {"ok": False, "error": f"{date} 날짜의 스캔 결과가 없습니다."}
+        
+        # DB에 저장된 returns 데이터 우선 사용 (성능 최적화)
+        # 필요한 경우에만 실시간 계산
+        returns_data = {}
+        codes_needing_calculation = []
+        
+        for row in rows:
+            data = _row_to_dict(row)
+            code = data.get("code")
+            if code == 'NORESULT':
+                continue
+            
+            # DB에 저장된 returns 데이터 확인
+            returns_raw = data.get("returns")
+            if returns_raw:
+                try:
+                    if isinstance(returns_raw, str):
+                        returns_dict = json.loads(returns_raw)
+                    else:
+                        returns_dict = returns_raw
+                    
+                    # 저장된 데이터가 유효한지 확인
+                    if isinstance(returns_dict, dict) and returns_dict.get('current_return') is not None:
+                        returns_data[code] = returns_dict
+                        continue
+                except:
+                    pass
+            
+            # DB에 없거나 유효하지 않으면 계산 필요
+            codes_needing_calculation.append(code)
+        
+        # 필요한 종목만 배치 계산
+        if codes_needing_calculation:
+            from services.returns_service import calculate_returns_batch
+            try:
+                calculated_returns = calculate_returns_batch(codes_needing_calculation, formatted_date)
+                returns_data.update(calculated_returns)
+            except Exception as e:
+                print(f"배치 수익률 계산 오류: {e}")
         
         items = []
         for row in rows:
@@ -1906,21 +1979,66 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             # 추천일 종가 (recommended_price) - DB의 close_price 사용
             recommended_price = current_price  # close_price가 current_price로 매핑됨
             
-            # 수익률 계산
-            try:
-                returns_info = calculate_returns(code, formatted_date)
+            # 수익률 계산 (배치 처리 결과 사용)
+            returns_info = returns_data.get(code) if code != 'NORESULT' else None
+            if returns_info:
                 current_return = returns_info.get('current_return', 0)
                 max_return = returns_info.get('max_return', 0)
                 min_return = returns_info.get('min_return', 0)
                 days_elapsed = returns_info.get('days_elapsed', 0)
-                # calculate_returns에서 반환한 scan_price가 더 정확할 수 있음
-                if returns_info and returns_info.get('scan_price'):
+                if returns_info.get('scan_price'):
                     recommended_price = returns_info.get('scan_price')
-            except Exception:
+            else:
                 current_return = 0
                 max_return = 0
                 min_return = 0
                 days_elapsed = 0
+            
+            # JSON 파싱 최적화: 한 번만 파싱
+            indicators_dict = indicators
+            if isinstance(indicators, str) and indicators:
+                try:
+                    indicators_dict = json.loads(indicators)
+                except:
+                    indicators_dict = {}
+            elif not indicators:
+                indicators_dict = {}
+            
+            trend_dict = trend
+            if isinstance(trend, str) and trend:
+                try:
+                    trend_dict = json.loads(trend)
+                except:
+                    trend_dict = {}
+            elif not trend:
+                trend_dict = {}
+            
+            flags_dict = flags
+            if isinstance(flags, str) and flags:
+                try:
+                    flags_dict = json.loads(flags)
+                except:
+                    flags_dict = {}
+            elif not flags:
+                flags_dict = {}
+            
+            details_dict = details
+            if isinstance(details, str) and details:
+                try:
+                    details_dict = json.loads(details)
+                except:
+                    details_dict = {}
+            elif not details:
+                details_dict = {}
+            
+            recurrence_dict = recurrence_raw
+            if isinstance(recurrence_raw, str) and recurrence_raw:
+                try:
+                    recurrence_dict = json.loads(recurrence_raw)
+                except:
+                    recurrence_dict = {}
+            elif not recurrence_raw:
+                recurrence_dict = {}
             
             item = {
                 "ticker": code,
@@ -1932,10 +2050,10 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 "change_rate": change_rate,
                 "market": market,
                 "strategy": strategy,
-                "indicators": json.loads(indicators) if isinstance(indicators, str) and indicators else (indicators or {}),
-                "trend": json.loads(trend) if isinstance(trend, str) and trend else (trend or {}),
-                "flags": json.loads(flags) if isinstance(flags, str) and flags else (flags or {}),
-                "details": json.loads(details) if isinstance(details, str) and details else (details or {}),
+                "indicators": indicators_dict,
+                "trend": trend_dict,
+                "flags": flags_dict,
+                "details": details_dict,
                 "returns": {
                     "current_return": current_return,
                     "max_return": max_return,
@@ -1946,7 +2064,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 "recommended_price": recommended_price,
                 "recommended_date": formatted_date,
                 "current_return": current_return,  # 편의를 위해 최상위 레벨에도 추가
-                "recurrence": json.loads(recurrence_raw) if isinstance(recurrence_raw, str) and recurrence_raw else (recurrence_raw or {})
+                "recurrence": recurrence_dict
             }
             items.append(item)
         
@@ -1971,17 +2089,16 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     else:
                         return date_str
                 
-                query_date1 = normalize_date_for_market_conditions(target_date)
-                query_date2 = normalize_date_for_market_conditions(formatted_date)
-                
+                # 날짜 형식 최적화: DATE 타입을 직접 사용
                 cur_mc.execute("""
                     SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
                            sector_rotation, foreign_flow, volume_trend,
                            min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                            trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
                            foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
-                    FROM market_conditions WHERE date = %s OR date = %s
-                """, (query_date1, query_date2))
+                    FROM market_conditions 
+                    WHERE date = %s
+                """, (target_date,))
                 row_mc = cur_mc.fetchone()
             
             if row_mc:

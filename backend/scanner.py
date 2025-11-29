@@ -36,6 +36,13 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df["RSI_DEMA"] = rsi_dema(close, 14)
     df["OBV"] = obv(close, volume)
     df["VOL_MA5"] = volume.rolling(5).mean()
+    
+    # 추세 피처 (SLOPE 계산)
+    slope_lb = int(getattr(config, 'trend_slope_lookback', 20))
+    df["TEMA20_SLOPE20"] = linreg_slope(df["TEMA20"], slope_lb)
+    df["OBV_SLOPE20"] = linreg_slope(df["OBV"], slope_lb)
+    df["DEMA10_SLOPE20"] = linreg_slope(df["DEMA10"], slope_lb)
+    
     return df
 
 
@@ -751,6 +758,43 @@ def scan_one_symbol(code: str, base_date: str = None, market_condition=None) -> 
         
         matched, sig_true, sig_total = match_stats(df, market_condition, stock_name)
         score, flags = score_conditions(df, market_condition)
+        
+        # 시장 분리 신호 시 가산점 적용 (양방향)
+        if market_condition and hasattr(market_condition, 'market_divergence') and market_condition.market_divergence:
+            divergence_type = getattr(market_condition, 'divergence_type', '')
+            try:
+                # 케이스 1: KOSPI 상승 + KOSDAQ 하락 → KOSPI 종목 가산점
+                if divergence_type == 'kospi_up_kosdaq_down':
+                    if hasattr(market_condition, 'kospi_universe') and market_condition.kospi_universe:
+                        if code in market_condition.kospi_universe:
+                            score += 1.0
+                            flags['kospi_bonus'] = True
+                    else:
+                        # Fallback: 캐시가 없으면 API 호출
+                        from kiwoom_api import api
+                        kospi_codes = api.get_top_codes('KOSPI', 200)
+                        if code in kospi_codes:
+                            score += 1.0
+                            flags['kospi_bonus'] = True
+                # 케이스 2: KOSPI 하락 + KOSDAQ 상승 → KOSDAQ 종목 가산점
+                elif divergence_type == 'kospi_down_kosdaq_up':
+                    if hasattr(market_condition, 'kosdaq_universe') and market_condition.kosdaq_universe:
+                        if code in market_condition.kosdaq_universe:
+                            score += 1.0
+                            flags['kosdaq_bonus'] = True
+                    else:
+                        # Fallback: 캐시가 없으면 API 호출
+                        from kiwoom_api import api
+                        kosdaq_codes = api.get_top_codes('KOSDAQ', 200)
+                        if code in kosdaq_codes:
+                            score += 1.0
+                            flags['kosdaq_bonus'] = True
+            except Exception as e:
+                # 에러 발생 시 로깅
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"가산점 적용 실패: {e}")
+        
         # 새로운 RSI 로직에서는 flags["match"]를 우선 사용
         matched = flags.get("match", bool(matched))
         

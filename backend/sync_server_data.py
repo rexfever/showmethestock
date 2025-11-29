@@ -118,6 +118,18 @@ def sync_table(server_db_url, target_pool, table_name, batch_size=1000):
                         if val is not None and isinstance(val, (dict, list)):
                             # psycopg의 Json 어댑터 사용
                             processed_row[i] = Json(val)
+                        # JSONB 컬럼인데 문자열이나 숫자로 들어온 경우 처리
+                        elif col in ['recurrence', 'returns', 'details', 'indicators', 'flags'] and val is not None:
+                            if not isinstance(val, (dict, list)):
+                                try:
+                                    # 문자열이면 JSON 파싱 시도
+                                    if isinstance(val, str):
+                                        processed_row[i] = Json(json.loads(val))
+                                    else:
+                                        # 숫자나 다른 타입이면 빈 JSON 객체로 변환
+                                        processed_row[i] = Json({})
+                                except:
+                                    processed_row[i] = Json({})
                         # users 테이블의 provider_id가 null이면 email 사용
                         elif table_name == 'users' and col == 'provider_id' and val is None:
                             # email 컬럼 찾기
@@ -243,7 +255,7 @@ def main():
             version = cur.fetchone()[0]
             print(f"  ✅ 로컬 DB 연결 성공: {version[:50]}...")
         
-        # 동기화할 테이블 목록 (전체 테이블)
+        # 동기화할 테이블 목록 (FK 의존성 순서 고려)
         # 서버 DB에서 테이블 목록 가져오기
         with psycopg.connect(server_db_url) as conn:
             with conn.cursor() as cur:
@@ -255,7 +267,17 @@ def main():
                     AND table_name NOT IN ('pg_stat_statements', 'pg_stat_statements_info')
                     ORDER BY table_name
                 """)
-                tables_to_sync = [row[0] for row in cur.fetchall()]
+                all_tables = [row[0] for row in cur.fetchall()]
+        
+        # FK 의존성 순서: users 먼저, 그 다음 나머지
+        priority_tables = ['users', 'scanner_settings', 'market_conditions', 'market_regime_daily']
+        tables_to_sync = []
+        for table in priority_tables:
+            if table in all_tables:
+                tables_to_sync.append(table)
+        for table in all_tables:
+            if table not in tables_to_sync:
+                tables_to_sync.append(table)
         
         print(f"\n📋 동기화할 테이블: {len(tables_to_sync)}개")
         for table in tables_to_sync:

@@ -154,17 +154,54 @@ class FilterEngine:
         # 총 신호 개수
         signals_true = basic_signals + additional_signals
         
-        # 추세 조건
-        trend_ok = (
-            (df.iloc[-1]["TEMA20_SLOPE20"] > 0) and
-            (df.iloc[-1]["OBV_SLOPE20"] > 0) and
-            (above_cnt >= 3)
-        )
+        # 추세 조건 (시장 상황에 따라 완화)
+        # 강세장에서는 조건 완화, 약세장에서는 엄격하게
+        if market_condition and self.market_analysis_enable:
+            market_sentiment = getattr(market_condition, 'market_sentiment', 'neutral')
+            final_regime = getattr(market_condition, 'final_regime', 'neutral')
+            global_trend_score = getattr(market_condition, 'global_trend_score', 0.0)
+            
+            # 강세장 판단: market_sentiment를 우선 확인 (v1 분석 결과)
+            # market_sentiment가 bull이면 강세장으로 인식
+            is_bull_market = (
+                (market_sentiment == 'bull') or 
+                (final_regime == 'bull') or 
+                (global_trend_score > 1.0)
+            )
+        else:
+            is_bull_market = False
         
-        # DEMA 슬로프 조건 (설정에 따라)
-        require_dema = getattr(self.config, 'require_dema_slope', 'optional')
-        if require_dema == "required":
-            trend_ok = trend_ok and (df.iloc[-1]["DEMA10_SLOPE20"] > 0)
+        if is_bull_market:
+            # 강세장: 조건 대폭 완화
+            # 기본 조건들
+            tema_slope_ok = df.iloc[-1]["TEMA20_SLOPE20"] > 0
+            obv_slope_ok = df.iloc[-1]["OBV_SLOPE20"] > 0
+            above_ok = above_cnt >= 2  # 3에서 2로 완화
+            golden_cross_ok = cur.get("TEMA20", 0) > cur.get("DEMA10", 0)
+            
+            # 강세장: 4개 조건 중 2개 이상 만족하면 OK (더 완화)
+            trend_conditions = [tema_slope_ok, obv_slope_ok, above_ok, golden_cross_ok]
+            trend_ok = sum(trend_conditions) >= 2  # 4개 중 2개 이상
+            
+            # DEMA 슬로프 조건 (강세장에서는 완전히 선택적)
+            require_dema = getattr(self.config, 'require_dema_slope', 'optional')
+            if require_dema == "required":
+                dema_slope_ok = df.iloc[-1]["DEMA10_SLOPE20"] > 0
+                # 강세장에서는 DEMA 슬로프가 없어도 다른 조건 3개 이상 만족하면 OK
+                if not dema_slope_ok:
+                    trend_ok = trend_ok or (sum(trend_conditions) >= 3)
+        else:
+            # 약세장/중립장: 기존 엄격한 조건 유지
+            trend_ok = (
+                (df.iloc[-1]["TEMA20_SLOPE20"] > 0) and
+                (df.iloc[-1]["OBV_SLOPE20"] > 0) and
+                (above_cnt >= 3)
+            )
+            
+            # DEMA 슬로프 조건 (설정에 따라)
+            require_dema = getattr(self.config, 'require_dema_slope', 'optional')
+            if require_dema == "required":
+                trend_ok = trend_ok and (df.iloc[-1]["DEMA10_SLOPE20"] > 0)
         
         # 최종 매칭: 신호 요건 충족 + 추세
         matched = (signals_true >= min_signals) and trend_ok

@@ -75,6 +75,13 @@ class Scorer:
         
         # 위험도 점수 계산
         risk_score, risk_flags = self._calculate_risk_score(df)
+        
+        # v4 구조: short_term_risk_score를 risk_score에 가중 적용
+        if market_condition is not None:
+            extra_risk = getattr(market_condition, "short_term_risk_score", None)
+            if extra_risk is not None:
+                risk_score = (risk_score or 0) + extra_risk
+        
         risk_threshold = getattr(self.config, 'risk_score_threshold', 4)
         if risk_score >= risk_threshold:
             return 0, {"match": False, "label": "위험종목", "risk_score": risk_score}
@@ -187,6 +194,13 @@ class Scorer:
         
         # 위험도 차감
         adjusted_score = score - risk_score
+        
+        # 시장 분리 신호 시 KOSPI 종목 가산점 적용
+        if market_condition and hasattr(market_condition, 'market_divergence') and market_condition.market_divergence:
+            # 종목 코드는 df에서 가져올 수 없으므로, calculate_score 호출 시 code를 전달받아야 함
+            # 일단 df의 name이나 다른 정보로 판단할 수 없으므로, scanner.py에서 처리하도록 함
+            # 여기서는 일단 스킵 (scanner.py에서 처리)
+            pass
         
         # 전략 결정
         from .strategy import determine_trading_strategy

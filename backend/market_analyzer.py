@@ -4,7 +4,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, Tuple, Optional, Any
+from typing import Dict, Tuple, Optional, Any, List
 from dataclasses import dataclass, field
 import logging
 
@@ -60,6 +60,19 @@ class MarketCondition:
     us_trend_score: float = 0.0
     kr_risk_score: float = 0.0
     us_risk_score: float = 0.0
+    
+    # 시장 분리 신호 (양방향)
+    market_divergence: bool = False
+    divergence_type: str = ""  # "kospi_up_kosdaq_down" 또는 "kospi_down_kosdaq_up"
+    kospi_r20: float = 0.0
+    kosdaq_r20: float = 0.0
+    kospi_universe: List[str] = field(default_factory=list)  # 성능 최적화: KOSPI 종목 리스트 캐시
+    kosdaq_universe: List[str] = field(default_factory=list)  # 성능 최적화: KOSDAQ 종목 리스트 캐시
+    
+    # Regime v4 구조 필드 (중기 레짐 기반 스캔 조건 + 단기 변동은 리스크 보정 전용)
+    longterm_regime: Optional[str] = None  # 20~60일 기준 장기 레짐
+    midterm_regime: Optional[str] = None  # 5~20일 기준 중기 레짐 (스캔 조건의 핵심)
+    short_term_risk_score: Optional[int] = None  # 0~3, 당일 단기 리스크 점수 (후보 제거 목적)
 
 class MarketAnalyzer:
     """시장 상황 분석기"""
@@ -279,10 +292,36 @@ class MarketAnalyzer:
                 logger.warning(f"거래일이 아닙니다: {date}, 장세 분석 건너뜀")
                 return 0.0, 0.02, None
             
-            # KOSPI 200 지수 (069500) 데이터 가져오기
-            # 며칠간의 추세를 분석하기 위해 최근 5일 데이터 사용
+            # 실제 KOSPI 지수 데이터 가져오기 (FinanceDataReader 사용)
+            # 키움 API는 지수 데이터를 직접 조회할 수 없으므로 FinanceDataReader 사용
+            # FinanceDataReader는 실제 KOSPI 지수 데이터를 제공하며 키움 API ETF와 비슷한 값
             lookback_days = 5
-            df = api.get_ohlcv("069500", lookback_days, date)
+            try:
+                import FinanceDataReader as fdr
+                # 최근 30일 데이터 가져오기
+                end_date = pd.to_datetime(date, format='%Y%m%d')
+                start_date = (end_date - pd.Timedelta(days=30)).strftime('%Y-%m-%d')
+                end_date_str = end_date.strftime('%Y-%m-%d')
+                df_fdr = fdr.DataReader('KS11', start_date, end_date_str)
+                if not df_fdr.empty:
+                    # 컬럼명 소문자로 통일
+                    df_fdr.columns = df_fdr.columns.str.lower()
+                    # date 컬럼 추가
+                    df_fdr['date'] = df_fdr.index.strftime('%Y%m%d')
+                    df = df_fdr.tail(lookback_days)
+                    
+                    # 데이터 검증: KOSPI 지수 범위 확인
+                    if not df.empty:
+                        kospi_recent = df.iloc[-1]['close']
+                        # KOSPI 지수는 보통 2000~4000 범위
+                        if not (2000 <= kospi_recent <= 4000):
+                            logger.warning(f"KOSPI 지수 값이 비정상적: {kospi_recent:.2f} (예상 범위: 2000~4000)")
+                else:
+                    df = pd.DataFrame()
+            except (ImportError, Exception) as e:
+                logger.warning(f"FinanceDataReader 사용 실패: {e}, 키움 API ETF 사용")
+                # Fallback: 기존 방법 (069500 ETF)
+                df = api.get_ohlcv("069500", lookback_days, date)
             if df.empty or len(df) < 2:
                 # 데이터가 없으면 기본값 반환
                 return 0.0, 0.02, None
@@ -306,37 +345,9 @@ class MarketAnalyzer:
                 daily_return = 0.0
                 prev_close = current_close
             
-            # 며칠간의 수익률 계산
-            returns_3d = []  # 최근 3일
-            returns_5d = []  # 최근 5일
-            
-            for i in range(max(0, current_idx - 4), current_idx):
-                if i + 1 < len(df):
-                    prev = df.iloc[i]['close']
-                    curr = df.iloc[i + 1]['close']
-                    if prev > 0:
-                        ret = (curr / prev - 1)
-                        returns_5d.append(ret)
-                        if i >= current_idx - 2:  # 최근 3일
-                            returns_3d.append(ret)
-            
-            # 평균 수익률 계산 (가중 평균: 최근일수록 높은 가중치)
-            if returns_3d:
-                # 최근 3일: 가중치 [0.2, 0.3, 0.5]
-                weights_3d = [0.2, 0.3, 0.5][-len(returns_3d):]
-                weighted_3d = sum(r * w for r, w in zip(returns_3d, weights_3d)) / sum(weights_3d)
-            else:
-                weighted_3d = daily_return
-            
-            if returns_5d:
-                # 최근 5일: 가중치 [0.1, 0.15, 0.2, 0.25, 0.3]
-                weights_5d = [0.1, 0.15, 0.2, 0.25, 0.3][-len(returns_5d):]
-                weighted_5d = sum(r * w for r, w in zip(returns_5d, weights_5d)) / sum(weights_5d)
-            else:
-                weighted_5d = daily_return
-            
-            # 최종 수익률: 단기 추세(50%) + 중기 추세(30%) + 당일(20%) 가중 평균
-            close_return = (weighted_3d * 0.5 + weighted_5d * 0.3 + daily_return * 0.2)
+            # 실제 전일 대비 등락률 사용 (가중 평균 대신)
+            # 스캐너 화면에 표시되는 코스피 등락률은 실제 전일 대비 등락률이어야 함
+            close_return = daily_return
             
             # 저가 기준 수익률 (급락장 판단용)
             low_return = None
@@ -356,7 +367,7 @@ class MarketAnalyzer:
             
             volatility = sum(volatilities) / len(volatilities) if volatilities else 0.02
             
-            logger.info(f"KOSPI 추세 분석: 당일={daily_return*100:+.2f}%, 3일평균={weighted_3d*100:+.2f}%, 5일평균={weighted_5d*100:+.2f}%, 최종={close_return*100:+.2f}%")
+            logger.info(f"KOSPI 전일 대비 등락률: {daily_return*100:+.2f}% (종가: {current_close:.2f})")
             
             return close_return, volatility, low_return
             
@@ -449,6 +460,225 @@ class MarketAnalyzer:
         except Exception as e:
             logger.warning(f"유니버스 평균 등락률 계산 실패: {e}")
             return None, 0
+    
+    def compute_long_regime(self, date: str) -> str:
+        """
+        20~60일 기준 장기 레짐 계산
+        
+        Args:
+            date: 분석 날짜 (YYYYMMDD)
+            
+        Returns:
+            'bull' / 'neutral' / 'bear' / 'crash' 중 하나
+        """
+        try:
+            from kiwoom_api import api
+            from main import is_trading_day
+            import numpy as np
+            
+            if not is_trading_day(date):
+                return "neutral"
+            
+            # 60일 데이터 가져오기
+            df = api.get_ohlcv("069500", 65, date)
+            if df.empty or len(df) < 61:
+                return "neutral"
+            
+            close = df['close'].values
+            
+            # 60일 수익률
+            r60 = (close[-1] / close[-61] - 1) if len(close) >= 61 else 0.0
+            
+            # 20일 변동성 (표준편차)
+            if len(close) >= 21:
+                returns_20d = np.diff(close[-21:]) / close[-21:-1]
+                volatility_20d = np.std(returns_20d) if len(returns_20d) > 0 else 0.0
+            else:
+                volatility_20d = 0.0
+            
+            # 장기 레짐 결정
+            if r60 > 0.08 and volatility_20d < 0.03:
+                return "bull"
+            elif r60 < -0.08 or volatility_20d > 0.05:
+                return "bear"
+            elif r60 < -0.15 or volatility_20d > 0.08:
+                return "crash"
+            else:
+                return "neutral"
+                
+        except Exception as e:
+            logger.warning(f"장기 레짐 계산 실패: {e}")
+            return "neutral"
+    
+    def compute_mid_regime(self, date: str) -> str:
+        """
+        5~20일 기준 중기 레짐 계산 (스캔 조건의 핵심)
+        
+        단일 일자의 급등락이 아니라, 최근 구간 평균/표준편차를 사용하여
+        단기 변동에 영향받지 않는 안정적인 레짐 판단
+        
+        Args:
+            date: 분석 날짜 (YYYYMMDD)
+            
+        Returns:
+            'bull' / 'neutral' / 'bear' / 'crash' 중 하나
+        """
+        try:
+            from kiwoom_api import api
+            from main import is_trading_day
+            import numpy as np
+            
+            if not is_trading_day(date):
+                return "neutral"
+            
+            # 20일 데이터 가져오기
+            df = api.get_ohlcv("069500", 25, date)
+            if df.empty or len(df) < 21:
+                return "neutral"
+            
+            close = df['close'].values
+            
+            # 20일 수익률
+            r20 = (close[-1] / close[-21] - 1) if len(close) >= 21 else 0.0
+            
+            # 최근 10일 평균 수익률 (단일 일자 급등락 완화)
+            if len(close) >= 11:
+                returns_10d = np.diff(close[-11:]) / close[-11:-1]
+                avg_return_10d = np.mean(returns_10d) if len(returns_10d) > 0 else 0.0
+            else:
+                avg_return_10d = 0.0
+            
+            # 최근 5일 수익률 (더 단기 추세)
+            if len(close) >= 6:
+                r5 = (close[-1] / close[-6] - 1)
+            else:
+                r5 = 0.0
+            
+            # 중기 레짐 결정 (구간 평균 기반, 단일 일자 급등락 완화)
+            # bull: 20일 수익률 양수 + 최근 10일 평균 양수
+            if r20 > 0.04 and avg_return_10d > 0.001:
+                return "bull"
+            # bear: 20일 수익률 음수 + 최근 10일 평균 음수
+            elif r20 < -0.04 and avg_return_10d < -0.001:
+                return "bear"
+            # crash: 극단적 하락
+            elif r20 < -0.10 or r5 < -0.05:
+                return "crash"
+            else:
+                return "neutral"
+                
+        except Exception as e:
+            logger.warning(f"중기 레짐 계산 실패: {e}")
+            return "neutral"
+    
+    def compute_short_term_risk(self, date: str) -> int:
+        """
+        당일 단기 리스크 점수 계산 (0~3)
+        
+        당일 KOSPI 수익률, 당일 KOSPI 저가/고가 변동폭,
+        미국 선물 또는 US ETF(SPY/QQQ)의 전일/당일 변화,
+        VIX 급등 여부를 종합하여 단기 리스크 점수 계산
+        
+        Args:
+            date: 분석 날짜 (YYYYMMDD)
+            
+        Returns:
+            0~3 범위의 정수 (0=안전, 3=위험)
+        """
+        try:
+            from kiwoom_api import api
+            from main import is_trading_day
+            from scanner_v2.regime_v4 import load_full_data
+            import pandas as pd
+            
+            if not is_trading_day(date):
+                return 0
+            
+            risk_score = 0
+            
+            # 1. 당일 KOSPI 수익률 및 변동폭
+            try:
+                df = api.get_ohlcv("069500", 2, date)
+                if not df.empty and len(df) >= 2:
+                    prev_close = df.iloc[-2]['close']
+                    curr_close = df.iloc[-1]['close']
+                    curr_low = df.iloc[-1]['low']
+                    curr_high = df.iloc[-1]['high']
+                    
+                    # 당일 수익률
+                    daily_return = (curr_close / prev_close - 1) if prev_close > 0 else 0.0
+                    
+                    # 장중 급락 (저가 기준)
+                    intraday_drop = (curr_low / prev_close - 1) if prev_close > 0 else 0.0
+                    
+                    # 일중 변동폭
+                    day_range = (curr_high / curr_low - 1) if curr_low > 0 else 0.0
+                    
+                    # 리스크 점수 가산
+                    if daily_return < -0.015 or intraday_drop < -0.02:  # -1.5% 이상 급락 or 장중 -2% 이하
+                        risk_score += 2
+                    elif daily_return < -0.01:  # -1% 이상 하락
+                        risk_score += 1
+                    
+                    if day_range > 0.04:  # 일중 변동폭 4% 이상
+                        risk_score += 1
+            except Exception as e:
+                logger.debug(f"KOSPI 단기 리스크 계산 실패: {e}")
+            
+            # 2. 미국 시장 (SPY/QQQ/VIX)
+            try:
+                us_data = load_full_data(date)
+                target_date = pd.to_datetime(date, format='%Y%m%d')
+                
+                # SPY 전일/당일 변화
+                if not us_data.get("SPY", pd.DataFrame()).empty:
+                    spy_df = us_data["SPY"]
+                    spy_df_filtered = spy_df[spy_df.index <= target_date]
+                    if len(spy_df_filtered) >= 2:
+                        spy_prev = spy_df_filtered.iloc[-2]['close']
+                        spy_curr = spy_df_filtered.iloc[-1]['close']
+                        spy_return = (spy_curr / spy_prev - 1) if spy_prev > 0 else 0.0
+                        
+                        if spy_return < -0.015:  # SPY -1.5% 이상 하락
+                            risk_score += 1
+                
+                # VIX 급등 여부
+                if not us_data.get("VIX", pd.DataFrame()).empty:
+                    vix_df = us_data["VIX"]
+                    vix_df_filtered = vix_df[vix_df.index <= target_date]
+                    if len(vix_df_filtered) >= 2:
+                        vix_prev = vix_df_filtered.iloc[-2]['close']
+                        vix_curr = vix_df_filtered.iloc[-1]['close']
+                        vix_change = (vix_curr / vix_prev - 1) if vix_prev > 0 else 0.0
+                        
+                        if vix_change > 0.10:  # VIX +10% 이상 급등
+                            risk_score += 1
+                        elif vix_curr > 30:  # VIX 30 이상
+                            risk_score += 1
+            except Exception as e:
+                logger.debug(f"미국 시장 단기 리스크 계산 실패: {e}")
+            
+            # 0~3 범위로 클램프
+            return max(0, min(3, risk_score))
+            
+        except Exception as e:
+            logger.warning(f"단기 리스크 계산 실패: {e}")
+            return 0
+    
+    def compose_final_regime_v4(self, midterm_regime: str) -> str:
+        """
+        v4에서는 final_regime를 midterm_regime와 동일하게 사용.
+        
+        단기 변동은 short_term_risk_score로만 반영하고,
+        final_regime에는 반영하지 않는다.
+        
+        Args:
+            midterm_regime: 중기 레짐 ('bull' / 'neutral' / 'bear' / 'crash')
+            
+        Returns:
+            final_regime (midterm_regime과 동일)
+        """
+        return midterm_regime
     
     def _determine_market_sentiment(self, kospi_return: float, volatility: float) -> str:
         """시장 심리 판단 (며칠간의 추세 반영)"""
@@ -1071,6 +1301,12 @@ class MarketAnalyzer:
     def analyze_market_condition_v4(self, date: Optional[str] = None, mode: str = "backtest") -> MarketCondition:
         """
         Global Regime Model v4 장세 분석 (미국 선물 데이터 포함)
+        
+        v4 구조:
+        - longterm_regime: 20~60일 기준 장기 레짐
+        - midterm_regime: 5~20일 기준 중기 레짐 (스캔 조건의 핵심)
+        - short_term_risk_score: 당일 단기 리스크 점수 (0~3, 후보 제거 목적)
+        - final_regime: midterm_regime과 동일 (단기 변동에 영향받지 않음)
         """
         if date is None:
             date = datetime.now().strftime('%Y%m%d')
@@ -1079,14 +1315,27 @@ class MarketAnalyzer:
             from scanner_v2.regime_v4 import analyze_regime_v4
             from services.regime_storage import upsert_regime
             
-            # v4 분석 실행
+            # v4 분석 실행 (기존 로직 유지)
             v4_result = analyze_regime_v4(date)
             
             # 기존 v1 분석 실행 (kospi_return 등 기본 정보를 위해)
             base_condition = self._analyze_market_condition_v1(date)
             
-            # v4 필드 업데이트
-            base_condition.final_regime = v4_result["final_regime"]
+            # ============================================================
+            # Regime v4 구조: longterm/midterm/short_term 계산
+            # ============================================================
+            longterm_regime = self.compute_long_regime(date)
+            midterm_regime = self.compute_mid_regime(date)
+            short_term_risk_score = self.compute_short_term_risk(date)
+            final_regime = self.compose_final_regime_v4(midterm_regime)
+            
+            # MarketCondition에 필드 채우기
+            base_condition.longterm_regime = longterm_regime
+            base_condition.midterm_regime = midterm_regime
+            base_condition.short_term_risk_score = short_term_risk_score
+            base_condition.final_regime = final_regime
+            
+            # 기존 v4 필드 업데이트 (하위 호환성 유지)
             base_condition.final_score = v4_result["final_score"]
             base_condition.kr_score = v4_result["kr_trend_score"]
             base_condition.us_prev_score = v4_result["us_trend_score"]
@@ -1099,6 +1348,8 @@ class MarketAnalyzer:
             base_condition.kr_risk_score = v4_result["kr_risk_score"]
             base_condition.us_risk_score = v4_result["us_risk_score"]
             base_condition.version = "regime_v4"
+            
+            logger.info(f"Regime v4 분석: longterm={longterm_regime}, midterm={midterm_regime}, short_risk={short_term_risk_score}, final={final_regime}")
             
             # DB 저장
             try:
@@ -1118,6 +1369,158 @@ class MarketAnalyzer:
             except Exception as db_error:
                 logger.warning(f"DB 저장 실패, 계속 진행: {db_error}")
             
+            # 시장 분리 신호 감지 (양방향)
+            kr_trend_features = v4_result.get("kr_trend_features", {})
+            is_divergence, divergence_type = self._detect_market_divergence(kr_trend_features)
+            base_condition.market_divergence = is_divergence
+            base_condition.divergence_type = divergence_type
+            if base_condition.market_divergence:
+                base_condition.kospi_r20 = kr_trend_features.get("KOSPI_R20", 0.0)
+                base_condition.kosdaq_r20 = kr_trend_features.get("KOSDAQ_R20", 0.0)
+                if divergence_type == "kospi_up_kosdaq_down":
+                    logger.info(f"📊 시장 분리 신호 감지 (KOSPI↑ KOSDAQ↓): KOSPI R20={base_condition.kospi_r20*100:.1f}%, KOSDAQ R20={base_condition.kosdaq_r20*100:.1f}%")
+                elif divergence_type == "kospi_down_kosdaq_up":
+                    logger.info(f"📊 시장 분리 신호 감지 (KOSPI↓ KOSDAQ↑): KOSPI R20={base_condition.kospi_r20*100:.1f}%, KOSDAQ R20={base_condition.kosdaq_r20*100:.1f}%")
+            
+            # market_conditions 테이블에도 저장 (일별 등락률 및 미국 레짐 소스 데이터 포함)
+            try:
+                from db_manager import db_manager
+                from main import create_market_conditions_table
+                from scanner_v2.regime_v4 import load_full_data
+                import json
+                import pandas as pd
+                
+                # 날짜 형식 변환 (YYYYMMDD -> YYYY-MM-DD)
+                if len(date) == 8:
+                    formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+                else:
+                    formatted_date = date
+                
+                # 미국 레짐 소스 데이터 계산
+                spy_return = None
+                qqq_return = None
+                vix_close = None
+                spy_close = None
+                qqq_close = None
+                
+                try:
+                    us_data = load_full_data(date)
+                    target_date = pd.to_datetime(date, format='%Y%m%d')
+                    
+                    # SPY 일별 등락률
+                    if not us_data.get("SPY", pd.DataFrame()).empty:
+                        spy_df = us_data["SPY"]
+                        if len(spy_df) >= 2:
+                            spy_df_filtered = spy_df[spy_df.index <= target_date]
+                            if len(spy_df_filtered) >= 2:
+                                prev_close = spy_df_filtered.iloc[-2]['close']
+                                curr_close = spy_df_filtered.iloc[-1]['close']
+                                if prev_close > 0:
+                                    spy_return = (curr_close / prev_close - 1)
+                                    spy_close = curr_close
+                    
+                    # QQQ 일별 등락률
+                    if not us_data.get("QQQ", pd.DataFrame()).empty:
+                        qqq_df = us_data["QQQ"]
+                        if len(qqq_df) >= 2:
+                            qqq_df_filtered = qqq_df[qqq_df.index <= target_date]
+                            if len(qqq_df_filtered) >= 2:
+                                prev_close = qqq_df_filtered.iloc[-2]['close']
+                                curr_close = qqq_df_filtered.iloc[-1]['close']
+                                if prev_close > 0:
+                                    qqq_return = (curr_close / prev_close - 1)
+                                    qqq_close = curr_close
+                    
+                    # VIX 종가
+                    if not us_data.get("VIX", pd.DataFrame()).empty:
+                        vix_df = us_data["VIX"]
+                        if len(vix_df) >= 1:
+                            vix_df_filtered = vix_df[vix_df.index <= target_date]
+                            if len(vix_df_filtered) >= 1:
+                                vix_close = vix_df_filtered.iloc[-1]['close']
+                except Exception as us_data_error:
+                    logger.debug(f"미국 레짐 소스 데이터 계산 실패 (무시): {us_data_error}")
+                
+                with db_manager.get_cursor(commit=True) as cur:
+                    create_market_conditions_table(cur)
+                    cur.execute("""
+                        INSERT INTO market_conditions(
+                            date, market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                            sector_rotation, foreign_flow, institution_flow, volume_trend,
+                            min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                            trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                            foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes,
+                            spy_return, qqq_return, vix_close, spy_close, qqq_close
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (date) DO UPDATE SET
+                            market_sentiment = EXCLUDED.market_sentiment,
+                            sentiment_score = EXCLUDED.sentiment_score,
+                            kospi_return = EXCLUDED.kospi_return,
+                            volatility = EXCLUDED.volatility,
+                            rsi_threshold = EXCLUDED.rsi_threshold,
+                            sector_rotation = EXCLUDED.sector_rotation,
+                            foreign_flow = EXCLUDED.foreign_flow,
+                            institution_flow = EXCLUDED.institution_flow,
+                            volume_trend = EXCLUDED.volume_trend,
+                            min_signals = EXCLUDED.min_signals,
+                            macd_osc_min = EXCLUDED.macd_osc_min,
+                            vol_ma5_mult = EXCLUDED.vol_ma5_mult,
+                            gap_max = EXCLUDED.gap_max,
+                            ext_from_tema20_max = EXCLUDED.ext_from_tema20_max,
+                            trend_metrics = EXCLUDED.trend_metrics,
+                            breadth_metrics = EXCLUDED.breadth_metrics,
+                            flow_metrics = EXCLUDED.flow_metrics,
+                            sector_metrics = EXCLUDED.sector_metrics,
+                            volatility_metrics = EXCLUDED.volatility_metrics,
+                            foreign_flow_label = EXCLUDED.foreign_flow_label,
+                            institution_flow_label = EXCLUDED.institution_flow_label,
+                            volume_trend_label = EXCLUDED.volume_trend_label,
+                            adjusted_params = EXCLUDED.adjusted_params,
+                            analysis_notes = EXCLUDED.analysis_notes,
+                            spy_return = EXCLUDED.spy_return,
+                            qqq_return = EXCLUDED.qqq_return,
+                            vix_close = EXCLUDED.vix_close,
+                            spy_close = EXCLUDED.spy_close,
+                            qqq_close = EXCLUDED.qqq_close,
+                            updated_at = NOW()
+                    """, (
+                        formatted_date,
+                        base_condition.market_sentiment,
+                        base_condition.sentiment_score,
+                        base_condition.kospi_return,
+                        base_condition.volatility,
+                        base_condition.rsi_threshold,
+                        base_condition.sector_rotation,
+                        base_condition.foreign_flow,
+                        base_condition.institution_flow,
+                        base_condition.volume_trend,
+                        base_condition.min_signals,
+                        base_condition.macd_osc_min,
+                        base_condition.vol_ma5_mult,
+                        base_condition.gap_max,
+                        base_condition.ext_from_tema20_max,
+                        json.dumps(base_condition.trend_metrics) if base_condition.trend_metrics else None,
+                        json.dumps(base_condition.breadth_metrics) if base_condition.breadth_metrics else None,
+                        json.dumps(base_condition.flow_metrics) if base_condition.flow_metrics else None,
+                        json.dumps(base_condition.sector_metrics) if base_condition.sector_metrics else None,
+                        json.dumps(base_condition.volatility_metrics) if base_condition.volatility_metrics else None,
+                        base_condition.foreign_flow_label,
+                        base_condition.institution_flow_label,
+                        base_condition.volume_trend_label,
+                        json.dumps(base_condition.adjusted_params) if base_condition.adjusted_params else None,
+                        base_condition.analysis_notes,
+                        spy_return,
+                        qqq_return,
+                        vix_close,
+                        spy_close,
+                        qqq_close
+                    ))
+                logger.info(f"✅ market_conditions 저장 완료: {date} (KOSPI: {base_condition.kospi_return*100:+.2f}%, SPY: {spy_return*100:+.2f}% if spy_return else 'N/A', QQQ: {qqq_return*100:+.2f}% if qqq_return else 'N/A')")
+            except Exception as save_error:
+                logger.warning(f"market_conditions 저장 실패 (무시): {save_error}")
+                import traceback
+                logger.debug(traceback.format_exc())
+            
             logger.info(f"Global Regime v4 분석 완료: {date} -> {v4_result['final_regime']} (trend: {v4_result['global_trend_score']:.2f}, risk: {v4_result['global_risk_score']:.2f})")
             return base_condition
             
@@ -1125,6 +1528,56 @@ class MarketAnalyzer:
             logger.error(f"Global Regime v4 분석 실패: {e}")
             # Fallback to v3
             return self.analyze_market_condition_v3(date, mode)
+    
+    def _detect_market_divergence(self, kr_trend_features: Dict[str, Any]) -> tuple:
+        """
+        시장 분리 신호 감지 (양방향)
+        
+        Args:
+            kr_trend_features: 한국 추세 feature 딕셔너리
+            
+        Returns:
+            tuple: (is_divergence: bool, divergence_type: str)
+                - is_divergence: 분리 신호가 감지되면 True
+                - divergence_type: "kospi_up_kosdaq_down" 또는 "kospi_down_kosdaq_up" 또는 ""
+        """
+        try:
+            if not kr_trend_features:
+                return False, ""
+            
+            kospi_r20 = kr_trend_features.get("KOSPI_R20", 0.0)
+            kosdaq_r20 = kr_trend_features.get("KOSDAQ_R20", 0.0)
+            
+            # None 값 체크
+            if kospi_r20 is None or kosdaq_r20 is None:
+                return False, ""
+            
+            # 타입 체크 및 변환
+            try:
+                kospi_r20 = float(kospi_r20)
+                kosdaq_r20 = float(kosdaq_r20)
+            except (TypeError, ValueError):
+                logger.warning(f"분리 신호 감지 실패: 타입 변환 불가 (KOSPI_R20={kospi_r20}, KOSDAQ_R20={kosdaq_r20})")
+                return False, ""
+            
+            # 분리도 계산 (절대값 차이)
+            divergence = abs(kospi_r20 - kosdaq_r20)
+            
+            # 분리 신호 조건:
+            # 1. 분리도가 5% 이상
+            # 2-1. 케이스 1: KOSPI 상승 (R20 > 0) + KOSDAQ 하락 (R20 < 0)
+            # 2-2. 케이스 2: KOSPI 하락 (R20 < 0) + KOSDAQ 상승 (R20 > 0)
+            if divergence > 0.05:
+                if kospi_r20 > 0 and kosdaq_r20 < 0:
+                    return True, "kospi_up_kosdaq_down"
+                elif kospi_r20 < 0 and kosdaq_r20 > 0:
+                    return True, "kospi_down_kosdaq_up"
+            
+            return False, ""
+            
+        except Exception as e:
+            logger.warning(f"분리 신호 감지 실패: {e}")
+            return False, ""
 
 # 전역 인스턴스
 market_analyzer = MarketAnalyzer()
