@@ -25,7 +25,18 @@ ALTER TABLE market_conditions
     ADD COLUMN IF NOT EXISTS spy_close DOUBLE PRECISION,
     ADD COLUMN IF NOT EXISTS qqq_close DOUBLE PRECISION;
 
--- 3. 인덱스 추가
+-- 3. Regime v4 관련 컬럼 추가
+ALTER TABLE market_conditions
+    ADD COLUMN IF NOT EXISTS longterm_regime TEXT,
+    ADD COLUMN IF NOT EXISTS midterm_regime TEXT,
+    ADD COLUMN IF NOT EXISTS short_term_risk_score INTEGER;
+
+-- 컬럼 설명 추가
+COMMENT ON COLUMN market_conditions.longterm_regime IS '20~60일 기준 장기 레짐 (bull/neutral/bear/crash)';
+COMMENT ON COLUMN market_conditions.midterm_regime IS '5~20일 기준 중기 레짐 (스캔 조건의 핵심)';
+COMMENT ON COLUMN market_conditions.short_term_risk_score IS '당일 단기 리스크 점수 (0~3)';
+
+-- 4. 인덱스 추가
 CREATE INDEX IF NOT EXISTS idx_market_conditions_date_desc
     ON market_conditions (date DESC);
 
