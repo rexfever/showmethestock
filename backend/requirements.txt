@@ -12,6 +12,7 @@ pytz==2023.3
 holidays==0.34
 boto3==1.34.0
 botocore==1.34.0
-FinanceDataReader==0.9.94
+# FinanceDataReader는 선택적 의존성 (PyPI에 없음, 필요시 수동 설치)
+# pip install git+https://github.com/FinanceData/FinanceDataReader.git
 yfinance>=0.2.0
 pykrx>=1.0.0
