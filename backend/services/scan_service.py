@@ -163,8 +163,25 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 try:
                     # 스캔 결과에 이미 포함된 종가와 등락률 우선 사용
                     indicators = it.get("indicators", {})
-                    scan_close = indicators.get("close")
-                    scan_change_rate = indicators.get("change_rate")
+                    # indicators가 객체인 경우 dict로 변환
+                    if not isinstance(indicators, dict):
+                        if hasattr(indicators, '__dict__'):
+                            indicators = indicators.__dict__
+                        elif hasattr(indicators, 'get'):
+                            # 이미 dict-like 객체
+                            pass
+                        else:
+                            indicators = {}
+                    
+                    scan_close = indicators.get("close") if isinstance(indicators, dict) else getattr(indicators, "close", None)
+                    scan_change_rate = indicators.get("change_rate") if isinstance(indicators, dict) else getattr(indicators, "change_rate", None)
+                    
+                    # change_rate가 소수 형태(0.0596)인 경우 퍼센트로 변환 (5.96)
+                    if scan_change_rate is not None:
+                        scan_change_rate = float(scan_change_rate)
+                        # 소수 형태인지 확인 (절대값이 1보다 작고 0이 아닌 경우)
+                        if abs(scan_change_rate) < 1.0 and scan_change_rate != 0.0:
+                            scan_change_rate = scan_change_rate * 100
                     
                     # 스캔 결과에 종가와 등락률이 있으면 사용
                     if scan_close is not None and scan_change_rate is not None:

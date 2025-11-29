@@ -115,15 +115,39 @@ def rescan_date(date: str, skip_existing: bool = False):
                     scan_items.append(result)
                 else:
                     # ScanResult 객체를 dict로 변환
+                    # indicators가 객체인 경우 dict로 변환
+                    indicators = result.indicators
+                    if not isinstance(indicators, dict):
+                        if hasattr(indicators, '__dict__'):
+                            indicators = indicators.__dict__
+                        else:
+                            indicators = {}
+                    
+                    # trend도 dict로 변환
+                    trend = result.trend
+                    if not isinstance(trend, dict):
+                        if hasattr(trend, '__dict__'):
+                            trend = trend.__dict__
+                        else:
+                            trend = {}
+                    
+                    # flags도 dict로 변환
+                    flags = result.flags
+                    if not isinstance(flags, dict):
+                        if hasattr(flags, '__dict__'):
+                            flags = flags.__dict__
+                        else:
+                            flags = {}
+                    
                     item = {
                         "ticker": result.ticker,
                         "name": result.name,
                         "score": result.score,
                         "match": result.match,
                         "strategy": result.strategy,
-                        "flags": result.flags,
-                        "indicators": result.indicators,
-                        "trend": result.trend,
+                        "flags": flags,
+                        "indicators": indicators,
+                        "trend": trend,
                         "score_label": result.score_label
                     }
                     scan_items.append(item)
