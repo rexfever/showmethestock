@@ -1353,16 +1353,36 @@ class MarketAnalyzer:
             
             # DB 저장
             try:
+                # kr_metrics 구성 (KOSPI, KOSDAQ R20 포함)
+                kr_metrics = {
+                    'kospi_r20': getattr(base_condition, 'kospi_r20', 0.0),
+                    'kosdaq_r20': getattr(base_condition, 'kosdaq_r20', 0.0),
+                    'kr_trend_score': v4_result["kr_trend_score"],
+                    'kr_risk_score': v4_result["kr_risk_score"],
+                    'longterm_regime': longterm_regime,
+                    'midterm_regime': midterm_regime,
+                    'short_term_risk_score': short_term_risk_score
+                }
+                
+                # us_metrics 구성
+                us_metrics = {
+                    'us_trend_score': v4_result["us_trend_score"],
+                    'us_risk_score': v4_result["us_risk_score"],
+                    'global_trend_score': v4_result["global_trend_score"],
+                    'global_risk_score': v4_result["global_risk_score"]
+                }
+                
                 regime_data = {
-                    'final_regime': v4_result["final_regime"],
+                    'final_regime': final_regime,
                     'kr_regime': v4_result["kr_regime"],
                     'us_prev_regime': v4_result["us_prev_regime"],
-                    'global_trend_score': v4_result["global_trend_score"],
-                    'global_risk_score': v4_result["global_risk_score"],
-                    'kr_trend_score': v4_result["kr_trend_score"],
-                    'us_trend_score': v4_result["us_trend_score"],
-                    'kr_risk_score': v4_result["kr_risk_score"],
-                    'us_risk_score': v4_result["us_risk_score"],
+                    'us_preopen_flag': getattr(base_condition, 'us_preopen_flag', 'none'),
+                    'us_metrics': us_metrics,
+                    'kr_metrics': kr_metrics,
+                    'us_preopen_metrics': {},
+                    'us_futures_score': v4_result["us_trend_score"],
+                    'us_futures_regime': v4_result["us_prev_regime"],
+                    'dxy': 0.0,  # DXY는 추후 추가 가능
                     'version': 'regime_v4'
                 }
                 upsert_regime(date, regime_data)
