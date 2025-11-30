@@ -34,7 +34,24 @@ export default function StockCardV2({ item, onViewChart }) {
   // strategy 우선순위: item.strategy > flags.trading_strategy > 기본값 "관찰"
   // 디버깅: strategy 값 확인
   const strategyFromFlags = flags?.trading_strategy || null;
-  const normalizedStrategy = (strategy && strategy.trim()) || (strategyFromFlags && strategyFromFlags.trim()) || '관찰';
+  
+  // 빈 문자열도 falsy로 처리
+  const strategyValue = (strategy && typeof strategy === 'string' && strategy.trim()) || null;
+  const flagsStrategyValue = (strategyFromFlags && typeof strategyFromFlags === 'string' && strategyFromFlags.trim()) || null;
+  
+  const normalizedStrategy = strategyValue || flagsStrategyValue || '관찰';
+  
+  // 디버깅 로그 (개발 환경에서만)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[StockCardV2] Strategy Debug:', {
+      itemStrategy: strategy,
+      strategyValue,
+      flagsTradingStrategy: flags?.trading_strategy,
+      flagsStrategyValue,
+      normalizedStrategy,
+      hasStrategyConfig: !!strategyConfig[normalizedStrategy]
+    });
+  }
   
   // 디버깅: 정규화된 전략이 유효한지 확인
   if (!strategyConfig[normalizedStrategy]) {
