@@ -174,7 +174,7 @@ class TestMainReturnsIntegration(unittest.TestCase):
                     'max_return': 4.0,
                     'min_return': 1.0
                 },
-                'expected_return': 2.94',
+                'expected_return': 2.94,
                 'expected_max': 4.0,
                 'expected_min': 1.0
             }
