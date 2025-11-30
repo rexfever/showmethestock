@@ -152,9 +152,20 @@ class ScannerV2:
                     logger.debug(f"가산점 적용 실패: {e}")
             
             # 10. 전략 결정
-            from .strategy import determine_trading_strategy
-            strategy_tuple = determine_trading_strategy(flags, score)
-            strategy = strategy_tuple[0] if isinstance(strategy_tuple, tuple) else "관찰"
+            # scorer에서 이미 전략을 결정했으므로 flags에서 가져옴
+            # 단, 가산점이 적용된 경우에는 adjusted_score를 다시 계산해서 전략 재결정
+            if flags.get('kospi_bonus') or flags.get('kosdaq_bonus'):
+                # 가산점 적용 후 점수가 변경되었으면 전략을 다시 결정
+                from .strategy import determine_trading_strategy
+                # adjusted_score 계산 (risk_score 차감)
+                risk_score = flags.get('risk_score', 0)
+                adjusted_score = score - risk_score
+                strategy_tuple = determine_trading_strategy(flags, adjusted_score)
+                strategy = strategy_tuple[0] if isinstance(strategy_tuple, tuple) else "관찰"
+                flags['trading_strategy'] = strategy
+            else:
+                # 가산점이 없으면 scorer에서 결정한 전략 사용
+                strategy = flags.get('trading_strategy', '관찰')
             
             # 11. 결과 생성
             cur = df.iloc[-1]
