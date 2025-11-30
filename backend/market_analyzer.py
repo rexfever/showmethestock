@@ -1378,12 +1378,13 @@ class MarketAnalyzer:
                     prev_date_str = prev_date_obj.strftime('%Y%m%d')
                     if is_trading_day(prev_date_str):
                         # DB에서 이전 날짜의 midterm_regime 조회
-                        prev_date_formatted = prev_date_obj.strftime('%Y-%m-%d')
+                        # date 컬럼이 DATE 타입이므로 date 객체로 조회
+                        prev_date_date = prev_date_obj.date()
                         with db_manager.get_cursor(commit=False) as cur:
                             cur.execute("""
                                 SELECT midterm_regime FROM market_conditions 
                                 WHERE date = %s
-                            """, (prev_date_formatted,))
+                            """, (prev_date_date,))
                             row = cur.fetchone()
                             if row and row[0]:
                                 prev_midterm_regime = row[0]
