@@ -39,7 +39,16 @@ export default function StockCardV2({ item, onViewChart }) {
   const strategyValue = (strategy && typeof strategy === 'string' && strategy.trim()) || null;
   const flagsStrategyValue = (strategyFromFlags && typeof strategyFromFlags === 'string' && strategyFromFlags.trim()) || null;
   
-  const normalizedStrategy = strategyValue || flagsStrategyValue || '관찰';
+  // 항상 문자열이 보장되도록 처리
+  let normalizedStrategy = strategyValue || flagsStrategyValue || '관찰';
+  
+  // 최종 검증: 빈 문자열이거나 공백만 있으면 '관찰'로 설정
+  if (!normalizedStrategy || (typeof normalizedStrategy === 'string' && !normalizedStrategy.trim())) {
+    normalizedStrategy = '관찰';
+  }
+  
+  // 문자열 타입 보장
+  normalizedStrategy = String(normalizedStrategy).trim() || '관찰';
   
   // 디버깅 로그 (개발 환경에서만)
   if (process.env.NODE_ENV === 'development') {
@@ -184,7 +193,7 @@ export default function StockCardV2({ item, onViewChart }) {
           title={strategyInfo.desc}
         >
           <span className="text-base leading-none" aria-hidden="true">{strategyInfo.icon}</span>
-          <span className="font-medium leading-tight whitespace-nowrap">{normalizedStrategy || '관찰'}</span>
+          <span className="font-medium leading-tight whitespace-nowrap block">{normalizedStrategy}</span>
         </span>
         <span className="text-xs text-gray-500 whitespace-nowrap">
           {strategyInfo.desc}
