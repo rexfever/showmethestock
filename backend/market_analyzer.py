@@ -1391,7 +1391,9 @@ class MarketAnalyzer:
             except Exception as e:
                 logger.debug(f"이전 날짜 레짐 조회 실패 (계속 진행): {e}")
             
+            logger.info(f"히스테리시스: {date} 이전 레짐={prev_midterm_regime}")
             midterm_regime = self.compute_mid_regime(date, prev_regime=prev_midterm_regime)
+            logger.info(f"히스테리시스: {date} 계산된 midterm_regime={midterm_regime}")
             short_term_risk_score = self.compute_short_term_risk(date)
             final_regime = self.compose_final_regime_v4(midterm_regime)
             
