@@ -49,6 +49,16 @@ export default function StockCardV2({ item, onViewChart }) {
                           score_label;
   
   const labelInfo = scoreLabelConfig[normalizedLabel] || scoreLabelConfig['후보 종목'];
+  
+  // Tailwind 동적 클래스 문제 해결: 명시적 클래스명 매핑
+  const labelClassName = {
+    '강력 추천': 'bg-red-100 text-red-700',
+    '강한 매수': 'bg-red-100 text-red-700',
+    '추천': 'bg-orange-100 text-orange-700',
+    '매수 후보': 'bg-orange-100 text-orange-700',
+    '관심 종목': 'bg-yellow-100 text-yellow-700',
+    '후보 종목': 'bg-gray-100 text-gray-700'
+  }[normalizedLabel] || 'bg-gray-100 text-gray-700';
 
   // 매매 가이드 정보
   const targetProfit = flags.target_profit ? (flags.target_profit * 100).toFixed(1) : null;
@@ -119,7 +129,7 @@ export default function StockCardV2({ item, onViewChart }) {
             </div>
           </div>
           <span 
-            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-${labelInfo.color}-100 text-${labelInfo.color}-700`}
+            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${labelClassName}`}
             title={
               normalizedLabel === '강력 추천' ? '점수 10점 이상 - 강한 매수 신호' :
               normalizedLabel === '추천' ? '점수 8점 이상 - 매수 후보' :
