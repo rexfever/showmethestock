@@ -152,8 +152,14 @@ export default function StockCardV2({ item, onViewChart }) {
 
       {/* 전략 배지 */}
       <div className="flex items-center space-x-2">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}>
+        <span 
+          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
+          title={strategyInfo.desc}
+        >
           {strategyInfo.icon} {strategy}
+        </span>
+        <span className="text-xs text-gray-500">
+          {strategyInfo.desc}
         </span>
       </div>
 
