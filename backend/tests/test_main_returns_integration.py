@@ -141,8 +141,11 @@ class TestMainReturnsIntegration(unittest.TestCase):
                 
                 # 로직 시뮬레이션 (main.py의 실제 로직과 동일)
                 # main.py Line 2000: if returns_info and isinstance(returns_info, dict) and returns_info.get('current_return') is not None:
-                is_valid = (
-                    returns_dict and  # 빈 딕셔너리는 False
+                # Python에서 빈 딕셔너리 {}는 falsy이므로 returns_dict and ... 는 {}를 반환하지만,
+                # 실제 if 문에서는 falsy로 평가되어 False가 됨
+                # 따라서 bool()로 감싸서 명시적으로 변환
+                is_valid = bool(
+                    returns_dict and  # 빈 딕셔너리는 falsy
                     isinstance(returns_dict, dict) and 
                     returns_dict.get('current_return') is not None
                 )
