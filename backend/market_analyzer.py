@@ -510,15 +510,18 @@ class MarketAnalyzer:
             logger.warning(f"장기 레짐 계산 실패: {e}")
             return "neutral"
     
-    def compute_mid_regime(self, date: str) -> str:
+    def compute_mid_regime(self, date: str, prev_regime: str = None) -> str:
         """
         5~20일 기준 중기 레짐 계산 (스캔 조건의 핵심)
         
         단일 일자의 급등락이 아니라, 최근 구간 평균/표준편차를 사용하여
         단기 변동에 영향받지 않는 안정적인 레짐 판단
         
+        히스테리시스 적용: 이전 레짐을 고려하여 자주 바뀌지 않도록 함
+        
         Args:
             date: 분석 날짜 (YYYYMMDD)
+            prev_regime: 이전 날짜의 midterm_regime (히스테리시스용)
             
         Returns:
             'bull' / 'neutral' / 'bear' / 'crash' 중 하나
@@ -555,17 +558,44 @@ class MarketAnalyzer:
                 r5 = 0.0
             
             # 중기 레짐 결정 (구간 평균 기반, 단일 일자 급등락 완화)
-            # bull: 20일 수익률 양수 + 최근 10일 평균 양수
-            if r20 > 0.04 and avg_return_10d > 0.001:
-                return "bull"
-            # bear: 20일 수익률 음수 + 최근 10일 평균 음수
-            elif r20 < -0.04 and avg_return_10d < -0.001:
-                return "bear"
-            # crash: 극단적 하락
-            elif r20 < -0.10 or r5 < -0.05:
+            # 히스테리시스: 이전 레짐을 고려하여 변경 임계값을 다르게 설정
+            
+            # crash: 극단적 하락 (항상 우선)
+            if r20 < -0.10 or r5 < -0.05:
                 return "crash"
+            
+            # bull 조건
+            bull_condition = r20 > 0.04 and avg_return_10d > 0.001
+            # bear 조건
+            bear_condition = r20 < -0.04 and avg_return_10d < -0.001
+            
+            # 히스테리시스: 이전 레짐이 있으면 변경 임계값을 완화
+            if prev_regime == "bull":
+                # bull 유지: 조건이 약간 약해져도 유지
+                if bull_condition or (r20 > 0.02 and avg_return_10d > -0.0005):
+                    return "bull"
+                # bear로 전환: 더 강한 bear 조건 필요
+                elif bear_condition and r20 < -0.06:
+                    return "bear"
+                else:
+                    return "neutral"
+            elif prev_regime == "bear":
+                # bear 유지: 조건이 약간 약해져도 유지
+                if bear_condition or (r20 < -0.02 and avg_return_10d < 0.0005):
+                    return "bear"
+                # bull로 전환: 더 강한 bull 조건 필요
+                elif bull_condition and r20 > 0.06:
+                    return "bull"
+                else:
+                    return "neutral"
             else:
-                return "neutral"
+                # 이전 레짐이 없거나 neutral인 경우: 기본 로직 사용
+                if bull_condition:
+                    return "bull"
+                elif bear_condition:
+                    return "bear"
+                else:
+                    return "neutral"
                 
         except Exception as e:
             logger.warning(f"중기 레짐 계산 실패: {e}")
@@ -1325,7 +1355,34 @@ class MarketAnalyzer:
             # Regime v4 구조: longterm/midterm/short_term 계산
             # ============================================================
             longterm_regime = self.compute_long_regime(date)
-            midterm_regime = self.compute_mid_regime(date)
+            
+            # 이전 날짜의 midterm_regime 가져오기 (히스테리시스용)
+            prev_midterm_regime = None
+            try:
+                from main import is_trading_day
+                from datetime import datetime, timedelta
+                
+                # 최근 5일 중 이전 거래일 찾기
+                date_obj = datetime.strptime(date, '%Y%m%d')
+                for i in range(1, 6):
+                    prev_date_obj = date_obj - timedelta(days=i)
+                    prev_date_str = prev_date_obj.strftime('%Y%m%d')
+                    if is_trading_day(prev_date_str):
+                        # DB에서 이전 날짜의 midterm_regime 조회
+                        prev_date_formatted = prev_date_obj.strftime('%Y-%m-%d')
+                        with db_manager.get_cursor(commit=False) as cur:
+                            cur.execute("""
+                                SELECT midterm_regime FROM market_conditions 
+                                WHERE date = %s
+                            """, (prev_date_formatted,))
+                            row = cur.fetchone()
+                            if row and row[0]:
+                                prev_midterm_regime = row[0]
+                        break
+            except Exception as e:
+                logger.debug(f"이전 날짜 레짐 조회 실패 (계속 진행): {e}")
+            
+            midterm_regime = self.compute_mid_regime(date, prev_regime=prev_midterm_regime)
             short_term_risk_score = self.compute_short_term_risk(date)
             final_regime = self.compose_final_regime_v4(midterm_regime)
             
