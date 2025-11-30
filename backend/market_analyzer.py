@@ -1390,7 +1390,9 @@ class MarketAnalyzer:
                                 prev_midterm_regime = row[0]
                         break
             except Exception as e:
-                logger.debug(f"이전 날짜 레짐 조회 실패 (계속 진행): {e}")
+                logger.warning(f"이전 날짜 레짐 조회 실패 (계속 진행): {e}")
+                import traceback
+                logger.debug(traceback.format_exc())
             
             logger.info(f"히스테리시스: {date} 이전 레짐={prev_midterm_regime}")
             midterm_regime = self.compute_mid_regime(date, prev_regime=prev_midterm_regime)
