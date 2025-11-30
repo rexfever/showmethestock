@@ -1970,8 +1970,9 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             # v1의 경우 소수 형태일 수 있으므로 변환 필요
             change_rate_raw = data.get("change_rate") or 0.0
             change_rate = float(change_rate_raw)
-            # scanner_version이 'v2'가 아닌 경우에만 변환 (v2는 이미 퍼센트 형태)
-            if detected_version != 'v2' and abs(change_rate) < 1.0 and change_rate != 0.0:
+            # detected_version 또는 target_scanner_version 확인 (v2는 이미 퍼센트 형태)
+            version_to_check = detected_version if 'detected_version' in locals() else target_scanner_version
+            if version_to_check != 'v2' and abs(change_rate) < 1.0 and change_rate != 0.0:
                 # 소수로 저장된 경우 퍼센트로 변환
                 change_rate = change_rate * 100
             change_rate = round(change_rate, 2)  # 퍼센트로 정규화, 소수점 2자리
