@@ -23,7 +23,7 @@ export default function StockCardV2({ item, onViewChart }) {
     스윙: { color: 'blue', icon: '⚡', desc: '단기 매매 (3~10일)' },
     포지션: { color: 'green', icon: '📈', desc: '중기 추세 추종 (2주~3개월)' },
     장기: { color: 'purple', icon: '🌱', desc: '장기 투자 (3개월 이상)' },
-    관찰: { color: 'gray', icon: '👀', desc: '관심 종목 (매수 대기)' }
+    관찰: { color: 'gray', icon: '⏳', desc: '관심 종목 (매수 대기)' }
   };
 
   const strategyInfo = strategyConfig[strategy] || strategyConfig.관찰;
