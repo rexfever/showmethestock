@@ -144,7 +144,7 @@ export default function StockCardV2({ item, onViewChart }) {
       )}
 
       {/* 추천일 대비 수익률 표시 */}
-      {recommended_date && recommended_price && current_return !== undefined && (
+      {recommended_date && recommended_price && current_return !== undefined && current_return !== null && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">📊</span>
@@ -170,6 +170,30 @@ export default function StockCardV2({ item, onViewChart }) {
                 {current_return > 0 ? ' 📈' : current_return < 0 ? ' 📉' : ''}
               </span>
             </div>
+            {/* 목표 달성 여부 표시 */}
+            {targetProfit && (
+              (() => {
+                const targetReturn = parseFloat(targetProfit);
+                const isAchieved = current_return >= targetReturn;
+                const progress = Math.min((current_return / targetReturn) * 100, 100);
+                return (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="text-gray-600">목표 수익률: {targetReturn}%</span>
+                      <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                        {isAchieved ? '✅ 목표 달성' : `목표까지 ${(targetReturn - current_return).toFixed(2)}%`}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${isAchieved ? 'bg-green-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.max(0, progress)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
         </div>
       )}

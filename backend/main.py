@@ -1932,8 +1932,8 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     else:
                         returns_dict = returns_raw
                     
-                    # 저장된 데이터가 유효한지 확인
-                    if isinstance(returns_dict, dict) and returns_dict.get('current_return') is not None:
+                    # 저장된 데이터가 유효한지 확인 (빈 딕셔너리나 None 값 제외)
+                    if isinstance(returns_dict, dict) and returns_dict and returns_dict.get('current_return') is not None:
                         returns_data[code] = returns_dict
                         continue
                 except:
@@ -1946,7 +1946,17 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
         if codes_needing_calculation:
             from services.returns_service import calculate_returns_batch
             try:
-                calculated_returns = calculate_returns_batch(codes_needing_calculation, formatted_date)
+                # DB의 close_price를 scan_price로 사용 (스캔일 종가)
+                scan_prices = {}
+                for row in rows:
+                    row_data = _row_to_dict(row)
+                    code = row_data.get("code")
+                    if code in codes_needing_calculation:
+                        close_price = row_data.get("current_price")  # current_price는 close_price로 매핑됨
+                        if close_price and close_price > 0:
+                            scan_prices[code] = float(close_price)
+                
+                calculated_returns = calculate_returns_batch(codes_needing_calculation, formatted_date, None, scan_prices)
                 returns_data.update(calculated_returns)
             except Exception as e:
                 print(f"배치 수익률 계산 오류: {e}")
@@ -1980,23 +1990,30 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             market = data.get("market")
             strategy = data.get("strategy")
             
-            # 추천일 종가 (recommended_price) - DB의 close_price 사용
-            recommended_price = current_price  # close_price가 current_price로 매핑됨
+            # 추천일 종가 (recommended_price) - DB의 close_price를 스캔일 종가로 사용
+            # current_price는 DB의 close_price로 매핑되어 있으므로 스캔일 종가임
+            # 기본값: DB의 close_price (스캔일 종가)
+            recommended_price = current_price if current_price and current_price > 0 else None
             
             # 수익률 계산 (배치 처리 결과 사용)
             returns_info = returns_data.get(code) if code != 'NORESULT' else None
-            if returns_info:
-                current_return = returns_info.get('current_return', 0)
-                max_return = returns_info.get('max_return', 0)
-                min_return = returns_info.get('min_return', 0)
+            if returns_info and isinstance(returns_info, dict) and returns_info.get('current_return') is not None:
+                current_return = returns_info.get('current_return')
+                max_return = returns_info.get('max_return', current_return)
+                min_return = returns_info.get('min_return', current_return)
                 days_elapsed = returns_info.get('days_elapsed', 0)
+                # returns_info에 scan_price가 있으면 사용 (스캔일 종가, DB close_price와 일치해야 함)
                 if returns_info.get('scan_price'):
                     recommended_price = returns_info.get('scan_price')
+                # returns_info에 scan_price가 없으면 DB의 close_price 사용 (스캔일 종가)
+                # 이미 위에서 설정했으므로 그대로 유지
             else:
-                current_return = 0
-                max_return = 0
-                min_return = 0
-                days_elapsed = 0
+                # returns_info가 없으면 수익률 데이터 없음으로 설정
+                current_return = None
+                max_return = None
+                min_return = None
+                days_elapsed = None
+                # recommended_price는 이미 DB의 close_price로 설정되어 있음
             
             # JSON 파싱 최적화: 한 번만 파싱
             indicators_dict = indicators
@@ -2378,7 +2395,8 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                                sector_rotation, foreign_flow, institution_flow, volume_trend,
                                min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                                trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                               foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                               foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes,
+                               midterm_regime, short_term_risk_score, final_regime, longterm_regime
                         FROM market_conditions WHERE date = %s
                     """, (query_date,))
                 else:
@@ -2387,7 +2405,8 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                                sector_rotation, foreign_flow, NULL as institution_flow, volume_trend,
                                min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                                trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                               foreign_flow_label, NULL as institution_flow_label, volume_trend_label, adjusted_params, analysis_notes
+                               foreign_flow_label, NULL as institution_flow_label, volume_trend_label, adjusted_params, analysis_notes,
+                               midterm_regime, short_term_risk_score, final_regime, longterm_regime
                         FROM market_conditions WHERE date = %s
                     """, (query_date,))
                 row_mc = cur_mc.fetchone()
@@ -2452,6 +2471,10 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                     volume_trend_label=volume_trend_label,
                     adjusted_params=adjusted_params,
                     analysis_notes=analysis_notes,
+                    midterm_regime=values.get("midterm_regime"),
+                    short_term_risk_score=int(values.get("short_term_risk_score")) if values.get("short_term_risk_score") is not None else None,
+                    final_regime=values.get("final_regime"),
+                    longterm_regime=values.get("longterm_regime"),
                 )
                 print(f"📊 시장 상황 조회 (DB): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
             else:

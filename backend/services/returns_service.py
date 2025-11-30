@@ -36,8 +36,16 @@ def _parse_cached_ohlcv(json_str: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> Optional[Dict]:
-    """특정 종목의 수익률 계산 (캐시 적용)"""
+def calculate_returns(ticker: str, scan_date: str, current_date: str = None, scan_price_from_db: float = None) -> Optional[Dict]:
+    """
+    특정 종목의 수익률 계산 (캐시 적용)
+    
+    Args:
+        ticker: 종목 코드
+        scan_date: 스캔 날짜 (YYYYMMDD)
+        current_date: 현재 날짜 (YYYYMMDD), None이면 오늘
+        scan_price_from_db: DB에 저장된 스캔일 종가 (있으면 우선 사용)
+    """
     try:
         if current_date is None:
             from datetime import datetime
@@ -45,15 +53,19 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
         
         # 날짜 형식 처리: 이미 YYYYMMDD 형식
         scan_date_formatted = scan_date
-            
-        # 스캔 날짜 데이터 가져오기
-        df_scan = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 1, scan_date_formatted))
         
-        if df_scan.empty:
-            print(f"스캔 날짜 데이터 없음: {ticker} {scan_date}")
-            return None
+        # 스캔일 종가 결정: DB 값이 있으면 우선 사용, 없으면 API로 조회
+        if scan_price_from_db and scan_price_from_db > 0:
+            scan_price = float(scan_price_from_db)
+        else:
+            # 스캔 날짜 데이터 가져오기
+            df_scan = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, 1, scan_date_formatted))
             
-        scan_price = float(df_scan.iloc[-1]['close'])
+            if df_scan.empty:
+                print(f"스캔 날짜 데이터 없음: {ticker} {scan_date}")
+                return None
+                
+            scan_price = float(df_scan.iloc[-1]['close'])
         
         # 현재 날짜 데이터 가져오기
         current_date_formatted = current_date
@@ -64,17 +76,58 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
             
         current_price = float(df_current.iloc[-1]['close'])
         
-        # 스캔일부터 현재까지의 모든 데이터 가져오기 (최고/최저가 계산용)
-        days_diff = (pd.to_datetime(current_date) - pd.to_datetime(scan_date)).days
-        period_count = min(days_diff + 10, 100)  # 여유분 포함
-        
-        df_period = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, period_count))
-        if df_period.empty:
-            return None
-            
         # 날짜 형식 통일 (YYYYMMDD -> datetime)
         scan_date_dt = pd.to_datetime(scan_date_formatted, format='%Y%m%d')
         current_date_dt = pd.to_datetime(current_date_formatted, format='%Y%m%d')
+        days_diff = (current_date_dt - scan_date_dt).days
+        
+        # 스캔일과 현재일이 같은 경우 (당일 스캔)
+        if days_diff == 0:
+            # 당일 스캔인 경우, 스캔일 종가와 현재가가 같으면 0% 반환
+            if abs(current_price - scan_price) < 0.01:  # 가격 차이가 거의 없으면
+                return {
+                    'current_return': 0.0,
+                    'max_return': 0.0,
+                    'min_return': 0.0,
+                    'scan_price': scan_price,
+                    'current_price': current_price,
+                    'max_price': scan_price,
+                    'min_price': scan_price,
+                    'days_elapsed': 0
+                }
+            else:
+                # 가격 차이가 있으면 수익률 계산
+                current_return = ((current_price - scan_price) / scan_price) * 100
+                return {
+                    'current_return': round(current_return, 2),
+                    'max_return': round(current_return, 2),
+                    'min_return': round(current_return, 2),
+                    'scan_price': scan_price,
+                    'current_price': current_price,
+                    'max_price': max(scan_price, current_price),
+                    'min_price': min(scan_price, current_price),
+                    'days_elapsed': 0
+                }
+        
+        # 스캔일부터 현재까지의 모든 데이터 가져오기 (최고/최저가 계산용)
+        period_count = min(days_diff + 10, 100)  # 여유분 포함
+        
+        df_period = _parse_cached_ohlcv(_get_cached_ohlcv(ticker, period_count, current_date_formatted))
+        if df_period.empty:
+            # 기간 데이터가 없으면 스캔일과 현재일 데이터만으로 계산
+            if scan_price > 0:
+                current_return = ((current_price - scan_price) / scan_price) * 100
+                return {
+                    'current_return': round(current_return, 2),
+                    'max_return': round(current_return, 2),
+                    'min_return': round(current_return, 2),
+                    'scan_price': scan_price,
+                    'current_price': current_price,
+                    'max_price': max(scan_price, current_price),
+                    'min_price': min(scan_price, current_price),
+                    'days_elapsed': days_diff
+                }
+            return None
         
         df_period['date_dt'] = pd.to_datetime(df_period['date'], format='%Y%m%d')
         
@@ -85,6 +138,19 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
         ]
         
         if df_period_filtered.empty:
+            # 필터링된 데이터가 없으면 스캔일과 현재일 데이터만으로 계산
+            if scan_price > 0:
+                current_return = ((current_price - scan_price) / scan_price) * 100
+                return {
+                    'current_return': round(current_return, 2),
+                    'max_return': round(current_return, 2),
+                    'min_return': round(current_return, 2),
+                    'scan_price': scan_price,
+                    'current_price': current_price,
+                    'max_price': max(scan_price, current_price),
+                    'min_price': min(scan_price, current_price),
+                    'days_elapsed': days_diff
+                }
             return None
         
         # 최고가/최저가 계산 (현재가도 포함, 0 이하 값 제외)
@@ -130,8 +196,16 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None) -> 
         return None
 
 
-def calculate_returns_batch(tickers: List[str], scan_date: str, current_date: str = None) -> Dict[str, Dict]:
-    """여러 종목의 수익률을 병렬로 계산"""
+def calculate_returns_batch(tickers: List[str], scan_date: str, current_date: str = None, scan_prices: Dict[str, float] = None) -> Dict[str, Dict]:
+    """
+    여러 종목의 수익률을 병렬로 계산
+    
+    Args:
+        tickers: 종목 코드 리스트
+        scan_date: 스캔 날짜 (YYYYMMDD)
+        current_date: 현재 날짜 (YYYYMMDD), None이면 오늘
+        scan_prices: 스캔일 종가 딕셔너리 {ticker: price} (DB의 close_price 사용)
+    """
     if current_date is None:
         from datetime import datetime
         current_date = datetime.now().strftime('%Y%m%d')
@@ -140,7 +214,7 @@ def calculate_returns_batch(tickers: List[str], scan_date: str, current_date: st
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         future_to_ticker = {
-            executor.submit(calculate_returns, ticker, scan_date, current_date): ticker 
+            executor.submit(calculate_returns, ticker, scan_date, current_date, scan_prices.get(ticker) if scan_prices else None): ticker 
             for ticker in tickers
         }
         
