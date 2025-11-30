@@ -588,8 +588,20 @@ class MarketAnalyzer:
                     return "bull"
                 else:
                     return "neutral"
+            elif prev_regime == "neutral":
+                # neutral 유지: 약한 조건으로도 유지
+                if bull_condition and r20 > 0.06:  # 더 강한 bull 조건 필요
+                    return "bull"
+                elif bear_condition and r20 < -0.06:  # 더 강한 bear 조건 필요
+                    return "bear"
+                elif bull_condition:
+                    return "bull"  # 약한 bull은 유지
+                elif bear_condition:
+                    return "bear"  # 약한 bear는 유지
+                else:
+                    return "neutral"
             else:
-                # 이전 레짐이 없거나 neutral인 경우: 기본 로직 사용
+                # 이전 레짐이 없거나 None인 경우: 기본 로직 사용
                 if bull_condition:
                     return "bull"
                 elif bear_condition:
