@@ -32,6 +32,14 @@ export default function StockCardV2({ item, onViewChart }) {
   };
 
   const strategyInfo = strategyConfig[strategy] || strategyConfig.관찰;
+  
+  // Tailwind 동적 클래스 문제 해결: 전략별 명시적 클래스명 매핑
+  const strategyClassName = {
+    '스윙': 'bg-blue-100 text-blue-700',
+    '포지션': 'bg-green-100 text-green-700',
+    '장기': 'bg-purple-100 text-purple-700',
+    '관찰': 'bg-gray-100 text-gray-700'
+  }[strategy] || 'bg-gray-100 text-gray-700';
 
   // 평가 레이블 색상
   const scoreLabelConfig = {
@@ -144,7 +152,7 @@ export default function StockCardV2({ item, onViewChart }) {
 
       {/* 전략 배지 */}
       <div className="flex items-center space-x-2">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-${strategyInfo.color}-100 text-${strategyInfo.color}-700`}>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}>
           {strategyInfo.icon} {strategy}
         </span>
       </div>
