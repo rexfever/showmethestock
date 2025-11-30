@@ -226,11 +226,12 @@ class ScannerV2:
         v4 구조: midterm_regime을 사용하여 cutoff 결정 (단기 변동에 영향받지 않음)
         """
         # v4 구조: midterm_regime 우선 사용 (스캔 조건의 핵심)
+        # final_regime은 midterm_regime과 동일하지만, midterm_regime을 직접 사용
         regime = None
         if market_condition is not None:
-            if getattr(market_condition, "midterm_regime", None):
+            if getattr(market_condition, "midterm_regime", None) is not None:
                 regime = market_condition.midterm_regime
-            elif getattr(market_condition, "final_regime", None):
+            elif getattr(market_condition, "final_regime", None) is not None:
                 regime = market_condition.final_regime
             else:
                 regime = getattr(market_condition, "market_sentiment", None)
@@ -249,7 +250,7 @@ class ScannerV2:
                 'bull': {'swing': 6.0, 'position': 4.3, 'longterm': 5.0},
                 'neutral': {'swing': 6.0, 'position': 4.5, 'longterm': 6.0},
                 'bear': {'swing': 999.0, 'position': 5.5, 'longterm': 6.0},
-                'crash': {'swing': 999.0, 'position': 999.0, 'longterm': 999.0}
+                'crash': {'swing': 999.0, 'position': 999.0, 'longterm': 6.0}  # crash에서 longterm만 허용
             }
             max_candidates = {'swing': 20, 'position': 15, 'longterm': 20}
         
@@ -263,6 +264,12 @@ class ScannerV2:
             score = result.score
             # risk_score는 flags에서 가져오기 (scorer에서 계산된 값)
             risk_score = result.flags.get("risk_score", 0) if hasattr(result, 'flags') and result.flags else 0
+            
+            # v4 구조: short_term_risk_score를 risk_score에 가중 적용
+            if market_condition is not None:
+                short_term_risk = getattr(market_condition, "short_term_risk_score", None)
+                if short_term_risk is not None:
+                    risk_score = (risk_score or 0) + short_term_risk
             
             # effective_score = score - risk_score
             effective_score = (score or 0) - (risk_score or 0)

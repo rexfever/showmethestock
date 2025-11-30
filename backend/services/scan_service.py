@@ -313,19 +313,21 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
         except Exception as e:
             print(f"⚠️ 장세 분석 실패, 기본 조건 사용: {e}")
     
-    # 급락장/crash 감지 시 추천하지 않음
+    # 급락장/crash 감지 로그 (스캔은 계속 진행, cutoff로 제어)
     crash_detected = False
     if market_condition:
         if hasattr(market_condition, 'final_regime') and market_condition.final_regime == 'crash':
             crash_detected = True
-            print(f"🔴 Global Regime v3 급락장 감지 - 추천 종목 없음 반환")
+            print(f"🔴 Global Regime v4 급락장 감지 - longterm horizon만 허용")
+        elif hasattr(market_condition, 'midterm_regime') and market_condition.midterm_regime == 'crash':
+            crash_detected = True
+            print(f"🔴 급락장 감지 (midterm_regime=crash) - longterm horizon만 허용")
         elif market_condition.market_sentiment == 'crash':
             crash_detected = True
             kospi_return = getattr(market_condition, 'kospi_return', 0.0)
-            print(f"🔴 급락장 감지 (KOSPI: {kospi_return:.2f}%) - 추천 종목 없음 반환")
+            print(f"🔴 급락장 감지 (KOSPI: {kospi_return:.2f}%) - longterm horizon만 허용")
     
-    if crash_detected:
-        return [], None, current_scanner_version
+    # crash여도 스캔은 진행 (cutoff로 swing/position 차단, longterm만 허용)
     
     # 약세장에서도 fallback 활성화하되, 장세별 목표 개수 적용
     use_fallback = config.fallback_enable
