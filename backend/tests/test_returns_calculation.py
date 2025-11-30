@@ -126,17 +126,19 @@ class TestReturnsCalculation(unittest.TestCase):
         })
         
         # 최고가 71000, 최저가 67000인 경우
+        # 주의: calculate_returns 내부에서 date_dt 컬럼을 추가하므로 미리 추가하지 않음
         period_df = pd.DataFrame({
             'date': ['20251127', '20251128', '20251129', '20251130'],
             'close': [68000.0, 69000.0, 69500.0, 70000.0],
             'high': [68500.0, 71000.0, 70000.0, 70500.0],  # 최고가 71000
             'low': [67500.0, 68500.0, 69000.0, 67000.0]   # 최저가 67000
         })
-        period_df['date_dt'] = pd.to_datetime(period_df['date'], format='%Y%m%d')
+        # date_dt는 함수 내부에서 추가되므로 여기서는 추가하지 않음
         
         mock_get.return_value = '{"dummy": "data"}'
-        # DB price 사용 시 scan_df는 사용되지 않음
-        mock_parse.side_effect = [pd.DataFrame(), current_df, period_df]
+        # DB price 사용 시: current_df만 조회, period_df 조회
+        # 실제 호출 순서: current_df (1회), period_df (1회)
+        mock_parse.side_effect = [current_df, period_df]
         
         result = calculate_returns(
             self.ticker, 
@@ -145,7 +147,7 @@ class TestReturnsCalculation(unittest.TestCase):
             scan_price_from_db=68000.0
         )
         
-        self.assertIsNotNone(result)
+        self.assertIsNotNone(result, "수익률 계산 결과가 None입니다. period_df 필터링 문제일 수 있습니다.")
         
         # 최고 수익률: (71000 - 68000) / 68000 * 100 = 4.41%
         expected_max_return = ((71000.0 - 68000.0) / 68000.0) * 100

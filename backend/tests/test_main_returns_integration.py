@@ -121,7 +121,7 @@ class TestMainReturnsIntegration(unittest.TestCase):
             {
                 'name': '빈 딕셔너리',
                 'returns_dict': {},
-                'should_use': False
+                'should_use': False  # 빈 딕셔너리는 current_return이 없으므로 False
             },
             {
                 'name': 'current_return이 None',
@@ -139,15 +139,16 @@ class TestMainReturnsIntegration(unittest.TestCase):
             with self.subTest(case=case['name']):
                 returns_dict = case['returns_dict']
                 
-                # 로직 시뮬레이션
+                # 로직 시뮬레이션 (main.py의 실제 로직과 동일)
+                # main.py Line 2000: if returns_info and isinstance(returns_info, dict) and returns_info.get('current_return') is not None:
                 is_valid = (
+                    returns_dict and  # 빈 딕셔너리는 False
                     isinstance(returns_dict, dict) and 
-                    returns_dict and 
                     returns_dict.get('current_return') is not None
                 )
                 
                 self.assertEqual(is_valid, case['should_use'], 
-                               f"Failed for case: {case['name']}")
+                               f"Failed for case: {case['name']} - is_valid={is_valid}, expected={case['should_use']}")
     
     def test_current_return_none_handling(self):
         """current_return이 None일 때 처리 테스트"""
