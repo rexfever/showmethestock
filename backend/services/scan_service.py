@@ -231,6 +231,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                                 "change_rate": round(float(change_rate), 2),
                                 "returns": json.dumps(returns_data, ensure_ascii=False) if returns_data else None,
                                 "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
+                                "strategy": it.get("strategy") or (it.get("flags", {}).get("trading_strategy") if isinstance(it.get("flags"), dict) else None),
                                 "scanner_version": scanner_version,
                             })
                 except Exception as e:
@@ -253,13 +254,13 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 )
             elif enhanced_rank:
                 cur_hist.executemany("""
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, returns, recurrence, scanner_version)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, returns, recurrence, strategy, scanner_version)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     (
                         r["date"], r["code"], r["name"], r["score"], r["flags"],
                         r["score_label"], r["close_price"], r["volume"], r["change_rate"],
-                        r.get("returns"), r.get("recurrence"), r["scanner_version"]
+                        r.get("returns"), r.get("recurrence"), r.get("strategy"), r["scanner_version"]
                     )
                     for r in enhanced_rank
                 ])
