@@ -283,6 +283,34 @@ export default function Portfolio() {
                         })()
                       )}
                     </div>
+                    {/* 목표 달성 여부 표시 */}
+                    {(() => {
+                      const buyAmount = tradingHistory.reduce((sum, trade) => 
+                        trade.trade_type === 'buy' ? sum + (trade.price * trade.quantity) : sum, 0
+                      );
+                      const totalProfit = portfolio.reduce((sum, item) => sum + (item.profit_loss || 0), 0);
+                      const totalReturn = buyAmount > 0 ? (totalProfit / buyAmount * 100) : 0;
+                      if (totalReturn === 0 && buyAmount === 0) return null; // 데이터가 없으면 표시 안 함
+                      const targetReturn = 5.0; // 기본 목표 수익률 5%
+                      const isAchieved = totalReturn >= targetReturn;
+                      const progress = Math.min((totalReturn / targetReturn) * 100, 100);
+                      return (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                            <span>목표: {targetReturn}%</span>
+                            <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                              {isAchieved ? '✅ 달성' : `${(targetReturn - totalReturn).toFixed(2)}% 남음`}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className={`h-1.5 rounded-full transition-all ${isAchieved ? 'bg-green-500' : 'bg-blue-500'}`}
+                              style={{ width: `${Math.max(0, progress)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -323,6 +351,20 @@ export default function Portfolio() {
                       <span className={`ml-2 ${item.profit_loss_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatPercentage(item.profit_loss_pct)}
                       </span>
+                      {/* 목표 달성 여부 표시 */}
+                      {item.profit_loss_pct !== null && item.profit_loss_pct !== undefined && (
+                        (() => {
+                          const targetReturn = 5.0; // 기본 목표 수익률 5%
+                          const isAchieved = item.profit_loss_pct >= targetReturn;
+                          return (
+                            <div className="text-xs mt-1 ml-0">
+                              <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                                {isAchieved ? '✅ 목표 달성' : `목표까지 ${(targetReturn - item.profit_loss_pct).toFixed(2)}%`}
+                              </span>
+                            </div>
+                          );
+                        })()
+                      )}
                     </div>
                   </div>
                   

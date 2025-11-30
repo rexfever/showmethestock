@@ -120,10 +120,34 @@ export default function PositionsPage() {
           <div className="text-2xl font-bold">{positions.length}개</div>
         </div>
         <div className="bg-white p-4 rounded shadow">
-          <div className="text-sm text-gray-600">총 수익률</div>
+          <div className="text-sm text-gray-600 mb-1">총 수익률</div>
           <div className={`text-2xl font-bold ${totalReturnPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {totalReturnPct.toFixed(2)}%
           </div>
+          {/* 목표 달성 여부 표시 */}
+          {totalReturnPct !== null && totalReturnPct !== undefined && (
+            (() => {
+              const targetReturn = 5.0; // 기본 목표 수익률 5%
+              const isAchieved = totalReturnPct >= targetReturn;
+              const progress = Math.min((totalReturnPct / targetReturn) * 100, 100);
+              return (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>목표: {targetReturn}%</span>
+                    <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                      {isAchieved ? '✅ 달성' : `${(targetReturn - totalReturnPct).toFixed(2)}% 남음`}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all ${isAchieved ? 'bg-green-500' : 'bg-blue-500'}`}
+                      style={{ width: `${Math.max(0, progress)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </div>
         <div className="bg-white p-4 rounded shadow">
           <div className="text-sm text-gray-600">총 수익금</div>
@@ -219,9 +243,25 @@ export default function PositionsPage() {
                   </td>
                   <td className="p-3">
                     {position.current_return_pct !== null ? (
-                      <span className={position.current_return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {position.current_return_pct.toFixed(2)}%
-                      </span>
+                      <div>
+                        <span className={position.current_return_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {position.current_return_pct.toFixed(2)}%
+                        </span>
+                        {/* 목표 달성 여부 표시 */}
+                        {position.current_return_pct !== null && position.current_return_pct !== undefined && (
+                          (() => {
+                            const targetReturn = 5.0; // 기본 목표 수익률 5%
+                            const isAchieved = position.current_return_pct >= targetReturn;
+                            return (
+                              <div className="text-xs mt-1">
+                                <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                                  {isAchieved ? '✅ 목표 달성' : `목표까지 ${(targetReturn - position.current_return_pct).toFixed(2)}%`}
+                                </span>
+                              </div>
+                            );
+                          })()
+                        )}
+                      </div>
                     ) : '-'}
                   </td>
                   <td className="p-3">
