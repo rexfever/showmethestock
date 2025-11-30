@@ -55,6 +55,8 @@ def determine_trading_strategy(flags: dict, adjusted_score: float) -> Tuple[str,
         elif flags.get("vol_expand") and momentum_score >= 5:
             return "스윙", 0.05, -0.05, "3~10일"
         else:
+            # adjusted_score >= 8이면 기본값으로 "포지션" 부여
+            # 점수가 높으면 최소한 중기 투자 전략은 부여
             return "포지션", 0.10, -0.07, "2주~3개월"  # 기본값
     
     elif adjusted_score >= 6:
@@ -62,7 +64,8 @@ def determine_trading_strategy(flags: dict, adjusted_score: float) -> Tuple[str,
         if trend_score >= 2:
             return "장기", 0.15, -0.10, "3개월 이상"
         else:
-            return "관찰", None, None, None
+            # adjusted_score >= 6이면 최소한 "장기" 전략 부여 (관찰 대신)
+            return "장기", 0.15, -0.10, "3개월 이상"
     
     else:
         return "관찰", None, None, None
