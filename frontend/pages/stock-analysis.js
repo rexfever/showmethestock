@@ -333,6 +333,7 @@ export default function StockAnalysis() {
             </div>
           </div>
         )}
+        </div>
       </Layout>
     </>
   );
