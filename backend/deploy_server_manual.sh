@@ -21,6 +21,10 @@ cd backend
 source venv/bin/activate
 pip install -r requirements.txt --quiet
 
+# FinanceDataReader 별도 설치 (requirements.txt에서 오류 발생)
+echo "  FinanceDataReader 설치 중..."
+pip install git+https://github.com/FinanceData/FinanceDataReader.git --quiet || echo "  ⚠️ FinanceDataReader 설치 실패 (이미 설치되어 있을 수 있음)"
+
 # 3. 백엔드 서비스 재시작
 echo ""
 echo "[3/4] 백엔드 서비스 재시작..."
