@@ -13,7 +13,7 @@ echo ""
 echo "=========================================="
 echo "[1/2] 백엔드 배포"
 echo "=========================================="
-cd /home/sohntech/showmethestock/backend
+cd /home/ubuntu/showmethestock/backend
 bash deploy_server_manual.sh
 
 # 2. 프론트엔드 배포
@@ -21,7 +21,7 @@ echo ""
 echo "=========================================="
 echo "[2/2] 프론트엔드 배포"
 echo "=========================================="
-cd /home/sohntech/showmethestock/frontend
+cd /home/ubuntu/showmethestock/frontend
 bash deploy_server_manual.sh
 
 echo ""
