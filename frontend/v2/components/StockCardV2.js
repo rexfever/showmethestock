@@ -80,7 +80,15 @@ export default function StockCardV2({ item, onViewChart }) {
             {current_price > 0 ? `${current_price.toLocaleString()}원` : '데이터 없음'}
           </div>
           <div className={`text-sm font-semibold ${change_rate > 0 ? 'text-red-500' : change_rate < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
-            {change_rate !== 0 ? `${change_rate > 0 ? '+' : ''}${change_rate.toFixed(2)}%` : '데이터 없음'}
+            {(() => {
+              const rate = change_rate;
+              if (rate === null || rate === undefined) return '데이터 없음';
+              if (rate === 0) return '0%';
+              
+              // 안전장치: 소수 형태면 퍼센트로 변환 (백엔드에서 이미 변환되어야 하지만 방어적 프로그래밍)
+              const displayRate = Math.abs(rate) < 1.0 && rate !== 0.0 ? rate * 100 : rate;
+              return `${rate > 0 ? '+' : ''}${displayRate.toFixed(2)}%`;
+            })()}
           </div>
         </div>
       </div>

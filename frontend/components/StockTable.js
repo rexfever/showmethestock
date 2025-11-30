@@ -98,7 +98,15 @@ const StockTable = ({
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm">
                     <span className={stock.change_rate > 0 ? 'text-red-500' : stock.change_rate < 0 ? 'text-blue-500' : 'text-gray-500'}>
-                      {stock.change_rate > 0 ? '+' : ''}{stock.change_rate?.toFixed(2) || 'N/A'}%
+                      {(() => {
+                        const rate = stock.change_rate;
+                        if (rate === null || rate === undefined) return 'N/A';
+                        if (rate === 0) return '0%';
+                        
+                        // 안전장치: 소수 형태면 퍼센트로 변환 (백엔드에서 이미 변환되어야 하지만 방어적 프로그래밍)
+                        const displayRate = Math.abs(rate) < 1.0 && rate !== 0.0 ? rate * 100 : rate;
+                        return `${rate > 0 ? '+' : ''}${displayRate.toFixed(2)}%`;
+                      })()}
                     </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
