@@ -15,8 +15,13 @@ export default function StockCardV2({ item, onViewChart }) {
     market,
     recommended_price,
     recommended_date,
-    current_return
+    current_return,
+    returns = {}
   } = item;
+  
+  // returns 객체에서 max_return, min_return 추출
+  const max_return = returns.max_return || (current_return > 0 ? current_return : 0);
+  const min_return = returns.min_return || (current_return < 0 ? current_return : 0);
 
   // 전략별 색상 및 아이콘
   const strategyConfig = {
@@ -170,37 +175,77 @@ export default function StockCardV2({ item, onViewChart }) {
                 {current_return > 0 ? ' 📈' : current_return < 0 ? ' 📉' : ''}
               </span>
             </div>
-            {/* 목표 달성 여부 표시 */}
+            {/* 목표 달성 여부 및 손절 기준 표시 */}
             {targetProfit && (
               (() => {
                 const targetReturn = parseFloat(targetProfit);
+                const stopLossValue = stopLoss ? parseFloat(stopLoss) : null;
+                
+                // 목표 달성 여부 (현재 수익률 기준)
                 const isAchieved = current_return >= targetReturn;
+                
+                // 목표 달성 후 수익률 감소 여부 (최고 수익률이 목표를 넘었지만 현재는 낮음)
+                const wasAchievedButDeclined = max_return >= targetReturn && current_return < targetReturn;
+                
+                // 손절 기준 도달 여부
+                const isStopLossReached = stopLossValue && current_return <= stopLossValue;
+                
+                // 최고 수익률과 현재 수익률 비교
+                const hasDeclinedFromPeak = max_return > current_return && max_return >= targetReturn;
+                const declineFromPeak = hasDeclinedFromPeak ? (max_return - current_return) : 0;
+                
                 const progress = Math.min((current_return / targetReturn) * 100, 100);
                 const excessReturn = isAchieved ? (current_return - targetReturn) : 0;
+                
                 return (
                   <div className="mt-3 pt-3 border-t border-blue-200">
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="text-gray-600">목표 수익률: {targetReturn}%</span>
-                      <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
-                        {isAchieved 
-                          ? `✅ 목표 달성${excessReturn > 0 ? ` (+${excessReturn.toFixed(2)}% 초과)` : ''}` 
+                      <span className={
+                        isStopLossReached ? 'text-red-600 font-semibold' :
+                        wasAchievedButDeclined ? 'text-orange-600 font-semibold' :
+                        isAchieved ? 'text-green-600 font-semibold' : 
+                        'text-gray-500'
+                      }>
+                        {isStopLossReached 
+                          ? `⚠️ 손절 기준 도달 (${current_return.toFixed(2)}%)`
+                          : wasAchievedButDeclined
+                          ? `⚠️ 목표 달성했으나 수익률 하락 (최고 ${max_return.toFixed(2)}% → 현재 ${current_return.toFixed(2)}%)`
+                          : isAchieved 
+                          ? `✅ 목표 달성${excessReturn > 0 ? ` (+${excessReturn.toFixed(2)}% 초과)` : ''}${hasDeclinedFromPeak ? ` (최고 ${max_return.toFixed(2)}%에서 ${declineFromPeak.toFixed(2)}% 하락)` : ''}`
                           : `목표까지 ${(targetReturn - current_return).toFixed(2)}%`}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 relative">
                       <div 
-                        className={`h-2 rounded-full transition-all ${isAchieved ? 'bg-green-500' : 'bg-blue-500'}`}
+                        className={`h-2 rounded-full transition-all ${
+                          isStopLossReached ? 'bg-red-500' :
+                          wasAchievedButDeclined ? 'bg-orange-500' :
+                          isAchieved ? 'bg-green-500' : 
+                          'bg-blue-500'
+                        }`}
                         style={{ width: `${Math.max(0, Math.min(progress, 100))}%` }}
                       />
-                      {isAchieved && excessReturn > 0 && (
+                      {isAchieved && excessReturn > 0 && !hasDeclinedFromPeak && (
                         <div className="absolute top-0 right-0 h-2 w-2 bg-yellow-400 rounded-full animate-pulse" 
                              style={{ right: `${Math.min(100 - (targetReturn / current_return * 100), 0)}%` }}
                         />
                       )}
                     </div>
-                    {isAchieved && excessReturn > 0 && (
+                    {/* 최고 수익률 정보 (목표 달성했지만 하락한 경우) */}
+                    {wasAchievedButDeclined && (
+                      <div className="mt-2 text-xs text-orange-600 font-medium">
+                        ⚠️ 최고 수익률 {max_return.toFixed(2)}%에서 {declineFromPeak.toFixed(2)}% 하락
+                      </div>
+                    )}
+                    {isAchieved && excessReturn > 0 && !hasDeclinedFromPeak && (
                       <div className="mt-1 text-xs text-yellow-600 font-medium">
                         🎉 목표 대비 {((current_return / targetReturn - 1) * 100).toFixed(0)}% 초과 달성!
+                      </div>
+                    )}
+                    {isStopLossReached && stopLossValue && (
+                      <div className="mt-2 text-xs text-red-600 font-medium">
+                        🛑 손절 기준({stopLossValue}%) 도달 - 매도 고려 권장
                       </div>
                     )}
                   </div>
