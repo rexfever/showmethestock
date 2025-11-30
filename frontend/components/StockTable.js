@@ -103,8 +103,10 @@ const StockTable = ({
                         if (rate === null || rate === undefined) return 'N/A';
                         if (rate === 0) return '0%';
                         
-                        // 안전장치: 소수 형태면 퍼센트로 변환 (백엔드에서 이미 변환되어야 하지만 방어적 프로그래밍)
-                        const displayRate = Math.abs(rate) < 1.0 && rate !== 0.0 ? rate * 100 : rate;
+                        // 백엔드에서 이미 퍼센트 형태로 반환됨 (0.57 = 0.57%)
+                        // 안전장치: 매우 작은 소수 형태(0.0057)가 올 경우에만 변환
+                        // 0.01 미만이고 0이 아닌 경우만 소수 형태로 간주
+                        const displayRate = Math.abs(rate) < 0.01 && rate !== 0.0 ? rate * 100 : rate;
                         return `${rate > 0 ? '+' : ''}${displayRate.toFixed(2)}%`;
                       })()}
                     </span>

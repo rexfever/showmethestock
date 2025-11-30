@@ -41,3 +41,51 @@ SSR 오류: TypeError: fetch failed
  ✓ Compiled /login in 371ms (302 modules)
  ✓ Compiled /kakao-callback in 69ms (306 modules)
  ✓ Compiled /_error in 155ms (289 modules)
+ ✓ Compiled /customer-scanner in 388ms (303 modules)
+SSR: Fetching from http://localhost:8000/latest-scan?scanner_version=v1
+SSR: Response data: true has data
+SSR: Returning 1 items
+SSR: scanDate: 20251128
+SSR: market_guide: {
+  market_condition: '약세',
+  guide_message: '😔 추천 종목이 없습니다. 시장 상황이 좋지 않으니 휴식을 권장합니다.',
+  investment_strategy: '전면 관망, 투자 휴식',
+  risk_level: '높음',
+  timing_advice: '시장 회복 신호까지 대기'
+}
+SSR: market_condition: exists
+ ✓ Compiled /login in 95ms (318 modules)
+ ✓ Compiled /kakao-callback in 68ms (322 modules)
+ ✓ Compiled / in 393ms (324 modules)
+SSR: Fetching from http://localhost:8000/latest-scan?scanner_version=v1
+ ✓ Compiled /stock-analysis in 243ms (324 modules)
+SSR: Response data: true has data
+SSR: Returning 1 items
+SSR: scanDate: 20251128
+SSR: market_guide: {
+  market_condition: '약세',
+  guide_message: '😔 추천 종목이 없습니다. 시장 상황이 좋지 않으니 휴식을 권장합니다.',
+  investment_strategy: '전면 관망, 투자 휴식',
+  risk_level: '높음',
+  timing_advice: '시장 회복 신호까지 대기'
+}
+SSR: market_condition: exists
+ ✓ Compiled /admin in 382ms (315 modules)
+ ✓ Compiled /_error in 131ms (296 modules)
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+  ▲ Next.js 13.5.11
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Ready in 3.3s
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 17.2s (273 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 13.5.11
+  - Local:        http://localhost:3001
+  - Environments: .env.local
+
+ ✓ Ready in 2.9s
+[?25h
