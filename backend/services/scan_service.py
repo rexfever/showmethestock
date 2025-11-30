@@ -195,6 +195,10 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                         except Exception:
                             volume = float(indicators.get("VOL", 0))
                         
+                        # returns와 recurrence 데이터 포함
+                        returns_data = it.get("returns", {})
+                        recurrence_data = it.get("recurrence", {})
+                        
                         enhanced_rank.append({
                             "date": date_obj,
                             "code": it["ticker"],
@@ -205,6 +209,9 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                             "close_price": float(scan_close),
                             "volume": volume,
                             "change_rate": round(float(scan_change_rate), 2),  # 퍼센트로 저장, 소수점 2자리
+                            "returns": json.dumps(returns_data, ensure_ascii=False) if returns_data else None,
+                            "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
+                            "strategy": it.get("strategy") or (it.get("flags", {}).get("trading_strategy") if isinstance(it.get("flags"), dict) else None),
                             "scanner_version": scanner_version,
                         })
                     else:
