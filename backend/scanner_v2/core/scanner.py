@@ -260,16 +260,27 @@ class ScannerV2:
         # v4 구조: (score - risk_score) >= cutoff 기준 사용
         filtered_results = {'swing': [], 'position': [], 'longterm': []}
         
+        # short_term_risk_score 가져오기 (throttling용)
+        short_term_risk = 0
+        if market_condition is not None:
+            short_term_risk = getattr(market_condition, "short_term_risk_score", None) or 0
+        
         for result in results:
             score = result.score
             # risk_score는 flags에서 가져오기 (scorer에서 계산된 값)
-            risk_score = result.flags.get("risk_score", 0) if hasattr(result, 'flags') and result.flags else 0
+            base_risk_score = result.flags.get("risk_score", 0) if hasattr(result, 'flags') and result.flags else 0
             
-            # v4 구조: short_term_risk_score를 risk_score에 가중 적용
-            if market_condition is not None:
-                short_term_risk = getattr(market_condition, "short_term_risk_score", None)
-                if short_term_risk is not None:
-                    risk_score = (risk_score or 0) + short_term_risk
+            # short_term_risk_score를 스케일링하여 최대 +1.0까지만 반영
+            risk_adjust = 0.0
+            if short_term_risk == 1:
+                risk_adjust = 0.5
+            elif short_term_risk == 2:
+                risk_adjust = 1.0
+            elif short_term_risk >= 3:
+                risk_adjust = 1.0
+            
+            # 최종 risk_score = base_risk_score + risk_adjust (최대 +1.0)
+            risk_score = (base_risk_score or 0) + risk_adjust
             
             # effective_score = score - risk_score
             effective_score = (score or 0) - (risk_score or 0)
@@ -286,10 +297,13 @@ class ScannerV2:
             if effective_score >= regime_cutoffs['longterm']:
                 filtered_results['longterm'].append(result)
         
+        # short_term_risk_score에 따른 MAX_CANDIDATES 조정 (throttling)
+        adjusted_max_candidates = self._adjust_max_candidates_by_risk(max_candidates, short_term_risk)
+        
         # max candidates 적용
         for horizon in filtered_results:
-            if len(filtered_results[horizon]) > max_candidates[horizon]:
-                filtered_results[horizon] = filtered_results[horizon][:max_candidates[horizon]]
+            if len(filtered_results[horizon]) > adjusted_max_candidates[horizon]:
+                filtered_results[horizon] = filtered_results[horizon][:adjusted_max_candidates[horizon]]
         
         # 통합 결과 (중복 제거)
         final_results = []
@@ -303,8 +317,44 @@ class ScannerV2:
                     seen_tickers.add(result.ticker)
         
         print(f"🎯 장세별 필터링 ({regime}): swing={len(filtered_results['swing'])}, position={len(filtered_results['position'])}, longterm={len(filtered_results['longterm'])}, 최종={len(final_results)}개")
+        if short_term_risk > 0:
+            print(f"   ⚠️ 단기 리스크 조정 (risk_score={short_term_risk}): max_candidates={adjusted_max_candidates}")
         
         return final_results
+    
+    def _adjust_max_candidates_by_risk(self, base_max: dict, risk_level: int) -> dict:
+        """
+        short_term_risk_score에 따라 MAX_CANDIDATES 조정 (throttling)
+        
+        Args:
+            base_max: 기본 MAX_CANDIDATES 딕셔너리
+            risk_level: short_term_risk_score 값 (0~3)
+            
+        Returns:
+            조정된 MAX_CANDIDATES 딕셔너리
+        """
+        risk_level = risk_level or 0
+        
+        if risk_level == 0:
+            return base_max.copy()
+        elif risk_level == 1:
+            return {
+                'swing': min(15, base_max.get('swing', 20)),
+                'position': min(10, base_max.get('position', 15)),
+                'longterm': base_max.get('longterm', 20)  # longterm은 유지
+            }
+        elif risk_level == 2:
+            return {
+                'swing': min(10, base_max.get('swing', 20)),
+                'position': min(5, base_max.get('position', 15)),
+                'longterm': min(15, base_max.get('longterm', 20))
+            }
+        else:  # risk_level >= 3
+            return {
+                'swing': min(5, base_max.get('swing', 20)),
+                'position': min(3, base_max.get('position', 15)),
+                'longterm': min(10, base_max.get('longterm', 20))
+            }
     
     def _calculate_change_rate(self, df: pd.DataFrame) -> float:
         """등락률 계산 (소수 형태로 반환, 예: 0.0596 = 5.96%)"""
