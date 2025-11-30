@@ -2115,31 +2115,52 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             with db_manager.get_cursor(commit=False) as cur_mc:
                 # market_conditions.date는 TEXT 타입이므로 문자열 형식으로 변환
                 # target_date는 DATE 타입, formatted_date는 YYYYMMDD 문자열
-                def normalize_date_for_market_conditions(date_val):
-                    if not date_val:
-                        return None
-                    # DATE 타입이면 문자열로 변환
-                    if hasattr(date_val, 'strftime'):
-                        return date_val.strftime('%Y-%m-%d')
-                    # 문자열이면 YYYY-MM-DD 형식으로 정규화
-                    date_str = str(date_val)
-                    if len(date_str) == 8 and '-' not in date_str:
-                        return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
-                    elif '-' in date_str:
-                        return date_str
+                if isinstance(target_date, str):
+                    # 이미 문자열이면 YYYY-MM-DD 형식으로 정규화
+                    if len(target_date) == 8 and '-' not in target_date:
+                        # YYYYMMDD 형식
+                        query_date = f"{target_date[:4]}-{target_date[4:6]}-{target_date[6:8]}"
+                    elif '-' in target_date:
+                        # 이미 YYYY-MM-DD 형식
+                        query_date = target_date
                     else:
-                        return date_str
+                        query_date = target_date
+                else:
+                    # DATE 타입이면 문자열로 변환 (YYYY-MM-DD)
+                    if hasattr(target_date, 'strftime'):
+                        query_date = target_date.strftime('%Y-%m-%d')
+                    else:
+                        query_date = str(target_date)
                 
-                # 날짜 형식 최적화: DATE 타입을 직접 사용
+                # institution_flow 컬럼 존재 여부 확인
                 cur_mc.execute("""
-                    SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
-                           sector_rotation, foreign_flow, volume_trend,
-                           min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
-                           trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
-                           foreign_flow_label, volume_trend_label, adjusted_params, analysis_notes
-                    FROM market_conditions 
-                    WHERE date = %s
-                """, (target_date,))
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'market_conditions' AND column_name = 'institution_flow'
+                """)
+                has_institution_flow = cur_mc.fetchone() is not None
+                
+                # 동적으로 컬럼 선택
+                if has_institution_flow:
+                    cur_mc.execute("""
+                        SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                               sector_rotation, foreign_flow, institution_flow, volume_trend,
+                               min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                               trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                               foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes,
+                               midterm_regime, short_term_risk_score, final_regime, longterm_regime
+                        FROM market_conditions WHERE date = %s
+                    """, (query_date,))
+                else:
+                    cur_mc.execute("""
+                        SELECT market_sentiment, sentiment_score, kospi_return, volatility, rsi_threshold,
+                               sector_rotation, foreign_flow, NULL as institution_flow, volume_trend,
+                               min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
+                               trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
+                               foreign_flow_label, NULL as institution_flow_label, volume_trend_label, adjusted_params, analysis_notes,
+                               midterm_regime, short_term_risk_score, final_regime, longterm_regime
+                        FROM market_conditions WHERE date = %s
+                    """, (query_date,))
                 row_mc = cur_mc.fetchone()
             
             if row_mc:
@@ -2172,36 +2193,54 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 adjusted_params = _ensure_json(values.get("adjusted_params"))
                 sentiment_score = values.get("sentiment_score") or 0.0
                 foreign_flow_label = values.get("foreign_flow_label") or values.get("foreign_flow") or "neutral"
+                institution_flow_label = values.get("institution_flow_label") or values.get("institution_flow") or "neutral"
                 volume_trend_label = values.get("volume_trend_label") or values.get("volume_trend") or "normal"
                 analysis_notes = values.get("analysis_notes")
-                
-                market_condition = {
-                    "market_sentiment": values.get("market_sentiment"),
-                    "sentiment_score": sentiment_score,
-                    "kospi_return": values.get("kospi_return"),
-                    "volatility": values.get("volatility"),
-                    "rsi_threshold": values.get("rsi_threshold"),
-                    "sector_rotation": values.get("sector_rotation"),
-                    "foreign_flow": values.get("foreign_flow"),
-                    "volume_trend": values.get("volume_trend"),
-                    "min_signals": values.get("min_signals"),
-                    "macd_osc_min": values.get("macd_osc_min"),
-                    "vol_ma5_mult": values.get("vol_ma5_mult"),
-                    "gap_max": values.get("gap_max"),
-                    "ext_from_tema20_max": values.get("ext_from_tema20_max"),
-                    "trend_metrics": trend_metrics,
-                    "breadth_metrics": breadth_metrics,
-                    "flow_metrics": flow_metrics,
-                    "sector_metrics": sector_metrics,
-                    "volatility_metrics": volatility_metrics,
-                    "foreign_flow_label": foreign_flow_label,
-                    "volume_trend_label": volume_trend_label,
-                    "adjusted_params": adjusted_params,
-                    "analysis_notes": analysis_notes,
-                }
+
+                from market_analyzer import MarketCondition
+                market_condition = MarketCondition(
+                    date=formatted_date,
+                    market_sentiment=values.get("market_sentiment"),
+                    kospi_return=values.get("kospi_return"),
+                    volatility=values.get("volatility"),
+                    rsi_threshold=values.get("rsi_threshold"),
+                    sector_rotation=values.get("sector_rotation"),
+                    foreign_flow=values.get("foreign_flow"),
+                    institution_flow=values.get("institution_flow"),
+                    volume_trend=values.get("volume_trend"),
+                    min_signals=values.get("min_signals"),
+                    macd_osc_min=values.get("macd_osc_min"),
+                    vol_ma5_mult=values.get("vol_ma5_mult"),
+                    gap_max=values.get("gap_max"),
+                    ext_from_tema20_max=values.get("ext_from_tema20_max"),
+                    sentiment_score=sentiment_score,
+                    trend_metrics=trend_metrics,
+                    breadth_metrics=breadth_metrics,
+                    flow_metrics=flow_metrics,
+                    sector_metrics=sector_metrics,
+                    volatility_metrics=volatility_metrics,
+                    foreign_flow_label=foreign_flow_label,
+                    institution_flow_label=institution_flow_label,
+                    volume_trend_label=volume_trend_label,
+                    adjusted_params=adjusted_params,
+                    analysis_notes=analysis_notes,
+                    midterm_regime=values.get("midterm_regime"),
+                    short_term_risk_score=int(values.get("short_term_risk_score")) if values.get("short_term_risk_score") is not None else None,
+                    final_regime=values.get("final_regime"),
+                    longterm_regime=values.get("longterm_regime"),
+                )
+                print(f"📊 시장 상황 조회 (DB): {market_condition.market_sentiment} (유효 수익률: {market_condition.kospi_return*100:.2f}%, RSI 임계값: {market_condition.rsi_threshold})")
+            else:
+                print(f"ℹ️ 시장 상황 데이터 없음 (날짜: {formatted_date})")
         except Exception as e:
-            print(f"⚠️ 시장 상황 조회 실패: {e}")
+            print(f"⚠️ 시장 상황 DB 조회 실패: {e}")
             market_condition = None
+        
+        # market_condition을 dict로 변환
+        market_condition_dict = None
+        if market_condition:
+            from dataclasses import asdict
+            market_condition_dict = asdict(market_condition)
         
         data = {
             "as_of": formatted_date,
@@ -2211,9 +2250,9 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             "matched_count": len(items),
             "rsi_mode": "current_status",
             "rsi_period": 14,
-            "rsi_threshold": 57.0,
+            "rsi_threshold": market_condition.rsi_threshold if market_condition else 57.0,
             "items": items,
-            "market_condition": market_condition,
+            "market_condition": market_condition_dict,
             "scanner_version": detected_version
         }
         data["enhanced_items"] = items
