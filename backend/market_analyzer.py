@@ -1470,8 +1470,9 @@ class MarketAnalyzer:
                             min_signals, macd_osc_min, vol_ma5_mult, gap_max, ext_from_tema20_max,
                             trend_metrics, breadth_metrics, flow_metrics, sector_metrics, volatility_metrics,
                             foreign_flow_label, institution_flow_label, volume_trend_label, adjusted_params, analysis_notes,
-                            spy_return, qqq_return, vix_close, spy_close, qqq_close
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            spy_return, qqq_return, vix_close, spy_close, qqq_close,
+                            longterm_regime, midterm_regime, short_term_risk_score, final_regime
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (date) DO UPDATE SET
                             market_sentiment = EXCLUDED.market_sentiment,
                             sentiment_score = EXCLUDED.sentiment_score,
@@ -1502,6 +1503,10 @@ class MarketAnalyzer:
                             vix_close = EXCLUDED.vix_close,
                             spy_close = EXCLUDED.spy_close,
                             qqq_close = EXCLUDED.qqq_close,
+                            longterm_regime = EXCLUDED.longterm_regime,
+                            midterm_regime = EXCLUDED.midterm_regime,
+                            short_term_risk_score = EXCLUDED.short_term_risk_score,
+                            final_regime = EXCLUDED.final_regime,
                             updated_at = NOW()
                     """, (
                         formatted_date,
@@ -1533,7 +1538,11 @@ class MarketAnalyzer:
                         qqq_return,
                         vix_close,
                         spy_close,
-                        qqq_close
+                        qqq_close,
+                        longterm_regime,
+                        midterm_regime,
+                        short_term_risk_score,
+                        final_regime
                     ))
                 logger.info(f"✅ market_conditions 저장 완료: {date} (KOSPI: {base_condition.kospi_return*100:+.2f}%, SPY: {spy_return*100:+.2f}% if spy_return else 'N/A', QQQ: {qqq_return*100:+.2f}% if qqq_return else 'N/A')")
             except Exception as save_error:
