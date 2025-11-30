@@ -1,6 +1,6 @@
 #!/bin/bash
 # 서버에서 직접 실행하는 프론트엔드 배포 스크립트
-# 사용법: cd /home/sohntech/showmethestock/frontend && bash deploy_server_manual.sh
+# 사용법: cd /home/ubuntu/showmethestock/frontend && bash deploy_server_manual.sh
 
 set -e
 
@@ -11,7 +11,7 @@ echo "=========================================="
 # 1. 최신 코드 가져오기
 echo ""
 echo "[1/5] 최신 코드 가져오기..."
-cd /home/sohntech/showmethestock
+cd /home/ubuntu/showmethestock
 git pull origin main
 
 # 2. 의존성 설치

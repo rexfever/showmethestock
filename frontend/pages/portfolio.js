@@ -5,8 +5,7 @@ import Head from 'next/head';
 import { fetchPortfolio } from '../services/portfolioService';
 import { calculateHoldingPeriod, formatDate, formatCurrency, formatPercentage } from '../utils/portfolioUtils';
 import { handleError } from '../utils/errorHandler';
-import Header from '../components/v2/Header';
-import BottomNavigation from '../components/v2/BottomNavigation';
+import Layout from '../layouts/v2/Layout';
 
 // 백엔드 URL 설정
 const getConfig = () => ({
@@ -196,10 +195,7 @@ export default function Portfolio() {
         <title>나의투자종목 - Stock Insight</title>
       </Head>
       
-      <div className="min-h-screen bg-gray-50">
-        {/* 상단 헤더 */}
-        <Header title="Stock Insight" />
-
+      <Layout headerTitle="나의투자종목">
         {/* 정보 배너 */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
           <div className="flex items-center justify-between">
@@ -566,10 +562,7 @@ export default function Portfolio() {
             </div>
           </div>
         )}
-
-        {/* 하단 네비게이션 */}
-        <BottomNavigation />
-      </div>
+      </Layout>
     </>
   );
 }

@@ -3,8 +3,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import getConfig from '../config';
-import Header from '../components/v2/Header';
-import BottomNavigation from '../components/v2/BottomNavigation';
+import Layout from '../layouts/v2/Layout';
 
 export default function StockAnalysis() {
   const router = useRouter();
@@ -94,10 +93,7 @@ export default function StockAnalysis() {
         <meta name="mobile-web-app-capable" content="yes" />
       </Head>
 
-      <div className="min-h-screen bg-gray-50">
-        {/* 상단 바 */}
-        <Header title="종목 분석" />
-
+      <Layout headerTitle="종목 분석">
         {/* 정보 배너 */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
           <div className="flex items-center justify-between">
@@ -113,7 +109,7 @@ export default function StockAnalysis() {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
 
         {/* 검색 폼 */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -337,11 +333,7 @@ export default function StockAnalysis() {
             </div>
           </div>
         )}
-
-        {/* 하단 네비게이션 */}
-        <BottomNavigation />
-        </div>
-      </div>
+      </Layout>
     </>
   );
 }

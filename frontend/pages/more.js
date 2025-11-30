@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
-import Header from '../components/v2/Header';
-import BottomNavigation from '../components/v2/BottomNavigation';
+import Layout from '../layouts/v2/Layout';
 
 export default function More() {
   const router = useRouter();
@@ -267,9 +266,7 @@ export default function More() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
-      <div className="min-h-screen bg-gray-50">
-        <Header title="더보기" />
-
+      <Layout headerTitle="더보기">
         {/* 정보 배너 */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
           <div className="flex items-center justify-between">
@@ -454,10 +451,7 @@ export default function More() {
             </div>
           )}
         </div>
-
-        {/* 하단 네비게이션 */}
-        <BottomNavigation />
-      </div>
+      </Layout>
 
       {/* 매매전략 가이드 모달 */}
       {showStrategyModal && (
