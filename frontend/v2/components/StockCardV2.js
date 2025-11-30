@@ -178,18 +178,20 @@ export default function StockCardV2({ item, onViewChart }) {
       </div>
 
       {/* 전략 배지 */}
-      <div className="flex items-center space-x-2">
-        <span 
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
-          title={strategyInfo.desc}
-        >
-          <span className="text-base">{strategyInfo.icon}</span>
-          <span className="font-medium">{normalizedStrategy}</span>
-        </span>
-        <span className="text-xs text-gray-500 whitespace-nowrap">
-          {strategyInfo.desc}
-        </span>
-      </div>
+      {normalizedStrategy && (
+        <div className="flex items-center space-x-2">
+          <span 
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
+            title={strategyInfo.desc}
+          >
+            <span className="text-base leading-none" aria-hidden="true">{strategyInfo.icon}</span>
+            <span className="font-medium leading-tight">{normalizedStrategy}</span>
+          </span>
+          <span className="text-xs text-gray-500 whitespace-nowrap">
+            {strategyInfo.desc}
+          </span>
+        </div>
+      )}
 
       {/* 매매 가이드 */}
       {targetProfit && stopLoss && holdingPeriod && (
