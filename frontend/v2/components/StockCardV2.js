@@ -176,20 +176,33 @@ export default function StockCardV2({ item, onViewChart }) {
                 const targetReturn = parseFloat(targetProfit);
                 const isAchieved = current_return >= targetReturn;
                 const progress = Math.min((current_return / targetReturn) * 100, 100);
+                const excessReturn = isAchieved ? (current_return - targetReturn) : 0;
                 return (
                   <div className="mt-3 pt-3 border-t border-blue-200">
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="text-gray-600">목표 수익률: {targetReturn}%</span>
                       <span className={isAchieved ? 'text-green-600 font-semibold' : 'text-gray-500'}>
-                        {isAchieved ? '✅ 목표 달성' : `목표까지 ${(targetReturn - current_return).toFixed(2)}%`}
+                        {isAchieved 
+                          ? `✅ 목표 달성${excessReturn > 0 ? ` (+${excessReturn.toFixed(2)}% 초과)` : ''}` 
+                          : `목표까지 ${(targetReturn - current_return).toFixed(2)}%`}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2 relative">
                       <div 
                         className={`h-2 rounded-full transition-all ${isAchieved ? 'bg-green-500' : 'bg-blue-500'}`}
-                        style={{ width: `${Math.max(0, progress)}%` }}
+                        style={{ width: `${Math.max(0, Math.min(progress, 100))}%` }}
                       />
+                      {isAchieved && excessReturn > 0 && (
+                        <div className="absolute top-0 right-0 h-2 w-2 bg-yellow-400 rounded-full animate-pulse" 
+                             style={{ right: `${Math.min(100 - (targetReturn / current_return * 100), 0)}%` }}
+                        />
+                      )}
                     </div>
+                    {isAchieved && excessReturn > 0 && (
+                      <div className="mt-1 text-xs text-yellow-600 font-medium">
+                        🎉 목표 대비 {((current_return / targetReturn - 1) * 100).toFixed(0)}% 초과 달성!
+                      </div>
+                    )}
                   </div>
                 );
               })()
