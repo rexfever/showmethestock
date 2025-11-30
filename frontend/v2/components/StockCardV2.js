@@ -50,19 +50,6 @@ export default function StockCardV2({ item, onViewChart }) {
   // 문자열 타입 보장
   normalizedStrategy = String(normalizedStrategy).trim() || '관찰';
   
-  // 디버깅 로그 (항상 출력하여 문제 진단)
-  console.log('[StockCardV2] Strategy Debug:', {
-    itemStrategy: strategy,
-    strategyValue,
-    flagsTradingStrategy: flags?.trading_strategy,
-    flagsStrategyValue,
-    normalizedStrategy,
-    hasStrategyConfig: !!strategyConfig[normalizedStrategy],
-    score: score,
-    score_label: score_label,
-    normalizedLabel: normalizedLabel
-  });
-  
   // 디버깅: 정규화된 전략이 유효한지 확인
   if (!strategyConfig[normalizedStrategy]) {
     console.warn(`[StockCardV2] Invalid strategy: "${normalizedStrategy}", falling back to "관찰"`);
@@ -92,6 +79,22 @@ export default function StockCardV2({ item, onViewChart }) {
   const normalizedLabel = score_label === '강한 매수' ? '강력 추천' :
                           score_label === '매수 후보' ? '추천' :
                           score_label;
+  
+  // 디버깅 로그 (normalizedLabel 정의 후 출력)
+  console.log('[StockCardV2] Strategy Debug:', {
+    ticker: ticker,
+    name: name,
+    score: score,
+    score_label: score_label,
+    normalizedLabel: normalizedLabel,
+    itemStrategy: strategy,
+    strategyValue: strategyValue,
+    flagsTradingStrategy: flags?.trading_strategy,
+    flagsStrategyValue: flagsStrategyValue,
+    normalizedStrategy: normalizedStrategy,
+    hasStrategyConfig: !!strategyConfig[normalizedStrategy],
+    strategyInfo: strategyInfo
+  });
   
   const labelInfo = scoreLabelConfig[normalizedLabel] || scoreLabelConfig['후보 종목'];
   
