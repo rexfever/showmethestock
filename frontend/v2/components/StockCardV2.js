@@ -31,8 +31,9 @@ export default function StockCardV2({ item, onViewChart }) {
     관찰: { color: 'gray', icon: '⏳', desc: '관심 종목 (매수 대기)' }
   };
 
-  // strategy가 null이거나 undefined일 때 기본값 "관찰" 사용
-  const normalizedStrategy = strategy || '관찰';
+  // strategy 우선순위: item.strategy > flags.trading_strategy > 기본값 "관찰"
+  const strategyFromFlags = flags?.trading_strategy || null;
+  const normalizedStrategy = strategy || strategyFromFlags || '관찰';
   
   const strategyInfo = strategyConfig[normalizedStrategy] || strategyConfig.관찰;
   
@@ -156,10 +157,11 @@ export default function StockCardV2({ item, onViewChart }) {
       {/* 전략 배지 */}
       <div className="flex items-center space-x-2">
         <span 
-          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
           title={strategyInfo.desc}
         >
-          {strategyInfo.icon} {normalizedStrategy}
+          <span>{strategyInfo.icon}</span>
+          <span>{normalizedStrategy}</span>
         </span>
         <span className="text-xs text-gray-500">
           {strategyInfo.desc}
