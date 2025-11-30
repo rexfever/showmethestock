@@ -36,12 +36,19 @@ export default function StockCardV2({ item, onViewChart }) {
   // 평가 레이블 색상
   const scoreLabelConfig = {
     '강력 추천': { color: 'red', icon: '🔥' },
+    '강한 매수': { color: 'red', icon: '🔥' },  // 백엔드 호환
     '추천': { color: 'orange', icon: '⭐' },
+    '매수 후보': { color: 'orange', icon: '⭐' },  // 백엔드 호환
     '관심 종목': { color: 'yellow', icon: '👀' },
     '후보 종목': { color: 'gray', icon: '📋' }
   };
 
-  const labelInfo = scoreLabelConfig[score_label] || scoreLabelConfig['후보 종목'];
+  // 백엔드 label을 프론트엔드 label로 매핑
+  const normalizedLabel = score_label === '강한 매수' ? '강력 추천' :
+                          score_label === '매수 후보' ? '추천' :
+                          score_label;
+  
+  const labelInfo = scoreLabelConfig[normalizedLabel] || scoreLabelConfig['후보 종목'];
 
   // 매매 가이드 정보
   const targetProfit = flags.target_profit ? (flags.target_profit * 100).toFixed(1) : null;
@@ -115,18 +122,18 @@ export default function StockCardV2({ item, onViewChart }) {
             <span 
               className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-${labelInfo.color}-100 text-${labelInfo.color}-700`}
               title={
-                score_label === '강력 추천' ? '점수 10점 이상 - 강한 매수 신호' :
-                score_label === '추천' ? '점수 8점 이상 - 매수 후보' :
-                score_label === '관심 종목' ? '점수 6점 이상 - 관심 종목' :
+                normalizedLabel === '강력 추천' ? '점수 10점 이상 - 강한 매수 신호' :
+                normalizedLabel === '추천' ? '점수 8점 이상 - 매수 후보' :
+                normalizedLabel === '관심 종목' ? '점수 6점 이상 - 관심 종목' :
                 '점수 6점 미만 - 후보 종목'
               }
             >
-              {labelInfo.icon} {score_label}
+              {labelInfo.icon} {normalizedLabel}
             </span>
             <div className="text-xs text-gray-400 mt-1">
-              {score_label === '강력 추천' ? '10점 이상' :
-               score_label === '추천' ? '8점 이상' :
-               score_label === '관심 종목' ? '6점 이상' :
+              {normalizedLabel === '강력 추천' ? '10점 이상' :
+               normalizedLabel === '추천' ? '8점 이상' :
+               normalizedLabel === '관심 종목' ? '6점 이상' :
                '6점 미만'}
             </div>
           </div>
