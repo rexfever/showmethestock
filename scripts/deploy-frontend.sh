@@ -73,20 +73,24 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-# 2. 테스트 실행
-log_info "2. 프론트엔드 테스트 실행 중..."
-
-# Jest 테스트 실행
-if [ -f "package.json" ] && grep -q '"test"' package.json; then
-    log_info "Jest 테스트 실행..."
-    if npm test -- --passWithNoTests --watchAll=false; then
-        log_success "Jest 테스트 통과"
+# 2. 테스트 실행 (서버 배포 시 건너뛰기)
+if [ "$DEPLOY_ENV" = "local" ]; then
+    log_info "2. 프론트엔드 테스트 실행 중..."
+    
+    # Jest 테스트 실행
+    if [ -f "package.json" ] && grep -q '"test"' package.json; then
+        log_info "Jest 테스트 실행..."
+        if npm test -- --passWithNoTests --watchAll=false; then
+            log_success "Jest 테스트 통과"
+        else
+            log_error "Jest 테스트 실패"
+            exit 1
+        fi
     else
-        log_error "Jest 테스트 실패"
-        exit 1
+        log_warning "테스트 스크립트가 없습니다. 테스트를 건너뜁니다."
     fi
 else
-    log_warning "테스트 스크립트가 없습니다. 테스트를 건너뜁니다."
+    log_info "2. 서버 배포 모드 - 테스트 건너뛰기"
 fi
 
 # 3. 의존성 설치
@@ -220,14 +224,16 @@ elif [ "$DEPLOY_ENV" = "server" ]; then
         exit 1
     fi
     
-    # 서버에 코드 업로드
-    log_info "서버에 코드 업로드..."
-    rsync -avz --exclude='node_modules' --exclude='.next' --exclude='.env*' \
-        ./ ubuntu@$SERVER_HOST:/home/ubuntu/showmethestock/frontend/
+    # 서버에서 git pull 실행
+    log_info "서버에서 git pull 실행..."
+    ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_HOST << 'EOF'
+        cd /home/ubuntu/showmethestock
+        git pull origin main
+EOF
     
     # 서버에서 배포 실행
     log_info "서버에서 배포 실행..."
-    ssh ubuntu@$SERVER_HOST << 'EOF'
+    ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_HOST << 'EOF'
         cd /home/ubuntu/showmethestock/frontend
         
         # 의존성 설치

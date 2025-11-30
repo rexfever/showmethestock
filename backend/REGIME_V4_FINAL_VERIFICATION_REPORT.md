@@ -229,6 +229,7 @@ print(f"🔴 급락장 감지 (KOSPI: {kospi_return:.2f}%) - longterm horizon만
 **결과**: ✅ **PASS**
 - fallback 단계에서 gap/ext/ATR/min_signals 변경 코드 없음
 - fallback은 수량 확보 목적만 담당
+- `fallback_presets`는 사전 정의된 프리셋만 사용 (동적 변경 없음)
 
 ---
 
@@ -247,6 +248,10 @@ elif getattr(market_condition, "final_regime", None) is not None:
 
 **결과**: ✅ **PASS**
 - `midterm_regime` 우선 사용, `final_regime`은 fallback
+
+**참고**: `backend/scanner_v2/core/filter_engine.py` (161줄)에서 `final_regime` 사용
+- **분석**: `filter_engine.py`는 soft filter 조건 완화용이며, cutoff 결정과 무관
+- **결과**: ✅ **PASS** (cutoff 결정에는 영향 없음)
 
 ### 2) short_term_risk_score가 score에 더해지는 코드
 
@@ -302,4 +307,3 @@ midterm_regime = self.compute_mid_regime(date)
 **주의사항**:
 - end-to-end 테스트는 실제 스캔 실행이 필요하므로 로컬 환경에서 실행 필요
 - 테스트 스크립트는 `backend/tests/test_regime_v4_final_verification.py`에 작성됨
-

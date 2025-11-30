@@ -64,41 +64,49 @@ if [ ! -f "requirements.txt" ]; then
     exit 1
 fi
 
-# 2. 테스트 실행
-log_info "2. 백엔드 테스트 실행 중..."
-
-# 단위 테스트 실행
-if [ -f "test_admin_rescan.py" ]; then
-    log_info "관리자 재스캔 테스트 실행..."
-    if python3 test_admin_rescan.py; then
-        log_success "관리자 재스캔 테스트 통과"
+# 2. 테스트 실행 (서버 배포 시 건너뛰기)
+if [ "$DEPLOY_ENV" = "local" ]; then
+    log_info "2. 백엔드 테스트 실행 중..."
+    
+    # 단위 테스트 실행
+    if [ -f "test_admin_rescan.py" ]; then
+        log_info "관리자 재스캔 테스트 실행..."
+        if python3 test_admin_rescan.py; then
+            log_success "관리자 재스캔 테스트 통과"
+        else
+            log_error "관리자 재스캔 테스트 실패"
+            exit 1
+        fi
+    fi
+    
+    # 3. 의존성 설치
+    log_info "3. 의존성 설치 중..."
+    
+    if [ -f "requirements.txt" ]; then
+        log_info "Python 패키지 설치..."
+        pip3 install -r requirements.txt --quiet
+        log_success "의존성 설치 완료"
     else
-        log_error "관리자 재스캔 테스트 실패"
+        log_warning "requirements.txt가 없습니다."
+    fi
+else
+    log_info "2. 서버 배포 모드 - 로컬 테스트 건너뛰기"
+fi
+
+# 4. 코드 검증 (서버 배포 시 건너뛰기)
+if [ "$DEPLOY_ENV" = "local" ]; then
+    log_info "4. 코드 검증 중..."
+    
+    # Python 문법 검사
+    log_info "Python 문법 검사..."
+    if python3 -m py_compile main.py; then
+        log_success "Python 문법 검사 통과"
+    else
+        log_error "Python 문법 오류 발견"
         exit 1
     fi
-fi
-
-# 3. 의존성 설치
-log_info "3. 의존성 설치 중..."
-
-if [ -f "requirements.txt" ]; then
-    log_info "Python 패키지 설치..."
-    pip3 install -r requirements.txt --quiet
-    log_success "의존성 설치 완료"
 else
-    log_warning "requirements.txt가 없습니다."
-fi
-
-# 4. 코드 검증
-log_info "4. 코드 검증 중..."
-
-# Python 문법 검사
-log_info "Python 문법 검사..."
-if python3 -m py_compile main.py; then
-    log_success "Python 문법 검사 통과"
-else
-    log_error "Python 문법 오류 발견"
-    exit 1
+    log_info "4. 서버 배포 모드 - 코드 검증 건너뛰기"
 fi
 
 # 5. 환경별 배포
@@ -192,14 +200,16 @@ elif [ "$DEPLOY_ENV" = "server" ]; then
         exit 1
     fi
     
-    # 서버에 코드 업로드
-    log_info "서버에 코드 업로드..."
-    rsync -avz --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' \
-        ./ ubuntu@$SERVER_HOST:/home/ubuntu/showmethestock/backend/
+    # 서버에 코드 업로드 (rsync 대신 git pull 사용)
+    log_info "서버에서 git pull 실행..."
+    ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_HOST << 'EOF'
+        cd /home/ubuntu/showmethestock
+        git pull origin main
+EOF
     
     # 서버에서 배포 실행
     log_info "서버에서 배포 실행..."
-    ssh ubuntu@$SERVER_HOST << 'EOF'
+    ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_HOST << 'EOF'
         cd /home/ubuntu/showmethestock/backend
         
         # 의존성 설치

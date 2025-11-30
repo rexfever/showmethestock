@@ -17,18 +17,37 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_crash_dates() -> list:
-    """크래시 날짜 목록 조회"""
+def get_crash_dates(include_bear: bool = True) -> list:
+    """크래시 날짜 목록 조회 (bear 포함 옵션)"""
     crash_dates = []
     
     try:
         with db_manager.get_cursor(commit=False) as cur:
-            cur.execute("""
-                SELECT date, final_regime, kr_metrics
-                FROM market_regime_daily
-                WHERE version = 'regime_v4'
-                ORDER BY date
-            """)
+            # crash 또는 bear 날짜 조회
+            if include_bear:
+                cur.execute("""
+                    SELECT date, final_regime, kr_metrics
+                    FROM market_regime_daily
+                    WHERE version = 'regime_v4'
+                    AND (
+                        final_regime = 'crash' OR 
+                        kr_metrics->>'midterm_regime' = 'crash' OR
+                        final_regime = 'bear' OR 
+                        kr_metrics->>'midterm_regime' = 'bear'
+                    )
+                    ORDER BY date
+                """)
+            else:
+                cur.execute("""
+                    SELECT date, final_regime, kr_metrics
+                    FROM market_regime_daily
+                    WHERE version = 'regime_v4'
+                    AND (
+                        final_regime = 'crash' OR 
+                        kr_metrics->>'midterm_regime' = 'crash'
+                    )
+                    ORDER BY date
+                """)
             
             rows = cur.fetchall()
             
@@ -54,12 +73,16 @@ def get_crash_dates() -> list:
                         except:
                             pass
                 
-                # crash인 경우만 추가
-                if final_regime == 'crash' or midterm_regime == 'crash':
+                # crash 또는 bear인 경우 추가
+                is_crash = (final_regime == 'crash' or midterm_regime == 'crash')
+                is_bear = (final_regime == 'bear' or midterm_regime == 'bear')
+                
+                if is_crash or (include_bear and is_bear):
                     crash_dates.append({
                         'date': date_str,
                         'final_regime': final_regime,
-                        'midterm_regime': midterm_regime
+                        'midterm_regime': midterm_regime,
+                        'type': 'crash' if is_crash else 'bear'
                     })
         
         return crash_dates
@@ -71,19 +94,21 @@ def get_crash_dates() -> list:
 def main():
     """크래시 날짜 재스캔 실행"""
     logger.info(f"\n{'='*80}")
-    logger.info("크래시 날짜 재스캔 시작")
+    logger.info("크래시/베어 날짜 재스캔 시작")
     logger.info(f"{'='*80}\n")
     
-    # 1. 크래시 날짜 조회
-    crash_dates = get_crash_dates()
+    # 1. 크래시 날짜 조회 (bear 포함)
+    crash_dates = get_crash_dates(include_bear=True)
     
     if not crash_dates:
-        logger.warning("크래시 날짜가 없습니다.")
+        logger.warning("크래시/베어 날짜가 없습니다.")
+        logger.info("현재 DB에 crash 레짐이 없습니다. 레짐 분석을 다시 실행하거나,")
+        logger.info("특정 날짜 범위를 지정하여 재스캔하세요.")
         return
     
-    logger.info(f"📊 크래시 날짜: {len(crash_dates)}일")
+    logger.info(f"📊 크래시/베어 날짜: {len(crash_dates)}일")
     for item in crash_dates:
-        logger.info(f"   - {item['date']}: final={item['final_regime']}, midterm={item['midterm_regime']}")
+        logger.info(f"   - {item['date']}: {item['type']} (final={item['final_regime']}, midterm={item['midterm_regime']})")
     
     logger.info(f"\n{'='*80}")
     logger.info(f"재스캔 시작: {len(crash_dates)}일")

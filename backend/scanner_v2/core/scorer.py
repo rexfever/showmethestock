@@ -73,15 +73,10 @@ class Scorer:
                 if not (self.config.atr_pct_min <= atr_pct <= self.config.atr_pct_max):
                     return 0, {"label": "변동성부적절", "match": False}
         
-        # 위험도 점수 계산
+        # 위험도 점수 계산 (base_risk_score만 계산, short_term_risk_score는 scanner.py에서 스케일링하여 적용)
         risk_score, risk_flags = self._calculate_risk_score(df)
         
-        # v4 구조: short_term_risk_score를 risk_score에 가중 적용
-        if market_condition is not None:
-            extra_risk = getattr(market_condition, "short_term_risk_score", None)
-            if extra_risk is not None:
-                risk_score = (risk_score or 0) + extra_risk
-        
+        # base_risk_score만 사용 (short_term_risk_score는 _apply_regime_cutoff에서 스케일링하여 적용)
         risk_threshold = getattr(self.config, 'risk_score_threshold', 4)
         if risk_score >= risk_threshold:
             return 0, {"match": False, "label": "위험종목", "risk_score": risk_score}

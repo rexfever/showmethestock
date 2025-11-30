@@ -32,8 +32,14 @@ export default function StockCardV2({ item, onViewChart }) {
   };
 
   // strategy 우선순위: item.strategy > flags.trading_strategy > 기본값 "관찰"
+  // 디버깅: strategy 값 확인
   const strategyFromFlags = flags?.trading_strategy || null;
-  const normalizedStrategy = strategy || strategyFromFlags || '관찰';
+  const normalizedStrategy = (strategy && strategy.trim()) || (strategyFromFlags && strategyFromFlags.trim()) || '관찰';
+  
+  // 디버깅: 정규화된 전략이 유효한지 확인
+  if (!strategyConfig[normalizedStrategy]) {
+    console.warn(`[StockCardV2] Invalid strategy: "${normalizedStrategy}", falling back to "관찰"`);
+  }
   
   const strategyInfo = strategyConfig[normalizedStrategy] || strategyConfig.관찰;
   
@@ -160,10 +166,10 @@ export default function StockCardV2({ item, onViewChart }) {
           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
           title={strategyInfo.desc}
         >
-          <span>{strategyInfo.icon}</span>
-          <span>{normalizedStrategy}</span>
+          <span className="text-base">{strategyInfo.icon}</span>
+          <span className="font-medium">{normalizedStrategy}</span>
         </span>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-500 whitespace-nowrap">
           {strategyInfo.desc}
         </span>
       </div>
