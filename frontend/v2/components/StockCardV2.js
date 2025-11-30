@@ -3,13 +3,11 @@
  * 일반 투자자에게 실용적이고 이해하기 쉬운 정보를 제공합니다.
  */
 export default function StockCardV2({ item, onViewChart }) {
-  // 컴포넌트 렌더링 확인 로그 (최상단)
-  console.log('[StockCardV2] ===== Component Rendered =====', {
-    ticker: item?.ticker,
-    name: item?.name,
-    hasItem: !!item,
-    itemKeys: item ? Object.keys(item) : []
-  });
+  // 컴포넌트 렌더링 확인 로그 (최상단) - 항상 출력
+  console.log('🔵🔵🔵 StockCardV2 RENDERED 🔵🔵🔵');
+  console.log('Item:', item);
+  console.log('Ticker:', item?.ticker);
+  console.log('Name:', item?.name);
   
   const {
     ticker,
