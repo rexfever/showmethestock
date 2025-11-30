@@ -1966,10 +1966,12 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             score_label = data.get("score_label")
             current_price = data.get("current_price")
             volume = data.get("volume")
-            # change_rate 정규화: 소수로 저장된 경우 퍼센트로 변환 (절댓값이 1보다 작으면 소수로 간주)
+            # change_rate 정규화: scanner_version이 'v2'인 경우 이미 퍼센트 형태로 저장됨
+            # v1의 경우 소수 형태일 수 있으므로 변환 필요
             change_rate_raw = data.get("change_rate") or 0.0
             change_rate = float(change_rate_raw)
-            if abs(change_rate) < 1.0 and change_rate != 0.0:
+            # scanner_version이 'v2'가 아닌 경우에만 변환 (v2는 이미 퍼센트 형태)
+            if detected_version != 'v2' and abs(change_rate) < 1.0 and change_rate != 0.0:
                 # 소수로 저장된 경우 퍼센트로 변환
                 change_rate = change_rate * 100
             change_rate = round(change_rate, 2)  # 퍼센트로 정규화, 소수점 2자리
@@ -2296,10 +2298,13 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             returns = data.get("returns")
             recurrence = data.get("recurrence")
             
-            # change_rate 정규화: 소수로 저장된 경우 퍼센트로 변환 (절댓값이 1보다 작으면 소수로 간주)
+            # change_rate 정규화: scanner_version이 'v2'인 경우 이미 퍼센트 형태로 저장됨
+            # v1의 경우 소수 형태일 수 있으므로 변환 필요
             change_rate_raw = data.get("change_rate") or 0.0
             change_rate = float(change_rate_raw)
-            if abs(change_rate) < 1.0 and change_rate != 0.0:
+            # scanner_version 파라미터 확인 (없으면 기본값 'v1'로 간주)
+            scanner_ver = scanner_version or 'v1'
+            if scanner_ver != 'v2' and abs(change_rate) < 1.0 and change_rate != 0.0:
                 # 소수로 저장된 경우 퍼센트로 변환
                 change_rate = change_rate * 100
             
