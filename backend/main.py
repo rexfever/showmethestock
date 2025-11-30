@@ -2151,7 +2151,8 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                         "sector_rotation", "foreign_flow", "institution_flow", "volume_trend",
                         "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max",
                         "trend_metrics", "breadth_metrics", "flow_metrics", "sector_metrics", "volatility_metrics",
-                        "foreign_flow_label", "institution_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
+                        "foreign_flow_label", "institution_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes",
+                        "midterm_regime", "short_term_risk_score", "final_regime", "longterm_regime"
                     ]
                     values = dict(zip(keys, row_mc))
                 
@@ -2440,7 +2441,8 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                         "sector_rotation", "foreign_flow", "institution_flow", "volume_trend",
                         "min_signals", "macd_osc_min", "vol_ma5_mult", "gap_max", "ext_from_tema20_max",
                         "trend_metrics", "breadth_metrics", "flow_metrics", "sector_metrics", "volatility_metrics",
-                        "foreign_flow_label", "institution_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes"
+                        "foreign_flow_label", "institution_flow_label", "volume_trend_label", "adjusted_params", "analysis_notes",
+                        "midterm_regime", "short_term_risk_score", "final_regime", "longterm_regime"
                     ]
                     values = dict(zip(keys, row_mc))
                 
