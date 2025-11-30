@@ -176,10 +176,13 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                     scan_close = indicators.get("close") if isinstance(indicators, dict) else getattr(indicators, "close", None)
                     scan_change_rate = indicators.get("change_rate") if isinstance(indicators, dict) else getattr(indicators, "change_rate", None)
                     
-                    # change_rate가 소수 형태(0.0596)인 경우 퍼센트로 변환 (5.96)
+                    # change_rate 변환: 스캐너 v2는 소수 형태로 반환 (예: 0.0596 = 5.96%)
+                    # 이미 퍼센트 형태인 경우(절대값 >= 1.0)는 그대로 사용, 소수 형태(절대값 < 1.0)는 100 곱하기
                     if scan_change_rate is not None:
                         scan_change_rate = float(scan_change_rate)
                         # 소수 형태인지 확인 (절대값이 1보다 작고 0이 아닌 경우)
+                        # 단, -1.0 ~ 1.0 범위는 소수 형태로 간주 (예: 0.0596, -0.67)
+                        # 1.0 이상은 이미 퍼센트 형태로 간주 (예: 5.96, -67.0)
                         if abs(scan_change_rate) < 1.0 and scan_change_rate != 0.0:
                             scan_change_rate = scan_change_rate * 100
                     

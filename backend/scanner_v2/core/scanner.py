@@ -300,7 +300,7 @@ class ScannerV2:
         return final_results
     
     def _calculate_change_rate(self, df: pd.DataFrame) -> float:
-        """등락률 계산"""
+        """등락률 계산 (소수 형태로 반환, 예: 0.0596 = 5.96%)"""
         if len(df) < 2:
             return 0.0
         
@@ -314,6 +314,7 @@ class ScannerV2:
                 break
         
         if prev_close > 0:
-            return round(((current_close - prev_close) / prev_close) * 100, 2)
+            # 소수 형태로 반환 (예: 0.0596 = 5.96%)
+            return round((current_close - prev_close) / prev_close, 4)
         return 0.0
 
