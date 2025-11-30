@@ -1988,7 +1988,22 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 change_rate = change_rate * 100
             change_rate = round(change_rate, 2)  # 퍼센트로 정규화, 소수점 2자리
             market = data.get("market")
-            strategy = data.get("strategy")
+            # strategy는 scan_rank 테이블에 컬럼이 없으므로 flags에서 가져옴
+            strategy = data.get("strategy")  # DB 컬럼에서 먼저 시도 (v1 호환성)
+            
+            # flags 파싱 (strategy 추출을 위해 먼저 파싱)
+            flags_dict = flags
+            if isinstance(flags, str) and flags:
+                try:
+                    flags_dict = json.loads(flags)
+                except:
+                    flags_dict = {}
+            elif not flags:
+                flags_dict = {}
+            
+            # flags에서 trading_strategy가 있으면 사용 (v2)
+            if not strategy and flags_dict and isinstance(flags_dict, dict):
+                strategy = flags_dict.get('trading_strategy')
             
             # 추천일 종가 (recommended_price) - DB의 close_price를 스캔일 종가로 사용
             # current_price는 DB의 close_price로 매핑되어 있으므로 스캔일 종가임
@@ -2034,14 +2049,17 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             elif not trend:
                 trend_dict = {}
             
-            flags_dict = flags
-            if isinstance(flags, str) and flags:
-                try:
-                    flags_dict = json.loads(flags)
-                except:
+            # flags는 이미 위에서 파싱됨 (strategy 추출을 위해)
+            # 중복 파싱 방지
+            if 'flags_dict' not in locals():
+                flags_dict = flags
+                if isinstance(flags, str) and flags:
+                    try:
+                        flags_dict = json.loads(flags)
+                    except:
+                        flags_dict = {}
+                elif not flags:
                     flags_dict = {}
-            elif not flags:
-                flags_dict = {}
             
             details_dict = details
             if isinstance(details, str) and details:
