@@ -50,17 +50,18 @@ export default function StockCardV2({ item, onViewChart }) {
   // 문자열 타입 보장
   normalizedStrategy = String(normalizedStrategy).trim() || '관찰';
   
-  // 디버깅 로그 (개발 환경에서만)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[StockCardV2] Strategy Debug:', {
-      itemStrategy: strategy,
-      strategyValue,
-      flagsTradingStrategy: flags?.trading_strategy,
-      flagsStrategyValue,
-      normalizedStrategy,
-      hasStrategyConfig: !!strategyConfig[normalizedStrategy]
-    });
-  }
+  // 디버깅 로그 (항상 출력하여 문제 진단)
+  console.log('[StockCardV2] Strategy Debug:', {
+    itemStrategy: strategy,
+    strategyValue,
+    flagsTradingStrategy: flags?.trading_strategy,
+    flagsStrategyValue,
+    normalizedStrategy,
+    hasStrategyConfig: !!strategyConfig[normalizedStrategy],
+    score: score,
+    score_label: score_label,
+    normalizedLabel: normalizedLabel
+  });
   
   // 디버깅: 정규화된 전략이 유효한지 확인
   if (!strategyConfig[normalizedStrategy]) {
