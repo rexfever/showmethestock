@@ -153,16 +153,28 @@ class ScannerV2:
             
             # 10. 전략 결정
             # scorer에서 이미 전략을 결정했으므로 flags에서 가져옴
-            # 단, 가산점이 적용된 경우에는 adjusted_score를 다시 계산해서 전략 재결정
+            # 단, 가산점이 적용된 경우에는 adjusted_score를 다시 계산해서 전략과 레이블 재결정
             if flags.get('kospi_bonus') or flags.get('kosdaq_bonus'):
-                # 가산점 적용 후 점수가 변경되었으면 전략을 다시 결정
+                # 가산점 적용 후 점수가 변경되었으면 전략과 레이블을 다시 결정
                 from .strategy import determine_trading_strategy
                 # adjusted_score 계산 (risk_score 차감)
                 risk_score = flags.get('risk_score', 0)
                 adjusted_score = score - risk_score
+                
+                # 전략 재결정
                 strategy_tuple = determine_trading_strategy(flags, adjusted_score)
                 strategy = strategy_tuple[0] if isinstance(strategy_tuple, tuple) else "관찰"
                 flags['trading_strategy'] = strategy
+                
+                # 레이블 재결정 (가산점 적용 후 adjusted_score 기준)
+                if adjusted_score >= 10:
+                    flags["label"] = "강한 매수"
+                elif adjusted_score >= 8:
+                    flags["label"] = "매수 후보"
+                elif adjusted_score >= 6:
+                    flags["label"] = "관심 종목"
+                else:
+                    flags["label"] = "후보 종목"
             else:
                 # 가산점이 없으면 scorer에서 결정한 전략 사용
                 strategy = flags.get('trading_strategy', '관찰')
