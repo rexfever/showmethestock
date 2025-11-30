@@ -103,12 +103,33 @@ export default function StockCardV2({ item, onViewChart }) {
       {/* 점수 및 평가 */}
       <div className="flex items-center space-x-3">
         <div className="flex items-center space-x-2">
-          <div className="text-2xl font-bold text-blue-600">
-            {score.toFixed(1)}점
+          <div className="flex flex-col">
+            <div className="text-2xl font-bold text-blue-600">
+              {score.toFixed(1)}점
+            </div>
+            <div className="text-xs text-gray-500">
+              만점: 15점
+            </div>
           </div>
-          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-${labelInfo.color}-100 text-${labelInfo.color}-700`}>
-            {labelInfo.icon} {score_label}
-          </span>
+          <div className="flex flex-col ml-2">
+            <span 
+              className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-${labelInfo.color}-100 text-${labelInfo.color}-700`}
+              title={
+                score_label === '강력 추천' ? '점수 10점 이상 - 강한 매수 신호' :
+                score_label === '추천' ? '점수 8점 이상 - 매수 후보' :
+                score_label === '관심 종목' ? '점수 6점 이상 - 관심 종목' :
+                '점수 6점 미만 - 후보 종목'
+              }
+            >
+              {labelInfo.icon} {score_label}
+            </span>
+            <div className="text-xs text-gray-400 mt-1">
+              {score_label === '강력 추천' ? '10점 이상' :
+               score_label === '추천' ? '8점 이상' :
+               score_label === '관심 종목' ? '6점 이상' :
+               '6점 미만'}
+            </div>
+          </div>
         </div>
       </div>
 
