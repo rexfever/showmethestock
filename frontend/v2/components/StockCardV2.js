@@ -31,7 +31,10 @@ export default function StockCardV2({ item, onViewChart }) {
     관찰: { color: 'gray', icon: '⏳', desc: '관심 종목 (매수 대기)' }
   };
 
-  const strategyInfo = strategyConfig[strategy] || strategyConfig.관찰;
+  // strategy가 null이거나 undefined일 때 기본값 "관찰" 사용
+  const normalizedStrategy = strategy || '관찰';
+  
+  const strategyInfo = strategyConfig[normalizedStrategy] || strategyConfig.관찰;
   
   // Tailwind 동적 클래스 문제 해결: 전략별 명시적 클래스명 매핑
   const strategyClassName = {
@@ -39,7 +42,7 @@ export default function StockCardV2({ item, onViewChart }) {
     '포지션': 'bg-green-100 text-green-700',
     '장기': 'bg-purple-100 text-purple-700',
     '관찰': 'bg-gray-100 text-gray-700'
-  }[strategy] || 'bg-gray-100 text-gray-700';
+  }[normalizedStrategy] || 'bg-gray-100 text-gray-700';
 
   // 평가 레이블 색상
   const scoreLabelConfig = {
@@ -156,7 +159,7 @@ export default function StockCardV2({ item, onViewChart }) {
           className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${strategyClassName}`}
           title={strategyInfo.desc}
         >
-          {strategyInfo.icon} {strategy}
+          {strategyInfo.icon} {normalizedStrategy}
         </span>
         <span className="text-xs text-gray-500">
           {strategyInfo.desc}
