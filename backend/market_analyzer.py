@@ -1353,6 +1353,7 @@ class MarketAnalyzer:
         try:
             from scanner_v2.regime_v4 import analyze_regime_v4
             from services.regime_storage import upsert_regime
+            from db_manager import db_manager
             
             # v4 분석 실행 (기존 로직 유지)
             v4_result = analyze_regime_v4(date)
