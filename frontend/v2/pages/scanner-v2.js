@@ -227,9 +227,10 @@ export default function ScannerV2({ initialData, initialScanDate, initialMarketC
 
   // 차트 보기 핸들러
   const handleViewChart = useCallback((ticker) => {
-    // 차트 페이지로 이동하거나 모달 표시
-    router.push(`/stock/${ticker}`);
-  }, [router]);
+    // 네이버 금융 차트 & 기업정보 링크 열기
+    const naverInfoUrl = `https://finance.naver.com/item/main.naver?code=${ticker}`;
+    window.open(naverInfoUrl, '_blank');
+  }, []);
 
   useEffect(() => {
     setMounted(true);
