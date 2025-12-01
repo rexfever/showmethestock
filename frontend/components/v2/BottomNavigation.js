@@ -45,16 +45,22 @@ export default function BottomNavigation() {
   return (
     <>
       {/* 하단 네비게이션 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black text-white z-50">
-        <div className="flex justify-around items-center py-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-black text-white z-[9999]" style={{ pointerEvents: 'auto' }}>
+        <div className="flex justify-around items-center py-2" style={{ pointerEvents: 'auto' }}>
           <button 
             type="button"
             className="flex flex-col items-center py-2 hover:bg-gray-800 cursor-pointer"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('추천종목 버튼 클릭:', { router: !!router, scannerLink });
               if (router && scannerLink) {
-                router.push(scannerLink);
+                console.log('router.push 호출:', scannerLink);
+                router.push(scannerLink).catch(err => {
+                  console.error('router.push 오류:', err);
+                });
+              } else {
+                console.warn('router 또는 scannerLink가 없음:', { router: !!router, scannerLink });
               }
             }}
           >
@@ -69,8 +75,13 @@ export default function BottomNavigation() {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('종목분석 버튼 클릭');
               if (router) {
-                router.push('/stock-analysis');
+                router.push('/stock-analysis').catch(err => {
+                  console.error('router.push 오류:', err);
+                });
+              } else {
+                console.warn('router가 없음');
               }
             }}
           >
@@ -85,8 +96,13 @@ export default function BottomNavigation() {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('나의투자종목 버튼 클릭');
               if (router) {
-                router.push('/portfolio');
+                router.push('/portfolio').catch(err => {
+                  console.error('router.push 오류:', err);
+                });
+              } else {
+                console.warn('router가 없음');
               }
             }}
           >
@@ -102,8 +118,13 @@ export default function BottomNavigation() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('관리자 버튼 클릭');
                 if (router) {
-                  router.push('/admin');
+                  router.push('/admin').catch(err => {
+                    console.error('router.push 오류:', err);
+                  });
+                } else {
+                  console.warn('router가 없음');
                 }
               }}
             >
@@ -120,8 +141,13 @@ export default function BottomNavigation() {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('더보기 버튼 클릭');
               if (router) {
-                router.push('/more');
+                router.push('/more').catch(err => {
+                  console.error('router.push 오류:', err);
+                });
+              } else {
+                console.warn('router가 없음');
               }
             }}
           >
