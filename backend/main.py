@@ -2025,6 +2025,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             
             # 수익률 계산 (배치 처리 결과 사용)
             returns_info = returns_data.get(code) if code != 'NORESULT' else None
+            actual_current_price = None  # 실제 현재가 (returns에서 가져옴)
             if returns_info and isinstance(returns_info, dict) and returns_info.get('current_return') is not None:
                 current_return = returns_info.get('current_return')
                 max_return = returns_info.get('max_return', current_return)
@@ -2033,6 +2034,9 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 # returns_info에 scan_price가 있으면 사용 (스캔일 종가, DB close_price와 일치해야 함)
                 if returns_info.get('scan_price'):
                     recommended_price = returns_info.get('scan_price')
+                # returns_info에 current_price가 있으면 실제 현재가로 사용
+                if returns_info.get('current_price'):
+                    actual_current_price = returns_info.get('current_price')
                 # returns_info에 scan_price가 없으면 DB의 close_price 사용 (스캔일 종가)
                 # 이미 위에서 설정했으므로 그대로 유지
             else:
@@ -2052,6 +2056,8 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                             days_elapsed = returns_dict.get('days_elapsed', 0)
                             if returns_dict.get('scan_price'):
                                 recommended_price = returns_dict.get('scan_price')
+                            if returns_dict.get('current_price'):
+                                actual_current_price = returns_dict.get('current_price')
                         else:
                             # DB에 returns가 있지만 current_return이 None인 경우
                             current_return = 0
@@ -2138,7 +2144,8 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     "current_return": current_return,
                     "max_return": max_return,
                     "min_return": min_return,
-                    "days_elapsed": days_elapsed
+                    "days_elapsed": days_elapsed,
+                    "current_price": actual_current_price if actual_current_price else None
                 },
                 # V2 UI를 위한 추가 필드
                 "recommended_price": recommended_price,
