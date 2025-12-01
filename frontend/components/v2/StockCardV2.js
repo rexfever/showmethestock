@@ -235,8 +235,11 @@ export default function StockCardV2({ item, onViewChart }) {
                 const progress = Math.min((current_return / targetReturn) * 100, 100);
                 const excessReturn = isAchieved ? (current_return - targetReturn) : 0;
                 
+                // 최고 수익률 위치 계산 (목표 대비)
+                const maxProgress = Math.min((max_return / targetReturn) * 100, 100);
+                
                 return (
-                  <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className={`mt-3 pt-3 border-t ${wasAchievedButDeclined ? 'border-orange-200 bg-orange-50 rounded-lg p-3 -mt-3 -pt-3' : 'border-blue-200'}`}>
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="text-gray-600">목표 수익률: {targetReturn}%</span>
                       <span className={
@@ -248,7 +251,7 @@ export default function StockCardV2({ item, onViewChart }) {
                         {isStopLossReached 
                           ? `⚠️ 손절 기준 도달 (${current_return.toFixed(2)}%)`
                           : wasAchievedButDeclined
-                          ? `⚠️ 목표 달성했으나 수익률 하락 (최고 ${max_return.toFixed(2)}% → 현재 ${current_return.toFixed(2)}%)`
+                          ? `📉 목표 달성했으나 하락 (최고 ${max_return.toFixed(2)}% → 현재 ${current_return.toFixed(2)}%)`
                           : isAchieved 
                           ? `✅ 목표 달성${excessReturn > 0 ? ` (+${excessReturn.toFixed(2)}% 초과)` : ''}${hasDeclinedFromPeak ? ` (최고 ${max_return.toFixed(2)}%에서 ${declineFromPeak.toFixed(2)}% 하락)` : ''}`
                           : `목표까지 ${(targetReturn - current_return).toFixed(2)}%`}
@@ -258,12 +261,23 @@ export default function StockCardV2({ item, onViewChart }) {
                       <div 
                         className={`h-2 rounded-full transition-all ${
                           isStopLossReached ? 'bg-red-500' :
-                          wasAchievedButDeclined ? 'bg-orange-500' :
+                          wasAchievedButDeclined ? 'bg-gradient-to-r from-orange-400 via-orange-500 to-red-500' :
                           isAchieved ? 'bg-green-500' : 
                           'bg-blue-500'
                         }`}
                         style={{ width: `${Math.max(0, Math.min(progress, 100))}%` }}
                       />
+                      {/* 최고 수익률 마커 (목표 달성했지만 하락한 경우) */}
+                      {wasAchievedButDeclined && maxProgress > progress && (
+                        <div 
+                          className="absolute top-0 h-2 flex items-center justify-center"
+                          style={{ left: `${Math.min(maxProgress, 100)}%`, transform: 'translateX(-50%)' }}
+                        >
+                          <div className="w-3 h-3 bg-yellow-400 transform rotate-45 border border-yellow-500 shadow-sm" 
+                               title={`최고 수익률: ${max_return.toFixed(2)}%`}
+                          />
+                        </div>
+                      )}
                       {isAchieved && excessReturn > 0 && !hasDeclinedFromPeak && (
                         <div className="absolute top-0 right-0 h-2 w-2 bg-yellow-400 rounded-full animate-pulse" 
                              style={{ right: `${Math.min(100 - (targetReturn / current_return * 100), 0)}%` }}
@@ -272,8 +286,8 @@ export default function StockCardV2({ item, onViewChart }) {
                     </div>
                     {/* 최고 수익률 정보 (목표 달성했지만 하락한 경우) */}
                     {wasAchievedButDeclined && (
-                      <div className="mt-2 text-xs text-orange-600 font-medium">
-                        ⚠️ 최고 수익률 {max_return.toFixed(2)}%에서 {declineFromPeak.toFixed(2)}% 하락
+                      <div className="mt-2 text-xs text-orange-700 font-medium bg-orange-100 rounded px-2 py-1">
+                        📉 최고 수익률 {max_return.toFixed(2)}%에서 {declineFromPeak.toFixed(2)}% 하락 (현재: {current_return.toFixed(2)}%)
                       </div>
                     )}
                     {isAchieved && excessReturn > 0 && !hasDeclinedFromPeak && (
