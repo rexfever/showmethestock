@@ -2026,10 +2026,38 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 # 이미 위에서 설정했으므로 그대로 유지
             else:
                 # returns_info가 없으면 수익률 데이터 없음으로 설정
-                current_return = None
-                max_return = None
-                min_return = None
-                days_elapsed = None
+                # DB에 저장된 returns 데이터 확인
+                if returns_raw:
+                    try:
+                        if isinstance(returns_raw, str):
+                            returns_dict = json.loads(returns_raw)
+                        else:
+                            returns_dict = returns_raw
+                        
+                        if isinstance(returns_dict, dict) and returns_dict.get('current_return') is not None:
+                            current_return = returns_dict.get('current_return')
+                            max_return = returns_dict.get('max_return', current_return)
+                            min_return = returns_dict.get('min_return', current_return)
+                            days_elapsed = returns_dict.get('days_elapsed', 0)
+                            if returns_dict.get('scan_price'):
+                                recommended_price = returns_dict.get('scan_price')
+                        else:
+                            # DB에 returns가 있지만 current_return이 None인 경우
+                            current_return = 0
+                            max_return = 0
+                            min_return = 0
+                            days_elapsed = 0
+                    except:
+                        current_return = 0
+                        max_return = 0
+                        min_return = 0
+                        days_elapsed = 0
+                else:
+                    # returns_info도 없고 DB returns도 없는 경우
+                    current_return = 0
+                    max_return = 0
+                    min_return = 0
+                    days_elapsed = 0
                 # recommended_price는 이미 DB의 close_price로 설정되어 있음
             
             # JSON 파싱 최적화: 한 번만 파싱
@@ -2104,7 +2132,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 # V2 UI를 위한 추가 필드
                 "recommended_price": recommended_price,
                 "recommended_date": formatted_date,
-                "current_return": current_return,  # 편의를 위해 최상위 레벨에도 추가
+                "current_return": current_return if current_return is not None else 0,  # None인 경우 0으로 처리
                 "recurrence": recurrence_dict
             }
             items.append(item)
@@ -2429,11 +2457,14 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             current_return = None
             if item["returns"] and isinstance(item["returns"], dict):
                 current_return = item["returns"].get("current_return")
+                # current_return이 None이면 0으로 처리 (수익률 계산 실패 또는 데이터 없음)
+                if current_return is None:
+                    current_return = 0
             
             # V2 UI 필드 추가
             item["recommended_price"] = recommended_price
             item["recommended_date"] = formatted_date
-            item["current_return"] = current_return  # 편의를 위해 최상위 레벨에도 추가
+            item["current_return"] = current_return if current_return is not None else 0  # None인 경우 0으로 처리
             
             items.append(item)
         
