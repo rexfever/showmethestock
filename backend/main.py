@@ -2417,6 +2417,24 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                 item["returns"].setdefault("max_return", 0)
                 item["returns"].setdefault("min_return", 0)
                 item["returns"].setdefault("days_elapsed", 0)
+            
+            # V2 UI를 위한 추가 필드: recommended_price, recommended_date, current_return
+            # 추천일 종가 (recommended_price) - DB의 close_price를 스캔일 종가로 사용
+            recommended_price = item.get("current_price") if item.get("current_price") and item.get("current_price") > 0 else None
+            # returns에 scan_price가 있으면 사용 (스캔일 종가)
+            if item["returns"] and isinstance(item["returns"], dict) and item["returns"].get("scan_price"):
+                recommended_price = item["returns"].get("scan_price")
+            
+            # current_return 추출
+            current_return = None
+            if item["returns"] and isinstance(item["returns"], dict):
+                current_return = item["returns"].get("current_return")
+            
+            # V2 UI 필드 추가
+            item["recommended_price"] = recommended_price
+            item["recommended_date"] = formatted_date
+            item["current_return"] = current_return  # 편의를 위해 최상위 레벨에도 추가
+            
             items.append(item)
         
         market_condition = None
