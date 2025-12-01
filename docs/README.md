@@ -66,6 +66,7 @@
 
 - `LOCAL_DEVELOPMENT_SETUP.md` - 로컬 개발 환경 구성 메뉴얼 (최신)
 - `SERVER_OPERATION_MANUAL.md` - 서버 작업 메뉴얼 (최신화)
+- `SERVER_DEPLOYMENT_20251128.md` - 서버 배포 가이드 (2025-11-28 작업 반영, 최신)
 - `DEPLOYMENT_CHECKLIST_SCANNER_V2.md` - 스캐너 V2 배포 체크리스트
 
 ### 🔧 문제 해결
@@ -74,10 +75,22 @@
 ### 📁 scanner-v2/ - 스캐너 V2 관련
 스캐너 V2 설계 및 사용 가이드
 
-- `SCANNER_V2_DESIGN.md` - 스캐너 V2 설계 문서
+**주요 문서**:
+- `README.md` - Scanner V2 문서 목록 및 가이드
+- `V2_UI_IMPLEMENTATION_STATUS.md` - 구현 완료 상태 (최신)
+- `V2_UI_WORK_LOG.md` - 작업 로그 및 이슈 해결 내역
+- `V2_UI_IMPLEMENTATION_PLAN.md` - 구현 계획서
+- `V2_UI_MOCKUP.md` - UI 목업 및 디자인
+- `V2_INFINITY_SCROLL_DESIGN.md` - 인피니티 스크롤 설계
+- `SCANNER_V2_DESIGN.md` - 스캐너 V2 전체 설계
 - `SCANNER_V2_USAGE.md` - 스캐너 V2 사용 가이드
 - `V1_VS_V2_COMPARISON.md` - V1과 V2 비교
+- `V1_VS_V2_DETAILED_COMPARISON.md` - 상세 비교
+- `SERVER_DATA_SYNC_GUIDE.md` - 서버 데이터 동기화 가이드
+- `REGIME_V4_UPDATE_LOG.md` - 레짐 v4 업데이트 로그
 - `CONFIG_SHARING.md` - 설정 공유 정책
+
+**아카이브**: 완료된 작업 관련 문서는 `archive/scanner-v2/` 디렉토리에 보관
 
 ### 📁 other/ - 기타 문서
 기타 문서들
@@ -105,5 +118,5 @@
 
 ---
 
-**마지막 업데이트**: 2025년 11월 24일
+**마지막 업데이트**: 2025년 12월 1일
 
