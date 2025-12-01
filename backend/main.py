@@ -1925,6 +1925,8 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             
             # DB에 저장된 returns 데이터 확인
             returns_raw = data.get("returns")
+            should_recalculate = False
+            
             if returns_raw:
                 try:
                     if isinstance(returns_raw, str):
@@ -1934,13 +1936,22 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     
                     # 저장된 데이터가 유효한지 확인 (빈 딕셔너리나 None 값 제외)
                     if isinstance(returns_dict, dict) and returns_dict and returns_dict.get('current_return') is not None:
-                        returns_data[code] = returns_dict
-                        continue
+                        # 스캔일이 오늘이 아니면 항상 재계산 (매일 최신 수익률 표시를 위해)
+                        from date_helper import get_kst_now
+                        today_str = get_kst_now().strftime('%Y%m%d')
+                        if formatted_date < today_str:
+                            # 전일 이전 스캔이면 항상 재계산하여 최신 수익률 표시
+                            should_recalculate = True
+                        else:
+                            # 당일 스캔이면 저장된 데이터 사용
+                            returns_data[code] = returns_dict
+                            continue
                 except:
                     pass
             
-            # DB에 없거나 유효하지 않으면 계산 필요
-            codes_needing_calculation.append(code)
+            # DB에 없거나 유효하지 않거나 재계산이 필요한 경우
+            if should_recalculate or not returns_raw:
+                codes_needing_calculation.append(code)
         
         # 필요한 종목만 배치 계산
         if codes_needing_calculation:
@@ -2453,13 +2464,43 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             if item["returns"] and isinstance(item["returns"], dict) and item["returns"].get("scan_price"):
                 recommended_price = item["returns"].get("scan_price")
             
-            # current_return 추출
+            # current_return 추출 및 재계산 필요 여부 확인
             current_return = None
+            should_recalculate_returns = False
+            
             if item["returns"] and isinstance(item["returns"], dict):
                 current_return = item["returns"].get("current_return")
+                
+                # 스캔일이 오늘이 아니면 항상 재계산 (매일 최신 수익률 표시를 위해)
+                from date_helper import get_kst_now
+                today_str = get_kst_now().strftime('%Y%m%d')
+                if formatted_date < today_str:
+                    # 전일 이전 스캔이면 항상 재계산하여 최신 수익률 표시
+                    should_recalculate_returns = True
+                
                 # current_return이 None이면 0으로 처리 (수익률 계산 실패 또는 데이터 없음)
                 if current_return is None:
                     current_return = 0
+            
+            # 재계산이 필요한 경우 실시간 계산
+            if should_recalculate_returns and data.get("code") and data.get("code") != 'NORESULT':
+                try:
+                    from services.returns_service import calculate_returns
+                    code = data.get("code")
+                    close_price = data.get("current_price")
+                    calculated_returns = calculate_returns(code, formatted_date, None, close_price)
+                    if calculated_returns and calculated_returns.get('current_return') is not None:
+                        current_return = calculated_returns.get('current_return')
+                        # item["returns"]도 업데이트
+                        if item["returns"]:
+                            item["returns"].update(calculated_returns)
+                        else:
+                            item["returns"] = calculated_returns
+                        # recommended_price도 업데이트
+                        if calculated_returns.get('scan_price'):
+                            recommended_price = calculated_returns.get('scan_price')
+                except Exception as e:
+                    print(f"수익률 재계산 오류 ({data.get('code')}): {e}")
             
             # V2 UI 필드 추가
             item["recommended_price"] = recommended_price
