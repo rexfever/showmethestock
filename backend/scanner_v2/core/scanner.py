@@ -165,6 +165,11 @@ class ScannerV2:
                 strategy_tuple = determine_trading_strategy(flags, adjusted_score)
                 strategy = strategy_tuple[0] if isinstance(strategy_tuple, tuple) else "관찰"
                 flags['trading_strategy'] = strategy
+                # 매매 가이드 정보도 함께 업데이트
+                if len(strategy_tuple) >= 4:
+                    flags['target_profit'] = strategy_tuple[1]
+                    flags['stop_loss'] = strategy_tuple[2]
+                    flags['holding_period'] = strategy_tuple[3]
                 
                 # 레이블 재결정 (가산점 적용 후 adjusted_score 기준)
                 if adjusted_score >= 10:
@@ -178,6 +183,18 @@ class ScannerV2:
             else:
                 # 가산점이 없으면 scorer에서 결정한 전략 사용
                 strategy = flags.get('trading_strategy', '관찰')
+                # 매매 가이드 정보가 없으면 기본값 설정 (scorer에서 이미 설정되어 있어야 하지만 안전장치)
+                if flags.get('target_profit') is None or flags.get('stop_loss') is None or flags.get('holding_period') is None:
+                    from .strategy import determine_trading_strategy
+                    risk_score = flags.get('risk_score', 0)
+                    adjusted_score = score - risk_score
+                    strategy_tuple = determine_trading_strategy(flags, adjusted_score)
+                    flags['trading_strategy'] = strategy_tuple[0] if isinstance(strategy_tuple, tuple) else "관찰"
+                    if len(strategy_tuple) >= 4:
+                        flags['target_profit'] = strategy_tuple[1]
+                        flags['stop_loss'] = strategy_tuple[2]
+                        flags['holding_period'] = strategy_tuple[3]
+                    strategy = flags['trading_strategy']
             
             # 11. 결과 생성
             cur = df.iloc[-1]
