@@ -107,7 +107,7 @@ export default function StockCardV2({ item, onViewChart }) {
         </div>
         <div className="text-right ml-4">
           <div className="text-2xl font-bold text-gray-900">
-            {(returns.current_price || current_price) > 0 ? `${(returns.current_price || current_price).toLocaleString()}원` : '데이터 없음'}
+            {current_price > 0 ? `${current_price.toLocaleString()}원` : '데이터 없음'}
           </div>
           <div className={`text-sm font-semibold ${change_rate > 0 ? 'text-red-500' : change_rate < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
             {(() => {

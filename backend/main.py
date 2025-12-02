@@ -2018,14 +2018,19 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             
             # 최종 fallback: strategy가 여전히 없으면 None (프론트엔드에서 "관찰"로 처리)
             
-            # 추천일 종가 (recommended_price) - DB의 close_price를 스캔일 종가로 사용
-            # current_price는 DB의 close_price로 매핑되어 있으므로 스캔일 종가임
-            # 기본값: DB의 close_price (스캔일 종가)
-            recommended_price = current_price if current_price and current_price > 0 else None
+            # 가격 변수 정리:
+            # - scan_date_close_price: 스캔일 종가 (DB의 current_price 컬럼)
+            # - today_close_price: 오늘 종가 (returns에서 계산)
+            # - display_price: 프론트엔드에 표시할 가격 (오늘 종가 우선, 없으면 스캔일 종가)
+            
+            scan_date_close_price = current_price  # DB의 current_price = 스캔일 종가
+            
+            # 추천일 종가 (recommended_price) - 스캔일 종가
+            recommended_price = scan_date_close_price if scan_date_close_price and scan_date_close_price > 0 else None
             
             # 수익률 계산 (배치 처리 결과 사용)
             returns_info = returns_data.get(code) if code != 'NORESULT' else None
-            actual_current_price = None  # 실제 현재가 (returns에서 가져옴)
+            today_close_price = None  # 오늘 종가 (returns에서 가져옴)
             if returns_info and isinstance(returns_info, dict) and returns_info.get('current_return') is not None:
                 current_return = returns_info.get('current_return')
                 max_return = returns_info.get('max_return', current_return)
@@ -2034,9 +2039,9 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 # returns_info에 scan_price가 있으면 사용 (스캔일 종가, DB close_price와 일치해야 함)
                 if returns_info.get('scan_price'):
                     recommended_price = returns_info.get('scan_price')
-                # returns_info에 current_price가 있으면 실제 현재가로 사용
+                # returns_info에 current_price가 있으면 오늘 종가로 사용
                 if returns_info.get('current_price'):
-                    actual_current_price = returns_info.get('current_price')
+                    today_close_price = returns_info.get('current_price')
                 # returns_info에 scan_price가 없으면 DB의 close_price 사용 (스캔일 종가)
                 # 이미 위에서 설정했으므로 그대로 유지
             else:
@@ -2057,7 +2062,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                             if returns_dict.get('scan_price'):
                                 recommended_price = returns_dict.get('scan_price')
                             if returns_dict.get('current_price'):
-                                actual_current_price = returns_dict.get('current_price')
+                                today_close_price = returns_dict.get('current_price')
                         else:
                             # DB에 returns가 있지만 current_return이 None인 경우
                             current_return = 0
@@ -2126,12 +2131,15 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             elif not recurrence_raw:
                 recurrence_dict = {}
             
+            # 프론트엔드에 표시할 가격: 오늘 종가 우선, 없으면 스캔일 종가
+            display_price = today_close_price if today_close_price and today_close_price > 0 else scan_date_close_price
+            
             item = {
                 "ticker": code,
                 "name": name,
                 "score": score,
                 "score_label": score_label,
-                "current_price": current_price,
+                "current_price": display_price,  # 오늘 종가 우선, 없으면 스캔일 종가
                 "volume": volume,
                 "change_rate": change_rate,
                 "market": market,
@@ -2145,7 +2153,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     "max_return": max_return,
                     "min_return": min_return,
                     "days_elapsed": days_elapsed,
-                    "current_price": actual_current_price if actual_current_price else None
+                    "current_price": today_close_price if today_close_price else None  # 오늘 종가
                 },
                 # V2 UI를 위한 추가 필드
                 "recommended_price": recommended_price,
@@ -2506,6 +2514,9 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                         # recommended_price도 업데이트
                         if calculated_returns.get('scan_price'):
                             recommended_price = calculated_returns.get('scan_price')
+                        # 오늘 종가로 업데이트 (과거 스캔인 경우)
+                        if calculated_returns.get('current_price') and calculated_returns.get('current_price') > 0:
+                            item["current_price"] = calculated_returns.get('current_price')
                 except Exception as e:
                     print(f"수익률 재계산 오류 ({data.get('code')}): {e}")
             

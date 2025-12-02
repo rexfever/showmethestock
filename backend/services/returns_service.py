@@ -4,13 +4,16 @@
 import pandas as pd
 import concurrent.futures
 from typing import Dict, List, Optional
-from functools import lru_cache
 from kiwoom_api import api
+from date_helper import get_kst_now
 
 
-@lru_cache(maxsize=1000)
 def _get_cached_ohlcv(ticker: str, count: int, base_dt: str = None) -> str:
-    """캐시된 OHLCV 데이터 조회"""
+    """OHLCV 데이터 조회 (api.get_ohlcv() 내부 TTL 캐시 사용)
+    
+    주의: @lru_cache를 제거하여 TTL 기반 캐시가 제대로 작동하도록 함
+    api.get_ohlcv() 내부에서 TTL 기반 캐시를 사용하므로 중복 캐싱 불필요
+    """
     try:
         df = api.get_ohlcv(ticker, count, base_dt)
         if df.empty:
@@ -20,10 +23,10 @@ def _get_cached_ohlcv(ticker: str, count: int, base_dt: str = None) -> str:
         return ""
 
 
-# 캐시 클리어 함수 추가
+# 캐시 클리어 함수 (api.get_ohlcv() 내부 캐시는 별도로 관리됨)
 def clear_cache():
-    """캐시를 클리어합니다"""
-    _get_cached_ohlcv.cache_clear()
+    """캐시를 클리어합니다 (현재는 사용하지 않음, api.get_ohlcv() 내부 캐시 사용)"""
+    pass
 
 
 def _parse_cached_ohlcv(json_str: str) -> pd.DataFrame:
@@ -48,8 +51,8 @@ def calculate_returns(ticker: str, scan_date: str, current_date: str = None, sca
     """
     try:
         if current_date is None:
-            from datetime import datetime
-            current_date = datetime.now().strftime('%Y%m%d')
+            # KST 기준 오늘 날짜 사용
+            current_date = get_kst_now().strftime('%Y%m%d')
         
         # 날짜 형식 처리: 이미 YYYYMMDD 형식
         scan_date_formatted = scan_date
@@ -207,8 +210,8 @@ def calculate_returns_batch(tickers: List[str], scan_date: str, current_date: st
         scan_prices: 스캔일 종가 딕셔너리 {ticker: price} (DB의 close_price 사용)
     """
     if current_date is None:
-        from datetime import datetime
-        current_date = datetime.now().strftime('%Y%m%d')
+        # KST 기준 오늘 날짜 사용
+        current_date = get_kst_now().strftime('%Y%m%d')
     
     results = {}
     
