@@ -2138,20 +2138,21 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             display_change_rate = change_rate  # 기본값: 스캔일 등락률
             if today_close_price and today_close_price > 0:
                 try:
-                    # 키움 API에서 현재 등락률 조회 (더 정확하고 빠름)
-                    quote = api.get_stock_quote(code)
-                    if quote and quote.get("change_rate") is not None:
-                        display_change_rate = quote.get("change_rate")
+                    # OHLCV 데이터로 직접 계산 (더 안정적)
+                    from date_helper import get_kst_now
+                    today_str = get_kst_now().strftime('%Y%m%d')
+                    df_today = api.get_ohlcv(code, 2, today_str)
+                    if not df_today.empty and len(df_today) >= 2:
+                        today_close = float(df_today.iloc[-1]['close'])
+                        prev_close = float(df_today.iloc[-2]['close'])
+                        if prev_close > 0:
+                            calculated_rate = ((today_close - prev_close) / prev_close) * 100
+                            display_change_rate = round(calculated_rate, 2)
                     else:
-                        # API 실패 시 OHLCV로 계산
-                        from date_helper import get_kst_now
-                        today_str = get_kst_now().strftime('%Y%m%d')
-                        df_today = api.get_ohlcv(code, 2, today_str)
-                        if not df_today.empty and len(df_today) >= 2:
-                            today_close = float(df_today.iloc[-1]['close'])
-                            prev_close = float(df_today.iloc[-2]['close'])
-                            if prev_close > 0:
-                                display_change_rate = round(((today_close - prev_close) / prev_close) * 100, 2)
+                        # OHLCV 실패 시 키움 API 시도
+                        quote = api.get_stock_quote(code)
+                        if quote and quote.get("change_rate") is not None and quote.get("change_rate") != 0.0:
+                            display_change_rate = quote.get("change_rate")
                 except Exception as e:
                     print(f"등락률 재계산 오류 ({code}): {e}")
                     # 오류 시 기존 change_rate 유지
@@ -2561,22 +2562,23 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             display_change_rate = item.get("change_rate", 0.0)  # 기본값: 스캔일 등락률
             if today_close_price and today_close_price > 0:
                 try:
-                    # 키움 API에서 현재 등락률 조회 (더 정확하고 빠름)
+                    # OHLCV 데이터로 직접 계산 (더 안정적)
                     code = data.get("code")
                     if code and code != 'NORESULT':
-                        quote = api.get_stock_quote(code)
-                        if quote and quote.get("change_rate") is not None:
-                            display_change_rate = quote.get("change_rate")
+                        from date_helper import get_kst_now
+                        today_str = get_kst_now().strftime('%Y%m%d')
+                        df_today = api.get_ohlcv(code, 2, today_str)
+                        if not df_today.empty and len(df_today) >= 2:
+                            today_close = float(df_today.iloc[-1]['close'])
+                            prev_close = float(df_today.iloc[-2]['close'])
+                            if prev_close > 0:
+                                calculated_rate = ((today_close - prev_close) / prev_close) * 100
+                                display_change_rate = round(calculated_rate, 2)
                         else:
-                            # API 실패 시 OHLCV로 계산
-                            from date_helper import get_kst_now
-                            today_str = get_kst_now().strftime('%Y%m%d')
-                            df_today = api.get_ohlcv(code, 2, today_str)
-                            if not df_today.empty and len(df_today) >= 2:
-                                today_close = float(df_today.iloc[-1]['close'])
-                                prev_close = float(df_today.iloc[-2]['close'])
-                                if prev_close > 0:
-                                    display_change_rate = round(((today_close - prev_close) / prev_close) * 100, 2)
+                            # OHLCV 실패 시 키움 API 시도
+                            quote = api.get_stock_quote(code)
+                            if quote and quote.get("change_rate") is not None and quote.get("change_rate") != 0.0:
+                                display_change_rate = quote.get("change_rate")
                 except Exception as e:
                     print(f"등락률 재계산 오류 ({data.get('code')}): {e}")
                     # 오류 시 기존 change_rate 유지
