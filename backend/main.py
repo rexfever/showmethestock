@@ -2134,6 +2134,28 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             # 프론트엔드에 표시할 가격: 오늘 종가 우선, 없으면 스캔일 종가
             display_price = today_close_price if today_close_price and today_close_price > 0 else scan_date_close_price
             
+            # 등락률 재계산: 오늘 종가가 있으면 오늘 기준 등락률 계산
+            display_change_rate = change_rate  # 기본값: 스캔일 등락률
+            if today_close_price and today_close_price > 0:
+                try:
+                    # 키움 API에서 현재 등락률 조회 (더 정확하고 빠름)
+                    quote = api.get_stock_quote(code)
+                    if quote and quote.get("change_rate") is not None:
+                        display_change_rate = quote.get("change_rate")
+                    else:
+                        # API 실패 시 OHLCV로 계산
+                        from date_helper import get_kst_now
+                        today_str = get_kst_now().strftime('%Y%m%d')
+                        df_today = api.get_ohlcv(code, 2, today_str)
+                        if not df_today.empty and len(df_today) >= 2:
+                            today_close = float(df_today.iloc[-1]['close'])
+                            prev_close = float(df_today.iloc[-2]['close'])
+                            if prev_close > 0:
+                                display_change_rate = round(((today_close - prev_close) / prev_close) * 100, 2)
+                except Exception as e:
+                    print(f"등락률 재계산 오류 ({code}): {e}")
+                    # 오류 시 기존 change_rate 유지
+            
             item = {
                 "ticker": code,
                 "name": name,
@@ -2141,7 +2163,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 "score_label": score_label,
                 "current_price": display_price,  # 오늘 종가 우선, 없으면 스캔일 종가
                 "volume": volume,
-                "change_rate": change_rate,
+                "change_rate": display_change_rate,  # 오늘 기준 등락률
                 "market": market,
                 "strategy": strategy,
                 "indicators": indicators_dict,
@@ -2535,12 +2557,38 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             # 프론트엔드에 표시할 가격: 오늘 종가 우선, 없으면 스캔일 종가
             display_price = today_close_price if today_close_price and today_close_price > 0 else scan_date_close_price
             
+            # 등락률 재계산: 오늘 종가가 있으면 오늘 기준 등락률 계산
+            display_change_rate = item.get("change_rate", 0.0)  # 기본값: 스캔일 등락률
+            if today_close_price and today_close_price > 0:
+                try:
+                    # 키움 API에서 현재 등락률 조회 (더 정확하고 빠름)
+                    code = data.get("code")
+                    if code and code != 'NORESULT':
+                        quote = api.get_stock_quote(code)
+                        if quote and quote.get("change_rate") is not None:
+                            display_change_rate = quote.get("change_rate")
+                        else:
+                            # API 실패 시 OHLCV로 계산
+                            from date_helper import get_kst_now
+                            today_str = get_kst_now().strftime('%Y%m%d')
+                            df_today = api.get_ohlcv(code, 2, today_str)
+                            if not df_today.empty and len(df_today) >= 2:
+                                today_close = float(df_today.iloc[-1]['close'])
+                                prev_close = float(df_today.iloc[-2]['close'])
+                                if prev_close > 0:
+                                    display_change_rate = round(((today_close - prev_close) / prev_close) * 100, 2)
+                except Exception as e:
+                    print(f"등락률 재계산 오류 ({data.get('code')}): {e}")
+                    # 오류 시 기존 change_rate 유지
+            
             # V2 UI 필드 추가
             item["recommended_price"] = recommended_price
             item["recommended_date"] = formatted_date
             item["current_return"] = current_return if current_return is not None else 0  # None인 경우 0으로 처리
             # current_price를 display_price로 업데이트 (오늘 종가 우선, 없으면 스캔일 종가)
             item["current_price"] = display_price
+            # change_rate를 오늘 기준 등락률로 업데이트
+            item["change_rate"] = display_change_rate
             
             items.append(item)
         
