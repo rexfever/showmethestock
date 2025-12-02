@@ -379,12 +379,13 @@ export default function More() {
                   <span className="text-xl">💰</span>
                   <h4 className="font-semibold text-gray-800">어떻게 투자하나요?</h4>
                 </div>
-                <p className="text-sm text-gray-600 font-medium">🎯 단기 스윙 투자 (1주일 내외)</p>
-                <p className="text-xs text-gray-500 mt-1">• 상승 초입에서 매수 → 상승 후 매도</p>
-                <p className="text-xs text-gray-500">• 목표: 5~10% 수익, 손절: -5% 이하</p>
-                <p className="text-xs text-gray-500">• 욕심내지 말고 적당한 수익에서 매도</p>
+                <p className="text-sm text-gray-600 font-medium">🎯 추천가 기준 매수 → 보유 전략</p>
+                <p className="text-xs text-gray-500 mt-1">• <strong>매수</strong>: 추천가(스캔일 종가) 기준 ±2% 이내 매수</p>
+                <p className="text-xs text-gray-500">• <strong>익절</strong>: +3% 도달 시 즉시 매도</p>
+                <p className="text-xs text-gray-500">• <strong>손절</strong>: -7% 하락 시 매도 (5일 후)</p>
+                <p className="text-xs text-gray-500">• <strong>보존</strong>: +1.5% 도달 후 원가 이하 시 매도</p>
                 <div className="mt-2 p-2 bg-green-100 rounded">
-                  <p className="text-xs text-green-700 font-medium">💡 핵심: 상승 파도를 타고 적당히 내리기</p>
+                  <p className="text-xs text-green-700 font-medium">💡 핵심: 종목당 100~200만원, 동시 3~5개 보유, 보유기간 5~45일</p>
                 </div>
                 <p className="text-xs text-red-500 mt-2 font-medium">⚠️ 투자는 본인 책임, 신중한 판단 필요</p>
               </div>
