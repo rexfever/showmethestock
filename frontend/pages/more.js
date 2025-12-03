@@ -300,11 +300,19 @@ export default function More() {
                       {isSpecialUser ? (
                         <>
                           <div className="special-user-name font-semibold text-lg">윤봄님</div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            <span className="special-user-badge inline-block px-2 py-0.5 text-xs font-semibold rounded-full text-white mr-2">
+                          <div className="text-sm text-gray-600 mt-1 flex items-center space-x-2">
+                            <span className="special-user-badge inline-block px-2 py-0.5 text-xs font-semibold rounded-full text-white">
                               💖 Special
                             </span>
-                            VIP 회원 ({user.provider})
+                            {user.membership_tier === 'vip' ? (
+                              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                👑 VIP
+                              </span>
+                            ) : user.membership_tier === 'premium' ? (
+                              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                👑 프리미엄
+                              </span>
+                            ) : null}
                           </div>
                         </>
                       ) : (
@@ -312,7 +320,8 @@ export default function More() {
                           <div className="font-semibold text-gray-900">{user.name}님</div>
                           <div className="text-sm text-gray-600">
                             {user.is_admin ? '🔧 관리자' : 
-                             user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
+                             user.membership_tier === 'vip' ? '👑 VIP 회원' :
+                             user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'}
                           </div>
                           {/* 디버깅 정보 */}
                           <div className="text-xs text-gray-400 mt-1">

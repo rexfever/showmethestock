@@ -32,7 +32,15 @@ export default function Header({ title = "스톡인사이트" }) {
                 <span className="special-user-badge px-2 py-0.5 text-xs font-semibold rounded-full text-white">
                   💖 Special
                 </span>
-                <span className="text-xs text-gray-400">({user.provider})</span>
+                {user.membership_tier === 'vip' ? (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                    👑 VIP
+                  </span>
+                ) : user.membership_tier === 'premium' ? (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    👑 프리미엄
+                  </span>
+                ) : null}
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -43,6 +51,10 @@ export default function Header({ title = "스톡인사이트" }) {
                   <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                     🔧 관리자
                   </span>
+                ) : user.membership_tier === 'vip' ? (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                    👑 VIP
+                  </span>
                 ) : user.membership_tier === 'premium' ? (
                   <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                     👑 프리미엄
@@ -52,7 +64,6 @@ export default function Header({ title = "스톡인사이트" }) {
                     일반 회원
                   </span>
                 )}
-                <span className="text-xs text-gray-400">({user.provider})</span>
               </div>
             )
           ) : !authLoading && authChecked ? (
