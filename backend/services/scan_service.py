@@ -75,6 +75,10 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
             return {"code": row[0], "date": row[1]} if len(row) >= 2 else {}
         
         # 결과를 종목별로 그룹화
+        # 한달(30일) 이내의 첫 등장일만 사용
+        from datetime import timedelta
+        one_month_ago = today_date_obj - timedelta(days=30)
+        
         for ticker in tickers:
             prev_dates = []
             for row in rows:
@@ -92,15 +96,19 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
                     else:
                         row_date_obj = row_date
                     
-                    if row_date_obj < today_date_obj:
+                    # 오늘 이전이고, 한달 이내인 날짜만 포함
+                    if row_date_obj < today_date_obj and row_date_obj >= one_month_ago:
                         # date 객체를 YYYYMMDD 문자열로 변환
                         if hasattr(row_date, 'strftime'):
                             prev_dates.append(row_date.strftime('%Y%m%d'))
                         else:
                             prev_dates.append(str(row_date))
+            
             if prev_dates:
-                last_as_of = prev_dates[0]
-                first_as_of = prev_dates[-1]
+                # 날짜 정렬 (오래된 순)
+                prev_dates_sorted = sorted(prev_dates)
+                last_as_of = prev_dates_sorted[-1]  # 가장 최근 등장일
+                first_as_of = prev_dates_sorted[0]  # 한달 이내 첫 등장일
                 try:
                     days_since_last = int((pd.to_datetime(today_as_of) - pd.to_datetime(last_as_of)).days)
                 except Exception:

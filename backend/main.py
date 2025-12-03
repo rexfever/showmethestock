@@ -2610,24 +2610,26 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             current_return = None
             should_recalculate_returns = False
             
+            # 재등장 종목인 경우 항상 재계산 (최초 추천일 기준으로 계산하기 위해)
+            recurrence = item.get("recurrence", {})
+            is_recurring = recurrence and recurrence.get("appeared_before", False)
+            first_as_of = recurrence.get("first_as_of") if is_recurring else None
+            
             if item["returns"] and isinstance(item["returns"], dict):
                 current_return = item["returns"].get("current_return")
                 
-                # 스캔일이 오늘이 아니면 항상 재계산 (매일 최신 수익률 표시를 위해)
+                # 재등장 종목이거나, 스캔일이 오늘이 아니면 항상 재계산
                 from date_helper import get_kst_now
                 today_str = get_kst_now().strftime('%Y%m%d')
-                if formatted_date < today_str:
-                    # 전일 이전 스캔이면 항상 재계산하여 최신 수익률 표시
+                if is_recurring or formatted_date < today_str:
+                    # 재등장 종목이거나 전일 이전 스캔이면 항상 재계산하여 최신 수익률 표시
                     should_recalculate_returns = True
                 
                 # current_return이 None이면 0으로 처리 (수익률 계산 실패 또는 데이터 없음)
                 if current_return is None:
                     current_return = 0
             
-            # 재등장 종목인 경우 최초 추천일 기준으로 수익률 계산
-            recurrence = item.get("recurrence", {})
-            is_recurring = recurrence and recurrence.get("appeared_before", False)
-            first_as_of = recurrence.get("first_as_of") if is_recurring else None
+            # 재등장 종목인 경우 최초 추천일 기준으로 수익률 계산 (위에서 이미 정의됨)
             
             # 재계산이 필요한 경우 실시간 계산
             if should_recalculate_returns and data.get("code") and data.get("code") != 'NORESULT':
