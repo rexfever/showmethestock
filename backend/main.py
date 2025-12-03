@@ -2556,8 +2556,9 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                 # 소수로 저장된 경우 퍼센트로 변환
                 change_rate = change_rate * 100
             
+            code = data.get("code")  # code 변수 정의
             item = {
-                "ticker": data.get("code"),
+                "ticker": code,
                 "name": data.get("name"),
                 "score": data.get("score"),
                 "score_label": data.get("score_label"),
