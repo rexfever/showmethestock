@@ -68,12 +68,19 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
         # today_as_of를 date 객체로 변환 (비교용)
         today_date_obj = yyyymmdd_to_date(today_as_of)
         
+        # row를 dict로 변환하는 헬퍼 함수
+        def _row_to_dict(row):
+            if isinstance(row, dict):
+                return row
+            return {"code": row[0], "date": row[1]} if len(row) >= 2 else {}
+        
         # 결과를 종목별로 그룹화
         for ticker in tickers:
             prev_dates = []
             for row in rows:
-                if row["code"] == ticker:
-                    row_date = row["date"]
+                row_dict = _row_to_dict(row)
+                if row_dict.get("code") == ticker:
+                    row_date = row_dict.get("date")
                     # date 객체인 경우 그대로 비교, 문자열인 경우 변환
                     if isinstance(row_date, str):
                         try:
