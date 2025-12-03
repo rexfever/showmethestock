@@ -97,3 +97,49 @@ export const isKakaoSDKReady = () => {
          window.Kakao && 
          window.Kakao.isInitialized();
 };
+
+/**
+ * 카카오톡 인앱 브라우저인지 확인
+ * @returns {boolean} 카카오톡 인앱 브라우저 여부
+ */
+export const isKakaoTalkBrowser = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  
+  // User-Agent로 카카오톡 인앱 브라우저 감지
+  const userAgent = window.navigator.userAgent || '';
+  const isKakaoTalk = /KAKAOTALK/i.test(userAgent);
+  
+  // 카카오 SDK가 로드되어 있으면 SDK 메서드 사용 (더 정확함)
+  if (window.Kakao && typeof window.Kakao.isKakaoTalkBrowser === 'function') {
+    return window.Kakao.isKakaoTalkBrowser();
+  }
+  
+  return isKakaoTalk;
+};
+
+/**
+ * 카카오톡 인앱 브라우저에서 자동 로그인 시도
+ * @returns {Promise} 로그인 결과
+ */
+export const autoLoginWithKakaoTalk = async () => {
+  return new Promise((resolve, reject) => {
+    // 카카오톡 인앱 브라우저가 아니면 실패
+    if (!isKakaoTalkBrowser()) {
+      reject(new Error('카카오톡 인앱 브라우저가 아닙니다.'));
+      return;
+    }
+    
+    // SDK가 준비되지 않았으면 실패
+    if (!isKakaoSDKReady()) {
+      reject(new Error('카카오 SDK가 준비되지 않았습니다.'));
+      return;
+    }
+    
+    // 카카오 로그인 실행 (카카오톡 앱에 로그인되어 있으면 자동으로 진행됨)
+    loginWithKakao()
+      .then(resolve)
+      .catch(reject);
+  });
+};
