@@ -2035,6 +2035,11 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             except Exception as e:
                 print(f"배치 수익률 계산 오류: {e}")
         
+        # 재등장 정보 계산 (모든 종목에 대해)
+        from services.scan_service import get_recurrence_data
+        all_tickers = [row_data.get("code") for row_data in [_row_to_dict(row) for row in rows] if row_data.get("code") and row_data.get("code") != 'NORESULT']
+        recurrence_data_map = get_recurrence_data(all_tickers, formatted_date) if all_tickers else {}
+        
         items = []
         for row in rows:
             data = _row_to_dict(row)
@@ -2526,6 +2531,11 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
         if not rows:
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
+        # 재등장 정보 계산 (모든 종목에 대해)
+        from services.scan_service import get_recurrence_data
+        all_tickers = [row_data.get("code") for row_data in [_row_to_dict(row) for row in rows] if row_data.get("code") and row_data.get("code") != 'NORESULT']
+        recurrence_data_map = get_recurrence_data(all_tickers, formatted_date) if all_tickers else {}
+        
         items = []
         for row in rows:
             data = _row_to_dict(row)
@@ -2561,7 +2571,7 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                 "flags": json.loads(flags) if isinstance(flags, str) and flags else (flags or {}),
                 "details": json.loads(details) if isinstance(details, str) and details else (details or {}),
                 "returns": json.loads(returns) if isinstance(returns, str) and returns else (returns or {}),
-                "recurrence": json.loads(recurrence) if isinstance(recurrence, str) and recurrence else (recurrence or {}),
+                "recurrence": recurrence_data_map.get(code, json.loads(recurrence) if isinstance(recurrence, str) and recurrence else (recurrence or {})),
             }
             # returns 필드 호환성 보정
             if not item["returns"]:
