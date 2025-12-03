@@ -32,6 +32,7 @@ export default function Header({ title = "스톡인사이트" }) {
                 <span className="special-user-badge px-2 py-0.5 text-xs font-semibold rounded-full text-white">
                   💖 Special
                 </span>
+                <span className="text-xs text-gray-400">({user.provider})</span>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
