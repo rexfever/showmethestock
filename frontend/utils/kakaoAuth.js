@@ -161,6 +161,13 @@ export const checkKakaoSession = async () => {
         success: (res) => {
           console.log('카카오 세션 확인 성공:', res);
           
+          // 응답 데이터 검증
+          if (!res || !res.kakao_account || !res.kakao_account.profile) {
+            console.warn('카카오 사용자 정보 형식이 올바르지 않습니다.');
+            resolve(null);
+            return;
+          }
+          
           const kakaoAccount = res.kakao_account;
           const profile = kakaoAccount.profile;
           
@@ -182,7 +189,17 @@ export const checkKakaoSession = async () => {
           resolve(userInfo);
         },
         fail: (error) => {
-          console.error('카카오 사용자 정보 조회 실패:', error);
+          // 에러 코드 확인
+          const errorCode = error?.code || error?.error || 'UNKNOWN';
+          const errorMessage = error?.msg || error?.message || '알 수 없는 오류';
+          
+          // 토큰 만료 또는 인증 실패 (401, -401 등)
+          if (errorCode === -401 || errorCode === 401 || errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+            console.warn('카카오 토큰이 만료되었거나 유효하지 않습니다:', errorMessage);
+          } else {
+            console.error('카카오 사용자 정보 조회 실패:', errorCode, errorMessage);
+          }
+          
           // 토큰이 만료되었을 수 있으므로 null 반환 (에러 아님)
           resolve(null);
         }

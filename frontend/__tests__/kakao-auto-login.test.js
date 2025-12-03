@@ -213,5 +213,45 @@ describe('일반 브라우저 카카오 세션 자동 로그인', () => {
     expect(result.provider).toBe('kakao');
     expect(result.access_token).toBe('mock_access_token');
   });
+
+  test('카카오 토큰 만료 시 null 반환', async () => {
+    global.window.Kakao.API.request = jest.fn(({ fail }) => {
+      fail({
+        code: -401,
+        msg: '토큰이 만료되었습니다.'
+      });
+    });
+    
+    const result = await checkKakaoSession();
+    
+    expect(result).toBeNull();
+    expect(global.window.Kakao.API.request).toHaveBeenCalled();
+  });
+
+  test('카카오 API 호출 실패 시 null 반환', async () => {
+    global.window.Kakao.API.request = jest.fn(({ fail }) => {
+      fail({
+        code: -1,
+        msg: '알 수 없는 오류'
+      });
+    });
+    
+    const result = await checkKakaoSession();
+    
+    expect(result).toBeNull();
+  });
+
+  test('카카오 응답 데이터 검증 실패 시 null 반환', async () => {
+    global.window.Kakao.API.request = jest.fn(({ success }) => {
+      success({
+        id: '123456789'
+        // kakao_account가 없음
+      });
+    });
+    
+    const result = await checkKakaoSession();
+    
+    expect(result).toBeNull();
+  });
 });
 

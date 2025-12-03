@@ -7,6 +7,10 @@ import { isKakaoTalkBrowser, autoLoginWithKakaoTalk, autoLoginWithKakaoSession, 
 import getConfig from '../config';
 import Cookies from 'js-cookie';
 
+// localStorage 키를 사용하여 중복 로그인 시도 방지
+const AUTO_LOGIN_ATTEMPT_KEY = 'kakao_auto_login_attempt';
+const AUTO_LOGIN_ATTEMPT_TIMEOUT = 5000; // 5초
+
 // 카카오 SDK 로드 및 초기화
 const loadKakaoSDK = () => {
   if (typeof window === 'undefined') {
@@ -81,6 +85,14 @@ function AutoKakaoLoginHandler() {
   // 카카오 로그인 성공 처리 함수
   const handleKakaoLoginSuccess = useCallback(async (kakaoUserInfo) => {
     try {
+      // 다시 한번 로그인 상태 확인 (경쟁 조건 방지)
+      const existingToken = localStorage.getItem('token') || Cookies.get('auth_token');
+      if (existingToken) {
+        console.log('이미 로그인되어 있습니다. 중복 로그인 시도 방지');
+        isAttemptingRef.current = false;
+        return;
+      }
+      
       // 백엔드로 소셜 로그인 요청
       const config = getConfig();
       const base = config.backendUrl;
@@ -99,7 +111,16 @@ function AutoKakaoLoginHandler() {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: '로그인 실패' }));
-        throw new Error(errorData.detail || '로그인 실패');
+        const errorMessage = errorData.detail || '로그인 실패';
+        
+        // 401 에러는 토큰 만료 또는 인증 실패
+        if (response.status === 401) {
+          console.warn('카카오 토큰이 만료되었거나 유효하지 않습니다:', errorMessage);
+        } else {
+          console.error('자동 로그인 API 호출 실패:', errorMessage);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
@@ -114,8 +135,12 @@ function AutoKakaoLoginHandler() {
       Cookies.set('auth_token', data.access_token, { expires: 7 });
       
       console.log('자동 로그인 완료');
+      // 성공 시 localStorage 플래그 제거
+      localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
     } catch (error) {
       console.error('자동 로그인 API 호출 실패:', error);
+      // 에러 발생 시에도 플래그 해제하여 재시도 가능하도록 함
+      localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
     } finally {
       isAttemptingRef.current = false;
     }
@@ -139,14 +164,27 @@ function AutoKakaoLoginHandler() {
       return;
     }
     
-    // 이미 로그인되어 있으면 스킵
-    if (isAuthenticated()) {
+    // 이미 로그인되어 있으면 스킵 (토큰과 사용자 정보 모두 확인)
+    const token = localStorage.getItem('token') || Cookies.get('auth_token');
+    const user = localStorage.getItem('user');
+    if (token && user && isAuthenticated()) {
       return;
     }
     
     // 이미 자동 로그인 시도 중이면 스킵
     if (isAttemptingRef.current) {
       return;
+    }
+    
+    // localStorage를 사용한 중복 시도 방지 (다른 탭에서 시도 중인 경우)
+    const lastAttempt = localStorage.getItem(AUTO_LOGIN_ATTEMPT_KEY);
+    if (lastAttempt) {
+      const lastAttemptTime = parseInt(lastAttempt, 10);
+      const now = Date.now();
+      if (now - lastAttemptTime < AUTO_LOGIN_ATTEMPT_TIMEOUT) {
+        console.log('최근 자동 로그인 시도가 있었습니다. 잠시 대기합니다.');
+        return;
+      }
     }
     
     // 로그인 페이지나 콜백 페이지에서는 자동 로그인 시도하지 않음
@@ -156,12 +194,22 @@ function AutoKakaoLoginHandler() {
     
     // 자동 로그인 시도 플래그 설정
     isAttemptingRef.current = true;
+    localStorage.setItem(AUTO_LOGIN_ATTEMPT_KEY, Date.now().toString());
     
     // 카카오 SDK 로드 및 자동 로그인 시도
     loadKakaoSDK()
       .then(() => {
         // SDK 로드 후 약간의 지연을 두고 자동 로그인 시도
         timeoutRef.current = setTimeout(() => {
+          // 다시 한번 로그인 상태 확인 (경쟁 조건 방지)
+          const currentToken = localStorage.getItem('token') || Cookies.get('auth_token');
+          const currentUser = localStorage.getItem('user');
+          if (currentToken && currentUser) {
+            console.log('이미 로그인되어 있습니다. 자동 로그인 스킵');
+            isAttemptingRef.current = false;
+            return;
+          }
+          
           if (isKakaoSDKReady()) {
             // 카카오톡 인앱 브라우저인 경우
             if (isKakaoTalkBrowser()) {
@@ -170,6 +218,7 @@ function AutoKakaoLoginHandler() {
                 .catch((error) => {
                   // 자동 로그인 실패는 정상 (사용자가 카카오톡에 로그인하지 않았거나 취소한 경우)
                   console.log('카카오톡 자동 로그인 실패 (정상):', error.message);
+                  localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
                   isAttemptingRef.current = false;
                 });
             } else {
@@ -182,25 +231,29 @@ function AutoKakaoLoginHandler() {
                   } else {
                     // 세션이 없으면 정상 (사용자가 카카오에 로그인하지 않음)
                     console.log('카카오 세션이 없습니다. (정상)');
+                    localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
                     isAttemptingRef.current = false;
                   }
                 })
                 .catch((error) => {
                   console.error('카카오 세션 확인 실패:', error);
+                  localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
                   isAttemptingRef.current = false;
                 });
             }
           } else {
             console.warn('카카오 SDK가 준비되지 않았습니다.');
+            localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
             isAttemptingRef.current = false;
           }
         }, 500);
       })
       .catch((error) => {
         console.error('카카오 SDK 로드 실패:', error);
+        localStorage.removeItem(AUTO_LOGIN_ATTEMPT_KEY);
         isAttemptingRef.current = false;
       });
-  }, [router.pathname, authChecked, isAuthenticated, setUser, setToken, handleKakaoLoginSuccess]);
+  }, [router.pathname, authChecked, setUser, setToken, handleKakaoLoginSuccess]);
   
   return null;
 }
