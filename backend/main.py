@@ -771,12 +771,24 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
             for idx, it in enumerate(scan_items):
                 # 원본 flags dict 가져오기 (ScanItem 변환 전)
                 original_flags = items[idx]["flags"] if idx < len(items) else {}
+                
+                # strategy 추출: it.strategy > original_flags.trading_strategy (우선순위)
+                strategy_value = None
+                if hasattr(it, 'strategy') and it.strategy:
+                    strategy_value = it.strategy
+                elif isinstance(original_flags, dict) and original_flags.get("trading_strategy"):
+                    strategy_value = original_flags.get("trading_strategy")
+                elif hasattr(it, 'flags') and hasattr(it.flags, '__dict__'):
+                    flags_dict = it.flags.__dict__
+                    if isinstance(flags_dict, dict) and flags_dict.get("trading_strategy"):
+                        strategy_value = flags_dict.get("trading_strategy")
+                
                 scan_items_dict.append({
                     'ticker': it.ticker,
                     'name': it.name,
                     'score': it.score,
                     'score_label': it.score_label,
-                    'strategy': it.strategy if hasattr(it, 'strategy') and it.strategy else None,
+                    'strategy': strategy_value,
                     'flags': original_flags if isinstance(original_flags, dict) else (it.flags.__dict__ if hasattr(it.flags, '__dict__') else {}),
                 })
             save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
