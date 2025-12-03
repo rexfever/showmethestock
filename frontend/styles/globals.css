@@ -16,4 +16,169 @@ body {
 .bg-slate-100 { background-color: #f1f5f9; }
 .text-slate-700 { color: #374151; }
 
+/* 특별 사용자 애니메이션 */
+@keyframes twinkle {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.05); 
+  }
+}
+
+@keyframes heartBeat {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  25% { 
+    transform: scale(1.1); 
+  }
+  50% { 
+    transform: scale(1); 
+  }
+  75% { 
+    transform: scale(1.05); 
+  }
+}
+
+@keyframes gradient {
+  0% { 
+    background-position: 0% 50%; 
+  }
+  50% { 
+    background-position: 100% 50%; 
+  }
+  100% { 
+    background-position: 0% 50%; 
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 1; 
+    transform: rotate(0deg) scale(1); 
+  }
+  50% { 
+    opacity: 0.5; 
+    transform: rotate(180deg) scale(1.2); 
+  }
+}
+
+/* 특별 사용자 스타일 */
+.special-user-name {
+  background: linear-gradient(90deg, #ff6b9d, #c44569, #ff6b9d);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient 3s ease infinite, twinkle 2s ease-in-out infinite;
+  font-weight: bold;
+  will-change: transform, opacity;
+}
+
+.special-user-badge {
+  animation: heartBeat 1.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  will-change: transform;
+}
+
+.special-user-icon {
+  animation: sparkle 2s ease-in-out infinite;
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* 접근성: 애니메이션 선호도 설정 */
+@media (prefers-reduced-motion: reduce) {
+  .special-user-name,
+  .special-user-badge,
+  .special-user-icon {
+    animation: none;
+  }
+}
+/* 특별 사용자 애니메이션 */
+@keyframes twinkle {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.05); 
+  }
+}
+
+@keyframes heartBeat {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  25% { 
+    transform: scale(1.1); 
+  }
+  50% { 
+    transform: scale(1); 
+  }
+  75% { 
+    transform: scale(1.05); 
+  }
+}
+
+@keyframes gradient {
+  0% { 
+    background-position: 0% 50%; 
+  }
+  50% { 
+    background-position: 100% 50%; 
+  }
+  100% { 
+    background-position: 0% 50%; 
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 1; 
+    transform: rotate(0deg) scale(1); 
+  }
+  50% { 
+    opacity: 0.5; 
+    transform: rotate(180deg) scale(1.2); 
+  }
+}
+
+/* 특별 사용자 스타일 */
+.special-user-name {
+  background: linear-gradient(90deg, #ff6b9d, #c44569, #ff6b9d);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient 3s ease infinite, twinkle 2s ease-in-out infinite;
+  font-weight: bold;
+  will-change: transform, opacity;
+}
+
+.special-user-badge {
+  animation: heartBeat 1.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  will-change: transform;
+}
+
+.special-user-icon {
+  animation: sparkle 2s ease-in-out infinite;
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* 접근성: 애니메이션 비활성화 옵션 */
+@media (prefers-reduced-motion: reduce) {
+  .special-user-name,
+  .special-user-badge,
+  .special-user-icon {
+    animation: none;
+  }
+}
+
 

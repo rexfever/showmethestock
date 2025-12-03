@@ -284,28 +284,51 @@ export default function More() {
         <div className="p-4">
           {/* 사용자 정보 카드 */}
           {!authLoading && authChecked && user ? (
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-xl">👤</span>
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-900">{user.name}님</div>
-                  <div className="text-sm text-gray-600">
-                    {user.is_admin ? '🔧 관리자' : 
-                     user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
+            (() => {
+              const isSpecialUser = user?.email === 'kuksos80215@daum.net';
+              return (
+                <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 ${isSpecialUser ? 'bg-gradient-to-br from-pink-100 to-rose-100' : 'bg-blue-100'} rounded-full flex items-center justify-center`}>
+                      {isSpecialUser ? (
+                        <span className="special-user-icon text-xl">✨</span>
+                      ) : (
+                        <span className="text-xl">👤</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      {isSpecialUser ? (
+                        <>
+                          <div className="special-user-name font-semibold text-lg">윤봄님</div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            <span className="special-user-badge inline-block px-2 py-0.5 text-xs font-semibold rounded-full text-white mr-2">
+                              💖 Special
+                            </span>
+                            VIP 회원 ({user.provider})
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-semibold text-gray-900">{user.name}님</div>
+                          <div className="text-sm text-gray-600">
+                            {user.is_admin ? '🔧 관리자' : 
+                             user.membership_tier === 'premium' ? '👑 프리미엄 회원' : '일반 회원'} ({user.provider})
+                          </div>
+                          {/* 디버깅 정보 */}
+                          <div className="text-xs text-gray-400 mt-1">
+                            Debug: is_admin={String(user.is_admin)} ({typeof user.is_admin}), tier={user.membership_tier}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">포인트</div>
+                      <div className="font-semibold text-blue-600">0P</div>
+                    </div>
                   </div>
-                  {/* 디버깅 정보 */}
-                  <div className="text-xs text-gray-400 mt-1">
-                    Debug: is_admin={String(user.is_admin)} ({typeof user.is_admin}), tier={user.membership_tier}
-                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-500">포인트</div>
-                  <div className="font-semibold text-blue-600">0P</div>
-                </div>
-              </div>
-            </div>
+              );
+            })()
           ) : (
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
               <div className="text-center">

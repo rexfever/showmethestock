@@ -5,6 +5,11 @@ export default function Header({ title = "스톡인사이트" }) {
   const router = useRouter();
   const { user, authLoading, authChecked } = useAuth();
 
+  // 특별 사용자 확인 함수
+  const isSpecialUser = (user) => {
+    return user?.email === 'kuksos80215@daum.net';
+  };
+
   return (
     <div className="bg-white shadow-sm">
       <div className="flex items-center justify-between p-4">
@@ -18,25 +23,37 @@ export default function Header({ title = "스톡인사이트" }) {
         </div>
         <div className="flex items-center space-x-3">
           {!authLoading && authChecked && user ? (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">
-                {user.name}님
-              </span>
-              {user.is_admin ? (
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                  🔧 관리자
+            isSpecialUser(user) ? (
+              <div className="flex items-center space-x-2">
+                <span className="special-user-icon text-lg">✨</span>
+                <span className="special-user-name text-sm">
+                  윤봄님
                 </span>
-              ) : user.membership_tier === 'premium' ? (
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                  👑 프리미엄
+                <span className="special-user-badge px-2 py-0.5 text-xs font-semibold rounded-full text-white">
+                  💖 Special
                 </span>
-              ) : (
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
-                  일반 회원
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">
+                  {user.name}님
                 </span>
-              )}
-              <span className="text-xs text-gray-400">({user.provider})</span>
-            </div>
+                {user.is_admin ? (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                    🔧 관리자
+                  </span>
+                ) : user.membership_tier === 'premium' ? (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    👑 프리미엄
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                    일반 회원
+                  </span>
+                )}
+                <span className="text-xs text-gray-400">({user.provider})</span>
+              </div>
+            )
           ) : !authLoading && authChecked ? (
             <span className="text-sm text-gray-500">게스트 사용자</span>
           ) : (
