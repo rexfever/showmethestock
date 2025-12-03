@@ -2697,9 +2697,11 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                 if not recommended_price or recommended_price == scan_date_close_price:
                     try:
                         from kiwoom_api import api
-                        df_first = api.get_ohlcv(code, 1, first_as_of)
-                        if not df_first.empty:
-                            recommended_price = float(df_first.iloc[-1]['close'])
+                        code = data.get("code")  # code 변수 정의
+                        if code and code != 'NORESULT':
+                            df_first = api.get_ohlcv(code, 1, first_as_of)
+                            if not df_first.empty:
+                                recommended_price = float(df_first.iloc[-1]['close'])
                     except:
                         pass  # 실패 시 기존 값 유지
             else:
