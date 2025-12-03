@@ -766,16 +766,19 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         }
         try:
             # save_scan_snapshot 사용 (scanner_version 포함)
-            scan_items_dict = [
-                {
+            # 원본 item["flags"]를 사용하여 trading_strategy 보존
+            scan_items_dict = []
+            for idx, it in enumerate(scan_items):
+                # 원본 flags dict 가져오기 (ScanItem 변환 전)
+                original_flags = items[idx]["flags"] if idx < len(items) else {}
+                scan_items_dict.append({
                     'ticker': it.ticker,
                     'name': it.name,
                     'score': it.score,
                     'score_label': it.score_label,
-                    'flags': it.flags.__dict__ if hasattr(it.flags, '__dict__') else {},
-                }
-                for it in scan_items
-            ]
+                    'strategy': it.strategy if hasattr(it, 'strategy') and it.strategy else None,
+                    'flags': original_flags if isinstance(original_flags, dict) else (it.flags.__dict__ if hasattr(it.flags, '__dict__') else {}),
+                })
             save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
             
             # 시장 상황도 함께 저장

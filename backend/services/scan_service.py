@@ -199,6 +199,20 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                         returns_data = it.get("returns", {})
                         recurrence_data = it.get("recurrence", {})
                         
+                        # strategy 추출: 직접 필드 > flags.trading_strategy (우선순위)
+                        strategy_value = it.get("strategy")
+                        if not strategy_value:
+                            # flags에서 trading_strategy 추출
+                            flags_dict = it.get("flags", {})
+                            if isinstance(flags_dict, str):
+                                try:
+                                    flags_dict = json.loads(flags_dict)
+                                except:
+                                    flags_dict = {}
+                            elif not isinstance(flags_dict, dict):
+                                flags_dict = {}
+                            strategy_value = flags_dict.get("trading_strategy") if flags_dict else None
+                        
                         enhanced_rank.append({
                             "date": date_obj,
                             "code": it["ticker"],
@@ -211,7 +225,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                             "change_rate": round(float(scan_change_rate), 2),  # 퍼센트로 저장, 소수점 2자리
                             "returns": json.dumps(returns_data, ensure_ascii=False) if returns_data else None,
                             "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
-                            "strategy": it.get("strategy") or (it.get("flags", {}).get("trading_strategy") if isinstance(it.get("flags"), dict) else None),
+                            "strategy": strategy_value,
                             "scanner_version": scanner_version,
                         })
                     else:
@@ -226,6 +240,20 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                             returns_data = it.get("returns", {})
                             recurrence_data = it.get("recurrence", {})
                             
+                            # strategy 추출: 직접 필드 > flags.trading_strategy (우선순위)
+                            strategy_value = it.get("strategy")
+                            if not strategy_value:
+                                # flags에서 trading_strategy 추출
+                                flags_dict = it.get("flags", {})
+                                if isinstance(flags_dict, str):
+                                    try:
+                                        flags_dict = json.loads(flags_dict)
+                                    except:
+                                        flags_dict = {}
+                                elif not isinstance(flags_dict, dict):
+                                    flags_dict = {}
+                                strategy_value = flags_dict.get("trading_strategy") if flags_dict else None
+                            
                             enhanced_rank.append({
                                 "date": date_obj,
                                 "code": it["ticker"],
@@ -238,7 +266,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                                 "change_rate": round(float(change_rate), 2),
                                 "returns": json.dumps(returns_data, ensure_ascii=False) if returns_data else None,
                                 "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
-                                "strategy": it.get("strategy") or (it.get("flags", {}).get("trading_strategy") if isinstance(it.get("flags"), dict) else None),
+                                "strategy": strategy_value,
                                 "scanner_version": scanner_version,
                             })
                 except Exception as e:
