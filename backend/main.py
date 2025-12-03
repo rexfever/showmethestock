@@ -2671,8 +2671,14 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                         # 오늘 종가 업데이트
                         if calculated_returns.get('current_price') and calculated_returns.get('current_price') > 0:
                             today_close_price = calculated_returns.get('current_price')
+                    else:
+                        # 수익률 계산 실패 시 로그 출력
+                        if is_recurring:
+                            print(f"⚠️ 재등장 종목 수익률 계산 실패 ({code}): first_as_of={first_as_of}, calculated_returns={calculated_returns}")
                 except Exception as e:
                     print(f"수익률 재계산 오류 ({data.get('code')}): {e}")
+                    import traceback
+                    traceback.print_exc()
             
             # 프론트엔드에 표시할 가격: 오늘 종가 우선, 없으면 스캔일 종가
             display_price = today_close_price if today_close_price and today_close_price > 0 else scan_date_close_price
