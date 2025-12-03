@@ -120,6 +120,81 @@ export const isKakaoTalkBrowser = () => {
 };
 
 /**
+ * 카카오 액세스 토큰 가져오기
+ * @returns {string|null} 액세스 토큰 또는 null
+ */
+export const getKakaoAccessToken = () => {
+  if (typeof window === 'undefined' || !window.Kakao || !isKakaoSDKReady()) {
+    return null;
+  }
+  
+  try {
+    return window.Kakao.Auth.getAccessToken() || null;
+  } catch (error) {
+    console.error('카카오 토큰 가져오기 실패:', error);
+    return null;
+  }
+};
+
+/**
+ * 카카오 세션 확인 및 사용자 정보 가져오기
+ * @returns {Promise} 사용자 정보 또는 null
+ */
+export const checkKakaoSession = async () => {
+  return new Promise((resolve, reject) => {
+    if (!isKakaoSDKReady()) {
+      reject(new Error('카카오 SDK가 준비되지 않았습니다.'));
+      return;
+    }
+    
+    // 액세스 토큰 확인
+    const accessToken = getKakaoAccessToken();
+    if (!accessToken) {
+      resolve(null); // 토큰이 없으면 null 반환 (에러 아님)
+      return;
+    }
+    
+    // 사용자 정보 가져오기
+    try {
+      window.Kakao.API.request({
+        url: '/v2/user/me',
+        success: (res) => {
+          console.log('카카오 세션 확인 성공:', res);
+          
+          const kakaoAccount = res.kakao_account;
+          const profile = kakaoAccount.profile;
+          
+          const userInfo = {
+            access_token: accessToken,
+            provider: 'kakao',
+            user_info: {
+              provider_id: res.id.toString(),
+              email: kakaoAccount.email || '',
+              name: profile.nickname || '',
+              profile_image: profile.profile_image_url || '',
+              phone_number: kakaoAccount.phone_number || '',
+              gender: kakaoAccount.gender || '',
+              age_range: kakaoAccount.age_range || '',
+              birthday: kakaoAccount.birthday || ''
+            }
+          };
+          
+          resolve(userInfo);
+        },
+        fail: (error) => {
+          console.error('카카오 사용자 정보 조회 실패:', error);
+          // 토큰이 만료되었을 수 있으므로 null 반환 (에러 아님)
+          resolve(null);
+        }
+      });
+    } catch (error) {
+      console.error('카카오 세션 확인 중 오류:', error);
+      resolve(null);
+    }
+  });
+};
+
+/**
  * 카카오톡 인앱 브라우저에서 자동 로그인 시도
  * @returns {Promise} 로그인 결과
  */
@@ -140,6 +215,32 @@ export const autoLoginWithKakaoTalk = async () => {
     // 카카오 로그인 실행 (카카오톡 앱에 로그인되어 있으면 자동으로 진행됨)
     loginWithKakao()
       .then(resolve)
+      .catch(reject);
+  });
+};
+
+/**
+ * 일반 브라우저에서 카카오 세션 확인 및 자동 로그인 시도
+ * @returns {Promise} 로그인 결과 또는 null
+ */
+export const autoLoginWithKakaoSession = async () => {
+  return new Promise((resolve, reject) => {
+    // SDK가 준비되지 않았으면 실패
+    if (!isKakaoSDKReady()) {
+      reject(new Error('카카오 SDK가 준비되지 않았습니다.'));
+      return;
+    }
+    
+    // 카카오 세션 확인
+    checkKakaoSession()
+      .then((userInfo) => {
+        if (userInfo) {
+          resolve(userInfo);
+        } else {
+          // 세션이 없으면 null 반환 (에러 아님)
+          resolve(null);
+        }
+      })
       .catch(reject);
   });
 };

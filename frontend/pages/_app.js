@@ -1,9 +1,9 @@
 import '../styles/globals.css';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { isKakaoTalkBrowser, autoLoginWithKakaoTalk, isKakaoSDKReady } from '../utils/kakaoAuth';
+import { isKakaoTalkBrowser, autoLoginWithKakaoTalk, autoLoginWithKakaoSession, isKakaoSDKReady } from '../utils/kakaoAuth';
 import getConfig from '../config';
 import Cookies from 'js-cookie';
 
@@ -78,6 +78,49 @@ function AutoKakaoLoginHandler() {
   const timeoutRef = useRef(null);
   const intervalRef = useRef(null);
   
+  // 카카오 로그인 성공 처리 함수
+  const handleKakaoLoginSuccess = useCallback(async (kakaoUserInfo) => {
+    try {
+      // 백엔드로 소셜 로그인 요청
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const response = await fetch(`${base}/auth/social-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: kakaoUserInfo.provider,
+          access_token: kakaoUserInfo.access_token,
+          user_info: kakaoUserInfo.user_info
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: '로그인 실패' }));
+        throw new Error(errorData.detail || '로그인 실패');
+      }
+      
+      const data = await response.json();
+      
+      // AuthContext 상태 업데이트 (동기화 보장)
+      setToken(data.access_token);
+      setUser(data.user);
+      
+      // localStorage와 쿠키에 저장 (AuthContext와 동기화)
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      Cookies.set('auth_token', data.access_token, { expires: 7 });
+      
+      console.log('자동 로그인 완료');
+    } catch (error) {
+      console.error('자동 로그인 API 호출 실패:', error);
+    } finally {
+      isAttemptingRef.current = false;
+    }
+  }, [setUser, setToken]);
+  
   useEffect(() => {
     // cleanup 함수
     return () => {
@@ -111,11 +154,6 @@ function AutoKakaoLoginHandler() {
       return;
     }
     
-    // 카카오톡 인앱 브라우저인지 확인
-    if (!isKakaoTalkBrowser()) {
-      return;
-    }
-    
     // 자동 로그인 시도 플래그 설정
     isAttemptingRef.current = true;
     
@@ -125,55 +163,33 @@ function AutoKakaoLoginHandler() {
         // SDK 로드 후 약간의 지연을 두고 자동 로그인 시도
         timeoutRef.current = setTimeout(() => {
           if (isKakaoSDKReady()) {
-            autoLoginWithKakaoTalk()
-              .then(async (kakaoUserInfo) => {
-                console.log('카카오톡 자동 로그인 성공:', kakaoUserInfo);
-                
-                try {
-                  // 백엔드로 소셜 로그인 요청
-                  const config = getConfig();
-                  const base = config.backendUrl;
-                  
-                  const response = await fetch(`${base}/auth/social-login`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      provider: kakaoUserInfo.provider,
-                      access_token: kakaoUserInfo.access_token,
-                      user_info: kakaoUserInfo.user_info
-                    }),
-                  });
-                  
-                  if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ detail: '로그인 실패' }));
-                    throw new Error(errorData.detail || '로그인 실패');
-                  }
-                  
-                  const data = await response.json();
-                  
-                  // AuthContext 상태 업데이트 (동기화 보장)
-                  setToken(data.access_token);
-                  setUser(data.user);
-                  
-                  // localStorage와 쿠키에 저장 (AuthContext와 동기화)
-                  localStorage.setItem('token', data.access_token);
-                  localStorage.setItem('user', JSON.stringify(data.user));
-                  Cookies.set('auth_token', data.access_token, { expires: 7 });
-                  
-                  console.log('자동 로그인 완료');
-                } catch (error) {
-                  console.error('자동 로그인 API 호출 실패:', error);
-                } finally {
+            // 카카오톡 인앱 브라우저인 경우
+            if (isKakaoTalkBrowser()) {
+              autoLoginWithKakaoTalk()
+                .then(handleKakaoLoginSuccess)
+                .catch((error) => {
+                  // 자동 로그인 실패는 정상 (사용자가 카카오톡에 로그인하지 않았거나 취소한 경우)
+                  console.log('카카오톡 자동 로그인 실패 (정상):', error.message);
                   isAttemptingRef.current = false;
-                }
-              })
-              .catch((error) => {
-                // 자동 로그인 실패는 정상 (사용자가 카카오톡에 로그인하지 않았거나 취소한 경우)
-                console.log('카카오톡 자동 로그인 실패 (정상):', error.message);
-                isAttemptingRef.current = false;
-              });
+                });
+            } else {
+              // 일반 브라우저인 경우 - 카카오 세션 확인
+              autoLoginWithKakaoSession()
+                .then((kakaoUserInfo) => {
+                  if (kakaoUserInfo) {
+                    console.log('카카오 세션 자동 로그인 성공:', kakaoUserInfo);
+                    handleKakaoLoginSuccess(kakaoUserInfo);
+                  } else {
+                    // 세션이 없으면 정상 (사용자가 카카오에 로그인하지 않음)
+                    console.log('카카오 세션이 없습니다. (정상)');
+                    isAttemptingRef.current = false;
+                  }
+                })
+                .catch((error) => {
+                  console.error('카카오 세션 확인 실패:', error);
+                  isAttemptingRef.current = false;
+                });
+            }
           } else {
             console.warn('카카오 SDK가 준비되지 않았습니다.');
             isAttemptingRef.current = false;
@@ -184,7 +200,7 @@ function AutoKakaoLoginHandler() {
         console.error('카카오 SDK 로드 실패:', error);
         isAttemptingRef.current = false;
       });
-  }, [router.pathname, authChecked, isAuthenticated, setUser, setToken]);
+  }, [router.pathname, authChecked, isAuthenticated, setUser, setToken, handleKakaoLoginSuccess]);
   
   return null;
 }

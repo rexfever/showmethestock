@@ -2,7 +2,7 @@
  * 카카오톡 인앱 브라우저 자동 로그인 테스트
  */
 
-import { isKakaoTalkBrowser, autoLoginWithKakaoTalk, isKakaoSDKReady } from '../utils/kakaoAuth';
+import { isKakaoTalkBrowser, autoLoginWithKakaoTalk, autoLoginWithKakaoSession, checkKakaoSession, getKakaoAccessToken, isKakaoSDKReady } from '../utils/kakaoAuth';
 
 // Mock window 객체
 const mockWindow = {
@@ -144,6 +144,74 @@ describe('자동 로그인', () => {
     expect(result).toHaveProperty('provider', 'kakao');
     expect(result).toHaveProperty('user_info');
     expect(global.window.Kakao.Auth.login).toHaveBeenCalled();
+  });
+});
+
+describe('일반 브라우저 카카오 세션 자동 로그인', () => {
+  beforeEach(() => {
+    global.window = {
+      ...mockWindow,
+      Kakao: {
+        isInitialized: jest.fn(() => true),
+        Auth: {
+          getAccessToken: jest.fn(() => 'mock_access_token'),
+        },
+        API: {
+          request: jest.fn(({ success }) => {
+            success({
+              id: '123456789',
+              kakao_account: {
+                email: 'test@example.com',
+                profile: {
+                  nickname: 'Test User',
+                  profile_image_url: 'https://example.com/image.jpg'
+                }
+              }
+            });
+          })
+        }
+      }
+    };
+    global.window.navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    delete global.window;
+  });
+
+  test('카카오 세션이 있는 경우 자동 로그인 성공', async () => {
+    const result = await autoLoginWithKakaoSession();
+    
+    expect(result).toBeTruthy();
+    expect(result.provider).toBe('kakao');
+    expect(result.access_token).toBe('mock_access_token');
+    expect(global.window.Kakao.Auth.getAccessToken).toHaveBeenCalled();
+    expect(global.window.Kakao.API.request).toHaveBeenCalled();
+  });
+
+  test('카카오 세션이 없는 경우 null 반환', async () => {
+    global.window.Kakao.Auth.getAccessToken = jest.fn(() => null);
+    
+    const result = await autoLoginWithKakaoSession();
+    
+    expect(result).toBeNull();
+    expect(global.window.Kakao.Auth.getAccessToken).toHaveBeenCalled();
+  });
+
+  test('getKakaoAccessToken 함수 테스트', () => {
+    const token = getKakaoAccessToken();
+    
+    expect(token).toBe('mock_access_token');
+    expect(global.window.Kakao.Auth.getAccessToken).toHaveBeenCalled();
+  });
+
+  test('checkKakaoSession 함수 테스트', async () => {
+    const result = await checkKakaoSession();
+    
+    expect(result).toBeTruthy();
+    expect(result.provider).toBe('kakao');
+    expect(result.access_token).toBe('mock_access_token');
   });
 });
 
