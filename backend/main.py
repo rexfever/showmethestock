@@ -1960,18 +1960,78 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
         if codes_needing_calculation:
             from services.returns_service import calculate_returns_batch
             try:
-                # DB의 close_price를 scan_price로 사용 (스캔일 종가)
-                scan_prices = {}
+                # 재등장 종목인 경우 최초 추천일 기준으로 수익률 계산
+                # 먼저 recurrence 데이터를 파싱하여 최초 추천일 확인
+                recurrence_map = {}
                 for row in rows:
                     row_data = _row_to_dict(row)
                     code = row_data.get("code")
                     if code in codes_needing_calculation:
-                        close_price = row_data.get("current_price")  # current_price는 close_price로 매핑됨
-                        if close_price and close_price > 0:
-                            scan_prices[code] = float(close_price)
+                        recurrence_raw = row_data.get("recurrence")
+                        if recurrence_raw:
+                            try:
+                                recurrence_dict = json.loads(recurrence_raw) if isinstance(recurrence_raw, str) else recurrence_raw
+                                if recurrence_dict and recurrence_dict.get("appeared_before") and recurrence_dict.get("first_as_of"):
+                                    recurrence_map[code] = recurrence_dict.get("first_as_of")
+                            except:
+                                pass
                 
-                calculated_returns = calculate_returns_batch(codes_needing_calculation, formatted_date, None, scan_prices)
-                returns_data.update(calculated_returns)
+                # DB의 close_price를 scan_price로 사용 (스캔일 종가)
+                scan_prices = {}
+                scan_dates = {}
+                for row in rows:
+                    row_data = _row_to_dict(row)
+                    code = row_data.get("code")
+                    if code in codes_needing_calculation:
+                        # 재등장 종목인 경우 최초 추천일 기준으로 계산
+                        if code in recurrence_map:
+                            first_as_of = recurrence_map[code]
+                            scan_dates[code] = first_as_of
+                            # 최초 추천일의 종가 조회
+                            try:
+                                from kiwoom_api import api
+                                df_first = api.get_ohlcv(code, 1, first_as_of)
+                                if not df_first.empty:
+                                    scan_prices[code] = float(df_first.iloc[-1]['close'])
+                                else:
+                                    # 최초 추천일 데이터가 없으면 현재 스캔일 종가 사용
+                                    close_price = row_data.get("current_price")
+                                    if close_price and close_price > 0:
+                                        scan_prices[code] = float(close_price)
+                                    scan_dates[code] = formatted_date
+                            except:
+                                # 실패 시 현재 스캔일 종가 사용
+                                close_price = row_data.get("current_price")
+                                if close_price and close_price > 0:
+                                    scan_prices[code] = float(close_price)
+                                scan_dates[code] = formatted_date
+                        else:
+                            # 일반 종목은 현재 스캔일 기준
+                            close_price = row_data.get("current_price")
+                            if close_price and close_price > 0:
+                                scan_prices[code] = float(close_price)
+                            scan_dates[code] = formatted_date
+                
+                # 재등장 종목과 일반 종목을 분리하여 계산
+                recurring_codes = [code for code in codes_needing_calculation if code in recurrence_map]
+                normal_codes = [code for code in codes_needing_calculation if code not in recurrence_map]
+                
+                # 재등장 종목은 각각 최초 추천일 기준으로 계산
+                for code in recurring_codes:
+                    if code in scan_dates and code in scan_prices:
+                        try:
+                            from services.returns_service import calculate_returns
+                            calculated_returns = calculate_returns(code, scan_dates[code], None, scan_prices[code])
+                            if calculated_returns:
+                                returns_data[code] = calculated_returns
+                        except Exception as e:
+                            print(f"재등장 종목 수익률 계산 오류 ({code}): {e}")
+                
+                # 일반 종목은 배치 처리
+                if normal_codes:
+                    normal_scan_prices = {code: scan_prices[code] for code in normal_codes if code in scan_prices}
+                    calculated_returns = calculate_returns_batch(normal_codes, formatted_date, None, normal_scan_prices)
+                    returns_data.update(calculated_returns)
             except Exception as e:
                 print(f"배치 수익률 계산 오류: {e}")
         
@@ -2134,6 +2194,22 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             elif not recurrence_raw:
                 recurrence_dict = {}
             
+            # 재등장 종목인 경우 최초 추천일 기준으로 recommended_date와 recommended_price 설정
+            is_recurring = recurrence_dict and recurrence_dict.get("appeared_before", False)
+            first_as_of = recurrence_dict.get("first_as_of") if is_recurring else None
+            recommended_date = formatted_date  # 기본값: 현재 스캔일
+            
+            if is_recurring and first_as_of:
+                recommended_date = first_as_of
+                # 최초 추천일의 종가를 조회하여 recommended_price 설정
+                try:
+                    from kiwoom_api import api
+                    df_first = api.get_ohlcv(code, 1, first_as_of)
+                    if not df_first.empty:
+                        recommended_price = float(df_first.iloc[-1]['close'])
+                except:
+                    pass  # 실패 시 기존 값 유지
+            
             # 프론트엔드에 표시할 가격: 오늘 종가 우선, 없으면 스캔일 종가
             display_price = today_close_price if today_close_price and today_close_price > 0 else scan_date_close_price
             
@@ -2170,6 +2246,9 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 "change_rate": display_change_rate,  # 오늘 기준 등락률
                 "market": market,
                 "strategy": strategy,
+                "recommended_date": recommended_date,  # 재등장 종목인 경우 최초 추천일
+                "recommended_price": recommended_price,  # 재등장 종목인 경우 최초 추천가
+                "current_return": current_return if current_return is not None else 0,
                 "indicators": indicators_dict,
                 "trend": trend_dict,
                 "flags": flags_dict,
@@ -2183,7 +2262,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 },
                 # V2 UI를 위한 추가 필드
                 "recommended_price": recommended_price,
-                "recommended_date": formatted_date,
+                "recommended_date": recommended_date,  # 재등장 종목인 경우 최초 추천일
                 "current_return": current_return if current_return is not None else 0,  # None인 경우 0으로 처리
                 "recurrence": recurrence_dict
             }
@@ -2534,14 +2613,38 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                 if current_return is None:
                     current_return = 0
             
+            # 재등장 종목인 경우 최초 추천일 기준으로 수익률 계산
+            recurrence = item.get("recurrence", {})
+            is_recurring = recurrence and recurrence.get("appeared_before", False)
+            first_as_of = recurrence.get("first_as_of") if is_recurring else None
+            
             # 재계산이 필요한 경우 실시간 계산
             if should_recalculate_returns and data.get("code") and data.get("code") != 'NORESULT':
                 try:
                     from services.returns_service import calculate_returns
                     code = data.get("code")
-                    # DB의 close_price를 스캔일 종가로 사용 (current_price는 close_price AS current_price로 매핑됨)
-                    scan_date_close_price_for_calc = scan_date_close_price
-                    calculated_returns = calculate_returns(code, formatted_date, None, scan_date_close_price_for_calc)
+                    
+                    # 재등장 종목인 경우 최초 추천일 기준으로 계산
+                    if is_recurring and first_as_of:
+                        # 최초 추천일의 종가 조회
+                        from kiwoom_api import api
+                        df_first = api.get_ohlcv(code, 1, first_as_of)
+                        if not df_first.empty:
+                            first_price = float(df_first.iloc[-1]['close'])
+                            calculated_returns = calculate_returns(code, first_as_of, None, first_price)
+                            # recommended_date와 recommended_price를 최초 추천일 기준으로 설정
+                            if calculated_returns:
+                                recommended_date = first_as_of
+                                recommended_price = first_price
+                        else:
+                            # 최초 추천일 데이터가 없으면 현재 스캔일 기준으로 계산
+                            scan_date_close_price_for_calc = scan_date_close_price
+                            calculated_returns = calculate_returns(code, formatted_date, None, scan_date_close_price_for_calc)
+                    else:
+                        # 일반 종목은 현재 스캔일 기준으로 계산
+                        scan_date_close_price_for_calc = scan_date_close_price
+                        calculated_returns = calculate_returns(code, formatted_date, None, scan_date_close_price_for_calc)
+                    
                     if calculated_returns and calculated_returns.get('current_return') is not None:
                         current_return = calculated_returns.get('current_return')
                         # item["returns"]도 업데이트
@@ -2549,8 +2652,8 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                             item["returns"].update(calculated_returns)
                         else:
                             item["returns"] = calculated_returns
-                        # recommended_price도 업데이트
-                        if calculated_returns.get('scan_price'):
+                        # recommended_price 업데이트 (재등장 종목이 아니거나 최초 추천일 데이터가 없는 경우만)
+                        if not (is_recurring and first_as_of) and calculated_returns.get('scan_price'):
                             recommended_price = calculated_returns.get('scan_price')
                         # 오늘 종가 업데이트
                         if calculated_returns.get('current_price') and calculated_returns.get('current_price') > 0:
@@ -2587,8 +2690,21 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
                     # 오류 시 기존 change_rate 유지
             
             # V2 UI 필드 추가
+            # 재등장 종목인 경우 최초 추천일 기준으로 설정
+            if is_recurring and first_as_of:
+                item["recommended_date"] = first_as_of
+                # 최초 추천일의 종가를 조회하여 recommended_price 설정
+                if not recommended_price or recommended_price == scan_date_close_price:
+                    try:
+                        from kiwoom_api import api
+                        df_first = api.get_ohlcv(code, 1, first_as_of)
+                        if not df_first.empty:
+                            recommended_price = float(df_first.iloc[-1]['close'])
+                    except:
+                        pass  # 실패 시 기존 값 유지
+            else:
+                item["recommended_date"] = formatted_date
             item["recommended_price"] = recommended_price
-            item["recommended_date"] = formatted_date
             item["current_return"] = current_return if current_return is not None else 0  # None인 경우 0으로 처리
             # current_price를 display_price로 업데이트 (오늘 종가 우선, 없으면 스캔일 종가)
             item["current_price"] = display_price

@@ -22,7 +22,8 @@ export default function StockCardV2({ item, onViewChart }) {
     recommended_price,
     recommended_date,
     current_return,
-    returns = {}
+    returns = {},
+    recurrence = {}
   } = item;
   
   // returns 객체에서 max_return, min_return 추출
@@ -197,6 +198,49 @@ export default function StockCardV2({ item, onViewChart }) {
         </div>
       </div>
 
+      {/* 재등장 정보 카드 */}
+      {recurrence?.appeared_before && (
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">🔄</span>
+            <h4 className="font-semibold text-purple-900">재등장 정보</h4>
+            {recurrence.days_since_last && recurrence.days_since_last <= 3 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 ml-auto">
+                ⚡ {recurrence.days_since_last}일 만에 재등장
+              </span>
+            )}
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">재등장 횟수:</span>
+              <span className="font-bold text-purple-700">{recurrence.appear_count || 0}회</span>
+            </div>
+            {recurrence.first_as_of && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">첫 등장:</span>
+                <span className="font-medium text-gray-800">
+                  {recurrence.first_as_of.slice(0,4)}년 {recurrence.first_as_of.slice(4,6)}월 {recurrence.first_as_of.slice(6,8)}일
+                </span>
+              </div>
+            )}
+            {recurrence.last_as_of && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">마지막 등장:</span>
+                <span className="font-medium text-gray-800">
+                  {recurrence.last_as_of.slice(0,4)}년 {recurrence.last_as_of.slice(4,6)}월 {recurrence.last_as_of.slice(6,8)}일
+                </span>
+              </div>
+            )}
+            {recurrence.days_since_last !== null && recurrence.days_since_last !== undefined && (
+              <div className="flex justify-between pt-2 border-t border-purple-200">
+                <span className="text-gray-600 font-semibold">등장 간격:</span>
+                <span className="font-bold text-purple-700">{recurrence.days_since_last}일</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 전략 배지 */}
       <div className="flex items-center space-x-2 flex-wrap">
         <span 
@@ -247,7 +291,9 @@ export default function StockCardV2({ item, onViewChart }) {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">📊</span>
-            <h4 className="font-semibold text-blue-900">추천일 대비 수익률</h4>
+            <h4 className="font-semibold text-blue-900">
+              {recurrence?.appeared_before ? '최초 추천일 대비 수익률' : '추천일 대비 수익률'}
+            </h4>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
