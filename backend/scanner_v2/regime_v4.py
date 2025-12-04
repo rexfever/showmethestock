@@ -377,7 +377,7 @@ def combine_global_regime_v4(kr_trend: str, us_trend: str, kr_risk: str, us_risk
     }
 
 def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
-    """캐시 직접 사용 (최대 속도) - 날짜 필터링 포함"""
+    """데이터 로드 (Chart API 사용 - us_futures_data_v8) - 날짜 필터링 포함"""
     import os
     
     # 날짜 파싱
@@ -466,42 +466,108 @@ def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
     # KOSPI와 KOSDAQ을 합쳐서 KR 데이터로 사용
     kr_df = kospi_df if not kospi_df.empty else kosdaq_df
     
-    # 미국 데이터 (CSV 캐시)
+    # 미국 데이터 (Chart API 사용 - us_futures_data_v8)
     spy_df = pd.DataFrame()
     qqq_df = pd.DataFrame()
     vix_df = pd.DataFrame()
     
     try:
-        cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'cache', 'us_futures')
+        from services.us_futures_data_v8 import us_futures_data_v8
         
-        # SPY
-        spy_path = os.path.join(cache_dir, 'SPY.csv')
-        if os.path.exists(spy_path):
-            spy_df = pd.read_csv(spy_path, index_col=0, parse_dates=True)
-            spy_df = spy_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
-            # 날짜 필터링
-            if not spy_df.empty:
+        # SPY (Chart API로 데이터 가져오기)
+        spy_df = us_futures_data_v8.fetch_data("SPY", period='1y')
+        if not spy_df.empty:
+            # 컬럼명 소문자로 통일 (기존 CSV와 동일한 형식)
+            # 존재하는 컬럼만 변환 (KeyError 방지)
+            rename_map = {}
+            if 'Open' in spy_df.columns:
+                rename_map['Open'] = 'open'
+            if 'High' in spy_df.columns:
+                rename_map['High'] = 'high'
+            if 'Low' in spy_df.columns:
+                rename_map['Low'] = 'low'
+            if 'Close' in spy_df.columns:
+                rename_map['Close'] = 'close'
+            if 'Volume' in spy_df.columns:
+                rename_map['Volume'] = 'volume'
+            if rename_map:
+                spy_df = spy_df.rename(columns=rename_map)
+            # 날짜 필터링 (DatetimeIndex 확인)
+            if isinstance(spy_df.index, pd.DatetimeIndex):
                 spy_df = spy_df[spy_df.index <= target_date]
         
-        # QQQ
-        qqq_path = os.path.join(cache_dir, 'QQQ.csv')
-        if os.path.exists(qqq_path):
-            qqq_df = pd.read_csv(qqq_path, index_col=0, parse_dates=True)
-            qqq_df = qqq_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+        # QQQ (Chart API로 데이터 가져오기)
+        qqq_df = us_futures_data_v8.fetch_data("QQQ", period='1y')
+        if not qqq_df.empty:
+            # 컬럼명 소문자로 통일
+            rename_map = {}
+            if 'Open' in qqq_df.columns:
+                rename_map['Open'] = 'open'
+            if 'High' in qqq_df.columns:
+                rename_map['High'] = 'high'
+            if 'Low' in qqq_df.columns:
+                rename_map['Low'] = 'low'
+            if 'Close' in qqq_df.columns:
+                rename_map['Close'] = 'close'
+            if 'Volume' in qqq_df.columns:
+                rename_map['Volume'] = 'volume'
+            if rename_map:
+                qqq_df = qqq_df.rename(columns=rename_map)
             # 날짜 필터링
-            if not qqq_df.empty:
+            if isinstance(qqq_df.index, pd.DatetimeIndex):
                 qqq_df = qqq_df[qqq_df.index <= target_date]
         
-        # VIX
-        vix_path = os.path.join(cache_dir, '^VIX.csv')
-        if os.path.exists(vix_path):
-            vix_df = pd.read_csv(vix_path, index_col=0, parse_dates=True)
-            vix_df = vix_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+        # VIX (Chart API로 데이터 가져오기)
+        vix_df = us_futures_data_v8.fetch_data("^VIX", period='1y')
+        if not vix_df.empty:
+            # 컬럼명 소문자로 통일
+            rename_map = {}
+            if 'Open' in vix_df.columns:
+                rename_map['Open'] = 'open'
+            if 'High' in vix_df.columns:
+                rename_map['High'] = 'high'
+            if 'Low' in vix_df.columns:
+                rename_map['Low'] = 'low'
+            if 'Close' in vix_df.columns:
+                rename_map['Close'] = 'close'
+            if 'Volume' in vix_df.columns:
+                rename_map['Volume'] = 'volume'
+            if rename_map:
+                vix_df = vix_df.rename(columns=rename_map)
             # 날짜 필터링
-            if not vix_df.empty:
+            if isinstance(vix_df.index, pd.DatetimeIndex):
                 vix_df = vix_df[vix_df.index <= target_date]
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"미국 데이터 로드 실패 (Chart API): {e}, CSV 캐시로 fallback")
+        # Fallback: CSV 캐시 직접 읽기
+        try:
+            cache_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'cache', 'us_futures')
+            
+            # SPY
+            spy_path = os.path.join(cache_dir, 'SPY.csv')
+            if os.path.exists(spy_path):
+                spy_df = pd.read_csv(spy_path, index_col=0, parse_dates=True)
+                spy_df = spy_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+                if not spy_df.empty:
+                    spy_df = spy_df[spy_df.index <= target_date]
+            
+            # QQQ
+            qqq_path = os.path.join(cache_dir, 'QQQ.csv')
+            if os.path.exists(qqq_path):
+                qqq_df = pd.read_csv(qqq_path, index_col=0, parse_dates=True)
+                qqq_df = qqq_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+                if not qqq_df.empty:
+                    qqq_df = qqq_df[qqq_df.index <= target_date]
+            
+            # VIX
+            vix_path = os.path.join(cache_dir, '^VIX.csv')
+            if os.path.exists(vix_path):
+                vix_df = pd.read_csv(vix_path, index_col=0, parse_dates=True)
+                vix_df = vix_df.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'volume'})
+                if not vix_df.empty:
+                    vix_df = vix_df[vix_df.index <= target_date]
+        except Exception:
+            pass
     
     return {
         "KR": kr_df,
