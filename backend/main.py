@@ -2995,6 +2995,73 @@ async def social_login(request: SocialLoginRequest):
             detail=f"로그인 중 오류가 발생했습니다: {str(e)}"
         )
 
+@app.post("/auth/dev-login", response_model=Token)
+async def dev_login(request: dict):
+    """개발 모드 로그인 (로컬 환경에서만 사용)"""
+    import os
+    # 프로덕션 환경에서는 비활성화
+    if os.getenv("ENVIRONMENT") == "production" or os.getenv("NODE_ENV") == "production":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="개발 모드 로그인은 프로덕션 환경에서 사용할 수 없습니다"
+        )
+    
+    try:
+        email = request.get("email", "kuksos80215@daum.net")
+        
+        # 사용자 조회
+        with db_manager.get_cursor(commit=False) as cur:
+            cur.execute("""
+                SELECT id, email, name, provider, membership_tier, is_admin, created_at, last_login
+                FROM users
+                WHERE email = %s
+            """, (email,))
+            row = cur.fetchone()
+            
+            if not row:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"사용자를 찾을 수 없습니다: {email}"
+                )
+            
+            # 사용자 정보 구성
+            user = User(
+                id=row[0],
+                email=row[1],
+                name=row[2] or "",
+                provider=row[3] or "kakao",
+                membership_tier=row[4] or "free",
+                is_admin=bool(row[5]),
+                created_at=row[6].isoformat() if row[6] else None,
+                last_login=row[7].isoformat() if row[7] else None
+            )
+        
+        # 마지막 로그인 시간 업데이트
+        auth_service.update_last_login(user.id)
+        
+        # JWT 토큰 생성
+        access_token_expires = timedelta(days=7)  # 개발 모드에서는 7일간 유효
+        access_token = auth_service.create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"개발 모드 로그인 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"개발 모드 로그인 중 오류가 발생했습니다: {str(e)}"
+        )
+
 @app.get("/auth/me", response_model=User)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """현재 로그인한 사용자 정보 조회"""

@@ -8,7 +8,7 @@ import { loginWithKakao, isKakaoSDKReady } from '../utils/kakaoAuth';
 
 export default function Login() {
   const router = useRouter();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, setUser, setToken } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState('');
   const [loginMethod, setLoginMethod] = useState('social'); // 'social' or 'email'
@@ -200,6 +200,52 @@ export default function Login() {
     }));
   };
 
+  // 개발 모드: 윤봄 계정으로 로그인
+  const handleDevLogin = async () => {
+    setIsLoggingIn(true);
+    setError('');
+
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+
+      // 개발 모드 로그인 엔드포인트 호출
+      const response = await fetch(`${base}/auth/dev-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: 'kuksos80215@daum.net'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 토큰 저장
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // AuthContext 업데이트
+        if (setUser && setToken) {
+          setUser(data.user);
+          setToken(data.access_token);
+        }
+        
+        // 메인 페이지로 이동 (V2)
+        router.push('/v2/scanner-v2');
+      } else {
+        setError(data.detail || '로그인에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('개발 모드 로그인 에러:', error);
+      setError('로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -264,6 +310,20 @@ export default function Login() {
           {/* 소셜 로그인 */}
           {loginMethod === 'social' && (
             <div className="space-y-4">
+              {/* 개발 모드: 윤봄 계정으로 로그인 (로컬 환경에서만 표시) */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={handleDevLogin}
+                  disabled={isLoggingIn}
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                    <span className="text-lg">✨</span>
+                  </span>
+                  {isLoggingIn ? '로그인 중...' : '윤봄님으로 로그인 (개발 모드)'}
+                </button>
+              )}
+              
               <button
                 onClick={() => handleSocialLogin('kakao')}
                 disabled={isLoggingIn || !kakaoSDKReady}
