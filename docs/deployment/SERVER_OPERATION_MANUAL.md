@@ -323,6 +323,9 @@ cat .env.local
 
 # 필수 환경 변수:
 # NEXT_PUBLIC_BACKEND_URL=http://52.79.145.238:8010
+
+# 참고: 프론트엔드는 config.js 파일에서 포트 설정을 중앙 관리합니다
+# frontend/config.js와 frontend/v2/config.js 파일 확인
 ```
 
 ### 3. 패키지 업데이트 및 빌드
@@ -664,8 +667,9 @@ curl http://localhost:3000
 
 ### 주요 업데이트
 
-1. **백엔드 포트**: 8000 → 8010
-2. **Scanner V2**: DB 기반 설정 관리 추가
+1. **백엔드 포트**: 8010
+2. **프론트엔드 포트 설정 중앙화**: config.js 파일에서 관리
+3. **Scanner V2**: DB 기반 설정 관리 추가
 3. **scan_rank 테이블**: `scanner_version` 컬럼 추가 (V1/V2 결과 분리 저장)
 4. **scanner_settings 테이블**: 스캐너 버전 DB 관리
 5. **날짜 처리 개선**: DATE/TIMESTAMP 타입 통일
@@ -682,8 +686,9 @@ curl http://localhost:3000
    - 스캐너 버전은 DB에서 관리 (`.env`는 fallback)
 
 3. **포트 확인**:
-   - 백엔드: 8010 (8000 아님)
+   - 백엔드: 8010
    - 프론트엔드: 3000
+   - 프론트엔드 포트 설정은 `frontend/config.js`와 `frontend/v2/config.js`에서 중앙 관리
 
 ---
 

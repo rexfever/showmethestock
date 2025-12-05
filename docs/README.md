@@ -66,6 +66,7 @@
 
 - `LOCAL_DEVELOPMENT_SETUP.md` - 로컬 개발 환경 구성 메뉴얼 (최신)
 - `SERVER_OPERATION_MANUAL.md` - 서버 작업 메뉴얼 (최신화)
+- `PORT_CONFIGURATION.md` - 포트 설정 중앙화 가이드 (신규)
 - `SERVER_DEPLOYMENT_20251128.md` - 서버 배포 가이드 (2025-11-28 작업 반영, 최신)
 - `DEPLOYMENT_CHECKLIST_SCANNER_V2.md` - 스캐너 V2 배포 체크리스트
 

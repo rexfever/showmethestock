@@ -141,6 +141,8 @@ sudo systemctl status stock-finder-frontend
 
 #### 8.1 백엔드 API 테스트
 
+**참고**: 백엔드 포트는 **8010**입니다.
+
 ```bash
 # 헬스 체크
 curl http://localhost:8010/health

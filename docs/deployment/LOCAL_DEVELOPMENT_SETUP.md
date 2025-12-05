@@ -303,7 +303,10 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8010
 EOF
 ```
 
-**참고**: 백엔드 포트는 **8010**입니다 (기존 8000에서 변경됨).
+**참고**: 
+- 백엔드 포트는 **8010**입니다
+- 프론트엔드는 `config.js` 파일에서 포트 설정을 중앙 관리합니다
+- 포트 변경 시 `frontend/config.js`와 `frontend/v2/config.js` 파일만 수정하면 됩니다
 
 ---
 
