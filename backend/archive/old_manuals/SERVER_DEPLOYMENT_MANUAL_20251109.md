@@ -312,7 +312,7 @@ cd /home/ubuntu/showmethestock/frontend
 cat .env.local
 
 # 필수 환경 변수:
-# NEXT_PUBLIC_BACKEND_URL=http://52.79.145.238:8000
+# NEXT_PUBLIC_BACKEND_URL=http://52.79.145.238:8010
 ```
 
 ### 3. 패키지 업데이트 및 빌드
@@ -895,7 +895,7 @@ source venv/bin/activate
 python main.py
 
 # 4. 포트 충돌 확인
-sudo lsof -i :8000
+sudo lsof -i :8010
 
 # 5. 환경 변수 확인
 cat .env | grep -E "DB_ENGINE|DATABASE_URL"

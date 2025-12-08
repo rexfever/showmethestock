@@ -277,7 +277,7 @@ cd ~/workspace/stock-finder/frontend
 
 # .env.local 파일 생성
 cat > .env.local << 'EOF'
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8010
 EOF
 ```
 
@@ -347,13 +347,13 @@ nohup uvicorn main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
 
 ```bash
 # 새 터미널에서
-curl http://localhost:8000/health
+curl http://localhost:8010/health
 
 # 예상 응답:
 # {"status":"ok","timestamp":"2025-11-09T..."}
 
 # API 문서 확인
-# 브라우저에서: http://localhost:8000/docs
+# 브라우저에서: http://localhost:8010/docs
 ```
 
 ---
@@ -496,7 +496,7 @@ pip install psycopg psycopg-binary psycopg-pool
 **해결**:
 ```bash
 # 8000 포트 사용 프로세스 확인 및 종료
-lsof -ti:8000 | xargs kill -9
+lsof -ti:8010 | xargs kill -9
 
 # 3000 포트 사용 프로세스 확인 및 종료
 lsof -ti:3000 | xargs kill -9

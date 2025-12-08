@@ -314,6 +314,167 @@ def send_auto_notification(matched_count):
     except Exception as e:
         logger.error(f"자동 알림 발송 중 오류 발생: {str(e)}")
 
+def preload_regime_cache_kr():
+    """한국 주식 레짐 분석용 캐시 사전 생성 (15:35)"""
+    if not is_trading_day():
+        logger.info("오늘은 거래일이 아닙니다. 레짐 분석용 캐시 생성을 건너뜁니다.")
+        return
+    
+    try:
+        logger.info("📊 레짐 분석용 캐시 사전 생성 시작 (한국)")
+        
+        # 1. KOSPI 데이터 (FinanceDataReader 자동 생성)
+        try:
+            import FinanceDataReader as fdr
+            today = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+            kospi_df = fdr.DataReader('KS11', start_date, today)
+            if not kospi_df.empty:
+                logger.info(f"✅ KOSPI 데이터 생성 완료: {len(kospi_df)}개 행")
+            else:
+                logger.warning("KOSPI 데이터가 비어있습니다.")
+        except ImportError:
+            logger.warning("FinanceDataReader가 설치되지 않음")
+        except Exception as e:
+            logger.warning(f"KOSPI 데이터 생성 실패: {e}")
+        
+        # 2. KOSDAQ 데이터 (CSV 캐시 확인/생성)
+        kosdaq_csv = os.path.join(os.path.dirname(__file__), '..', 'data_cache', 'ohlcv', '229200.csv')
+        if os.path.exists(kosdaq_csv):
+            logger.info("✅ KOSDAQ 캐시 확인됨")
+        else:
+            logger.warning("KOSDAQ 캐시 없음 - 수동 생성 필요")
+        
+        # 3. 미국 선물 데이터 (레짐 분석에 필요)
+        try:
+            from services.us_futures_data_v8 import us_futures_data_v8
+            symbols = ['SPY', 'QQQ', '^VIX']
+            for symbol in symbols:
+                try:
+                    df = us_futures_data_v8.fetch_data(symbol, period='1y')
+                    if not df.empty:
+                        logger.info(f"✅ {symbol} 캐시 생성 완료: {len(df)}개 행")
+                    else:
+                        logger.warning(f"{symbol} 캐시 생성 실패 (빈 데이터)")
+                except Exception as e:
+                    logger.error(f"{symbol} 캐시 생성 오류: {e}")
+        except Exception as e:
+            logger.error(f"미국 선물 데이터 캐시 생성 실패: {e}")
+        
+        logger.info("✅ 레짐 분석용 캐시 사전 생성 완료 (한국)")
+        
+    except Exception as e:
+        logger.error(f"레짐 분석용 캐시 사전 생성 중 오류 발생: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+def preload_regime_cache_us():
+    """미국 주식 레짐 분석용 캐시 사전 생성 (06:50)"""
+    if not is_us_trading_day():
+        logger.info("오늘은 미국 거래일이 아닙니다. 레짐 분석용 캐시 생성을 건너뜁니다.")
+        return
+    
+    try:
+        logger.info("📊 레짐 분석용 캐시 사전 생성 시작 (미국)")
+        
+        from services.us_futures_data_v8 import us_futures_data_v8
+        symbols = ['SPY', 'QQQ', '^VIX', 'ES=F', 'NQ=F', 'DX-Y.NYB']
+        
+        for symbol in symbols:
+            try:
+                df = us_futures_data_v8.fetch_data(symbol, period='1y')
+                if not df.empty:
+                    logger.info(f"✅ {symbol} 캐시 생성 완료: {len(df)}개 행")
+                else:
+                    logger.warning(f"{symbol} 캐시 생성 실패 (빈 데이터)")
+            except Exception as e:
+                logger.error(f"{symbol} 캐시 생성 오류: {e}")
+        
+        logger.info("✅ 레짐 분석용 캐시 사전 생성 완료 (미국)")
+        
+    except Exception as e:
+        logger.error(f"레짐 분석용 캐시 사전 생성 중 오류 발생: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+def preload_scan_cache_kr(limit: int = 200):
+    """한국 주식 스캔용 캐시 사전 생성 (과거 데이터만, 선택적)"""
+    if not is_trading_day():
+        logger.info("오늘은 거래일이 아닙니다. 스캔용 캐시 생성을 건너뜁니다.")
+        return
+    
+    try:
+        logger.info(f"📈 스캔용 캐시 사전 생성 시작 (한국, 상위 {limit}개 종목)")
+        
+        from kiwoom_api import api
+        
+        # 유니버스 로드
+        kospi_codes = api.get_top_codes("KOSPI", limit // 2)
+        kosdaq_codes = api.get_top_codes("KOSDAQ", limit // 2)
+        universe = kospi_codes + kosdaq_codes
+        
+        logger.info(f"유니버스 로드 완료: {len(universe)}개 종목")
+        
+        # 과거 30일 데이터만 사전 생성
+        today = datetime.now()
+        success_count = 0
+        for code in universe:
+            try:
+                for days_ago in range(1, 31):  # 최근 30일
+                    past_date = (today - timedelta(days=days_ago)).strftime('%Y%m%d')
+                    # base_dt를 지정하여 과거 날짜 데이터만 생성
+                    api.get_ohlcv(code, 220, past_date)
+                success_count += 1
+            except Exception as e:
+                logger.warning(f"{code} 캐시 생성 실패: {e}")
+        
+        logger.info(f"✅ 스캔용 캐시 사전 생성 완료: {success_count}/{len(universe)}개 종목")
+        
+    except Exception as e:
+        logger.error(f"스캔용 캐시 사전 생성 중 오류 발생: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+def preload_scan_cache_us(limit: int = 200):
+    """미국 주식 스캔용 캐시 사전 생성 (과거 데이터만, 선택적)"""
+    if not is_us_trading_day():
+        logger.info("오늘은 미국 거래일이 아닙니다. 스캔용 캐시 생성을 건너뜁니다.")
+        return
+    
+    try:
+        logger.info(f"📈 스캔용 캐시 사전 생성 시작 (미국, 상위 {limit}개 종목)")
+        
+        from services.us_stocks_universe import USStocksUniverse
+        from services.us_stocks_data import us_stocks_data
+        
+        us_universe = USStocksUniverse()
+        
+        # 유니버스 로드
+        symbols = us_universe.get_combined_universe(limit=limit)
+        symbol_list = [item['symbol'] for item in symbols]
+        
+        logger.info(f"유니버스 로드 완료: {len(symbol_list)}개 종목")
+        
+        # 과거 30일 데이터만 사전 생성
+        today = datetime.now()
+        success_count = 0
+        for symbol in symbol_list:
+            try:
+                for days_ago in range(1, 31):  # 최근 30일
+                    past_date = (today - timedelta(days=days_ago)).strftime('%Y%m%d')
+                    # base_dt를 지정하여 과거 날짜 데이터만 생성
+                    us_stocks_data.get_ohlcv(symbol, 220, past_date)
+                success_count += 1
+            except Exception as e:
+                logger.warning(f"{symbol} 캐시 생성 실패: {e}")
+        
+        logger.info(f"✅ 스캔용 캐시 사전 생성 완료: {success_count}/{len(symbol_list)}개 종목")
+        
+    except Exception as e:
+        logger.error(f"스캔용 캐시 사전 생성 중 오류 발생: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
 def run_validation():
     """데이터 확정 시점 검증 (15:31~15:40)"""
     if not is_trading_day():
@@ -337,6 +498,32 @@ def run_validation():
 
 def setup_scheduler():
     """스케줄러 설정 - KST 기준"""
+    # === 레짐 분석용 캐시 사전 생성 (필수) ===
+    
+    # 한국 주식: 장 마감 직후 (15:35)
+    schedule.every().day.at("15:35").do(preload_regime_cache_kr)
+    # - KOSPI: FinanceDataReader (자동)
+    # - KOSDAQ: CSV 캐시 확인/생성
+    # - SPY/QQQ/VIX: us_futures_data_v8.fetch_data()
+    
+    # 미국 주식: 미국 장 마감 후 (06:50)
+    schedule.every().day.at("06:50").do(preload_regime_cache_us)
+    # - SPY/QQQ/VIX/ES=F/NQ=F/DX-Y.NYB: us_futures_data_v8.fetch_data()
+    
+    # === 스캔용 캐시 사전 생성 (선택적) ===
+    
+    # 한국 주식: 스캔 30분 전 (15:12)
+    # schedule.every().day.at("15:12").do(preload_scan_cache_kr)
+    # - 상위 200개 종목의 과거 30일 데이터만 생성
+    # - 당일 데이터는 생성하지 않음
+    # 주석 처리: 선택적 기능이므로 필요 시 활성화
+    
+    # 미국 주식: 스캔 30분 전 (06:30)
+    # schedule.every().day.at("06:30").do(preload_scan_cache_us)
+    # - 상위 200개 종목의 과거 30일 데이터만 생성
+    # - 당일 데이터는 생성하지 않음
+    # 주석 처리: 선택적 기능이므로 필요 시 활성화
+    
     # === 한국 주식 스캔 ===
     # 데이터 확정 시점 검증 (15:31~15:40, 매분)
     schedule.every().day.at("15:31").do(run_validation)
@@ -352,20 +539,30 @@ def setup_scheduler():
     
     # 매일 오후 3시 40분에 장세 분석 실행 (데이터 확정 후) - KST 기준
     schedule.every().day.at("15:40").do(run_market_analysis)
+    # - 레짐 분석용 캐시 사용 ✅
     
     # 매일 오후 3시 42분에 한국 주식 스캔 실행 (장세 분석 후) - KST 기준
     schedule.every().day.at("15:42").do(run_scan)
+    # - 과거 데이터: 사전 생성된 캐시 사용 ✅ (선택적)
+    # - 당일 데이터: 스캔 시점에 생성 (최신 데이터 보장)
     
     # === 미국 주식 스캔 ===
     # 매일 오전 7시에 미국 주식 스캔 실행 (미국 시장 마감 후 데이터 확정 시점) - KST 기준
     # 서머타임: 미국 정규장 마감 5:00 KST → 스캔 7:00 KST
     # 비서머타임: 미국 정규장 마감 6:00 KST → 스캔 7:00 KST
     schedule.every().day.at("07:00").do(run_us_scan)
+    # - 과거 데이터: 사전 생성된 캐시 사용 ✅ (선택적)
+    # - 당일 데이터: 스캔 시점에 생성 (최신 데이터 보장)
     
     logger.info("자동 스케줄러가 설정되었습니다.")
+    logger.info("=== 레짐 분석용 캐시 사전 생성 (필수) ===")
+    logger.info("- 매일 오후 3:35 KST: 한국 주식 레짐 분석용 캐시 생성")
+    logger.info("- 매일 오전 6:50 KST: 미국 주식 레짐 분석용 캐시 생성")
+    logger.info("=== 스캔용 캐시 사전 생성 (선택적) ===")
+    logger.info("- 주석 처리됨: 필요 시 15:12 (한국), 06:30 (미국) 활성화")
     logger.info("=== 한국 주식 ===")
     logger.info("- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)")
-    logger.info("- 매일 오후 3:40 KST: 장세 분석 실행")
+    logger.info("- 매일 오후 3:40 KST: 장세 분석 실행 (레짐 분석용 캐시 사용)")
     logger.info("- 매일 오후 3:42 KST: 한국 주식 스캔 실행")
     logger.info("=== 미국 주식 ===")
     logger.info("- 매일 오전 7:00 KST: 미국 주식 스캔 실행")

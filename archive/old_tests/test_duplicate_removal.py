@@ -6,7 +6,7 @@ API 엔드포인트 중복 제거 테스트
 import requests
 import json
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8010"
 
 def test_scan_positions():
     """scan_positions 엔드포인트 테스트"""
