@@ -12,8 +12,17 @@ export default function HomePage() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
     setIsMobile(isMobileDevice);
+    
+    // 초기화면 설정 확인 및 리다이렉트
+    const initialScreen = localStorage.getItem('initialScreen') || 'korean';
+    if (initialScreen === 'us') {
+      router.push('/v2/us-stocks-scanner');
+    } else {
+      router.push('/v2/scanner-v2');
+    }
+    
     setLoading(false);
-  }, []);
+  }, [router]);
 
   if (loading) {
     return (

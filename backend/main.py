@@ -23,6 +23,10 @@ from environment import get_environment_info
 from kiwoom_api import KiwoomAPI
 from scanner import compute_indicators, match_condition, match_stats, strategy_text, score_conditions
 from market_analyzer import market_analyzer
+from services.us_stocks_universe import us_stocks_universe
+from services.us_stocks_data import us_stocks_data
+from scanner_v2.us_scanner import USScanner
+from scanner_v2.config_v2 import ScannerV2Config
 from models import ScanResponse, ScanItem, IndicatorPayload, TrendPayload, AnalyzeResponse, UniverseResponse, UniverseItem, ScoreFlags, PositionResponse, PositionItem, AddPositionRequest, UpdatePositionRequest, PortfolioResponse, PortfolioItem, AddToPortfolioRequest, UpdatePortfolioRequest, MaintenanceSettingsRequest, TradingHistory, AddTradingRequest, TradingHistoryResponse
 from utils import is_code, normalize_code_or_name
 from date_helper import normalize_date, get_kst_now
@@ -131,6 +135,7 @@ def create_popup_notice_table(cur):
 from services.returns_service import calculate_returns, calculate_returns_batch, clear_cache
 from services.enhanced_report_generator import EnhancedReportGenerator
 from services.scan_service import get_recurrence_data, save_scan_snapshot, execute_scan_with_fallback
+from services.access_log_service import init_access_logs_table, log_access
 
 # 향상된 보고서 생성기 인스턴스
 report_generator = EnhancedReportGenerator()
@@ -166,6 +171,13 @@ async def lifespan(app: FastAPI):
     logger = logging.getLogger(__name__)
     logger.info("🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...")
     
+    # 접속 기록 테이블 초기화
+    try:
+        init_access_logs_table()
+        logger.info("✅ 접속 기록 테이블 초기화 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ 접속 기록 테이블 초기화 실패: {e}")
+    
     # 스케줄러를 백그라운드 스레드로 실행
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
@@ -200,6 +212,84 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 접속 기록 미들웨어
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+import time
+
+class AccessLogMiddleware(BaseHTTPMiddleware):
+    """접속 기록 미들웨어"""
+    
+    async def dispatch(self, request: Request, call_next):
+        # 요청 시작 시간
+        start_time = time.time()
+        
+        # IP 주소 가져오기
+        ip_address = request.client.host if request.client else None
+        if request.headers.get("x-forwarded-for"):
+            # 프록시를 통한 경우 실제 IP 주소
+            ip_address = request.headers.get("x-forwarded-for").split(",")[0].strip()
+        
+        # User-Agent
+        user_agent = request.headers.get("user-agent", "")
+        
+        # 요청 경로 및 메서드
+        request_path = request.url.path
+        request_method = request.method
+        
+        # 사용자 정보 (토큰에서 추출)
+        user_id = None
+        email = None
+        try:
+            auth_header = request.headers.get("authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header.replace("Bearer ", "")
+                from auth_service import auth_service
+                token_data = auth_service.verify_token(token)
+                if token_data:
+                    user = auth_service.get_user_by_id(token_data.user_id)
+                    if user:
+                        user_id = user.id
+                        email = user.email
+        except Exception:
+            # 인증 실패는 무시 (비로그인 사용자)
+            pass
+        
+        # 요청 처리
+        response = await call_next(request)
+        
+        # 응답 시간 계산
+        response_time_ms = int((time.time() - start_time) * 1000)
+        
+        # 상태 코드
+        status_code = response.status_code
+        
+        # 접속 기록 저장 (비동기로 처리하여 응답 지연 최소화)
+        # 정적 파일이나 헬스 체크는 제외
+        if not request_path.startswith(("/static/", "/_next/", "/favicon.ico", "/health")):
+            try:
+                log_access(
+                    user_id=user_id,
+                    email=email,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    request_path=request_path,
+                    request_method=request_method,
+                    status_code=status_code,
+                    response_time_ms=response_time_ms
+                )
+            except Exception as e:
+                # 접속 기록 실패는 로그만 남기고 요청 처리는 계속
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"접속 기록 저장 실패: {e}")
+        
+        return response
+
+app.add_middleware(AccessLogMiddleware)
+
 api = KiwoomAPI()
 
 
@@ -919,6 +1009,164 @@ def universe(apply_scan: bool = False, kospi_limit: int = None, kosdaq_limit: in
         as_of=datetime.now().strftime('%Y%m%d'),
         items=items,
     )
+
+
+@app.get('/scan/us-stocks', response_model=ScanResponse)
+def scan_us_stocks(
+    universe_type: str = 'sp500',  # 'sp500', 'nasdaq100', 'combined'
+    limit: int = 500,
+    date: str = None,
+    save_snapshot: bool = True  # 한국 주식과 동일하게 기본값 True
+):
+    """
+    미국 주식 스캔
+    
+    Args:
+        universe_type: 유니버스 타입 ('sp500', 'nasdaq100', 'combined')
+        limit: 최대 종목 수
+        date: 스캔 날짜 (YYYYMMDD 형식, None이면 오늘)
+        save_snapshot: 스캔 결과를 DB에 저장할지 여부
+    """
+    try:
+        # 날짜 처리
+        today_as_of = normalize_date(date) if date else get_kst_now().strftime('%Y%m%d')
+        
+        # 유니버스 가져오기
+        try:
+            if universe_type == 'sp500':
+                stocks = us_stocks_universe.get_sp500_list()
+                if not stocks:
+                    raise HTTPException(status_code=500, detail="S&P 500 리스트를 가져올 수 없습니다")
+                symbols = [s['symbol'] for s in stocks[:limit]]
+            elif universe_type == 'nasdaq100':
+                stocks = us_stocks_universe.get_nasdaq100_list()
+                if not stocks:
+                    raise HTTPException(status_code=500, detail="NASDAQ 100 리스트를 가져올 수 없습니다")
+                symbols = [s['symbol'] for s in stocks[:limit]]
+            elif universe_type == 'combined':
+                symbols = us_stocks_universe.get_combined_universe(limit=limit)
+                if not symbols:
+                    raise HTTPException(status_code=500, detail="통합 유니버스를 가져올 수 없습니다")
+            else:
+                raise HTTPException(status_code=400, detail=f"지원하지 않는 유니버스 타입: {universe_type}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"⚠️ 유니버스 가져오기 실패: {e}")
+            raise HTTPException(status_code=500, detail=f"유니버스 가져오기 실패: {str(e)}")
+        
+        print(f"📊 미국 주식 스캔 시작: {len(symbols)}개 종목, 날짜: {today_as_of}")
+        
+        # 시장 조건 분석 (미국 시장용 - 추후 구현)
+        market_condition = None
+        if config.market_analysis_enable:
+            try:
+                # 미국 시장 레짐 분석 (추후 구현)
+                # market_condition = market_analyzer.analyze_us_market_condition(today_as_of)
+                pass
+            except Exception as e:
+                print(f"⚠️ 미국 시장 분석 실패: {e}")
+        
+        # 스캐너 설정
+        scanner_config = ScannerV2Config()
+        
+        # 미국 주식 스캐너 생성
+        us_scanner = USScanner(scanner_config, market_analyzer)
+        
+        # 스캔 실행
+        results = us_scanner.scan(symbols, today_as_of, market_condition)
+        
+        print(f"✅ 미국 주식 스캔 완료: {len(results)}개 종목 발견")
+        
+        # ScanItem 리스트로 변환
+        items: List[ScanItem] = []
+        for result in results:
+            try:
+                # 등락률 및 현재가 가져오기
+                quote = us_stocks_data.get_stock_quote(result.ticker)
+                change_rate = quote.get('change_rate', 0.0) if quote else 0.0
+                current_price = quote.get('current_price', 0.0) if quote else 0.0
+                
+                # OHLCV 데이터에서 close 가져오기 (fallback)
+                if current_price == 0.0:
+                    df = us_stocks_data.get_ohlcv(result.ticker, 1)
+                    if not df.empty:
+                        current_price = float(df.iloc[-1]['close'])
+                
+                items.append(ScanItem(
+                    ticker=result.ticker,
+                    name=result.name,
+                    score=result.score,
+                    score_label=result.score_label,
+                    current_price=current_price,
+                    change_rate=change_rate,
+                    strategy=result.strategy,
+                    indicators=IndicatorPayload(**result.indicators) if result.indicators else None,
+                    trend=TrendPayload(**result.trend) if result.trend else None,
+                    flags=ScoreFlags(**result.flags) if result.flags else None
+                ))
+            except Exception as e:
+                print(f"⚠️ {result.ticker} 변환 오류: {e}")
+                continue
+        
+        # DB 저장 (한국 주식과 동일한 방식)
+        if save_snapshot:
+            try:
+                from services.scan_service import save_scan_snapshot
+                scan_items_dict = []
+                for idx, result in enumerate(results):
+                    # flags를 dict로 변환
+                    flags_dict = {}
+                    if result.flags:
+                        if isinstance(result.flags, dict):
+                            flags_dict = result.flags
+                        elif hasattr(result.flags, '__dict__'):
+                            flags_dict = result.flags.__dict__
+                    
+                    # strategy 추출 (우선순위: result.strategy > flags.trading_strategy)
+                    strategy_value = result.strategy
+                    if not strategy_value and flags_dict.get("trading_strategy"):
+                        strategy_value = flags_dict.get("trading_strategy")
+                    
+                    scan_items_dict.append({
+                        'ticker': result.ticker,
+                        'name': result.name,
+                        'score': result.score,
+                        'score_label': result.score_label,
+                        'strategy': strategy_value,
+                        'flags': flags_dict,
+                    })
+                
+                # scanner_version을 'us_v2'로 저장 (한국 주식은 'v1' 또는 'v2')
+                save_scan_snapshot(scan_items_dict, today_as_of, 'us_v2')
+                print(f"✅ 미국 주식 스캔 결과 DB 저장 완료: {today_as_of} (버전: us_v2)")
+            except Exception as e:
+                print(f"⚠️ 미국 주식 스캔 결과 DB 저장 실패: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        return ScanResponse(
+            as_of=today_as_of,
+            universe_count=len(symbols),
+            matched_count=len(items),
+            rsi_mode="current_status",
+            rsi_period=14,
+            rsi_threshold=scanner_config.rsi_setup_min,  # 미국 주식용 RSI 임계값
+            items=items,
+            fallback_step=None,
+            score_weights=scanner_config.get_weights(),
+            score_level_strong=scanner_config.score_level_strong,
+            score_level_watch=scanner_config.score_level_watch,
+            market_guide=None,  # 미국 시장 가이드 (추후 구현)
+            market_condition=market_condition
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"❌ 미국 주식 스캔 오류: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"미국 주식 스캔 실패: {str(e)}")
 
 
 @app.get('/_debug/topvalue')
@@ -1865,7 +2113,8 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
         target_date = yyyymmdd_to_date(formatted_date)
         
         # 스캐너 버전 결정: 파라미터 > DB 설정 > 기본값
-        if scanner_version and scanner_version in ['v1', 'v2']:
+        # 'us_v2'도 허용 (미국 주식 스캔)
+        if scanner_version and scanner_version in ['v1', 'v2', 'us_v2']:
             target_scanner_version = scanner_version
         else:
             # DB 설정에서 읽기
@@ -2461,7 +2710,8 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None):
             )}
         
         # 스캐너 버전 결정: 파라미터 > DB 설정 > 기본값
-        if scanner_version and scanner_version in ['v1', 'v2']:
+        # 'us_v2'도 허용 (미국 주식 스캔)
+        if scanner_version and scanner_version in ['v1', 'v2', 'us_v2']:
             target_scanner_version = scanner_version
         else:
             # DB 설정에서 읽기
@@ -3817,6 +4067,189 @@ async def get_admin_stats(admin_user: User = Depends(get_admin_user)):
             detail=f"관리자 통계 조회 중 오류가 발생했습니다: {str(e)}"
         )
 
+@app.get("/admin/access-logs")
+async def get_access_logs(
+    user_id: Optional[int] = None,
+    email: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100,
+    admin_user: User = Depends(get_admin_user)
+):
+    """접속 기록 조회 (관리자 전용)"""
+    try:
+        from services.access_log_service import get_access_logs
+        from datetime import datetime
+        
+        start_dt = None
+        end_dt = None
+        
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            except:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            except:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        logs = get_access_logs(
+            user_id=user_id,
+            email=email,
+            ip_address=ip_address,
+            start_date=start_dt,
+            end_date=end_dt,
+            limit=limit
+        )
+        
+        return {
+            "ok": True,
+            "count": len(logs),
+            "logs": logs
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"접속 기록 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/admin/access-logs/daily-stats")
+async def get_daily_visitor_stats_endpoint(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    admin_user: User = Depends(get_admin_user)
+):
+    """일별 방문자 수 조회 (관리자 전용)"""
+    try:
+        from services.access_log_service import get_daily_visitor_stats
+        from datetime import datetime
+        
+        start_dt = None
+        end_dt = None
+        
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            except:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            except:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        stats = get_daily_visitor_stats(start_dt, end_dt)
+        
+        return {
+            "ok": True,
+            "count": len(stats),
+            "stats": stats
+        }
+    except Exception as e:
+        import traceback
+        import logging
+        logger = logging.getLogger(__name__)
+        error_detail = f"일별 방문자 수 조회 중 오류가 발생했습니다: {str(e)}"
+        error_traceback = traceback.format_exc()
+        print(f"[ERROR] {error_detail}\n{error_traceback}")
+        logger.error(f"{error_detail}\n{error_traceback}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_detail
+        )
+
+
+@app.get("/admin/access-logs/daily-stats-by-path")
+async def get_daily_visitor_stats_by_path_endpoint(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    admin_user: User = Depends(get_admin_user)
+):
+    """화면별 일 방문자 수 조회 (관리자 전용)"""
+    try:
+        from services.access_log_service import get_daily_visitor_stats_by_path
+        from datetime import datetime
+        
+        start_dt = None
+        end_dt = None
+        
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            except:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            except:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        stats = get_daily_visitor_stats_by_path(start_dt, end_dt)
+        
+        return {
+            "ok": True,
+            "count": len(stats),
+            "stats": stats
+        }
+    except Exception as e:
+        import traceback
+        import logging
+        logger = logging.getLogger(__name__)
+        error_detail = f"화면별 일 방문자 수 조회 중 오류가 발생했습니다: {str(e)}"
+        error_traceback = traceback.format_exc()
+        print(f"[ERROR] {error_detail}\n{error_traceback}")
+        logger.error(f"{error_detail}\n{error_traceback}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_detail
+        )
+
+
+@app.get("/admin/access-logs/cumulative-stats")
+async def get_cumulative_visitor_stats_endpoint(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    admin_user: User = Depends(get_admin_user)
+):
+    """누적 방문자 수 조회 (관리자 전용)"""
+    try:
+        from services.access_log_service import get_cumulative_visitor_stats
+        from datetime import datetime
+        
+        start_dt = None
+        end_dt = None
+        
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            except:
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            except:
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        stats = get_cumulative_visitor_stats(start_dt, end_dt)
+        
+        return {
+            "ok": True,
+            "data": stats
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"누적 방문자 수 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
 @app.get("/admin/users")
 async def get_all_users(
     limit: int = 100,
@@ -4415,6 +4848,201 @@ async def update_bottom_nav_link(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"바텀메뉴 링크 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
         )
+
+@app.get("/admin/bottom-nav-visible")
+async def get_bottom_nav_visible(admin_user: User = Depends(get_admin_user)):
+    """바텀메뉴 노출 설정 조회 (관리자 전용)"""
+    try:
+        from scanner_settings_manager import get_scanner_setting
+        visible = get_scanner_setting('bottom_nav_visible', 'true')
+        return {
+            "is_visible": visible.lower() == 'true' if visible else True
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"바텀메뉴 노출 설정 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/admin/bottom-nav-visible")
+async def update_bottom_nav_visible(
+    request: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """바텀메뉴 노출 설정 업데이트 (관리자 전용)"""
+    try:
+        is_visible = request.get('is_visible') if isinstance(request, dict) else request
+        if not isinstance(is_visible, bool):
+            # 문자열로 전달된 경우 변환
+            if isinstance(is_visible, str):
+                is_visible = is_visible.lower() in ['true', '1', 'yes']
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="is_visible은 boolean 값이어야 합니다."
+                )
+        
+        from scanner_settings_manager import set_scanner_setting
+        success = set_scanner_setting(
+            'bottom_nav_visible',
+            'true' if is_visible else 'false',
+            description='바텀메뉴 노출 여부 (true: 표시, false: 숨김)',
+            updated_by=admin_user.email if admin_user else None
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="바텀메뉴 노출 설정 저장에 실패했습니다."
+            )
+        
+        return {
+            "ok": True,
+            "message": "바텀메뉴 노출 설정이 업데이트되었습니다.",
+            "is_visible": is_visible
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"바텀메뉴 노출 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/admin/bottom-nav-menu-items")
+async def get_bottom_nav_menu_items(admin_user: User = Depends(get_admin_user)):
+    """바텀메뉴 개별 메뉴 아이템 설정 조회 (관리자 전용)"""
+    try:
+        from scanner_settings_manager import get_scanner_setting
+        import json
+        
+        # 기본 메뉴 아이템 설정
+        default_items = {
+            "korean_stocks": True,
+            "us_stocks": True,
+            "stock_analysis": True,
+            "portfolio": True,
+            "more": True
+        }
+        
+        menu_items_json = get_scanner_setting('bottom_nav_menu_items', None)
+        if menu_items_json:
+            try:
+                menu_items = json.loads(menu_items_json)
+                # 기본값과 병합
+                return {**default_items, **menu_items}
+            except:
+                return default_items
+        
+        return default_items
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"바텀메뉴 메뉴 아이템 설정 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.post("/admin/bottom-nav-menu-items")
+async def update_bottom_nav_menu_items(
+    request: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """바텀메뉴 개별 메뉴 아이템 설정 업데이트 (관리자 전용)"""
+    try:
+        import json
+        from scanner_settings_manager import set_scanner_setting
+        
+        # request가 dict인 경우 'menu_items' 키에서 가져오기
+        if isinstance(request, dict):
+            menu_items = request.get('menu_items')
+        else:
+            menu_items = request
+        
+        # menu_items가 없거나 dict가 아니면 에러
+        if not menu_items or not isinstance(menu_items, dict):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="menu_items는 객체여야 합니다."
+            )
+        
+        # JSON 문자열로 변환하여 저장
+        menu_items_json = json.dumps(menu_items)
+        
+        success = set_scanner_setting(
+            'bottom_nav_menu_items',
+            menu_items_json,
+            description='바텀메뉴 개별 메뉴 아이템 표시 여부 (JSON 형식)',
+            updated_by=admin_user.email if admin_user else None
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="바텀메뉴 메뉴 아이템 설정 저장에 실패했습니다."
+            )
+        
+        return {
+            "ok": True,
+            "message": "바텀메뉴 메뉴 아이템 설정이 업데이트되었습니다.",
+            "menu_items": menu_items
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"바텀메뉴 메뉴 아이템 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
+        )
+
+@app.get("/bottom-nav-visible")
+async def get_bottom_nav_visible_public():
+    """바텀메뉴 노출 설정 조회 (공개 API)"""
+    try:
+        from scanner_settings_manager import get_scanner_setting
+        visible = get_scanner_setting('bottom_nav_visible', 'true')
+        return {
+            "is_visible": visible.lower() == 'true' if visible else True
+        }
+    except Exception as e:
+        # 에러 발생 시 기본값으로 true 반환
+        return {
+            "is_visible": True
+        }
+
+@app.get("/bottom-nav-menu-items")
+async def get_bottom_nav_menu_items_public():
+    """바텀메뉴 개별 메뉴 아이템 설정 조회 (공개 API)"""
+    try:
+        from scanner_settings_manager import get_scanner_setting
+        import json
+        
+        # 기본 메뉴 아이템 설정
+        default_items = {
+            "korean_stocks": True,
+            "us_stocks": True,
+            "stock_analysis": True,
+            "portfolio": True,
+            "more": True
+        }
+        
+        menu_items_json = get_scanner_setting('bottom_nav_menu_items', None)
+        if menu_items_json:
+            try:
+                menu_items = json.loads(menu_items_json)
+                # 기본값과 병합
+                return {**default_items, **menu_items}
+            except:
+                return default_items
+        
+        return default_items
+    except Exception as e:
+        # 에러 발생 시 기본값 반환
+        return {
+            "korean_stocks": True,
+            "us_stocks": True,
+            "stock_analysis": True,
+            "portfolio": True,
+            "more": True
+        }
 
 @app.get("/bottom-nav-link")
 async def get_bottom_nav_link_public():
@@ -5288,3 +5916,97 @@ async def get_market_validation(date: str = None):
 
 # 라우터 포함
 app.include_router(recurrence_router)
+
+
+# ==================== 미국 레짐 분석 API ====================
+
+@app.get("/api/us-regime/analyze")
+async def analyze_us_regime(date: str = None):
+    """미국 시장 레짐 분석
+    
+    Args:
+        date: 분석 날짜 (YYYYMMDD 형식, None이면 오늘)
+    
+    Returns:
+        {
+            "date": "20251205",
+            "regime": "bull",
+            "regime_kr": "강세장",
+            "score": 75.5,
+            "components": {...},
+            "market_data": {...},
+            "filter_values": {...},
+            "advice": "..."
+        }
+    """
+    try:
+        from services.us_regime_analyzer import us_regime_analyzer
+        
+        # 날짜 처리
+        analysis_date = normalize_date(date) if date else get_kst_now().strftime('%Y%m%d')
+        
+        # 레짐 분석 실행
+        result = us_regime_analyzer.analyze_us_market(analysis_date)
+        
+        # 레짐 한글 변환
+        regime_kr_map = {
+            "bull": "강세장",
+            "neutral_bull": "약한 강세장",
+            "neutral": "중립",
+            "neutral_bear": "약한 약세장",
+            "bear": "약세장"
+        }
+        
+        return {
+            "ok": True,
+            "data": {
+                "date": analysis_date,
+                "regime": result.get("final_regime"),
+                "regime_kr": regime_kr_map.get(result.get("final_regime"), "중립"),
+                "score": round(result.get("final_score", 0), 2),
+                "components": {
+                    "stocks": {
+                        "score": round(result.get("us_equity_score", 0), 2),
+                        "weight": 0.5,
+                        "regime": result.get("us_equity_regime")
+                    },
+                    "futures": {
+                        "score": round(result.get("us_futures_score", 0), 2),
+                        "weight": 0.3,
+                        "regime": result.get("us_futures_regime")
+                    },
+                    "volatility": {
+                        "score": round(result.get("us_volatility_score", 0), 2),
+                        "weight": 0.2
+                    }
+                },
+                "market_data": {
+                    "SPY": {
+                        "change_pct": round(result.get("spy_change", 0), 2)
+                    },
+                    "QQQ": {
+                        "change_pct": round(result.get("qqq_change", 0), 2)
+                    },
+                    "VIX": {
+                        "level": round(result.get("vix_level", 0), 2)
+                    }
+                },
+                "filter_values": {
+                    "rsi_threshold": result.get("rsi_threshold", 58),
+                    "min_signals": result.get("min_signals", 3),
+                    "vol_ma5_mult": result.get("vol_ma5_mult", 2.5),
+                    "gap_max": result.get("gap_max", 0.015),
+                    "ext_from_tema20_max": result.get("ext_from_tema20_max", 0.015)
+                },
+                "advice": result.get("advice", "시장 상황을 주의 깊게 관찰하세요.")
+            }
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"미국 레짐 분석 오류: {e}")
+        traceback.print_exc()
+        return {
+            "ok": False,
+            "error": f"미국 레짐 분석 중 오류가 발생했습니다: {str(e)}"
+        }

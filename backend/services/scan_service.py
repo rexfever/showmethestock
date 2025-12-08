@@ -166,9 +166,11 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 from config import config
                 scanner_version = getattr(config, 'scanner_version', 'v1')
         
-        # 버전 검증
-        if scanner_version not in ['v1', 'v2']:
-            scanner_version = 'v1'
+        # 버전 검증 (미국 주식 'us_v2' 허용)
+        if scanner_version not in ['v1', 'v2', 'us_v2']:
+            # us_v2는 그대로 유지, 다른 값은 v1로 fallback
+            if scanner_version != 'us_v2':
+                scanner_version = 'v1'
         
         with db_manager.get_cursor(commit=True) as cur_hist:
             _ensure_scan_rank_table(cur_hist)

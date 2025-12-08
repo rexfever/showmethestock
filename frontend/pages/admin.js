@@ -3,11 +3,11 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import getConfig from '../config';
-import MarketConditionDetailCard from '../components/MarketConditionDetailCard';
+import Cookies from 'js-cookie';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isAuthenticated, user, token, loading: authLoading, authChecked } = useAuth();
+  const { isAuthenticated, user, token, loading: authLoading, authChecked, logout } = useAuth();
   
   // 날짜 형식 변환 함수
   const convertToYYYYMMDD = (dateStr) => {
@@ -27,10 +27,15 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [scanDates, setScanDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [rescanLoading, setRescanLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // 방문자 통계 상태
+  const [dailyVisitorStats, setDailyVisitorStats] = useState([]);
+  const [dailyVisitorStatsByPath, setDailyVisitorStatsByPath] = useState([]);
+  const [cumulativeVisitorStats, setCumulativeVisitorStats] = useState(null);
+  const [visitorStatsLoading, setVisitorStatsLoading] = useState(false);
+  const [visitorStatsStartDate, setVisitorStatsStartDate] = useState('');
+  const [visitorStatsEndDate, setVisitorStatsEndDate] = useState('');
+  const [authErrorShown, setAuthErrorShown] = useState(false); // 인증 에러 알림 중복 방지
   
   // 메인트넌스 설정 상태
   const [maintenanceSettings, setMaintenanceSettings] = useState({
@@ -50,14 +55,6 @@ export default function AdminDashboard() {
   });
   const [popupLoading, setPopupLoading] = useState(false);
 
-  // 추세 변동 대응 상태
-  const [trendAnalysis, setTrendAnalysis] = useState(null);
-  const [trendLoading, setTrendLoading] = useState(false);
-  const [trendApplyLoading, setTrendApplyLoading] = useState(false);
-  
-  // 장세 분석 상태
-  const [marketCondition, setMarketCondition] = useState(null);
-  const [marketLoading, setMarketLoading] = useState(false);
   
   // 스캐너 설정 상태
   const [scannerSettings, setScannerSettings] = useState({
@@ -72,6 +69,20 @@ export default function AdminDashboard() {
     link_type: 'v1'  // 'v1' 또는 'v2'
   });
   const [bottomNavLinkLoading, setBottomNavLinkLoading] = useState(false);
+  
+  // 바텀메뉴 노출 설정 상태
+  const [bottomNavVisible, setBottomNavVisible] = useState(true);
+  const [bottomNavVisibleLoading, setBottomNavVisibleLoading] = useState(false);
+  
+  // 바텀메뉴 개별 메뉴 아이템 설정 상태
+  const [bottomNavMenuItems, setBottomNavMenuItems] = useState({
+    korean_stocks: true,
+    us_stocks: true,
+    stock_analysis: true,
+    portfolio: true,
+    more: true
+  });
+  const [bottomNavMenuItemsLoading, setBottomNavMenuItemsLoading] = useState(false);
   const [scannerLink, setScannerLink] = useState('/customer-scanner'); // 동적 스캐너 링크
 
   useEffect(() => {
@@ -127,13 +138,28 @@ export default function AdminDashboard() {
       performAnalysis(router.query.analyze);
     } else {
       fetchAdminData();
-      fetchScanDates();
-      fetchTrendAnalysis();
-      fetchMarketCondition();
       fetchScannerSettings();
       fetchBottomNavLink();
+      fetchBottomNavVisible();
+      fetchBottomNavMenuItems();
     }
   }, [authChecked, authLoading, isAuthenticated, router, token]);
+
+  const handleAuthError = () => {
+    if (!authErrorShown) {
+      setAuthErrorShown(true);
+      // 로그아웃 처리
+      if (logout) {
+        logout();
+      }
+      // 쿠키와 localStorage 정리
+      Cookies.remove('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+      router.push('/login');
+    }
+  };
 
   const fetchBottomNavLink = async () => {
     try {
@@ -153,11 +179,131 @@ export default function AdminDashboard() {
         // 동적 스캐너 링크 설정
         const linkUrl = data.link_url || (data.link_type === 'v2' ? '/v2/scanner-v2' : '/customer-scanner');
         setScannerLink(linkUrl);
+      } else if (response.status === 401) {
+        handleAuthError();
       }
     } catch (error) {
       console.error('바텀메뉴 링크 설정 조회 실패:', error);
       // 에러 시 기본값 사용
       setScannerLink('/customer-scanner');
+    }
+  };
+
+  const fetchBottomNavVisible = async () => {
+    setBottomNavVisibleLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-visible`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBottomNavVisible(data.is_visible !== false);
+      } else if (response.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('바텀메뉴 노출 설정 조회 실패:', error);
+    } finally {
+      setBottomNavVisibleLoading(false);
+    }
+  };
+
+  const updateBottomNavVisible = async () => {
+    setBottomNavVisibleLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-visible`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_visible: bottomNavVisible })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        fetchBottomNavVisible();
+        return { success: true, message: data.message || '바텀메뉴 노출 설정이 저장되었습니다.' };
+      } else if (response.status === 401) {
+        handleAuthError();
+        return { success: false, error: '인증 오류' };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || '바텀메뉴 노출 설정 저장에 실패했습니다.' };
+      }
+    } catch (error) {
+      console.error('바텀메뉴 노출 설정 저장 실패:', error);
+      return { success: false, error: '바텀메뉴 노출 설정 저장 중 오류가 발생했습니다.' };
+    } finally {
+      setBottomNavVisibleLoading(false);
+    }
+  };
+
+  const fetchBottomNavMenuItems = async () => {
+    setBottomNavMenuItemsLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-menu-items`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBottomNavMenuItems({
+          korean_stocks: data.korean_stocks === true,
+          us_stocks: data.us_stocks === true,
+          stock_analysis: data.stock_analysis === true,
+          portfolio: data.portfolio === true,
+          more: data.more === true
+        });
+      } else if (response.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('바텀메뉴 메뉴 아이템 설정 조회 실패:', error);
+    } finally {
+      setBottomNavMenuItemsLoading(false);
+    }
+  };
+
+  const updateBottomNavMenuItems = async () => {
+    setBottomNavMenuItemsLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-menu-items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ menu_items: bottomNavMenuItems })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        fetchBottomNavMenuItems();
+        return { success: true, message: data.message || '바텀메뉴 메뉴 아이템 설정이 저장되었습니다.' };
+      } else if (response.status === 401) {
+        handleAuthError();
+        return { success: false, error: '인증 오류' };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || '바텀메뉴 메뉴 아이템 설정 저장에 실패했습니다.' };
+      }
+    } catch (error) {
+      console.error('바텀메뉴 메뉴 아이템 설정 저장 실패:', error);
+      return { success: false, error: '바텀메뉴 메뉴 아이템 설정 저장 중 오류가 발생했습니다.' };
+    } finally {
+      setBottomNavMenuItemsLoading(false);
     }
   };
 
@@ -176,67 +322,18 @@ export default function AdminDashboard() {
       });
       if (response.ok) {
         const data = await response.json();
-        alert(data.message || '바텀메뉴 링크 설정이 저장되었습니다.');
         // 설정 다시 불러오기
         fetchBottomNavLink();
+        return { success: true, message: data.message || '바텀메뉴 링크 설정이 저장되었습니다.' };
       } else {
         const data = await response.json();
-        alert(`저장 실패: ${data.detail || '알 수 없는 오류'}`);
+        return { success: false, error: `저장 실패: ${data.detail || '알 수 없는 오류'}` };
       }
     } catch (error) {
       console.error('바텀메뉴 링크 설정 저장 실패:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      return { success: false, error: '저장 중 오류가 발생했습니다.' };
     } finally {
       setBottomNavLinkLoading(false);
-    }
-  };
-
-  const fetchTrendAnalysis = async () => {
-    setTrendLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/admin/trend-analysis`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok) {
-          setTrendAnalysis(data.data);
-        }
-      } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('추세 분석 조회 실패:', error);
-    } finally {
-      setTrendLoading(false);
-    }
-  };
-  
-  const fetchMarketCondition = async () => {
-    setMarketLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/latest-scan`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && data.data && data.data.market_condition) {
-          setMarketCondition(data.data.market_condition);
-        }
-      }
-    } catch (error) {
-      console.error('장세 분석 조회 실패:', error);
-    } finally {
-      setMarketLoading(false);
     }
   };
 
@@ -262,8 +359,7 @@ export default function AdminDashboard() {
           });
         }
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       }
     } catch (error) {
       console.error('스캐너 설정 조회 실패:', error);
@@ -299,8 +395,7 @@ export default function AdminDashboard() {
           alert(data.error || '설정 업데이트에 실패했습니다.');
         }
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       } else {
         const data = await response.json();
         alert(data.error || '설정 업데이트에 실패했습니다.');
@@ -310,50 +405,6 @@ export default function AdminDashboard() {
       alert('설정 업데이트 중 오류가 발생했습니다.');
     } finally {
       setScannerLoading(false);
-    }
-  };
-
-  const applyTrendParams = async () => {
-    if (!trendAnalysis || !trendAnalysis.recommended_params) {
-      alert('권장 파라미터가 없습니다.');
-      return;
-    }
-
-    if (!confirm('권장 파라미터를 적용하시겠습니까? .env 파일이 백업되고 업데이트됩니다.')) {
-      return;
-    }
-
-    setTrendApplyLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/admin/trend-apply`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(trendAnalysis.recommended_params)
-      });
-      
-      const data = await response.json();
-      
-      if (data.ok) {
-        const changesText = Array.isArray(data.changes) && data.changes.length > 0
-          ? data.changes.join('\n')
-          : '변경 사항 없음';
-        alert(`파라미터 적용 완료!\n변경 사항:\n${changesText}\n\n서버 재시작이 필요할 수 있습니다.`);
-        // 분석 데이터 다시 불러오기
-        fetchTrendAnalysis();
-      } else {
-        alert(`파라미터 적용 실패: ${data.error || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      console.error('파라미터 적용 실패:', error);
-      alert('파라미터 적용 중 오류가 발생했습니다.');
-    } finally {
-      setTrendApplyLoading(false);
     }
   };
 
@@ -375,6 +426,74 @@ export default function AdminDashboard() {
       alert('분석 중 오류가 발생했습니다.');
     } finally {
       setAnalysisLoading(false);
+    }
+  };
+
+  const fetchVisitorStats = async () => {
+    setVisitorStatsLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const params = new URLSearchParams();
+      if (visitorStatsStartDate) {
+        params.append('start_date', visitorStatsStartDate);
+      }
+      if (visitorStatsEndDate) {
+        params.append('end_date', visitorStatsEndDate);
+      }
+      
+      const [dailyResponse, dailyByPathResponse, cumulativeResponse] = await Promise.all([
+        fetch(`${base}/admin/access-logs/daily-stats?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${base}/admin/access-logs/daily-stats-by-path?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${base}/admin/access-logs/cumulative-stats?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      ]);
+      
+      if (dailyResponse.ok) {
+        const dailyData = await dailyResponse.json();
+        if (dailyData.ok) {
+          setDailyVisitorStats(dailyData.stats || []);
+        }
+      } else if (dailyResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+      
+      if (dailyByPathResponse.ok) {
+        const dailyByPathData = await dailyByPathResponse.json();
+        if (dailyByPathData.ok) {
+          setDailyVisitorStatsByPath(dailyByPathData.stats || []);
+        }
+      } else if (dailyByPathResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+      
+      if (cumulativeResponse.ok) {
+        const cumulativeData = await cumulativeResponse.json();
+        if (cumulativeData.ok) {
+          setCumulativeVisitorStats(cumulativeData.data);
+        }
+      } else if (cumulativeResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('방문자 통계 조회 실패:', error);
+    } finally {
+      setVisitorStatsLoading(false);
     }
   };
 
@@ -410,14 +529,16 @@ export default function AdminDashboard() {
         const statsData = await statsResponse.json();
         setStats(statsData);
       } else if (statsResponse.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
         return;
       }
 
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         setUsers(usersData.users);
+      } else if (usersResponse.status === 401) {
+        handleAuthError();
+        return;
       }
 
       if (maintenanceResponse.ok) {
@@ -427,6 +548,9 @@ export default function AdminDashboard() {
           end_date: convertToYYYYMMDD_Display(maintenanceData.end_date) || '',
           message: maintenanceData.message || '서비스 점검 중입니다.'
         });
+      } else if (maintenanceResponse.status === 401) {
+        handleAuthError();
+        return;
       }
 
       if (popupResponse.ok) {
@@ -438,27 +562,14 @@ export default function AdminDashboard() {
           start_date: convertToYYYYMMDD_Display(popupData.start_date) || '',
           end_date: convertToYYYYMMDD_Display(popupData.end_date) || ''
         });
+      } else if (popupResponse.status === 401) {
+        handleAuthError();
+        return;
       }
     } catch (error) {
       console.error('관리자 데이터 로딩 오류:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchScanDates = async () => {
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/available-scan-dates`);
-      const data = await response.json();
-      
-      if (data.ok) {
-        setScanDates(data.dates || []);
-      } else {
-      }
-    } catch (error) {
     }
   };
 
@@ -483,8 +594,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         alert('메인트넌스 설정이 업데이트되었습니다.');
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       } else {
         alert('메인트넌스 설정 업데이트에 실패했습니다.');
       }
@@ -518,8 +628,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         alert('팝업 공지 설정이 업데이트되었습니다.');
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       } else {
         alert('팝업 공지 설정 업데이트에 실패했습니다.');
       }
@@ -531,70 +640,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRescan = async () => {
-    if (!selectedDate) {
-      alert('날짜를 선택해주세요.');
-      return;
-    }
-
-    if (!confirm(`${selectedDate} 날짜로 재스캔을 실행하시겠습니까?`)) {
-      return;
-    }
-
-    setRescanLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/scan?date=${convertToYYYYMMDD(selectedDate)}&save_snapshot=true`);
-      const data = await response.json();
-      
-      if (data.ok) {
-        alert(`${selectedDate} 재스캔이 완료되었습니다. 추천 종목: ${data.items.length}개`);
-        fetchScanDates(); // 날짜 목록 새로고침
-      } else {
-        alert(`재스캔 실패: ${data.error || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      alert('재스캔 중 오류가 발생했습니다.');
-    } finally {
-      setRescanLoading(false);
-    }
-  };
-
-  const handleDeleteScan = async () => {
-    if (!selectedDate) {
-      alert('날짜를 선택해주세요.');
-      return;
-    }
-
-    if (!confirm(`${selectedDate} 날짜의 스캔 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
-      return;
-    }
-
-    setDeleteLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/scan/${convertToYYYYMMDD(selectedDate)}`, {
-        method: 'DELETE'
-      });
-      const data = await response.json();
-      
-      if (data.ok) {
-        alert(`${selectedDate} 스캔 데이터가 삭제되었습니다. (삭제된 레코드: ${data.deleted_records}개)`);
-        fetchScanDates(); // 날짜 목록 새로고침
-        setSelectedDate(''); // 선택 초기화
-      } else {
-        alert(`삭제 실패: ${data.error || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      alert('삭제 중 오류가 발생했습니다.');
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   const handleUserEdit = (user) => {
     setEditingUser({ ...user });
@@ -604,7 +649,7 @@ export default function AdminDashboard() {
   const handleUserUpdate = async () => {
     try {
       const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8000' 
+        ? 'http://localhost:8010' 
         : 'https://sohntech.ai.kr/backend';
 
       const response = await fetch(`${base}/admin/users/${editingUser.id}`, {
@@ -642,7 +687,7 @@ export default function AdminDashboard() {
 
     try {
       const base = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8000' 
+        ? 'http://localhost:8010' 
         : 'https://sohntech.ai.kr/backend';
 
       const response = await fetch(`${base}/admin/users/${userId}`, {
@@ -968,101 +1013,204 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 스캔 데이터 관리 */}
-        <div className="bg-white rounded-lg shadow mb-8">
+        {/* 방문자 통계 */}
+        <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">스캔 데이터 관리</h2>
-            <p className="text-sm text-gray-600">날짜별 스캔 데이터 삭제 및 재스캔</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">📊 방문자 통계</h2>
+                <p className="text-sm text-gray-600">일별 방문자 수 및 누적 방문자 수 조회</p>
+              </div>
+              <button
+                onClick={fetchVisitorStats}
+                disabled={visitorStatsLoading}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {visitorStatsLoading ? '조회 중...' : '🔄 새로고침'}
+              </button>
+            </div>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 날짜 선택 */}
+          <div className="px-6 py-4 space-y-6">
+            {/* 날짜 범위 선택 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  스캔 날짜 선택
+                  시작 날짜
                 </label>
-                <select
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                <input
+                  type="date"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">날짜를 선택하세요</option>
-                  {scanDates.map((date) => (
-                    <option key={date} value={date}>
-                      {date}
-                    </option>
-                  ))}
-                </select>
+                  value={visitorStatsStartDate}
+                  onChange={(e) => setVisitorStatsStartDate(e.target.value)}
+                />
               </div>
-
-              {/* 액션 버튼들 */}
-              <div className="flex flex-col space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  종료 날짜
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={visitorStatsEndDate}
+                  onChange={(e) => setVisitorStatsEndDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-end">
                 <button
-                  onClick={handleRescan}
-                  disabled={!selectedDate || rescanLoading}
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  onClick={fetchVisitorStats}
+                  disabled={visitorStatsLoading}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {rescanLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      재스캔 중...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      재스캔 실행
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleDeleteScan}
-                  disabled={!selectedDate || deleteLoading}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {deleteLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      삭제 중...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      스캔 데이터 삭제
-                    </>
-                  )}
+                  {visitorStatsLoading ? '조회 중...' : '조회'}
                 </button>
               </div>
             </div>
 
-            {/* 스캔 날짜 목록 */}
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">사용 가능한 스캔 날짜 ({scanDates.length}개)</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {scanDates.map((date) => (
-                  <button
-                    key={date}
-                    onClick={() => setSelectedDate(date)}
-                    className={`px-3 py-2 text-sm rounded-md border ${
-                      selectedDate === date
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {date}
-                  </button>
-                ))}
+            {/* 누적 방문자 수 */}
+            {cumulativeVisitorStats && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">누적 방문자 수</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">기간</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {cumulativeVisitorStats.start_date || '전체'} ~ {cumulativeVisitorStats.end_date || '전체'}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">고유 방문자 수</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {cumulativeVisitorStats.total_unique_visitors?.toLocaleString() || 0}명
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">총 방문 횟수</p>
+                    <p className="text-2xl font-bold text-indigo-600">
+                      {cumulativeVisitorStats.total_visits?.toLocaleString() || 0}회
+                    </p>
+                  </div>
+                </div>
               </div>
+            )}
+
+            {/* 일별 방문자 수 테이블 */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">일별 방문자 수</h3>
+              {visitorStatsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">조회 중...</p>
+                </div>
+              ) : dailyVisitorStats.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          날짜
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          고유 방문자 수
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          총 방문 횟수
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {dailyVisitorStats.map((stat, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {stat.date}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {stat.unique_visitors?.toLocaleString() || 0}명
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {stat.total_visits?.toLocaleString() || 0}회
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>조회된 데이터가 없습니다.</p>
+                  <p className="text-sm mt-2">날짜 범위를 선택하고 조회 버튼을 클릭하세요.</p>
+                </div>
+              )}
+            </div>
+
+            {/* 화면별 방문자 수 테이블 */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">화면별 방문자 수</h3>
+              {visitorStatsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">조회 중...</p>
+                </div>
+              ) : dailyVisitorStatsByPath.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          날짜
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          화면
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          고유 방문자 수
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          총 방문 횟수
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {dailyVisitorStatsByPath.map((stat, index) => {
+                        // 경로를 화면명으로 변환
+                        const getPathName = (path) => {
+                          const pathMap = {
+                            '/v2/us-stocks-scanner': '미국주식추천',
+                            '/v2/scanner-v2': '한국주식추천 (V2)',
+                            '/customer-scanner': '한국주식추천 (V1)',
+                            '/stock-analysis': '종목분석',
+                            '/portfolio': '나의투자종목',
+                            '/my-stocks': '나의투자종목 (대체)',
+                            '/more': '더보기'
+                          };
+                          return pathMap[path] || path;
+                        };
+                        
+                        return (
+                          <tr key={`${stat.date}-${stat.path}-${index}`} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {stat.date}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {getPathName(stat.path)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {stat.unique_visitors?.toLocaleString() || 0}명
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {stat.total_visits?.toLocaleString() || 0}회
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>조회된 데이터가 없습니다.</p>
+                  <p className="text-sm mt-2">날짜 범위를 선택하고 조회 버튼을 클릭하세요.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1169,250 +1317,6 @@ export default function AdminDashboard() {
                 {popupLoading ? '저장 중...' : '설정 저장'}
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* 장세 분석 */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">📊 오늘의 장세 분석</h2>
-                <p className="text-sm text-gray-600">시장 상황 및 스캔 파라미터</p>
-              </div>
-              <button
-                onClick={fetchMarketCondition}
-                disabled={marketLoading}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
-              >
-                {marketLoading ? '조회 중...' : '🔄 새로고침'}
-              </button>
-            </div>
-          </div>
-          <div className="px-6 py-4">
-            {marketLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-600">조회 중...</p>
-              </div>
-            ) : marketCondition ? (
-              <MarketConditionDetailCard marketCondition={marketCondition} />
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>장세 분석 데이터가 없습니다.</p>
-                <p className="text-sm mt-2">스캔이 실행되면 자동으로 표시됩니다.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 추세 변동 대응 */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">📊 추세 변동 대응</h2>
-                <p className="text-sm text-gray-600">성과 분석 및 파라미터 자동 조정</p>
-              </div>
-              <button
-                onClick={fetchTrendAnalysis}
-                disabled={trendLoading}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
-              >
-                {trendLoading ? '분석 중...' : '🔄 새로고침'}
-              </button>
-            </div>
-          </div>
-          <div className="px-6 py-4">
-            {trendLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-600">분석 중...</p>
-              </div>
-            ) : trendAnalysis ? (
-              <div className="space-y-6">
-                {/* 성과 지표 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 최근 4주간 성과 */}
-                  <div className="border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">최근 4주간 성과</h3>
-                    {trendAnalysis.recent_4weeks.avg_return !== null ? (
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">평균 수익률:</span>
-                          <span className={`font-semibold ${trendAnalysis.recent_4weeks.avg_return >= 30 ? 'text-green-600' : trendAnalysis.recent_4weeks.avg_return >= 20 ? 'text-blue-600' : trendAnalysis.recent_4weeks.avg_return >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {trendAnalysis.recent_4weeks.avg_return?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">승률:</span>
-                          <span className={`font-semibold ${trendAnalysis.recent_4weeks.win_rate >= 90 ? 'text-green-600' : trendAnalysis.recent_4weeks.win_rate >= 80 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {trendAnalysis.recent_4weeks.win_rate?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">추천 종목:</span>
-                          <span className="font-medium">{trendAnalysis.recent_4weeks.total_stocks}개</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">데이터 없음</p>
-                    )}
-                  </div>
-
-                  {/* 현재 월 성과 */}
-                  <div className="border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">현재 월 성과</h3>
-                    {trendAnalysis.current_month.avg_return !== null ? (
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">평균 수익률:</span>
-                          <span className={`font-semibold ${trendAnalysis.current_month.avg_return >= 30 ? 'text-green-600' : trendAnalysis.current_month.avg_return >= 20 ? 'text-blue-600' : trendAnalysis.current_month.avg_return >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {trendAnalysis.current_month.avg_return?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">승률:</span>
-                          <span className={`font-semibold ${trendAnalysis.current_month.win_rate >= 90 ? 'text-green-600' : trendAnalysis.current_month.win_rate >= 80 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {trendAnalysis.current_month.win_rate?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">추천 종목:</span>
-                          <span className="font-medium">{trendAnalysis.current_month.total_stocks}개</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">데이터 없음</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 평가 결과 */}
-                <div className={`border-l-4 rounded p-4 ${
-                  trendAnalysis.evaluation === 'excellent' ? 'bg-green-50 border-green-500' :
-                  trendAnalysis.evaluation === 'good' ? 'bg-blue-50 border-blue-500' :
-                  trendAnalysis.evaluation === 'fair' ? 'bg-yellow-50 border-yellow-500' :
-                  'bg-red-50 border-red-500'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        평가: {
-                          trendAnalysis.evaluation === 'excellent' ? '⭐ 매우 우수' :
-                          trendAnalysis.evaluation === 'good' ? '✅ 양호' :
-                          trendAnalysis.evaluation === 'fair' ? '⚠️ 보통' :
-                          '❌ 저조'
-                        }
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {trendAnalysis.evaluation === 'poor' && '즉시 파라미터 조정을 권장합니다.'}
-                        {trendAnalysis.evaluation === 'fair' && '파라미터 조정을 검토하세요.'}
-                        {trendAnalysis.evaluation === 'good' && '현재 성과가 양호합니다.'}
-                        {trendAnalysis.evaluation === 'excellent' && '현재 성과가 매우 우수합니다!'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 파라미터 비교 */}
-                <div className="border rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4">권장 파라미터 조정</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3 font-medium text-gray-700">파라미터</th>
-                          <th className="text-right py-2 px-3 font-medium text-gray-700">현재 값</th>
-                          <th className="text-right py-2 px-3 font-medium text-gray-700">권장 값</th>
-                          <th className="text-center py-2 px-3 font-medium text-gray-700">변경</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.keys(trendAnalysis.current_params).map((key) => {
-                          const current = trendAnalysis.current_params[key];
-                          const recommended = trendAnalysis.recommended_params[key];
-                          const changed = current !== recommended;
-                          return (
-                            <tr key={key} className="border-b">
-                              <td className="py-2 px-3 text-gray-700">{key}</td>
-                              <td className="py-2 px-3 text-right font-medium">{current}</td>
-                              <td className={`py-2 px-3 text-right font-medium ${changed ? 'text-blue-600' : ''}`}>
-                                {recommended}
-                              </td>
-                              <td className="py-2 px-3 text-center">
-                                {changed ? (
-                                  <span className="text-orange-600 font-semibold">변경</span>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Fallback 정보 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Fallback 설정</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">활성화:</span>
-                      <span className={`ml-2 font-medium ${trendAnalysis.fallback_enabled ? 'text-green-600' : 'text-gray-400'}`}>
-                        {trendAnalysis.fallback_enabled ? '✅ 활성화' : '❌ 비활성화'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">최소 목표:</span>
-                      <span className="ml-2 font-medium">{trendAnalysis.fallback_target_min}개</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">최대 목표:</span>
-                      <span className="ml-2 font-medium">{trendAnalysis.fallback_target_max}개</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 적용 버튼 */}
-                <div className="flex justify-end">
-                  <button
-                    onClick={applyTrendParams}
-                    disabled={trendApplyLoading || !trendAnalysis.recommended_params}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {trendApplyLoading ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        적용 중...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        권장 파라미터 적용
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-gray-500">분석 데이터를 불러올 수 없습니다.</p>
-                <button
-                  onClick={fetchTrendAnalysis}
-                  className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  다시 시도
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1603,15 +1507,47 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 바텀메뉴 링크 설정 */}
+        {/* 바텀메뉴 설정 */}
         <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">바텀메뉴 링크 설정</h2>
-            <p className="text-sm text-gray-600">바텀메뉴의 "추천종목" 버튼이 연결될 화면을 설정합니다</p>
+            <h2 className="text-lg font-medium text-gray-900">바텀메뉴 설정</h2>
+            <p className="text-sm text-gray-600">바텀메뉴의 노출 여부 및 링크 설정을 관리합니다</p>
           </div>
-          <div className="px-6 py-4 space-y-4">
-            {/* 링크 타입 선택 */}
+          <div className="px-6 py-4 space-y-6">
+            {/* 바텀메뉴 노출 설정 */}
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                바텀메뉴 노출
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="bottomNavVisible"
+                    checked={bottomNavVisible === true}
+                    onChange={() => setBottomNavVisible(true)}
+                    className="mr-2"
+                  />
+                  <span>표시</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="bottomNavVisible"
+                    checked={bottomNavVisible === false}
+                    onChange={() => setBottomNavVisible(false)}
+                    className="mr-2"
+                  />
+                  <span>숨김</span>
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                💡 <strong>설정 안내:</strong> "숨김"으로 설정하면 모든 화면에서 바텀메뉴가 표시되지 않습니다.
+              </p>
+            </div>
+
+            {/* 바텀메뉴 링크 설정 */}
+            <div className="border-t pt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 추천종목 링크
               </label>
@@ -1634,6 +1570,78 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* 개별 메뉴 아이템 설정 */}
+            <div className="border-t pt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                개별 메뉴 아이템 표시
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.korean_stocks}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      korean_stocks: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>한국주식추천</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.us_stocks}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      us_stocks: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>미국주식추천</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.stock_analysis}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      stock_analysis: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>종목분석</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.portfolio}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      portfolio: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>나의투자종목</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.more}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      more: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>더보기</span>
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                💡 <strong>설정 안내:</strong> 체크 해제된 메뉴는 바텀메뉴에서 표시되지 않습니다. 관리자 메뉴는 관리자 권한이 있는 사용자에게만 자동으로 표시됩니다.
+              </p>
+            </div>
+
             {/* 현재 설정 정보 */}
             <div className="bg-gray-50 rounded-md p-4">
               <div className="text-sm space-y-2">
@@ -1649,11 +1657,27 @@ export default function AdminDashboard() {
             {/* 저장 버튼 */}
             <div className="flex justify-end">
               <button
-                onClick={updateBottomNavLink}
-                disabled={bottomNavLinkLoading}
+                onClick={async () => {
+                  const results = await Promise.all([
+                    updateBottomNavLink(),
+                    updateBottomNavVisible(),
+                    updateBottomNavMenuItems()
+                  ]);
+                  
+                  // 모든 결과 확인
+                  const allSuccess = results.every(r => r && r.success);
+                  const errors = results.filter(r => r && !r.success).map(r => r.error);
+                  
+                  if (allSuccess) {
+                    alert('바텀메뉴 설정이 모두 저장되었습니다.');
+                  } else {
+                    alert(`일부 설정 저장에 실패했습니다:\n${errors.join('\n')}`);
+                  }
+                }}
+                disabled={bottomNavLinkLoading || bottomNavVisibleLoading || bottomNavMenuItemsLoading}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {bottomNavLinkLoading ? '저장 중...' : '설정 저장'}
+                {(bottomNavLinkLoading || bottomNavVisibleLoading || bottomNavMenuItemsLoading) ? '저장 중...' : '설정 저장'}
               </button>
             </div>
           </div>

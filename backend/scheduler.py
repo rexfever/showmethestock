@@ -65,6 +65,33 @@ def is_trading_day():
     
     return True
 
+def is_us_trading_day():
+    """미국 거래일인지 확인 (주말과 미국 공휴일 제외) - KST 기준"""
+    # KST 시간대 사용
+    kst = pytz.timezone('Asia/Seoul')
+    now_kst = datetime.now(kst)
+    
+    # 미국 시간대로 변환 (EST/EDT)
+    # 서머타임 자동 처리
+    us_eastern = pytz.timezone('US/Eastern')
+    now_us = now_kst.astimezone(us_eastern)
+    today_us = now_us.date()
+    
+    # 주말 체크 (토요일, 일요일)
+    if today_us.weekday() >= 5:
+        return False
+    
+    # 미국 공휴일 체크
+    try:
+        us_holidays = holidays.UnitedStates()
+        if today_us in us_holidays:
+            return False
+    except Exception:
+        # holidays 모듈에서 미국 공휴일을 지원하지 않으면 주말만 체크
+        pass
+    
+    return True
+
 def run_market_analysis():
     """장세 분석 실행 (15:35)"""
     if not is_trading_day():
@@ -175,13 +202,13 @@ def run_market_analysis():
         logger.error(traceback.format_exc())
 
 def run_scan():
-    """스캔 실행 (15:40)"""
+    """한국 주식 스캔 실행 (15:42)"""
     if not is_trading_day():
         logger.info(f"오늘은 거래일이 아닙니다. 스캔을 건너뜁니다.")
         return
     
     try:
-        logger.info("📈 자동 스캔을 시작합니다...")
+        logger.info("📈 한국 주식 자동 스캔을 시작합니다...")
         
         # 백엔드 API 호출 (환경별 URL 사용)
         env_info = get_environment_info()
@@ -195,7 +222,7 @@ def run_scan():
         if response.status_code == 200:
             data = response.json()
             matched_count = data.get('matched_count', 0)
-            logger.info(f"✅ 자동 스캔 완료: {matched_count}개 종목 매칭")
+            logger.info(f"✅ 한국 주식 자동 스캔 완료: {matched_count}개 종목 매칭")
             
             # 스캔 결과는 DB에 저장됨 (JSON 파일 저장 제거)
             logger.info("스캔 결과가 DB에 저장되었습니다.")
@@ -204,10 +231,51 @@ def run_scan():
             send_auto_notification(matched_count)
             
         else:
-            logger.error(f"스캔 실패: HTTP {response.status_code}")
+            logger.error(f"한국 주식 스캔 실패: HTTP {response.status_code}")
             
     except Exception as e:
-        logger.error(f"자동 스캔 중 오류 발생: {str(e)}")
+        logger.error(f"한국 주식 자동 스캔 중 오류 발생: {str(e)}")
+
+def run_us_scan():
+    """미국 주식 스캔 실행 (오전 7:00 KST)"""
+    # 미국 시장이 마감된 후 데이터 확정 시점에 실행
+    # 서머타임: 미국 정규장 마감 5:00 KST → 스캔 7:00 KST
+    # 비서머타임: 미국 정규장 마감 6:00 KST → 스캔 7:00 KST
+    if not is_us_trading_day():
+        logger.info(f"오늘은 미국 거래일이 아닙니다. 미국 주식 스캔을 건너뜁니다.")
+        return
+    
+    try:
+        logger.info("🇺🇸 미국 주식 자동 스캔을 시작합니다...")
+        
+        # 백엔드 API 호출 (환경별 URL 사용)
+        env_info = get_environment_info()
+        if env_info['is_local']:
+            backend_url = "http://localhost:8010"
+        else:
+            backend_url = "http://localhost:8010"  # 서버에서는 내부 통신
+        
+        # S&P 500 + NASDAQ 100 통합 스캔
+        response = requests.get(
+            f"{backend_url}/scan/us-stocks?universe_type=combined&limit=500&save_snapshot=true",
+            timeout=600  # 미국 주식은 종목 수가 많아 타임아웃을 더 길게
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            matched_count = data.get('matched_count', 0)
+            logger.info(f"✅ 미국 주식 자동 스캔 완료: {matched_count}개 종목 매칭")
+            
+            # 스캔 결과는 DB에 저장됨
+            logger.info("미국 주식 스캔 결과가 DB에 저장되었습니다.")
+            
+        else:
+            logger.error(f"미국 주식 스캔 실패: HTTP {response.status_code}")
+            
+    except Exception as e:
+        logger.error(f"미국 주식 자동 스캔 중 오류 발생: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 def send_auto_notification(matched_count):
     """자동 알림 발송 (솔라피 알림톡)"""
@@ -269,6 +337,7 @@ def run_validation():
 
 def setup_scheduler():
     """스케줄러 설정 - KST 기준"""
+    # === 한국 주식 스캔 ===
     # 데이터 확정 시점 검증 (15:31~15:40, 매분)
     schedule.every().day.at("15:31").do(run_validation)
     schedule.every().day.at("15:32").do(run_validation)
@@ -284,13 +353,22 @@ def setup_scheduler():
     # 매일 오후 3시 40분에 장세 분석 실행 (데이터 확정 후) - KST 기준
     schedule.every().day.at("15:40").do(run_market_analysis)
     
-    # 매일 오후 3시 42분에 스캔 실행 (장세 분석 후) - KST 기준
+    # 매일 오후 3시 42분에 한국 주식 스캔 실행 (장세 분석 후) - KST 기준
     schedule.every().day.at("15:42").do(run_scan)
     
+    # === 미국 주식 스캔 ===
+    # 매일 오전 7시에 미국 주식 스캔 실행 (미국 시장 마감 후 데이터 확정 시점) - KST 기준
+    # 서머타임: 미국 정규장 마감 5:00 KST → 스캔 7:00 KST
+    # 비서머타임: 미국 정규장 마감 6:00 KST → 스캔 7:00 KST
+    schedule.every().day.at("07:00").do(run_us_scan)
+    
     logger.info("자동 스케줄러가 설정되었습니다.")
+    logger.info("=== 한국 주식 ===")
     logger.info("- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)")
     logger.info("- 매일 오후 3:40 KST: 장세 분석 실행")
-    logger.info("- 매일 오후 3:42 KST: 스캔 실행")
+    logger.info("- 매일 오후 3:42 KST: 한국 주식 스캔 실행")
+    logger.info("=== 미국 주식 ===")
+    logger.info("- 매일 오전 7:00 KST: 미국 주식 스캔 실행")
     logger.info("- 주말과 공휴일은 자동으로 제외됩니다.")
 
 def run_scheduler():
