@@ -1,12 +1,12 @@
 export async function fetchScan() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/scan');
   if (!res.ok) throw new Error('scan failed');
   return res.json();
 }
 
 export async function fetchAnalyze(name_or_code) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const url = base + '/analyze?name_or_code=' + encodeURIComponent(name_or_code);
   const res = await fetch(url);
   if (!res.ok) throw new Error('analyze failed');
@@ -14,21 +14,21 @@ export async function fetchAnalyze(name_or_code) {
 }
 
 export async function fetchUniverse() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/universe');
   if (!res.ok) throw new Error('universe failed');
   return res.json();
 }
 
 export async function fetchSnapshots() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/snapshots');
   if (!res.ok) throw new Error('snapshots failed');
   return res.json();
 }
 
 export async function fetchValidateFromSnapshot(asOf, topK) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const url = base + `/validate_from_snapshot?as_of=${encodeURIComponent(asOf)}&top_k=${encodeURIComponent(topK)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('validate_from_snapshot failed');
@@ -36,14 +36,14 @@ export async function fetchValidateFromSnapshot(asOf, topK) {
 }
 
 export async function reloadConfig() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/_reload_config', { method: 'POST' });
   if (!res.ok) throw new Error('reload_config failed');
   return res.json();
 }
 
 export async function sendScanResult(to, topN=5){
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const url = base + '/send_scan_result?to=' + encodeURIComponent(to) + '&top_n=' + encodeURIComponent(topN);
   const res = await fetch(url, { method: 'POST' });
   if (!res.ok) throw new Error('send_scan_result failed');
@@ -51,14 +51,14 @@ export async function sendScanResult(to, topN=5){
 }
 
 export async function fetchPositions() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/positions');
   if (!res.ok) throw new Error('positions failed');
   return res.json();
 }
 
 export async function addPosition(position) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/positions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -69,7 +69,7 @@ export async function addPosition(position) {
 }
 
 export async function updatePosition(positionId, updateData) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + `/positions/${positionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -80,7 +80,7 @@ export async function updatePosition(positionId, updateData) {
 }
 
 export async function deletePosition(positionId) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + `/positions/${positionId}`, {
     method: 'DELETE'
   });
@@ -89,14 +89,14 @@ export async function deletePosition(positionId) {
 }
 
 export async function fetchScanPositions() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const res = await fetch(base + '/scan_positions');
   if (!res.ok) throw new Error('scan_positions failed');
   return res.json();
 }
 
 export async function autoAddPositions(scoreThreshold = 8, defaultQuantity = 10, entryDate = null) {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8010';
   const params = new URLSearchParams({
     score_threshold: scoreThreshold.toString(),
     default_quantity: defaultQuantity.toString()
