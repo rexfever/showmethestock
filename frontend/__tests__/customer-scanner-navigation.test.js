@@ -24,7 +24,7 @@ jest.mock('../contexts/AuthContext', () => ({
 jest.mock('../config', () => ({
   __esModule: true,
   default: jest.fn(() => ({
-    backendUrl: 'http://localhost:8000',
+    backendUrl: 'http://localhost:8010',
   })),
 }));
 
@@ -115,7 +115,7 @@ describe('CustomerScanner Navigation', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/latest-scan',
+          'http://localhost:8010/latest-scan',
           expect.objectContaining({
             method: 'GET',
             headers: expect.any(Object),

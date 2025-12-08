@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       name: sanitizeInput(req.body.name)
     };
 
-    const response = await fetch('http://localhost:8000/portfolio/add', {
+    const response = await fetch('http://localhost:8010/portfolio/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

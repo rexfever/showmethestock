@@ -335,7 +335,7 @@ export default function PremierScanner({ initialData }) {
 
 export async function getServerSideProps() {
   try {
-    const base = 'http://localhost:8000';
+    const base = 'http://localhost:8010';
     const response = await fetch(`${base}/latest-scan`);
     
     if (!response.ok) {
