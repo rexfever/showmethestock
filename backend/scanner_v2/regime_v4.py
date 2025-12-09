@@ -387,17 +387,14 @@ def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
     kospi_df = pd.DataFrame()
     kosdaq_df = pd.DataFrame()
     try:
-        # 실제 KOSPI 지수 데이터 (FinanceDataReader 사용)
-        # 키움 API는 지수 데이터를 직접 조회할 수 없으므로 FinanceDataReader 사용
-        # FinanceDataReader는 실제 KOSPI 지수 데이터를 제공하며 키움 API ETF와 비슷한 값
+        # 실제 KOSPI 지수 데이터 (pykrx 우선, FinanceDataReader fallback)
+        # pykrx는 한국거래소 공식 데이터로 정확도 높고 당일 데이터 제공 가능
         try:
-            import FinanceDataReader as fdr
-            from kiwoom_api import api
+            from utils.kospi_data_loader import get_kospi_data
             
             # 충분한 기간의 데이터 가져오기 (약 1년)
-            start_date = (target_date - pd.Timedelta(days=365)).strftime('%Y-%m-%d')
-            end_date = target_date.strftime('%Y-%m-%d')
-            kospi_df = fdr.DataReader('KS11', start_date, end_date)
+            date_str = target_date.strftime('%Y%m%d')
+            kospi_df = get_kospi_data(date=date_str, days=365)
             
             if not kospi_df.empty:
                 # 컬럼명 소문자로 통일
@@ -426,29 +423,31 @@ def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
                 except Exception as e:
                     logger.debug(f"KOSPI 데이터 검증 실패 (무시): {e}")
                 
-                logger.debug(f"FinanceDataReader로 KOSPI 지수 데이터 로드: {len(kospi_df)}개 행")
-        except ImportError:
-            logger.warning("FinanceDataReader가 설치되지 않음. 캐시 사용")
-            # Fallback: 기존 캐시 사용
-            cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'kospi200_ohlcv.pkl')
-            if os.path.exists(cache_path):
-                kospi_df = pd.read_pickle(cache_path)
-                if not kospi_df.empty:
-                    if isinstance(kospi_df.index, pd.DatetimeIndex):
-                        kospi_df = kospi_df[kospi_df.index <= target_date]
-                    elif 'date' in kospi_df.columns:
-                        kospi_df = kospi_df[pd.to_datetime(kospi_df['date']) <= target_date]
+                # 데이터 검증: KOSPI 지수 범위 확인
+                try:
+                    if not kospi_df.empty:
+                        kospi_recent = kospi_df.iloc[-1]['close']
+                        # KOSPI 지수는 보통 2000~4000 범위
+                        if not (2000 <= kospi_recent <= 4000):
+                            logger.warning(f"KOSPI 지수 값이 비정상적: {kospi_recent:.2f} (예상 범위: 2000~4000)")
+                        
+                        # R20 계산하여 비정상적인 변동 확인
+                        if len(kospi_df) >= 21:
+                            close_20d_ago = kospi_df.iloc[-21]['close']
+                            latest_close = kospi_df.iloc[-1]['close']
+                            r20 = (latest_close / close_20d_ago - 1) * 100
+                            
+                            # R20이 10% 이상이면 경고
+                            if abs(r20) > 10:
+                                validation_date = target_date.strftime('%Y%m%d')
+                                logger.warning(f"KOSPI R20이 비정상적으로 큼: {r20:.2f}% (날짜: {validation_date})")
+                except Exception as e:
+                    logger.debug(f"KOSPI 데이터 검증 실패 (무시): {e}")
+                
+                logger.debug(f"KOSPI 지수 데이터 로드: {len(kospi_df)}개 행")
         except Exception as e:
-            logger.warning(f"FinanceDataReader로 KOSPI 지수 데이터 로드 실패: {e}, 캐시 사용")
-            # Fallback: 기존 캐시 사용
-            cache_path = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'kospi200_ohlcv.pkl')
-            if os.path.exists(cache_path):
-                kospi_df = pd.read_pickle(cache_path)
-                if not kospi_df.empty:
-                    if isinstance(kospi_df.index, pd.DatetimeIndex):
-                        kospi_df = kospi_df[kospi_df.index <= target_date]
-                    elif 'date' in kospi_df.columns:
-                        kospi_df = kospi_df[pd.to_datetime(kospi_df['date']) <= target_date]
+            logger.warning(f"KOSPI 지수 데이터 로드 실패: {e}")
+            kospi_df = pd.DataFrame()
         
         # KOSDAQ 데이터 (CSV 캐시)
         kosdaq_csv = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'data_cache', 'ohlcv', '229200.csv')

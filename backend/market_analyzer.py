@@ -297,29 +297,17 @@ class MarketAnalyzer:
             # FinanceDataReader는 실제 KOSPI 지수 데이터를 제공하며 키움 API ETF와 비슷한 값
             lookback_days = 5
             try:
-                import FinanceDataReader as fdr
-                # 최근 30일 데이터 가져오기
-                end_date = pd.to_datetime(date, format='%Y%m%d')
-                start_date = (end_date - pd.Timedelta(days=30)).strftime('%Y-%m-%d')
-                end_date_str = end_date.strftime('%Y-%m-%d')
-                df_fdr = fdr.DataReader('KS11', start_date, end_date_str)
-                if not df_fdr.empty:
-                    # 컬럼명 소문자로 통일
-                    df_fdr.columns = df_fdr.columns.str.lower()
+                from utils.kospi_data_loader import get_kospi_data
+                # pykrx 우선, FinanceDataReader fallback (당일 데이터 제공 가능)
+                df = get_kospi_data(date=date, days=30)
+                if not df.empty:
                     # date 컬럼 추가
-                    df_fdr['date'] = df_fdr.index.strftime('%Y%m%d')
-                    df = df_fdr.tail(lookback_days)
-                    
-                    # 데이터 검증: KOSPI 지수 범위 확인
-                    if not df.empty:
-                        kospi_recent = df.iloc[-1]['close']
-                        # KOSPI 지수는 보통 2000~4000 범위
-                        if not (2000 <= kospi_recent <= 4000):
-                            logger.warning(f"KOSPI 지수 값이 비정상적: {kospi_recent:.2f} (예상 범위: 2000~4000)")
+                    df['date'] = df.index.strftime('%Y%m%d')
+                    df = df.tail(lookback_days)
                 else:
                     df = pd.DataFrame()
-            except (ImportError, Exception) as e:
-                logger.warning(f"FinanceDataReader 사용 실패: {e}, 키움 API ETF 사용")
+            except Exception as e:
+                logger.warning(f"KOSPI 지수 데이터 로드 실패: {e}, 키움 API ETF 사용")
                 # Fallback: 기존 방법 (069500 ETF)
                 df = api.get_ohlcv("069500", lookback_days, date)
             if df.empty or len(df) < 2:

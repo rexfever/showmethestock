@@ -7,9 +7,12 @@ import pandas as pd
 import numpy as np
 import pickle
 from pathlib import Path
+import logging
 
 from auth import KiwoomAuth
 from config import config
+
+logger = logging.getLogger(__name__)
 
 
 class KiwoomAPI:
@@ -495,7 +498,8 @@ class KiwoomAPI:
         
         캐싱 적용:
         - 메모리 캐시 우선 확인
-        - base_dt가 있는 경우 디스크 캐시 확인
+        - base_dt가 있는 경우: 해당 base_dt의 디스크 캐시 확인
+        - base_dt가 None인 경우: 최신 디스크 캐시 확인 후 증분 업데이트
         - 캐시 미스 시 API 호출 후 메모리 + 디스크 저장
         """
         # 1. 메모리 캐시 확인
@@ -503,13 +507,80 @@ class KiwoomAPI:
         if cached_df is not None:
             return cached_df
         
-        # 2. 디스크 캐시 확인 (base_dt가 있는 경우만)
-        if base_dt and self._disk_cache_enabled:
-            cached_df = self._load_from_disk_cache(code, count, base_dt)
-            if cached_df is not None:
-                # 메모리 캐시에도 저장
-                self._set_cached_ohlcv(code, count, base_dt, cached_df)
-                return cached_df
+        # 2. 디스크 캐시 확인
+        if self._disk_cache_enabled:
+            if base_dt:
+                # base_dt가 지정된 경우: 해당 base_dt의 캐시 확인
+                cached_df = self._load_from_disk_cache(code, count, base_dt)
+                if cached_df is not None:
+                    # 메모리 캐시에도 저장
+                    self._set_cached_ohlcv(code, count, base_dt, cached_df)
+                    return cached_df
+            else:
+                # base_dt가 None인 경우: 최신 디스크 캐시 찾아서 증분 업데이트
+                cached_df, latest_base_dt = self._find_latest_disk_cache(code, count)
+                if cached_df is not None:
+                    # 캐시의 최신 날짜 확인
+                    if 'date' in cached_df.columns:
+                        cached_df['date'] = pd.to_datetime(cached_df['date'])
+                        latest_cache_date = cached_df['date'].max()
+                    else:
+                        # date가 인덱스인 경우
+                        if isinstance(cached_df.index, pd.DatetimeIndex):
+                            latest_cache_date = cached_df.index.max()
+                        else:
+                            latest_cache_date = None
+                    
+                    # 오늘 날짜
+                    today = pd.Timestamp.now().normalize()
+                    
+                    # 캐시의 최신 날짜가 오늘보다 오래된 경우에만 당일 데이터 추가
+                    if latest_cache_date is not None and latest_cache_date < today:
+                        logger.debug(f"{code} 캐시가 오래됨 (최신: {latest_cache_date.date()}, 오늘: {today.date()}), 당일 데이터 추가")
+                        # 당일 데이터만 API로 가져오기
+                        today_data = self._fetch_today_data_from_api(code)
+                        if not today_data.empty:
+                            # 기존 데이터와 병합
+                            combined = pd.concat([cached_df, today_data])
+                            # 중복 제거 (최신 데이터 우선)
+                            if 'date' in combined.columns:
+                                combined = combined.drop_duplicates(subset=['date'], keep='last')
+                                combined = combined.sort_values('date').reset_index(drop=True)
+                            else:
+                                combined = combined[~combined.index.duplicated(keep='last')]
+                                combined = combined.sort_index()
+                            
+                            # count만큼만 반환
+                            if len(combined) > count:
+                                combined = combined.tail(count)
+                            
+                            # 메모리 캐시 저장
+                            self._set_cached_ohlcv(code, count, base_dt, combined)
+                            
+                            # 디스크 캐시 업데이트
+                            # combined의 최신 날짜를 base_dt로 사용
+                            if 'date' in combined.columns:
+                                combined_latest_date = pd.to_datetime(combined['date']).max()
+                            elif isinstance(combined.index, pd.DatetimeIndex):
+                                combined_latest_date = combined.index.max()
+                            else:
+                                combined_latest_date = None
+                            
+                            if combined_latest_date is not None:
+                                # 과거 날짜인 경우만 디스크 캐시 저장
+                                today = pd.Timestamp.now().normalize()
+                                if combined_latest_date < today:
+                                    combined_base_dt = combined_latest_date.strftime('%Y%m%d')
+                                    self._save_to_disk_cache(code, count, combined_base_dt, combined)
+                            
+                            return combined
+                    
+                    # 캐시가 최신이면 그대로 반환
+                    if len(cached_df) >= count:
+                        result = cached_df.tail(count)
+                        # 메모리 캐시에도 저장
+                        self._set_cached_ohlcv(code, count, base_dt, result)
+                        return result
         
         # 3. 캐시 미스: API 호출
         if self.force_mock:
@@ -523,6 +594,21 @@ class KiwoomAPI:
             # base_dt가 있는 경우 디스크에도 저장 (과거 날짜)
             if base_dt and self._disk_cache_enabled:
                 self._save_to_disk_cache(code, count, base_dt, df)
+            elif base_dt is None and self._disk_cache_enabled:
+                # base_dt가 None인 경우: DataFrame의 최신 날짜를 base_dt로 사용
+                if 'date' in df.columns:
+                    latest_date = pd.to_datetime(df['date']).max()
+                elif isinstance(df.index, pd.DatetimeIndex):
+                    latest_date = df.index.max()
+                else:
+                    latest_date = None
+                
+                if latest_date is not None:
+                    # 과거 날짜인 경우만 디스크 캐시 저장
+                    today = pd.Timestamp.now().normalize()
+                    if latest_date < today:
+                        base_dt_str = latest_date.strftime('%Y%m%d')
+                        self._save_to_disk_cache(code, count, base_dt_str, df)
         
         return df
     
@@ -582,6 +668,102 @@ class KiwoomAPI:
             except:
                 pass
             return None
+    
+    def _find_latest_disk_cache(self, code: str, count: int) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
+        """최신 디스크 캐시 찾기 (base_dt=None일 때 사용)
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+        
+        Returns:
+            (DataFrame, base_dt) 또는 (None, None)
+        """
+        if not self._disk_cache_enabled:
+            return None, None
+        
+        try:
+            # 캐시 디렉토리에서 해당 종목의 모든 캐시 파일 찾기
+            pattern = f"{code}_{count}_*.pkl"
+            cache_files = list(self._disk_cache_dir.glob(pattern))
+            
+            if not cache_files:
+                return None, None
+            
+            # base_dt 기준으로 정렬 (최신 날짜 우선)
+            cache_files_with_dt = []
+            for cache_file in cache_files:
+                try:
+                    # 파일명에서 base_dt 추출: {code}_{count}_{base_dt}.pkl
+                    base_dt = cache_file.stem.split('_')[-1]
+                    if len(base_dt) == 8 and base_dt.isdigit():
+                        cache_files_with_dt.append((cache_file, base_dt))
+                except:
+                    continue
+            
+            if not cache_files_with_dt:
+                return None, None
+            
+            # base_dt 기준 내림차순 정렬 (최신 날짜 우선)
+            cache_files_with_dt.sort(key=lambda x: x[1], reverse=True)
+            
+            # 최신 캐시 파일 로드 시도
+            for cache_file, base_dt in cache_files_with_dt:
+                try:
+                    with open(cache_file, 'rb') as f:
+                        cached_data = pickle.load(f)
+                        df, timestamp = cached_data
+                    
+                    # TTL 확인 (과거 날짜는 1년)
+                    ttl = self._calculate_ttl(base_dt)
+                    if time.time() - timestamp > ttl:
+                        # 만료된 캐시는 건너뛰기
+                        continue
+                    
+                    # 복사본 반환
+                    return df.copy(), base_dt
+                except Exception as e:
+                    logger.debug(f"{code} 캐시 파일 로드 실패: {cache_file}, {e}")
+                    continue
+            
+            return None, None
+        except Exception as e:
+            logger.debug(f"{code} 최신 캐시 찾기 실패: {e}")
+            return None, None
+    
+    def _fetch_today_data_from_api(self, code: str) -> pd.DataFrame:
+        """당일 데이터만 API로 가져오기
+        
+        Args:
+            code: 종목 코드
+        
+        Returns:
+            DataFrame (당일 데이터만, 비어있을 수 있음)
+        """
+        try:
+            # 최근 5일 데이터를 가져와서 당일 데이터만 필터링
+            df = self._fetch_ohlcv_from_api(code, count=5, base_dt=None)
+            if df.empty:
+                return df
+            
+            # 오늘 날짜
+            today = pd.Timestamp.now().normalize()
+            
+            # date 컬럼이 있는 경우
+            if 'date' in df.columns:
+                df['date'] = pd.to_datetime(df['date'])
+                today_df = df[df['date'].dt.normalize() == today]
+            # date가 인덱스인 경우
+            elif isinstance(df.index, pd.DatetimeIndex):
+                today_df = df[df.index.normalize() == today]
+            else:
+                # date 정보가 없으면 빈 DataFrame 반환
+                return pd.DataFrame()
+            
+            return today_df
+        except Exception as e:
+            logger.warning(f"{code} 당일 데이터 가져오기 실패: {e}")
+            return pd.DataFrame()
     
     def _save_to_disk_cache(self, code: str, count: int, base_dt: str, df: pd.DataFrame) -> None:
         """디스크 캐시에 OHLCV 데이터 저장

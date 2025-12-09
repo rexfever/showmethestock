@@ -18,12 +18,11 @@ class RegimeAnalyzerCached:
         self.us_data = us_futures_data_v8
     
     def get_kospi_data(self, date: str = None) -> pd.DataFrame:
-        """KOSPI 데이터 조회 (해당 날짜 기준)"""
+        """KOSPI 데이터 조회 (해당 날짜 기준) - pykrx 우선, FinanceDataReader fallback"""
         try:
-            # 해당 날짜 기준으로 직접 API 호출
-            from kiwoom_api import api
-            df = api.get_ohlcv("069500", 30, date)  # KOSPI200 ETF (30일)
-            
+            from utils.kospi_data_loader import get_kospi_data
+            # pykrx 우선, FinanceDataReader fallback (당일 데이터 제공 가능)
+            df = get_kospi_data(date=date, days=30)
             return df
         except Exception as e:
             logger.error(f"KOSPI 데이터 조회 실패: {e}")
