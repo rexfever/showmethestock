@@ -100,6 +100,11 @@
 - `PROJECT_OVERVIEW.md` - 프로젝트 개요 및 아키텍처 (시작하기)
 - `SCAN_LOGIC_IMPROVEMENTS_SUMMARY.md` - 스캔 로직 개선 요약
 - `API_ENDPOINTS.md` - API 엔드포인트 문서
+- `REGIME_ANALYSIS_AND_SCAN_PROCESS.md` - 레짐 분석 및 스캔 프로세스 종합 보고서
+- `US_STOCK_REGIME_ANALYSIS_FINAL_SUMMARY.md` - 미국 주식 스캔 레짐 분석 적용 최종 요약
+- `US_STOCK_REGIME_ANALYSIS_TEST_REPORT.md` - 미국 주식 스캔 레짐 분석 테스트 보고서
+- `US_STOCK_REGIME_ANALYSIS_CODE_REVIEW.md` - 미국 주식 스캔 레짐 분석 코드 리뷰
+- `US_MARKET_REGIME_ANALYSIS_NEED.md` - 미국 시장 레짐 분석 필요성 검토
 
 ---
 
@@ -119,5 +124,5 @@
 
 ---
 
-**마지막 업데이트**: 2025년 12월 1일
+**마지막 업데이트**: 2025년 12월 6일
 

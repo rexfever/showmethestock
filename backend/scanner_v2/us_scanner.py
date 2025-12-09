@@ -208,8 +208,12 @@ class USScanner:
         
         filtered = []
         for result in results:
-            strategy = result.strategy.lower()
-            cutoff = cutoffs.get(strategy, 999)
+            # strategy가 None이거나 빈 문자열인 경우 처리
+            if not result.strategy:
+                cutoff = 999  # 기본값: 모든 종목 제외
+            else:
+                strategy = result.strategy.lower()
+                cutoff = cutoffs.get(strategy, 999)
             
             if result.score >= cutoff:
                 filtered.append(result)

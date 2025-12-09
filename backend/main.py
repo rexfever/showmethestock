@@ -1057,15 +1057,22 @@ def scan_us_stocks(
         
         print(f"📊 미국 주식 스캔 시작: {len(symbols)}개 종목, 날짜: {today_as_of}")
         
-        # 시장 조건 분석 (미국 시장용 - 추후 구현)
+        # 시장 조건 분석 (Global Regime v4 사용 - 한국+미국 통합 분석)
         market_condition = None
         if config.market_analysis_enable:
             try:
-                # 미국 시장 레짐 분석 (추후 구현)
-                # market_condition = market_analyzer.analyze_us_market_condition(today_as_of)
-                pass
+                # Global Regime v4 사용 (한국+미국 데이터를 모두 고려)
+                # v4는 이미 SPY, QQQ, VIX 등 미국 데이터를 포함하므로 적합
+                market_condition = market_analyzer.analyze_market_condition(
+                    today_as_of, 
+                    regime_version='v4'
+                )
+                print(f"✅ 레짐 분석 완료: {market_condition.final_regime if hasattr(market_condition, 'final_regime') else market_condition.market_sentiment}")
             except Exception as e:
-                print(f"⚠️ 미국 시장 분석 실패: {e}")
+                print(f"⚠️ 미국 시장 레짐 분석 실패: {e}")
+                import traceback
+                print(traceback.format_exc())
+                # 레짐 분석 실패 시에도 스캔은 계속 진행 (market_condition = None)
         
         # 스캐너 설정
         scanner_config = ScannerV2Config()
