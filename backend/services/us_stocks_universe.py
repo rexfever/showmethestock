@@ -48,15 +48,20 @@ class USStocksUniverse:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            # lxml 없이도 작동하도록 html5lib 사용
+            # requests로 직접 가져오기 (User-Agent 헤더 필요)
+            import requests
+            from io import StringIO
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            # lxml 또는 html5lib 사용
             try:
-                tables = pd.read_html(url, flavor='html5lib')
+                tables = pd.read_html(StringIO(response.text), flavor='lxml')
             except:
-                # html5lib도 없으면 requests로 직접 가져오기
-                import requests
-                from io import StringIO
-                response = requests.get(url, headers=headers, timeout=10)
-                tables = pd.read_html(StringIO(response.text), flavor='html5lib')
+                try:
+                    tables = pd.read_html(StringIO(response.text), flavor='html5lib')
+                except:
+                    # 기본 파서 사용
+                    tables = pd.read_html(StringIO(response.text))
             sp500_table = tables[0]  # 첫 번째 테이블이 S&P 500 리스트
             
             stocks = []

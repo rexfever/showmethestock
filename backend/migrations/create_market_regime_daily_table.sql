@@ -44,3 +44,37 @@ COMMENT ON COLUMN market_regime_daily.us_futures_score IS '미국 선물 점수 
 COMMENT ON COLUMN market_regime_daily.us_futures_regime IS '미국 선물 레짐 (v4)';
 COMMENT ON COLUMN market_regime_daily.dxy IS '달러 인덱스 (v4)';
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

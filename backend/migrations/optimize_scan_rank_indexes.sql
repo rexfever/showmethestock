@@ -26,3 +26,37 @@ ON scan_rank(code, date DESC);
 -- 인덱스 통계 업데이트
 ANALYZE scan_rank;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

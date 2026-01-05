@@ -43,6 +43,40 @@ def _ensure_scan_rank_table(cursor) -> None:
             END IF;
         END $$;
     """)
+    
+    # anchor 필드 마이그레이션 (이미 있으면 스킵)
+    cursor.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'scan_rank' AND column_name = 'anchor_date'
+            ) THEN
+                ALTER TABLE scan_rank ADD COLUMN anchor_date DATE;
+            END IF;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'scan_rank' AND column_name = 'anchor_close'
+            ) THEN
+                ALTER TABLE scan_rank ADD COLUMN anchor_close DOUBLE PRECISION;
+            END IF;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'scan_rank' AND column_name = 'anchor_price_type'
+            ) THEN
+                ALTER TABLE scan_rank ADD COLUMN anchor_price_type TEXT DEFAULT 'CLOSE';
+            END IF;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'scan_rank' AND column_name = 'anchor_source'
+            ) THEN
+                ALTER TABLE scan_rank ADD COLUMN anchor_source TEXT DEFAULT 'KRX_EOD';
+            END IF;
+        END $$;
+    """)
 
 
 def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]:
@@ -144,18 +178,26 @@ def get_recurrence_data(tickers: List[str], today_as_of: str) -> Dict[str, Dict]
 
 
 def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version: str = None) -> None:
-    """스캔 스냅샷 저장 (returns, recurrence 포함)
+    """스캔 스냅샷 저장 (returns, recurrence, anchor 필드 포함)
     
     Args:
         scan_items: 스캔 결과 리스트 (returns, recurrence 포함 가능)
         today_as_of: 스캔 날짜 (YYYYMMDD)
-        scanner_version: 스캐너 버전 (v1 또는 v2), None이면 현재 활성화된 버전 사용
+        scanner_version: 스캐너 버전 (v1, v2, 또는 v2-lite), None이면 현재 활성화된 버전 사용
+    
+    Note:
+        anchor_close는 추천 생성 시점에 한 번만 결정하여 저장.
+        이후 API 응답에서는 재계산하지 않고 저장된 값을 사용.
     """
     try:
-        from date_helper import yyyymmdd_to_date
+        from date_helper import yyyymmdd_to_date, get_trading_date, get_anchor_close
         
         # YYYYMMDD 문자열을 date 객체로 변환
         date_obj = yyyymmdd_to_date(today_as_of)
+        
+        # anchor_date 결정 (거래일 보장)
+        anchor_date_str = get_trading_date(today_as_of)
+        anchor_date_obj = yyyymmdd_to_date(anchor_date_str)
         
         # 스캐너 버전 결정 (없으면 현재 활성화된 버전 사용)
         if scanner_version is None:
@@ -166,17 +208,52 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 from config import config
                 scanner_version = getattr(config, 'scanner_version', 'v1')
         
-        # 버전 검증 (미국 주식 'us_v2' 허용)
-        if scanner_version not in ['v1', 'v2', 'us_v2']:
-            # us_v2는 그대로 유지, 다른 값은 v1로 fallback
-            if scanner_version != 'us_v2':
+        # 버전 검증 (미국 주식 'us_v2', v2-lite, v3 허용)
+        if scanner_version not in ['v1', 'v2', 'v2-lite', 'us_v2', 'v3']:
+            # us_v2, v2-lite, v3는 그대로 유지, 다른 값은 v1로 fallback
+            if scanner_version not in ['us_v2', 'v2-lite', 'v3']:
                 scanner_version = 'v1'
         
         with db_manager.get_cursor(commit=True) as cur_hist:
             _ensure_scan_rank_table(cur_hist)
         
+            # v3인 경우, 이미 ACTIVE 상태인 종목 필터링
+            if scanner_version == 'v3':
+                # 최신 ACTIVE 상태인 종목 코드 조회
+                cur_hist.execute("""
+                    SELECT DISTINCT code
+                    FROM scan_rank
+                    WHERE scanner_version = 'v3'
+                    AND code != 'NORESULT'
+                    AND date = (
+                        SELECT MAX(date)
+                        FROM scan_rank
+                        WHERE scanner_version = 'v3'
+                        AND code = scan_rank.code
+                    )
+                    AND (
+                        flags IS NULL
+                        OR flags::text = '{}'
+                        OR (flags::jsonb->>'assumption_broken')::boolean IS NOT TRUE
+                        AND (flags::jsonb->>'flow_broken')::boolean IS NOT TRUE
+                    )
+                """)
+                active_codes = {row[0] if isinstance(row, (list, tuple)) else row.get('code') for row in cur_hist.fetchall()}
+                
+                if active_codes:
+                    print(f"🔍 [v3 필터링] 이미 ACTIVE 상태인 종목 {len(active_codes)}개 제외: {list(active_codes)[:5]}...")
+            else:
+                active_codes = set()
+        
             enhanced_rank = []
+            filtered_count = 0
             for it in scan_items:
+                # v3인 경우, 이미 ACTIVE 상태인 종목 제외
+                if scanner_version == 'v3':
+                    code = it.get("code") or it.get("ticker")
+                    if code and code in active_codes:
+                        filtered_count += 1
+                        continue
                 try:
                     # 스캔 결과에 이미 포함된 종가와 등락률 우선 사용
                     indicators = it.get("indicators", {})
@@ -206,29 +283,52 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                     # 스캔 결과에 종가와 등락률이 있으면 사용
                     if scan_close is not None and scan_change_rate is not None:
                         # volume은 별도로 가져오기 (스캔 결과에 없을 수 있음)
-                        try:
-                            df = api.get_ohlcv(it["ticker"], 1, today_as_of)
-                            volume = float(df.iloc[-1]["volume"]) if not df.empty else 0.0
-                        except Exception:
-                            volume = float(indicators.get("VOL", 0))
+                        # 미국 주식(us_v2)은 키움 API를 사용하지 않음
+                        if scanner_version == 'us_v2':
+                            volume = float(indicators.get("VOL", 0)) if isinstance(indicators, dict) else getattr(indicators, "VOL", 0)
+                        else:
+                            try:
+                                df = api.get_ohlcv(it["ticker"], 1, today_as_of)
+                                volume = float(df.iloc[-1]["volume"]) if not df.empty else 0.0
+                            except Exception:
+                                volume = float(indicators.get("VOL", 0)) if isinstance(indicators, dict) else getattr(indicators, "VOL", 0)
+                        
+                        # anchor_close 결정 (추천 생성 시점에 한 번만 결정)
+                        # anchor_date의 공식 종가를 조회
+                        anchor_close_value = get_anchor_close(it["ticker"], anchor_date_str, price_type="CLOSE")
+                        if anchor_close_value is None:
+                            # 조회 실패 시 스캔 결과의 종가 사용 (fallback)
+                            anchor_close_value = float(scan_close)
+                            anchor_source_value = "scan_result_fallback"
+                        else:
+                            anchor_source_value = "KRX_EOD"
                         
                         # returns와 recurrence 데이터 포함
                         returns_data = it.get("returns", {})
                         recurrence_data = it.get("recurrence", {})
                         
                         # strategy 추출: 직접 필드 > flags.trading_strategy (우선순위)
-                        strategy_value = it.get("strategy")
-                        if not strategy_value:
-                            # flags에서 trading_strategy 추출
-                            flags_dict = it.get("flags", {})
-                            if isinstance(flags_dict, str):
-                                try:
-                                    flags_dict = json.loads(flags_dict)
-                                except:
+                        # v3의 경우 item의 strategy를 우선 사용하고 flags는 무시
+                        if scanner_version == 'v3':
+                            # v3는 항상 "midterm" 또는 "v2_lite"로 저장되어야 함
+                            strategy_value = it.get("strategy")
+                            if strategy_value not in ['midterm', 'v2_lite']:
+                                # v3인데 strategy가 없거나 잘못된 경우 기본값 사용하지 않음
+                                strategy_value = None
+                        else:
+                            # v1/v2는 기존 로직 사용
+                            strategy_value = it.get("strategy")
+                            if not strategy_value:
+                                # flags에서 trading_strategy 추출
+                                flags_dict = it.get("flags", {})
+                                if isinstance(flags_dict, str):
+                                    try:
+                                        flags_dict = json.loads(flags_dict)
+                                    except:
+                                        flags_dict = {}
+                                elif not isinstance(flags_dict, dict):
                                     flags_dict = {}
-                            elif not isinstance(flags_dict, dict):
-                                flags_dict = {}
-                            strategy_value = flags_dict.get("trading_strategy") if flags_dict else None
+                                strategy_value = flags_dict.get("trading_strategy") if flags_dict else None
                         
                         enhanced_rank.append({
                             "date": date_obj,
@@ -244,32 +344,67 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                             "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
                             "strategy": strategy_value,
                             "scanner_version": scanner_version,
+                            # anchor 필드 추가
+                            "anchor_date": anchor_date_obj,
+                            "anchor_close": anchor_close_value,
+                            "anchor_price_type": "CLOSE",
+                            "anchor_source": anchor_source_value,
                         })
                     else:
                         # 스캔 결과에 없으면 API로 계산 (fallback)
-                        df = api.get_ohlcv(it["ticker"], 2, today_as_of)
-                        if not df.empty:
+                        # 미국 주식(us_v2)은 키움 API를 사용하지 않음
+                        if scanner_version == 'us_v2':
+                            # 미국 주식은 스캔 결과에 이미 데이터가 있어야 함
+                            # 없으면 기본값 사용
+                            scan_close = it.get("current_price", 0.0)
+                            scan_change_rate = it.get("change_rate", 0.0)
+                            volume = it.get("volume", 0.0)
+                            df = None
+                        else:
+                            df = api.get_ohlcv(it["ticker"], 2, today_as_of)
+                        
+                        if df is not None and not df.empty:
                             latest = df.iloc[-1]
                             prev = df.iloc[-2] if len(df) > 1 else None
                             # 등락률을 퍼센트로 계산
                             change_rate = ((latest.close - prev.close) / prev.close * 100) if prev is not None and prev.close > 0 else 0.0
+                            
+                            # anchor_close 결정 (추천 생성 시점에 한 번만 결정)
+                            # anchor_date의 공식 종가를 조회
+                            anchor_close_value = get_anchor_close(it["ticker"], anchor_date_str, price_type="CLOSE")
+                            if anchor_close_value is None:
+                                # 조회 실패 시 API로 조회한 종가 사용 (fallback)
+                                anchor_close_value = float(latest.close)
+                                anchor_source_value = "api_fallback"
+                            else:
+                                anchor_source_value = "KRX_EOD"
+                            
                             # returns와 recurrence 데이터 포함
                             returns_data = it.get("returns", {})
                             recurrence_data = it.get("recurrence", {})
                             
                             # strategy 추출: 직접 필드 > flags.trading_strategy (우선순위)
-                            strategy_value = it.get("strategy")
-                            if not strategy_value:
-                                # flags에서 trading_strategy 추출
-                                flags_dict = it.get("flags", {})
-                                if isinstance(flags_dict, str):
-                                    try:
-                                        flags_dict = json.loads(flags_dict)
-                                    except:
+                            # v3의 경우 item의 strategy를 우선 사용하고 flags는 무시
+                            if scanner_version == 'v3':
+                                # v3는 항상 "midterm" 또는 "v2_lite"로 저장되어야 함
+                                strategy_value = it.get("strategy")
+                                if strategy_value not in ['midterm', 'v2_lite']:
+                                    # v3인데 strategy가 없거나 잘못된 경우 기본값 사용하지 않음
+                                    strategy_value = None
+                            else:
+                                # v1/v2는 기존 로직 사용
+                                strategy_value = it.get("strategy")
+                                if not strategy_value:
+                                    # flags에서 trading_strategy 추출
+                                    flags_dict = it.get("flags", {})
+                                    if isinstance(flags_dict, str):
+                                        try:
+                                            flags_dict = json.loads(flags_dict)
+                                        except:
+                                            flags_dict = {}
+                                    elif not isinstance(flags_dict, dict):
                                         flags_dict = {}
-                                elif not isinstance(flags_dict, dict):
-                                    flags_dict = {}
-                                strategy_value = flags_dict.get("trading_strategy") if flags_dict else None
+                                    strategy_value = flags_dict.get("trading_strategy") if flags_dict else None
                             
                             enhanced_rank.append({
                                 "date": date_obj,
@@ -285,9 +420,15 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                                 "recurrence": json.dumps(recurrence_data, ensure_ascii=False) if recurrence_data else None,
                                 "strategy": strategy_value,
                                 "scanner_version": scanner_version,
+                                # anchor 필드 추가
+                                "anchor_date": anchor_date_obj,
+                                "anchor_close": anchor_close_value,
+                                "anchor_price_type": "CLOSE",
+                                "anchor_source": anchor_source_value,
                             })
                 except Exception as e:
-                    logger.debug(f"스캔 결과 저장 중 오류 ({it.get('ticker', 'unknown')}): {e}")
+                    # logger가 없을 수 있으므로 print 사용
+                    print(f"⚠️ 스캔 결과 저장 중 오류 ({it.get('ticker', 'unknown')}): {e}")
                     continue
         
             # 해당 날짜와 버전의 기존 데이터 삭제 (date 객체 사용)
@@ -298,34 +439,70 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
                 print(f"📭 스캔 결과 0개 - NORESULT 레코드 저장: {today_as_of} (버전: {scanner_version})")
                 cur_hist.execute(
                     """
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version, anchor_date, anchor_close, anchor_price_type, anchor_source)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (date_obj, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
-                     "추천종목 없음", 0.0, 0.0, 0.0, scanner_version)
+                     "추천종목 없음", 0.0, 0.0, 0.0, scanner_version, anchor_date_obj, None, "CLOSE", "NORESULT")
                 )
             elif enhanced_rank:
                 cur_hist.executemany("""
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, returns, recurrence, strategy, scanner_version)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, returns, recurrence, strategy, scanner_version, anchor_date, anchor_close, anchor_price_type, anchor_source)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     (
                         r["date"], r["code"], r["name"], r["score"], r["flags"],
                         r["score_label"], r["close_price"], r["volume"], r["change_rate"],
-                        r.get("returns"), r.get("recurrence"), r.get("strategy"), r["scanner_version"]
+                        r.get("returns"), r.get("recurrence"), r.get("strategy"), r["scanner_version"],
+                        r.get("anchor_date"), r.get("anchor_close"), r.get("anchor_price_type", "CLOSE"), r.get("anchor_source", "KRX_EOD")
                     )
                     for r in enhanced_rank
                 ])
-                print(f"✅ 스캔 결과 저장 완료: {len(enhanced_rank)}개 종목 (날짜: {today_as_of}, 버전: {scanner_version})")
+                if scanner_version == 'v3' and filtered_count > 0:
+                    print(f"✅ 스캔 결과 저장 완료: {len(enhanced_rank)}개 종목 (날짜: {today_as_of}, 버전: {scanner_version}), ACTIVE 중복 제외: {filtered_count}개")
+                else:
+                    print(f"✅ 스캔 결과 저장 완료: {len(enhanced_rank)}개 종목 (날짜: {today_as_of}, 버전: {scanner_version})")
+                
+                # v3인 경우 recommendations 시스템에도 저장
+                if scanner_version == 'v3':
+                    try:
+                        from services.recommendation_service import process_scan_results_to_recommendations
+                        
+                        # scan_items 형식으로 변환
+                        scan_items_for_rec = []
+                        for r in enhanced_rank:
+                            scan_items_for_rec.append({
+                                "ticker": r["code"],
+                                "name": r["name"],
+                                "score": r["score"],
+                                "score_label": r["score_label"],
+                                "strategy": r.get("strategy"),
+                                "indicators": json.loads(r.get("indicators", "{}")) if isinstance(r.get("indicators"), str) else r.get("indicators", {}),
+                                "flags": json.loads(r.get("flags", "{}")) if isinstance(r.get("flags"), str) else r.get("flags", {}),
+                                "details": json.loads(r.get("details", "{}")) if isinstance(r.get("details"), str) else r.get("details", {})
+                            })
+                        
+                        # recommendations 생성
+                        rec_result = process_scan_results_to_recommendations(
+                            scan_items_for_rec,
+                            today_as_of,
+                            scan_run_id=None,
+                            scanner_version='v3'
+                        )
+                        print(f"✅ recommendations 생성 완료: {rec_result['recommendations_created']}개 생성, {rec_result['recommendations_skipped']}개 건너뜀")
+                    except Exception as e:
+                        print(f"⚠️ recommendations 생성 오류: {e}")
+                        import traceback
+                        traceback.print_exc()
             else:
                 print(f"📭 enhanced_rank 비어있음 - NORESULT 레코드 저장: {today_as_of} (버전: {scanner_version})")
                 cur_hist.execute(
                     """
-                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO scan_rank (date, code, name, score, flags, score_label, close_price, volume, change_rate, scanner_version, anchor_date, anchor_close, anchor_price_type, anchor_source)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (date_obj, "NORESULT", "추천종목 없음", 0.0, json.dumps({"no_result": True}, ensure_ascii=False),
-                     "추천종목 없음", 0.0, 0.0, 0.0, scanner_version)
+                     "추천종목 없음", 0.0, 0.0, 0.0, scanner_version, anchor_date_obj, None, "CLOSE", "NORESULT")
                 )
     except Exception as e:
         print(f"스냅샷 저장 오류: {e}")
@@ -558,3 +735,76 @@ def execute_scan_with_fallback(universe: List[str], date: Optional[str] = None, 
     
     print(f"🎯 최종 선택: Step {chosen_step}, {len(items)}개 종목")
     return items, chosen_step, current_scanner_version
+
+
+def save_v3_results_to_db(v3_result: dict, scan_date: str):
+    """V3 스캔 결과를 DB에 저장"""
+    try:
+        # V3 결과를 기존 ScanItem 형식으로 변환
+        items = []
+        
+        # midterm 결과 추가
+        midterm_candidates = v3_result.get("results", {}).get("midterm", {}).get("candidates", [])
+        for candidate in midterm_candidates:
+            code = candidate.get("code", "")
+            # v3 엔진이 반환하는 구조: midterm은 name이 None일 수 있음
+            name = candidate.get("name") or ""
+            score = candidate.get("score", 0.0)
+            indicators = candidate.get("indicators", {})
+            
+            # v3 엔진이 반환하는 구조: midterm도 meta 필드가 있을 수 있음
+            meta = candidate.get("meta", {})
+            # midterm은 trend/flags가 meta 안에 있거나 직접 있을 수 있음
+            trend = meta.get("trend", {}) if meta else candidate.get("trend", {})
+            flags = meta.get("flags", {}) if meta else candidate.get("flags", {})
+            
+            # ScanItem 형식으로 변환 (save_scan_snapshot 형식)
+            item = {
+                "ticker": code,  # ticker 필드 사용
+                "name": name,
+                "score": score,
+                "score_label": f"midterm_{score:.1f}",
+                "strategy": "midterm",  # v3에서는 항상 "midterm"으로 저장
+                "market": "KR",
+                "indicators": indicators,
+                "trend": trend,
+                "flags": flags,
+            }
+            items.append(item)
+        
+        # v2_lite 결과 추가
+        v2_lite_candidates = v3_result.get("results", {}).get("v2_lite", {}).get("candidates", [])
+        for candidate in v2_lite_candidates:
+            code = candidate.get("code", "")
+            name = candidate.get("name", "")
+            score = candidate.get("score", 0.0) or 1.0  # v2-lite는 score 미사용이므로 기본값 1.0
+            indicators = candidate.get("indicators", {})
+            
+            # v3 엔진이 반환하는 구조: flags와 trend가 meta 안에 있음
+            meta = candidate.get("meta", {})
+            trend = meta.get("trend", {}) if meta else candidate.get("trend", {})
+            flags = meta.get("flags", {}) if meta else candidate.get("flags", {})
+            
+            # ScanItem 형식으로 변환 (save_scan_snapshot 형식)
+            item = {
+                "ticker": code,  # ticker 필드 사용
+                "name": name,
+                "score": score,
+                "score_label": f"v2_lite_{score:.1f}",
+                "strategy": "v2_lite",  # v3에서는 항상 "v2_lite"로 저장 (원본 "눌림목" 무시)
+                "market": "KR",
+                "indicators": indicators,
+                "trend": trend,
+                "flags": flags,
+            }
+            items.append(item)
+        
+        # DB에 저장 (scanner_version='v3')
+        save_scan_snapshot(items, scan_date, scanner_version='v3')
+        
+        print(f"  ✅ DB 저장 완료: midterm {len(midterm_candidates)}개, v2_lite {len(v2_lite_candidates)}개")
+        
+    except Exception as e:
+        print(f"  ❌ DB 저장 실패: {e}")
+        import traceback
+        traceback.print_exc()

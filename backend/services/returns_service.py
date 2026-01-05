@@ -9,17 +9,33 @@ from date_helper import get_kst_now
 
 
 def _get_cached_ohlcv(ticker: str, count: int, base_dt: str = None) -> str:
-    """OHLCV 데이터 조회 (api.get_ohlcv() 내부 TTL 캐시 사용)
+    """OHLCV 데이터 조회 (api.get_ohlcv() 내부 TTL 캐시 및 디스크 캐시 사용)
     
     주의: @lru_cache를 제거하여 TTL 기반 캐시가 제대로 작동하도록 함
-    api.get_ohlcv() 내부에서 TTL 기반 캐시를 사용하므로 중복 캐싱 불필요
+    api.get_ohlcv() 내부에서 TTL 기반 캐시 및 디스크 캐시를 사용하므로 중복 캐싱 불필요
     """
     try:
+        # 디스크 캐시 우선 확인 (키움 API 인증 실패 시에도 사용 가능)
         df = api.get_ohlcv(ticker, count, base_dt)
         if df.empty:
             return ""
         return df.to_json(orient='records')
-    except Exception:
+    except Exception as e:
+        # API 실패 시에도 디스크 캐시에서 로드 시도
+        try:
+            from pathlib import Path
+            import pickle
+            cache_dir = Path("cache/ohlcv")
+            if base_dt:
+                cache_file = cache_dir / f"{ticker}_{count}_{base_dt}.pkl"
+                if cache_file.exists():
+                    with open(cache_file, 'rb') as f:
+                        cached_data = pickle.load(f)
+                        df, _ = cached_data
+                        if not df.empty:
+                            return df.to_json(orient='records')
+        except:
+            pass
         return ""
 
 

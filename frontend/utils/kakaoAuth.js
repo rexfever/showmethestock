@@ -79,17 +79,9 @@ export const loginWithKakao = () => {
 };
 
 export const logoutWithKakao = () => {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.Kakao) {
-      // SDK가 없어도 로컬 로그아웃은 진행
-      resolve();
-      return;
-    }
-
-    window.Kakao.Auth.logout(() => {
-      resolve();
-    });
-  });
+  // 카카오 로그아웃 API 호출을 완전히 제거
+  // 401 에러 방지를 위해 로컬 로그아웃만 진행
+  return Promise.resolve();
 };
 
 export const isKakaoSDKReady = () => {

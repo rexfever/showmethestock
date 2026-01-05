@@ -112,3 +112,37 @@ const strategyInfo = strategyConfig[normalizedStrategy] || strategyConfig.관찰
 2. 프론트엔드 콘솔 로그 확인
 3. React DevTools로 props 확인
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

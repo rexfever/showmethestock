@@ -72,3 +72,37 @@ def test_bonus_score_affects_strategy_but_not_label():
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
