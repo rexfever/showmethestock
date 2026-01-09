@@ -7,7 +7,11 @@ import os
 from datetime import datetime
 
 # 프로젝트 루트를 Python 경로에 추가
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
+
+# config를 먼저 import하여 .env 로드 (config.py가 dotenv를 로드함)
+import config
 
 from date_helper import get_kst_now
 from db_manager import db_manager
@@ -27,14 +31,24 @@ def load_universe():
         return []
 
 def main():
-    """오늘 날짜 V3 스캔 실행"""
+    """오늘 날짜 또는 지정 날짜 V3 스캔 실행"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='V3 스캔 실행')
+    parser.add_argument('--date', type=str, help='스캔 날짜 (YYYYMMDD 형식). 지정하지 않으면 오늘 날짜 사용')
+    args = parser.parse_args()
+    
     print("=" * 60)
-    print("🚀 오늘 날짜 V3 스캔 실행")
+    print("🚀 V3 스캔 실행")
     print("=" * 60)
     
-    # 오늘 날짜
-    today_str = get_kst_now().strftime('%Y%m%d')
-    print(f"\n📅 오늘 날짜: {today_str}")
+    # 날짜 결정
+    if args.date:
+        today_str = args.date
+        print(f"\n📅 지정된 날짜: {today_str}")
+    else:
+        today_str = get_kst_now().strftime('%Y%m%d')
+        print(f"\n📅 오늘 날짜: {today_str}")
     
     # 기존 결과 확인
     with db_manager.get_cursor(commit=False) as cur:

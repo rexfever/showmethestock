@@ -6723,6 +6723,9 @@ async def get_bottom_nav_menu_items_public():
 @app.get("/bottom-nav-link")
 async def get_bottom_nav_link_public(current_user: Optional[User] = Depends(get_optional_user)):
     """바텀메뉴 추천종목 링크 조회 (공개 API, 사용자별 설정 우선, active_engine 차순)"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         from scanner_settings_manager import get_active_engine, get_scanner_setting
         
