@@ -18,9 +18,16 @@ export default function Settings() {
 
   // 인증 체크
   useEffect(() => {
-    if (authChecked && !authLoading && !isAuthenticated()) {
+    // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
+    if (!authChecked || authLoading) {
+      return;
+    }
+    
+    // 인증되지 않은 경우 로그인 페이지로 리다이렉트
+    if (!isAuthenticated()) {
       // 원래 경로를 쿼리 파라미터로 전달
       router.push(`/login?redirect=${encodeURIComponent('/settings')}`);
+      return;
     }
   }, [authChecked, authLoading, isAuthenticated, router]);
 

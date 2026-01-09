@@ -158,7 +158,16 @@ export const AuthProvider = ({ children }) => {
     }
     
     // 현재 상태에서 토큰과 사용자 정보 확인
-    return !!token && !!user;
+    if (token && user) {
+      return true;
+    }
+    
+    // 상태가 없으면 localStorage와 쿠키에서 확인
+    const localToken = localStorage.getItem('token');
+    const localUser = localStorage.getItem('user');
+    const cookieToken = Cookies.get('auth_token');
+    
+    return !!(localToken || cookieToken) && !!localUser;
   };
 
   const getToken = () => {

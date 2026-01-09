@@ -262,7 +262,7 @@ export default function BottomNavigation() {
                 return;
               }
               console.log('[BottomNav] 이동 시작:', targetPath);
-              window.location.href = targetPath;
+              router.push(targetPath);
             }}
           >
             <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
