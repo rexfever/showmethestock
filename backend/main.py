@@ -5583,6 +5583,9 @@ async def delete_user_kiwoom_keys(current_user: User = Depends(get_current_user)
 @app.get("/user/preferences")
 async def get_user_preferences(current_user: User = Depends(get_current_user)):
     """사용자별 추천 방식 설정 조회"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         with db_manager.get_cursor(commit=False) as cur:
             cur.execute("""
@@ -5622,6 +5625,9 @@ async def set_user_preferences(
     current_user: User = Depends(get_current_user)
 ):
     """사용자별 추천 방식 설정 저장"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         recommendation_type = request.get('recommendation_type')
         
