@@ -11,3 +11,4 @@
 마이그레이션 SQL 파일은 `backend/migrations/` 디렉토리에 있습니다.
 
 
+

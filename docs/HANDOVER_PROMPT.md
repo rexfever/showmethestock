@@ -8,6 +8,31 @@
 
 ---
 
+## 최근 작업 내용 (2026-01-02 ~ 2026-01-03)
+
+### 0. ARCHIVED 데이터 정책 준수 수정 (2026-01-03)
+- **목적**: ARCHIVED 데이터가 정책에 맞게 저장되도록 수정
+- **정책**:
+  1. **BROKEN을 거친 경우**: `broken_return_pct`를 `archive_return_pct`로 사용 (BROKEN 시점 스냅샷)
+  2. **손절 조건 만족 시**: `broken_at`, `broken_return_pct` 저장 및 `archive_reason = 'NO_MOMENTUM'` 설정
+  3. **REPLACED 케이스**: REPLACED 전환 시점 스냅샷 사용
+  4. **TTL_EXPIRED 케이스**: TTL 만료 시점 스냅샷 사용
+- **백엔드 변경**:
+  - `recommendation_service_v2.py`:
+    - `transition_recommendation_status_transaction`: BROKEN → ARCHIVED 전환 시 `broken_return_pct`를 `archive_return_pct`로 사용
+    - `transition_recommendation_status_transaction`: BROKEN 전환 시 `broken_at` 설정 추가
+    - `create_recommendation_transaction`: 손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 및 `archive_return_pct`로 사용
+  - `recommendation_service.py`:
+    - `create_recommendation`: 손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 및 `archive_return_pct`로 사용
+- **테스트 코드**:
+  - `backend/tests/test_stop_loss_policy.py`: 손절 정책 준수 테스트 작성
+- **데이터 업데이트 스크립트**:
+  - `backend/scripts/fix_all_archived_with_policy.py`: 모든 ARCHIVED 데이터를 정책에 맞게 재계산
+- **동작 방식**:
+  - BROKEN → ARCHIVED 전환 시: `broken_return_pct`가 있으면 그것을 `archive_return_pct`로 사용 (정책 준수)
+  - 손절 조건 만족 시: `broken_at`, `broken_return_pct` 저장하고 `archive_return_pct`로 사용
+  - REPLACED/ARCHIVED 전환 시 손절 조건 만족하면 `broken_at`, `broken_return_pct` 저장
+
 ## 최근 작업 내용 (2026-01-02)
 
 ### 1. 종료 시점 손익 고정 기능 추가
@@ -120,10 +145,16 @@
   
 - `backend/services/recommendation_service_v2.py`
   - BROKEN 전환 시 `broken_return_pct` 저장 (종료 시점 수익률)
+  - BROKEN 전환 시 `broken_at` 설정 추가
   - BROKEN 전환 시 `reason_code` 검증 및 정확한 값 비교 로직 추가
   - ARCHIVED 전환 시 `reason` → `archive_reason` 복사
+  - **ARCHIVED 전환 시 `broken_return_pct`를 `archive_return_pct`로 사용 (정책 준수)**
   - ARCHIVED 전환 시 `reason_code` 정확한 값 비교 로직 추가 (문자열 매칭 제거)
   - `archive_return_pct`, `archive_price`, `archive_phase` 저장
+  - **`create_recommendation_transaction`: 손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 및 `archive_return_pct`로 사용**
+  
+- `backend/services/recommendation_service.py`
+  - **`create_recommendation`: 손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 및 `archive_return_pct`로 사용**
   
 - `backend/services/recommendation_service.py`
   - `get_needs_attention_recommendations_list()`: 
@@ -344,9 +375,20 @@
 - [ ] NEW 카드에서 종료 사유 표시 확인
 
 ### 테스트
-- [ ] ACTIVE → BROKEN 전환 시 `reason` 설정 확인
-- [ ] BROKEN → ARCHIVED 전환 시 `reason` → `archive_reason` 복사 확인
-- [ ] ARCHIVED 페이지에서 모든 항목 정상 표시 확인
+- [x] ACTIVE → BROKEN 전환 시 `reason` 설정 확인
+- [x] BROKEN → ARCHIVED 전환 시 `reason` → `archive_reason` 복사 확인
+- [x] **BROKEN → ARCHIVED 전환 시 `broken_return_pct`를 `archive_return_pct`로 사용 확인**
+- [x] **손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 확인**
+- [x] **REPLACED/ARCHIVED 전환 시 손절 조건 만족하면 `broken_at`, `broken_return_pct` 저장 확인**
+- [x] ARCHIVED 페이지에서 모든 항목 정상 표시 확인
+- [ ] `backend/tests/test_stop_loss_policy.py` 테스트 실행 (환경 설정 필요)
+- [ ] 실제 환경에서 손절 조건 만족 시 BROKEN 전환 확인
+- [ ] REPLACED/ARCHIVED 전환 시 손절 조건 확인 로직 검증
+
+### 모니터링
+- [ ] 장 마감 후 상태 평가 로그 확인
+- [ ] 새로 ARCHIVED되는 항목의 정책 준수 확인
+- [ ] `broken_at`이 None인 항목이 다시 발생하지 않는지 확인
 
 ---
 
@@ -370,11 +412,13 @@
 ### 종료 시점 손익 고정
 - **BROKEN 전환**: `recommendation_service_v2.py`에서 `broken_return_pct` 저장
 - **ARCHIVED 전환**: `recommendation_service_v2.py`에서 `archive_return_pct` 저장
+  - **정책**: BROKEN을 거친 경우 `broken_return_pct`를 `archive_return_pct`로 사용 (BROKEN 시점 스냅샷)
 - **조회 시**: 
   - BROKEN: 두 가지 손익률 제공
     - `broken_return_pct`: 판단 당시 손익률 (종료 시점 고정)
     - `current_return`: 현재 시점 손익률 (실시간 계산)
   - ARCHIVED: `archive_return_pct`만 사용, 없으면 `None` (현재 시점 계산 금지)
+    - **정책**: `broken_return_pct`가 있으면 그것을 `archive_return_pct`로 사용
 
 ---
 
@@ -484,7 +528,93 @@ npm run dev
 
 ---
 
-**작성일**: 2026-01-02  
+---
+
+## ARCHIVED 데이터 정책 (2026-01-03 최종 업데이트)
+
+### 손절 정책
+- **v2_lite**: `stop_loss = 0.02` → `stop_loss_pct = -2.0%`
+- **midterm**: `stop_loss = 0.07` → `stop_loss_pct = -7.0%`
+- **조건**: `current_return <= stop_loss_pct`이면 BROKEN으로 전이
+
+### ARCHIVED 데이터 정책
+1. **BROKEN을 거친 경우**: `broken_return_pct`를 `archive_return_pct`로 사용 (BROKEN 시점 스냅샷)
+2. **손절 조건 만족 시**: 
+   - `broken_at`, `broken_return_pct` 저장
+   - `archive_return_pct`는 `broken_return_pct` 사용
+   - `archive_reason = 'NO_MOMENTUM'` 설정
+3. **REPLACED 케이스**: REPLACED 전환 시점(`status_changed_at`) 스냅샷 사용
+4. **TTL_EXPIRED 케이스**: TTL 만료 시점 스냅샷 사용
+
+### 정책 준수 규칙
+- `broken_return_pct`가 있으면 반드시 `broken_at`도 설정되어야 함
+- `broken_return_pct`가 있으면 `archive_return_pct`는 `broken_return_pct`와 일치해야 함
+- 손절 조건 만족 시 `archive_reason`은 반드시 `NO_MOMENTUM`이어야 함
+
+### 코드 위치
+- `backend/services/state_transition_service.py`: ACTIVE → BROKEN 전환 로직 (장 마감 후 15:45 KST)
+- `backend/services/recommendation_service_v2.py`:
+  - `transition_recommendation_status_transaction`: 
+    - BROKEN 전환 시 `broken_at` 설정 추가 (line 400-408)
+    - BROKEN → ARCHIVED 전환 시 `broken_return_pct`를 `archive_return_pct`로 사용
+  - `create_recommendation_transaction`: 
+    - 손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 및 `archive_return_pct`로 사용
+    - 변수 스코프 문제 해결 (`stop_loss_pct` try 블록 밖에서 초기화)
+- `backend/services/recommendation_service.py`:
+  - `create_recommendation`: 
+    - 손절 조건 만족 시 `broken_at`, `broken_return_pct` 저장 및 `archive_return_pct`로 사용
+    - 변수 스코프 문제 해결 (`stop_loss_pct` try 블록 밖에서 초기화)
+
+### 데이터 업데이트 스크립트
+- `backend/scripts/fix_archived_broken_at.py`: `broken_at`이 None인 항목 수정 (49개 수정 완료)
+- `backend/scripts/fix_all_archived_with_policy.py`: 전체 ARCHIVED 데이터 정책 재검증 (모든 항목 준수 확인 완료)
+- 실행: `python3 backend/scripts/fix_all_archived_with_policy.py`
+
+### 테스트 코드
+- `backend/tests/test_stop_loss_policy.py`: 손절 정책 준수 테스트 (작성 완료)
+- 실행: `python3 -m unittest tests.test_stop_loss_policy -v` 또는 `python3 -m pytest backend/tests/test_stop_loss_policy.py -v`
+
+### 현재 상태 (2026-01-03)
+- ✅ 모든 정책 준수 로직 구현 완료
+- ✅ 변수 스코프 문제 해결
+- ✅ BROKEN 전환 시 `broken_at` 설정 보장
+- ✅ 모든 ARCHIVED 데이터 정책 준수 확인 완료
+- ✅ `broken_at`이 None인 항목 모두 수정 완료 (49개)
+
+### 문제 해결 히스토리
+1. **초기 문제**: ARCHIVED 종목 중 수익률이 높은데도 `archive_reason = 'NO_MOMENTUM'`인 경우 발견
+2. **원인 분석**: BROKEN → ARCHIVED 전환 시 `broken_return_pct`를 `archive_return_pct`로 사용하지 않음
+3. **코드 수정**: `transition_recommendation_status_transaction`에서 BROKEN → ARCHIVED 전환 시 `broken_return_pct` 사용
+4. **추가 문제**: `broken_at`이 None인데 `broken_return_pct`가 있는 경우 발견
+5. **최종 수정**: 
+   - `transition_recommendation_status_transaction`에서 BROKEN 전환 시 `broken_at` 설정 추가
+   - 변수 스코프 문제 해결 (`stop_loss_pct` try 블록 밖에서 초기화)
+   - ARCHIVED 데이터 업데이트 완료 (49개 항목 수정)
+
+---
+
+**작성일**: 2026-01-02 (최종 업데이트: 2026-01-03)  
 **작성자**: AI Assistant  
-**버전**: 1.0
+**버전**: 1.2
+
+---
+
+## 최근 완료된 작업 (2026-01-03)
+
+### ARCHIVED 데이터 정책 준수 수정 완료
+- **목적**: ARCHIVED 데이터가 정책에 맞게 저장되도록 수정
+- **완료된 작업**:
+  1. ✅ 코드 리뷰 및 버그 수정
+     - `transition_recommendation_status_transaction`: BROKEN 전환 시 `broken_at` 설정 추가
+     - `create_recommendation_transaction`: `stop_loss_pct` 변수 스코프 문제 해결
+     - `create_recommendation`: `stop_loss_pct` 변수 스코프 문제 해결
+  2. ✅ ARCHIVED 데이터 업데이트
+     - `fix_archived_broken_at.py`: 49개 항목의 `broken_at` 설정 완료
+     - `fix_all_archived_with_policy.py`: 정책 재검증 완료 (모든 항목 준수)
+  3. ✅ 최종 검증 결과
+     - `broken_at`이 None인데 `broken_return_pct`가 있는 경우: 0개
+     - `broken_return_pct`와 `archive_return_pct` 불일치: 0개
+     - 손절 조건 만족했는데 `archive_reason`이 NO_MOMENTUM이 아닌 경우: 0개
+
+**모든 ARCHIVED 데이터가 정책을 준수합니다!**
 

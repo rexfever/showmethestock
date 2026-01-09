@@ -53,6 +53,9 @@ docs/
 - [Scanner V2 가이드](./scanner-v2/SCANNER_V2_USAGE.md)
 - [Scanner V2 설계](./scanner-v2/SCANNER_V2_DESIGN.md)
 
+### 백엔드 스크립트
+- [스캔 스크립트 작성 가이드](./backend/scanner/SCAN_SCRIPT_GUIDE.md) - 서버 API를 사용한 스캔 스크립트 작성 방법
+
 ## 문서 작성 규칙
 
 1. **위치**: 모든 문서는 `/docs` 디렉토리 아래에 분류하여 저장
