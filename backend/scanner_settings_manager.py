@@ -156,3 +156,26 @@ def get_regime_version() -> str:
     import os
     return os.getenv("REGIME_VERSION", "v1")
 
+
+def get_active_engine() -> str:
+    """활성 엔진 조회 (DB 우선, 없으면 기본값 v1)"""
+    db_value = get_scanner_setting('active_engine')
+    if db_value:
+        return db_value
+    
+    # DB에 없으면 기본값 v1 반환
+    return "v1"
+
+
+def set_active_engine(engine: str, updated_by: str = None) -> bool:
+    """활성 엔진 설정 (v1, v2, v3)"""
+    if engine not in ['v1', 'v2', 'v3']:
+        return False
+    
+    return set_scanner_setting(
+        'active_engine', 
+        engine, 
+        description=f'활성 스캐너 엔진 ({engine})',
+        updated_by=updated_by
+    )
+
