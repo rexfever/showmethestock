@@ -11,3 +11,4 @@ WHERE name IS NOT NULL;
 COMMENT ON COLUMN recommendations.name IS '종목명 (성능 최적화: API 호출 제거)';
 
 
+

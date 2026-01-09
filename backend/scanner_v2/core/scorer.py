@@ -180,6 +180,10 @@ class Scorer:
         
         signals_sufficient = signals_true >= min_signals
         
+        # 저점수 종목 품질 검증 (기본 신호 부족 시 필터링)
+        if score < 4 and basic_signals < 2:
+            signals_sufficient = False
+        
         # 신호 우선 원칙: 신호 충족 = 후보군 (점수 무관)
         flags["match"] = signals_sufficient
         flags["signals_count"] = signals_true
@@ -187,8 +191,73 @@ class Scorer:
         flags["signals_additional"] = additional_signals
         flags["min_signals_required"] = min_signals
         
-        # 위험도 차감
-        adjusted_score = score - risk_score
+        # 6점 이상 종목에 대한 추가 위험도 차감 (고점수 = 과열 가능성)
+        additional_risk = 0
+        if score >= 6:
+            cur = df.iloc[-1]
+            rsi_tema = cur.get("RSI_TEMA", 0)
+            
+            # RSI 과열 추가 차감
+            if rsi_tema >= 75:
+                additional_risk += 3  # RSI 75 이상: 3점 추가 차감
+            elif rsi_tema >= 70:
+                additional_risk += 2  # RSI 70 이상: 2점 추가 차감
+            
+            # 거래량 급증 추가 차감
+            vol_ma5 = cur.get("VOL_MA5", 0)
+            if vol_ma5 > 0:
+                vol_ratio = cur.get("volume", 0) / vol_ma5
+                if vol_ratio >= 3.0:
+                    additional_risk += 3  # 거래량 3배 이상: 3점 추가 차감
+                elif vol_ratio >= 2.5:
+                    additional_risk += 2  # 거래량 2.5배 이상: 2점 추가 차감
+            
+            # 이격률 과도 추가 차감
+            tema20 = cur.get("TEMA20", 0)
+            if tema20 > 0:
+                ext_pct = (cur.get("close", 0) - tema20) / tema20
+                if ext_pct >= 0.08:
+                    additional_risk += 3  # 8% 이상 이격: 3점 추가 차감
+                elif ext_pct >= 0.05:
+                    additional_risk += 2  # 5% 이상 이격: 2점 추가 차감
+            
+            # 과열 상태 종합 판단: 여러 위험 신호가 동시에 있으면 추가 차감
+            overheat_count = sum([
+                rsi_tema >= 70,
+                vol_ratio >= 2.5 if vol_ma5 > 0 else False,
+                ext_pct >= 0.05 if tema20 > 0 else False
+            ])
+            if overheat_count >= 2:  # 2개 이상 위험 신호
+                additional_risk += 2  # 과열 상태 추가 차감
+            
+            risk_score += additional_risk
+            flags["additional_risk_6plus"] = additional_risk
+        
+        # 위험도 차감 (점수 = 위험도 역설 해결: 고점수 = 높은 위험도)
+        # 점수가 높을수록 위험도가 높으므로, 위험도 차감을 더 강하게 적용
+        risk_multiplier = 1.0
+        if score >= 8:
+            # 고점수 종목은 위험도 차감을 2.0배 적용 (고점수 = 높은 위험도)
+            risk_multiplier = 2.0
+        elif score >= 6:
+            # 중고점수 종목은 위험도 차감을 1.5배 적용 (고점수 = 높은 위험도)
+            risk_multiplier = 1.5
+        
+        adjusted_risk_score = int(risk_score * risk_multiplier)
+        adjusted_score = score - adjusted_risk_score
+        
+        # 저점수 종목 품질 검증 강화 (0-4점 구간 성과 악화 해결)
+        # 기본 신호(골든크로스, 거래량, MACD, RSI) 중 최소 2개 이상 요구
+        if adjusted_score < 4:
+            if basic_signals < 2:
+                adjusted_score = 0
+                flags["low_score_filtered"] = True
+                flags["low_score_reason"] = f"기본 신호 부족 ({basic_signals}개)"
+        
+        # 위험도 차감 정보 저장
+        flags["risk_score"] = risk_score
+        flags["risk_multiplier"] = risk_multiplier
+        flags["adjusted_risk_score"] = adjusted_risk_score
         
         # 시장 분리 신호 시 KOSPI 종목 가산점 적용
         if market_condition and hasattr(market_condition, 'market_divergence') and market_condition.market_divergence:
@@ -232,7 +301,6 @@ class Scorer:
         ])
         
         flags["details"] = details
-        flags["risk_score"] = risk_score
         
         return adjusted_score, flags
     

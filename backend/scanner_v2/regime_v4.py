@@ -410,35 +410,14 @@ def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
                         if not (2000 <= kospi_recent <= 4000):
                             logger.warning(f"KOSPI 지수 값이 비정상적: {kospi_recent:.2f} (예상 범위: 2000~4000)")
                         
-                        # R20 계산하여 비정상적인 변동 확인
+                        # R20 계산하여 비정상적인 변동 확인 (20일 수익률)
                         if len(kospi_df) >= 21:
                             close_20d_ago = kospi_df.iloc[-21]['close']
                             latest_close = kospi_df.iloc[-1]['close']
                             r20 = (latest_close / close_20d_ago - 1) * 100
                             
-                            # R20이 10% 이상이면 경고
-                            if abs(r20) > 10:
-                                validation_date = target_date.strftime('%Y%m%d')
-                                logger.warning(f"KOSPI R20이 비정상적으로 큼: {r20:.2f}% (날짜: {validation_date})")
-                except Exception as e:
-                    logger.debug(f"KOSPI 데이터 검증 실패 (무시): {e}")
-                
-                # 데이터 검증: KOSPI 지수 범위 확인
-                try:
-                    if not kospi_df.empty:
-                        kospi_recent = kospi_df.iloc[-1]['close']
-                        # KOSPI 지수는 보통 2000~4000 범위
-                        if not (2000 <= kospi_recent <= 4000):
-                            logger.warning(f"KOSPI 지수 값이 비정상적: {kospi_recent:.2f} (예상 범위: 2000~4000)")
-                        
-                        # R20 계산하여 비정상적인 변동 확인
-                        if len(kospi_df) >= 21:
-                            close_20d_ago = kospi_df.iloc[-21]['close']
-                            latest_close = kospi_df.iloc[-1]['close']
-                            r20 = (latest_close / close_20d_ago - 1) * 100
-                            
-                            # R20이 10% 이상이면 경고
-                            if abs(r20) > 10:
+                            # R20이 20% 이상이면 경고 (10%는 실제 시장에서도 흔함)
+                            if abs(r20) > 20:
                                 validation_date = target_date.strftime('%Y%m%d')
                                 logger.warning(f"KOSPI R20이 비정상적으로 큼: {r20:.2f}% (날짜: {validation_date})")
                 except Exception as e:

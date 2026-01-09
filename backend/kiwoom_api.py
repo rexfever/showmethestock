@@ -586,7 +586,29 @@ class KiwoomAPI:
         if self.force_mock:
             df = self._gen_mock_ohlcv(code, count, base_dt)
         else:
-            df = self._fetch_ohlcv_from_api(code, count, base_dt)
+            try:
+                df = self._fetch_ohlcv_from_api(code, count, base_dt)
+            except RuntimeError as e:
+                # 키움 API 인증 실패 시 디스크 캐시 재시도
+                if "인증에 실패" in str(e) or "Token error" in str(e):
+                    logger.warning(f"키움 API 인증 실패, 디스크 캐시 재시도: {code}")
+                    if base_dt and self._disk_cache_enabled:
+                        # base_dt가 있는 경우: 해당 base_dt의 캐시 재시도
+                        cached_df = self._load_from_disk_cache(code, count, base_dt)
+                        if cached_df is not None and not cached_df.empty:
+                            logger.info(f"디스크 캐시에서 로드 성공: {code}, {base_dt}")
+                            self._set_cached_ohlcv(code, count, base_dt, cached_df)
+                            return cached_df
+                    # base_dt가 None인 경우: 최신 디스크 캐시 재시도
+                    if not base_dt and self._disk_cache_enabled:
+                        cached_df, _ = self._find_latest_disk_cache(code, count)
+                        if cached_df is not None and not cached_df.empty:
+                            logger.info(f"최신 디스크 캐시에서 로드 성공: {code}")
+                            result = cached_df.tail(count) if len(cached_df) >= count else cached_df
+                            self._set_cached_ohlcv(code, count, base_dt, result)
+                            return result
+                    logger.error(f"디스크 캐시도 없음, API 인증 실패: {code}, {e}")
+                raise
         
         # 4. 캐시 저장 (메모리 + 디스크)
         if not df.empty:

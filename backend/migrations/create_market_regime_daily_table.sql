@@ -78,3 +78,4 @@ COMMENT ON COLUMN market_regime_daily.dxy IS '달러 인덱스 (v4)';
 
 
 
+

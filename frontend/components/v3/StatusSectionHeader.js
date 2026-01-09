@@ -20,17 +20,13 @@ export default function StatusSectionHeader({
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
       <div className="flex-1">
-        <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          
-          {/* BROKEN: 개수 배지 */}
-          {sectionType === 'BROKEN' && count > 0 && (
-            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-              {count}
-            </span>
-          )}
-          
-          {/* ACTIVE: 개수 표시 제거 (금지사항) */}
+        <div className="flex items-center space-x-2">
+          <h3 className={`text-base font-semibold ${sectionType === 'BROKEN' ? 'text-red-800' : 'text-gray-900'}`}>
+            {title}
+            {(sectionType === 'BROKEN' || sectionType === 'ACTIVE') && count > 0 && (
+              <span className="text-gray-900 font-normal"> ({count})</span>
+            )}
+          </h3>
         </div>
         
         {/* 보조 문구 (BROKEN 섹션용) */}

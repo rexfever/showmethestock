@@ -66,7 +66,7 @@ export const addToPortfolio = async (investmentData) => {
   };
   
   // CSRF 토큰 생성
-  const csrfToken = generateCSRFToken();
+  const csrfToken = await generateCSRFToken();
 
   const response = await fetch(`${base}/portfolio/add`, {
     method: 'POST',
@@ -109,7 +109,7 @@ export const removeFromPortfolio = async (ticker) => {
   }
   
   const sanitizedTicker = sanitizeInput(ticker);
-  const csrfToken = generateCSRFToken();
+  const csrfToken = await generateCSRFToken();
 
   const response = await fetch(`${base}/portfolio/${sanitizedTicker}`, {
     method: 'DELETE',

@@ -1,10 +1,11 @@
 /**
  * 날짜별 스캔 결과 섹션 컴포넌트
  */
+import { memo } from 'react';
 import StockCardV2 from './StockCardV2';
 import MarketRegimeCard from './MarketRegimeCard';
 
-export default function DateSection({ date, stocks, marketCondition, isLoading, onViewChart }) {
+function DateSection({ date, stocks, marketCondition, isLoading, onViewChart }) {
   // 날짜 포맷팅
   const formatDate = (dateStr) => {
     if (!dateStr || dateStr.length !== 8) return dateStr;
@@ -22,7 +23,9 @@ export default function DateSection({ date, stocks, marketCondition, isLoading, 
   };
 
   const formattedDate = formatDate(date);
-  const hasStocks = stocks && stocks.length > 0;
+  // NORESULT를 제외한 실제 추천 종목만 카운트
+  const actualStocks = stocks ? stocks.filter(s => s && s.ticker && s.ticker !== 'NORESULT') : [];
+  const hasStocks = actualStocks.length > 0;
 
   return (
     <div className="mb-6">
@@ -34,7 +37,7 @@ export default function DateSection({ date, stocks, marketCondition, isLoading, 
             <h2 className="text-lg font-bold text-gray-900">{formattedDate}</h2>
           </div>
           <div className="text-sm text-gray-600">
-            추천 종목: <span className="font-semibold text-blue-600">{hasStocks ? stocks.length : 0}개</span>
+            추천 종목: <span className="font-semibold text-blue-600">{actualStocks.length}개</span>
           </div>
         </div>
       </div>
@@ -45,7 +48,7 @@ export default function DateSection({ date, stocks, marketCondition, isLoading, 
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-gray-500 text-sm mt-2">로딩 중...</p>
         </div>
-      ) : !hasStocks ? (
+      ) : !hasStocks || (stocks && stocks.length === 1 && stocks[0]?.ticker === 'NORESULT') ? (
         // 추천 종목이 없는 경우
         <div className="p-4">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
@@ -68,7 +71,7 @@ export default function DateSection({ date, stocks, marketCondition, isLoading, 
               <MarketRegimeCard marketCondition={marketCondition} />
             </div>
           )}
-          {stocks.map((stock, index) => (
+          {actualStocks.map((stock, index) => (
             <StockCardV2
               key={stock.ticker || index}
               item={stock}
@@ -80,4 +83,15 @@ export default function DateSection({ date, stocks, marketCondition, isLoading, 
     </div>
   );
 }
+
+export default memo(DateSection, (prevProps, nextProps) => {
+  // props 비교 최적화: 실제 변경된 경우에만 리렌더링
+  return (
+    prevProps.date === nextProps.date &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.stocks === nextProps.stocks &&
+    prevProps.marketCondition === nextProps.marketCondition &&
+    prevProps.onViewChart === nextProps.onViewChart
+  );
+});
 

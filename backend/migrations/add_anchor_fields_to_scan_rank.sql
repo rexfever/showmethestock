@@ -51,3 +51,4 @@ COMMENT ON COLUMN scan_rank.anchor_price_type IS '가격 타입: CLOSE 또는 AD
 COMMENT ON COLUMN scan_rank.anchor_source IS '데이터 소스: KRX_EOD, vendor, internal_cache 등';
 
 
+

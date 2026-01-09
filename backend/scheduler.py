@@ -202,14 +202,12 @@ def run_market_analysis():
         logger.error(traceback.format_exc())
 
 def run_scan():
-    """한국 주식 스캔 실행 (15:42)"""
+    """한국 주식 스캔 실행 (15:42) - v2와 v3 모두 실행"""
     if not is_trading_day():
         logger.info(f"오늘은 거래일이 아닙니다. 스캔을 건너뜁니다.")
         return
     
     try:
-        logger.info("📈 한국 주식 자동 스캔을 시작합니다...")
-        
         # 백엔드 API 호출 (환경별 URL 사용)
         env_info = get_environment_info()
         if env_info['is_local']:
@@ -217,24 +215,67 @@ def run_scan():
         else:
             backend_url = "http://localhost:8010"  # 서버에서는 내부 통신
         
-        response = requests.get(f"{backend_url}/scan?save_snapshot=true", timeout=300)
+        matched_count_v2 = 0
+        matched_count_v3 = 0
+        success_v2 = False
+        success_v3 = False
         
-        if response.status_code == 200:
-            data = response.json()
-            matched_count = data.get('matched_count', 0)
-            logger.info(f"✅ 한국 주식 자동 스캔 완료: {matched_count}개 종목 매칭")
+        # v2 스캔 실행
+        logger.info("📈 한국 주식 v2 스캔 시작...")
+        try:
+            response_v2 = requests.get(
+                f"{backend_url}/scan?save_snapshot=true&scanner_version=v2", 
+                timeout=300
+            )
             
-            # 스캔 결과는 DB에 저장됨 (JSON 파일 저장 제거)
+            if response_v2.status_code == 200:
+                data_v2 = response_v2.json()
+                matched_count_v2 = data_v2.get('matched_count', 0)
+                logger.info(f"✅ v2 스캔 완료: {matched_count_v2}개 종목 매칭")
+                success_v2 = True
+            else:
+                logger.error(f"v2 스캔 실패: HTTP {response_v2.status_code}")
+        except Exception as e:
+            logger.error(f"v2 스캔 중 오류 발생: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+        
+        # v3 스캔 실행
+        logger.info("📈 한국 주식 v3 스캔 시작...")
+        try:
+            response_v3 = requests.get(
+                f"{backend_url}/scan?save_snapshot=true&scanner_version=v3", 
+                timeout=300
+            )
+            
+            if response_v3.status_code == 200:
+                data_v3 = response_v3.json()
+                matched_count_v3 = data_v3.get('matched_count', 0)
+                logger.info(f"✅ v3 스캔 완료: {matched_count_v3}개 종목 매칭")
+                success_v3 = True
+            else:
+                logger.error(f"v3 스캔 실패: HTTP {response_v3.status_code}")
+        except Exception as e:
+            logger.error(f"v3 스캔 중 오류 발생: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+        
+        # 스캔 결과 요약
+        if success_v2 or success_v3:
+            logger.info(f"📊 스캔 결과 요약: v2={matched_count_v2}개, v3={matched_count_v3}개")
             logger.info("스캔 결과가 DB에 저장되었습니다.")
             
-            # 자동 알림 발송
-            send_auto_notification(matched_count)
-            
+            # 자동 알림 발송 (v2와 v3 중 더 많은 매칭 수 사용)
+            total_matched = max(matched_count_v2, matched_count_v3)
+            if total_matched > 0:
+                send_auto_notification(total_matched)
         else:
-            logger.error(f"한국 주식 스캔 실패: HTTP {response.status_code}")
+            logger.error("v2와 v3 스캔 모두 실패했습니다.")
             
     except Exception as e:
         logger.error(f"한국 주식 자동 스캔 중 오류 발생: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 def run_us_scan():
     """미국 주식 스캔 실행 (오전 7:00 KST)"""
@@ -439,10 +480,30 @@ def setup_scheduler():
     schedule.every().day.at("15:40").do(run_market_analysis)
     # - 레짐 분석용 캐시 사용 (증분 업데이트 방식) ✅
     
-    # 매일 오후 3시 42분에 한국 주식 스캔 실행 (장세 분석 후) - KST 기준
-    schedule.every().day.at("15:42").do(run_scan)
+    # 매일 오후 3시 43분에 한국 주식 스캔 실행 (장세 분석 완료 후) - KST 기준
+    schedule.every().day.at("15:43").do(run_scan)  # 15:42 → 15:43 변경 (장세 분석 완료 보장)
     # - 과거 데이터: 캐시에서 자동 로드 (증분 업데이트 방식) ✅
     # - 당일 데이터: 증분 업데이트 (당일만 추가) ✅
+    
+    # === 추천 인스턴스 상태 평가 ===
+    # 매일 오후 3시 45분에 상태 평가 실행 (스캔 후) - KST 기준
+    # v3 recommendations 테이블을 사용하는 새로운 상태 전이 프로세스
+    from services.state_transition_service import evaluate_active_recommendations
+    def run_status_evaluation():
+        """v3 recommendations 테이블 기반 상태 평가"""
+        try:
+            logger.info("[scheduler] v3 추천 상태 평가 시작...")
+            stats = evaluate_active_recommendations()
+            logger.info(f"[scheduler] v3 추천 상태 평가 완료: {stats}")
+        except Exception as e:
+            logger.error(f"[scheduler] 상태 평가 오류: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+    
+    schedule.every().day.at("15:49").do(run_status_evaluation)  # 15:47 → 15:49 변경 (v2/v3 스캔 완료 보장)
+    # - ACTIVE → BROKEN 단방향 전이만 수행
+    # - current_return <= stop_loss_pct 조건 확인
+    # - recommendations 테이블 사용 (v2 스키마)
     
     # === 미국 주식 스캔 ===
     # 매일 오전 7시에 미국 주식 스캔 실행 (미국 시장 마감 후 데이터 확정 시점) - KST 기준
@@ -463,7 +524,8 @@ def setup_scheduler():
     logger.info("=== 한국 주식 ===")
     logger.info("- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)")
     logger.info("- 매일 오후 3:40 KST: 장세 분석 실행 (레짐 분석용 캐시 사용)")
-    logger.info("- 매일 오후 3:42 KST: 한국 주식 스캔 실행 (오늘자 데이터만 추가)")
+    logger.info("- 매일 오후 3:43 KST: 한국 주식 스캔 실행 (v2 + v3 모두 실행, 장세 분석 완료 후)")
+    logger.info("- 매일 오후 3:49 KST: 추천 인스턴스 상태 평가 (ACTIVE → BROKEN 전이, 스캔 완료 후 실행)")
     logger.info("=== 미국 주식 ===")
     logger.info("- 매일 오전 7:00 KST: 미국 주식 스캔 실행 (오늘자 데이터만 추가)")
     logger.info("- 주말과 공휴일은 자동으로 제외됩니다.")

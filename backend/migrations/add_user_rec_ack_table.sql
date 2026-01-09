@@ -26,3 +26,4 @@ COMMENT ON COLUMN user_rec_ack.ack_type IS '확인 타입 (BROKEN_VIEWED 등)';
 COMMENT ON COLUMN user_rec_ack.acked_at IS '확인 시각';
 
 
+

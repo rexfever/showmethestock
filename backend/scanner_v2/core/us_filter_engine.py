@@ -16,11 +16,9 @@ class USFilterEngine:
         # market_analysis_enable 체크용
         self.market_analysis_enable = getattr(config, 'market_analysis_enable', True)
         
-        # USD 기준 필터 값 (환율 1300 기준)
-        # 한국: 10억원 → 미국: 약 $770K (더 보수적으로 $1M)
-        # 한국: 2,000원 → 미국: $5
-        self.min_turnover_usd = getattr(config, 'min_turnover_usd', 1000000)  # $1M
-        self.min_price_usd = getattr(config, 'min_price_usd', 5.0)  # $5
+        # USD 기준 필터 값 (미국 주식 전용 설정 우선 사용)
+        self.min_turnover_usd = getattr(config, 'us_min_turnover_usd', 2000000)  # $2M (기본값)
+        self.min_price_usd = getattr(config, 'us_min_price_usd', 5.0)  # $5
     
     def apply_hard_filters(self, df: pd.DataFrame, stock_name: str, market_condition: Optional[MarketCondition] = None) -> bool:
         """
@@ -49,11 +47,11 @@ class USFilterEngine:
         if any(keyword.lower() in stock_name.lower() for keyword in us_bond_keywords):
             return False
         
-        # 3. RSI 상한선 필터링
+        # 3. RSI 상한선 필터링 (미국 주식 전용 설정 사용)
         if market_condition and self.market_analysis_enable:
             rsi_upper_limit = market_condition.rsi_threshold + 25.0
         else:
-            rsi_upper_limit = self.config.rsi_upper_limit
+            rsi_upper_limit = getattr(self.config, 'us_rsi_upper_limit', 85)
         
         if cur.get("RSI_TEMA", 0) > rsi_upper_limit:
             return False
@@ -69,10 +67,12 @@ class USFilterEngine:
         if cur.get("close", 0) < self.min_price_usd:
             return False
         
-        # 6. 과열 필터
+        # 6. 과열 필터 (미국 주식 전용 설정 사용)
+        overheat_rsi = getattr(self.config, 'us_overheat_rsi_tema', 75)
+        overheat_vol_mult = getattr(self.config, 'us_overheat_vol_mult', 4.0)
         overheat = (
-            (cur.get("RSI_TEMA", 0) >= self.config.overheat_rsi_tema) and
-            (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= self.config.overheat_vol_mult * cur.get("VOL_MA5", 0))
+            (cur.get("RSI_TEMA", 0) >= overheat_rsi) and
+            (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= overheat_vol_mult * cur.get("VOL_MA5", 0))
         )
         if overheat:
             return False
@@ -85,8 +85,9 @@ class USFilterEngine:
             gap_max = market_condition.gap_max
             ext_max = market_condition.ext_from_tema20_max
         else:
-            gap_max = getattr(self.config, 'gap_max', 0.015)
-            ext_max = getattr(self.config, 'ext_from_tema20_max', 0.015)
+            # 미국 주식 전용 설정 사용 (더 큰 갭/이격 허용)
+            gap_max = getattr(self.config, 'us_gap_max', 0.03)
+            ext_max = getattr(self.config, 'us_ext_from_tema20_max', 0.05)
         
         # 갭 필터: 음수 갭도 허용 (하락 후 반등 가능)
         gap_ok = (gap_now <= gap_max)  # 최대값만 체크 (음수 갭 허용)
@@ -94,13 +95,14 @@ class USFilterEngine:
         if not (gap_ok and ext_ok):
             return False
         
-        # 8. ATR 필터 (활성화된 경우)
+        # 8. ATR 필터 (미국 주식은 변동성이 크므로 범위 확대)
         if getattr(self.config, 'use_atr_filter', False):
             _atr = atr(df["high"], df["low"], df["close"], 14).iloc[-1]
             if cur.get("close", 0):
                 atr_pct = _atr / cur.get("close", 1)
-                atr_min = getattr(self.config, 'atr_pct_min', 0.01)
-                atr_max = getattr(self.config, 'atr_pct_max', 0.04)
+                # 미국 주식 전용 설정 사용 (더 넓은 범위)
+                atr_min = getattr(self.config, 'us_atr_pct_min', 0.005)
+                atr_max = getattr(self.config, 'us_atr_pct_max', 0.06)
                 if not (atr_min <= atr_pct <= atr_max):
                     return False
         
@@ -124,15 +126,34 @@ class USFilterEngine:
         cur = df.iloc[-1]
         prev = df.iloc[-2]
         
-        # 동적 조건 가져오기
+        # 동적 조건 가져오기 (미국 주식 전용 설정 사용)
+        # 약세장/중립장에서는 조건 완화
         if market_condition and self.market_analysis_enable:
             rsi_threshold = market_condition.rsi_threshold
             min_signals = market_condition.min_signals
             vol_ma5_mult = market_condition.vol_ma5_mult
+            
+            # 약세장/중립장 감지 및 조건 완화
+            market_sentiment = getattr(market_condition, 'market_sentiment', 'neutral')
+            final_regime = getattr(market_condition, 'final_regime', 'neutral')
+            is_bear_market = (market_sentiment == 'bear') or (final_regime == 'bear')
+            is_neutral_market = (market_sentiment == 'neutral') and (final_regime == 'neutral')
+            
+            if is_bear_market:
+                # 약세장: 필터 대폭 강화 (분석 결과 약세장에서 매우 나쁜 성과: -0.98%, 승률 10.9%)
+                rsi_threshold = max(60, rsi_threshold)  # RSI 임계값 60 이상으로 강화
+                vol_ma5_mult = max(2.5, vol_ma5_mult * 1.3)  # 거래량 필터 강화 (30% 상향)
+                min_signals = max(4, min_signals + 2)  # 최소 신호 개수 4개 이상으로 강화
+            elif is_neutral_market:
+                # 중립장: 약간 완화 (기존 로직 유지)
+                rsi_threshold = max(45, rsi_threshold - 10)  # 최소 45까지 낮춤
+                vol_ma5_mult = max(1.5, vol_ma5_mult * 0.8)  # 20% 완화
+                min_signals = max(2, min_signals - 1)  # 최소 2개로 완화
         else:
-            rsi_threshold = getattr(self.config, 'rsi_threshold', 58)
-            min_signals = getattr(self.config, 'min_signals', 3)
-            vol_ma5_mult = getattr(self.config, 'vol_ma5_mult', 2.5)
+            # 시장 조건 없음: 중립장 가정하고 조건 완화
+            rsi_threshold = 50  # 중립장에서는 50으로 낮춤
+            min_signals = 2  # 최소 2개로 완화
+            vol_ma5_mult = 1.5  # 거래량 필터 완화
         
         # 골든크로스 확인
         lookback = min(5, len(df) - 1)
@@ -149,21 +170,68 @@ class USFilterEngine:
         # 기본 신호 4개
         cond_gc = (crossed_recently or (cur.get("TEMA20", 0) > cur.get("DEMA10", 0))) and (df.iloc[-1].get("TEMA20_SLOPE20", 0) > 0)
         cond_macd = (cur.get("MACD_LINE", 0) > cur.get("MACD_SIGNAL", 0)) or (cur.get("MACD_OSC", 0) > 0)
-        rsi_momentum = (cur.get("RSI_TEMA", 0) > cur.get("RSI_DEMA", 0)) or (abs(cur.get("RSI_TEMA", 0) - cur.get("RSI_DEMA", 0)) < 3 and cur.get("RSI_TEMA", 0) > rsi_threshold)
+        
+        # RSI 모멘텀: 약세장/중립장에서는 RSI 상승 추세만 확인 (절대값보다는 상대적 모멘텀)
+        rsi_tema = cur.get("RSI_TEMA", 0)
+        rsi_dema = cur.get("RSI_DEMA", 0)
+        
+        # 기본 RSI 모멘텀 조건
+        rsi_momentum = (rsi_tema > rsi_dema) or (abs(rsi_tema - rsi_dema) < 3 and rsi_tema > rsi_threshold)
+        
+        # 약세장/중립장에서는 RSI가 낮아도 상승 추세면 허용
+        if market_condition and self.market_analysis_enable:
+            market_sentiment = getattr(market_condition, 'market_sentiment', 'neutral')
+            final_regime = getattr(market_condition, 'final_regime', 'neutral')
+            is_bear_market = (market_sentiment == 'bear') or (final_regime == 'bear')
+            is_neutral_market = (market_sentiment == 'neutral') and (final_regime == 'neutral')
+            
+            # 약세장 또는 중립장에서 RSI가 낮은 경우
+            if (is_bear_market or is_neutral_market) and rsi_tema < rsi_threshold:
+                # RSI 상승 추세만 확인 (RSI가 상승 중이면 OK, 최소 25 이상)
+                rsi_momentum = (rsi_tema > rsi_dema) and (rsi_tema > 25)
+        else:
+            # 시장 조건 없음: RSI가 낮아도 상승 추세면 허용 (중립장 가정)
+            if rsi_tema < rsi_threshold:
+                rsi_momentum = (rsi_tema > rsi_dema) and (rsi_tema > 25)
+        
         cond_rsi = rsi_momentum
         cond_vol = (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= vol_ma5_mult * cur.get("VOL_MA5", 0))
         
         basic_signals = sum([bool(cond_gc), bool(cond_macd), bool(cond_rsi), bool(cond_vol)])
         
-        # 추가 신호 3개
+        # 추가 신호 3개 (약세장/중립장에서는 완화)
         obv_slope_ok = df.iloc[-1].get("OBV_SLOPE20", 0) > 0.001
         tema_slope_ok = (df.iloc[-1].get("TEMA20_SLOPE20", 0) > 0.001) and (cur.get("close", 0) > cur.get("TEMA20", 0))
-        above_ok = above_cnt >= 3
+        
+        # 약세장/중립장에서는 above_cnt 기준 완화
+        if market_condition and self.market_analysis_enable:
+            market_sentiment = getattr(market_condition, 'market_sentiment', 'neutral')
+            final_regime = getattr(market_condition, 'final_regime', 'neutral')
+            is_bear_market = (market_sentiment == 'bear') or (final_regime == 'bear')
+            is_neutral_market = (market_sentiment == 'neutral') and (final_regime == 'neutral')
+            
+            if is_bear_market or is_neutral_market:
+                above_ok = above_cnt >= 2  # 약세장/중립장: 2개 이상
+            else:
+                above_ok = above_cnt >= 3  # 강세장: 3개 이상
+        else:
+            above_ok = above_cnt >= 2  # 시장 조건 없음: 2개 이상
         
         additional_signals = sum([bool(obv_slope_ok), bool(tema_slope_ok), bool(above_ok)])
         
         # 총 신호 개수
         signals_true = basic_signals + additional_signals
+        
+        # 약세장 추가 필터: RSI < 60 강제 (약세장에서 성과가 매우 나쁨)
+        if market_condition and self.market_analysis_enable:
+            market_sentiment = getattr(market_condition, 'market_sentiment', 'neutral')
+            final_regime = getattr(market_condition, 'final_regime', 'neutral')
+            is_bear_market = (market_sentiment == 'bear') or (final_regime == 'bear')
+            
+            if is_bear_market:
+                # 약세장: RSI 60 이상 종목 제외
+                if rsi_tema >= 60:
+                    return False, 0, 0
         
         # 추세 조건 (시장 상황에 따라 완화)
         if market_condition and self.market_analysis_enable:
@@ -195,14 +263,33 @@ class USFilterEngine:
                 if not dema_slope_ok:
                     trend_ok = trend_ok or (sum(trend_conditions) >= 3)
         else:
-            # 약세장/중립장: 미국 주식은 조건 완화 (4개 중 2개 이상)
+            # 약세장/중립장: 시장 상황에 따라 조정
             tema_slope_ok = df.iloc[-1]["TEMA20_SLOPE20"] > 0
             obv_slope_ok = df.iloc[-1]["OBV_SLOPE20"] > 0
-            above_ok = above_cnt >= 2  # 3에서 2로 완화
+            above_ok = above_cnt >= 2  # 약세장에서는 2개 이상으로 완화
             golden_cross_ok = cur.get("TEMA20", 0) > cur.get("DEMA10", 0)
             
             trend_conditions = [tema_slope_ok, obv_slope_ok, above_ok, golden_cross_ok]
-            trend_ok = sum(trend_conditions) >= 2  # 4개 중 2개 이상
+            
+            # 약세장/중립장 감지
+            if market_condition and self.market_analysis_enable:
+                market_sentiment = getattr(market_condition, 'market_sentiment', 'neutral')
+                final_regime = getattr(market_condition, 'final_regime', 'neutral')
+                is_bear_market = (market_sentiment == 'bear') or (final_regime == 'bear')
+                is_neutral_market = (market_sentiment == 'neutral') and (final_regime == 'neutral')
+                
+                if is_bear_market:
+                    # 약세장: 4개 중 2개 이상 (완화)
+                    trend_ok = sum(trend_conditions) >= 2
+                elif is_neutral_market:
+                    # 중립장: 4개 중 2개 이상 (완화)
+                    trend_ok = sum(trend_conditions) >= 2
+                else:
+                    # 강세장: 4개 중 2개 이상 (완화)
+                    trend_ok = sum(trend_conditions) >= 2
+            else:
+                # 시장 조건 없음: 중립장 가정, 4개 중 2개 이상 (완화)
+                trend_ok = sum(trend_conditions) >= 2
             
             require_dema = getattr(self.config, 'require_dema_slope', 'optional')
             if require_dema == "required":

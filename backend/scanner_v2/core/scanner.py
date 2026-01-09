@@ -244,6 +244,35 @@ class ScannerV2:
         Returns:
             ScanResult 리스트
         """
+        # 강세장/중립장 또는 강세장 기간의 크래시 레짐만 추천 전략
+        # - 강세장: 최고 성과 구간
+        # - 중립장: 양호한 성과 (평균 +2.52%, 승률 65.4%)
+        # - 크래시: 강세장 기간 중 일시적 급락만 허용 (longterm_regime = bull)
+        #   (백테스트 결과: 강세장 기간의 크래시에서 평균 10.43%, 승률 80.0%)
+        # - 약세장: 제외 (부정적 성과 예상)
+        if market_condition:
+            # 레짐 확인 (midterm_regime 우선, 없으면 final_regime, 없으면 market_sentiment)
+            regime = getattr(market_condition, 'midterm_regime', None) or \
+                     getattr(market_condition, 'final_regime', None) or \
+                     getattr(market_condition, 'market_sentiment', 'neutral')
+            
+            # longterm_regime 확인 (크래시 레짐의 경우)
+            longterm_regime = getattr(market_condition, 'longterm_regime', None)
+            
+            # 크래시 레짐은 longterm_regime이 bull일 때만 허용
+            if regime == 'crash':
+                if longterm_regime != 'bull':
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f"⚠️ 크래시 레짐 감지 (longterm={longterm_regime}) - 강세장 기간의 크래시만 허용하므로 스캔 건너뜀")
+                    return []
+            # 약세장만 제외 (강세장, 중립장, 크래시는 허용)
+            elif regime == 'bear':
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"⚠️ 약세장 감지 - 약세장은 제외하므로 스캔 건너뜀")
+                return []
+        
         results = []
         for code in universe:
             result = self.scan_one(code, date, market_condition)
@@ -256,6 +285,9 @@ class ScannerV2:
         # Global Regime v3 기반 horizon cutoff 적용
         if market_condition:
             results = self._apply_regime_cutoff(results, market_condition)
+        
+        # Regime v4 정책 적용 (반환 직전)
+        results = self._apply_regime_v4_policy(results, date, market_condition)
         
         return results
     
@@ -414,4 +446,216 @@ class ScannerV2:
             # 소수 형태로 반환 (예: 0.0596 = 5.96%)
             return round((current_close - prev_close) / prev_close, 4)
         return 0.0
+    
+    def _apply_regime_v4_policy(self, results: List[ScanResult], date: str = None, market_condition: Optional[MarketCondition] = None) -> List[ScanResult]:
+        """
+        Regime v4 정책 적용 (반환 직전)
+        
+        기존 로직은 변경하지 않고, 추천의 강도(노출 수/등급/중단 OFF)만 제어한다.
+        mode 지원: "off" (미적용), "on" (적용), "shadow" (로그만, 원본 반환)
+        
+        Args:
+            results: 이미 정렬된 ScanResult 리스트
+            date: 스캔 날짜
+            market_condition: 시장 조건 (이미 계산된 경우)
+        
+        Returns:
+            정책이 적용된 ScanResult 리스트
+        """
+        # 설정 확인
+        try:
+            from config import config
+            policy_mode = getattr(config, 'scanner_v2_regime_policy_mode', 'off').lower()
+            if policy_mode not in ['off', 'on', 'shadow']:
+                policy_mode = 'off'
+        except Exception:
+            policy_mode = 'off'
+        
+        # off 모드: 레짐 계산도 하지 않고 원본 반환
+        if policy_mode == 'off':
+            return results
+        
+        candidates_before = len(results)
+        scan_date = date or datetime.now().strftime('%Y%m%d')
+        
+        # Regime v4 분석 (스캔당 1회만)
+        regime = None
+        final_regime = None
+        risk_label = None
+        error = None
+        
+        try:
+            # market_condition이 이미 Regime v4 결과를 포함하고 있는지 확인
+            if market_condition and hasattr(market_condition, 'version') and market_condition.version == 'regime_v4':
+                regime = market_condition
+            else:
+                # Regime v4 직접 호출
+                from scanner_v2.regime_v4 import analyze_regime_v4
+                if date:
+                    regime = analyze_regime_v4(date)
+                else:
+                    # 날짜가 없으면 오늘 날짜 사용
+                    from datetime import datetime
+                    today = datetime.now().strftime('%Y%m%d')
+                    regime = analyze_regime_v4(today)
+            
+            # 레짐 정보 추출
+            from scanner_v2.regime_policy import _extract_final_regime, _extract_risk_label
+            final_regime = _extract_final_regime(regime)
+            risk_label = _extract_risk_label(regime)
+            
+        except Exception as e:
+            # 레짐 계산 실패
+            error = str(e)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Regime v4 분석 실패: {e}")
+            
+            # shadow 모드에서는 로그 기록 후 원본 반환
+            if policy_mode == 'shadow':
+                from scanner_v2.utils.policy_logger import log_policy_application
+                log_policy_application(
+                    scan_date=scan_date,
+                    mode=policy_mode,
+                    final_regime=None,
+                    risk_label=None,
+                    grade=None,
+                    top_n=None,
+                    candidates_before=candidates_before,
+                    candidates_after=None,
+                    apply_success=False,
+                    error=error
+                )
+            
+            # 실패 시 항상 원본 반환
+            return results
+        
+        # 정책 결정
+        try:
+            from scanner_v2.regime_policy import decide_policy
+            
+            policy = decide_policy(regime, enabled=True)
+            grade = policy.grade
+            top_n = policy.top_n
+            reason = policy.reason
+            snapshot = policy.snapshot
+            
+            # shadow 모드: 정책 결정은 하지만 실제 적용은 하지 않고 원본 반환
+            if policy_mode == 'shadow':
+                candidates_after = min(top_n, candidates_before) if top_n > 0 else 0
+                
+                # candidates 리스트 생성 (ticker, name, score 포함)
+                candidates_list = []
+                for r in results:
+                    candidates_list.append({
+                        'ticker': r.ticker,
+                        'name': r.name,
+                        'score': r.score,
+                        'score_label': r.score_label
+                    })
+                
+                from scanner_v2.utils.policy_logger import log_policy_application
+                log_policy_application(
+                    scan_date=scan_date,
+                    mode=policy_mode,
+                    final_regime=final_regime,
+                    risk_label=risk_label,
+                    grade=grade,
+                    top_n=top_n,
+                    candidates_before=candidates_before,
+                    candidates_after=candidates_after,
+                    apply_success=True,
+                    error=None,
+                    reason=reason,
+                    snapshot=snapshot,
+                    candidates_list=candidates_list
+                )
+                return results  # 원본 반환
+            
+            # on 모드: 정책 적용
+            if policy.grade == "OFF" or policy.top_n == 0:
+                candidates_after = 0
+                from scanner_v2.utils.policy_logger import log_policy_application
+                log_policy_application(
+                    scan_date=scan_date,
+                    mode=policy_mode,
+                    final_regime=final_regime,
+                    risk_label=risk_label,
+                    grade=grade,
+                    top_n=top_n,
+                    candidates_before=candidates_before,
+                    candidates_after=candidates_after,
+                    apply_success=True,
+                    error=None,
+                    reason=reason,
+                    snapshot=snapshot
+                )
+                return []
+            
+            # top_n > 0인 경우 슬라이싱만 수행 (순서 유지)
+            if policy.top_n > 0:
+                filtered_results = results[:policy.top_n]
+                candidates_after = len(filtered_results)
+                
+                from scanner_v2.utils.policy_logger import log_policy_application
+                log_policy_application(
+                    scan_date=scan_date,
+                    mode=policy_mode,
+                    final_regime=final_regime,
+                    risk_label=risk_label,
+                    grade=grade,
+                    top_n=top_n,
+                    candidates_before=candidates_before,
+                    candidates_after=candidates_after,
+                    apply_success=True,
+                    error=None,
+                    reason=reason,
+                    snapshot=snapshot
+                )
+                
+                return filtered_results
+            
+            # 그 외의 경우 원본 그대로 반환
+            from scanner_v2.utils.policy_logger import log_policy_application
+            log_policy_application(
+                scan_date=scan_date,
+                mode=policy_mode,
+                final_regime=final_regime,
+                risk_label=risk_label,
+                grade=grade,
+                top_n=top_n,
+                candidates_before=candidates_before,
+                candidates_after=candidates_before,
+                apply_success=True,
+                error=None,
+                reason=reason,
+                snapshot=snapshot
+            )
+            return results
+            
+        except Exception as e:
+            # 정책 적용 실패
+            error = str(e)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Regime v4 정책 적용 실패: {e}")
+            
+            # shadow 모드에서는 로그 기록
+            if policy_mode == 'shadow':
+                from scanner_v2.utils.policy_logger import log_policy_application
+                log_policy_application(
+                    scan_date=scan_date,
+                    mode=policy_mode,
+                    final_regime=final_regime,
+                    risk_label=risk_label,
+                    grade=None,
+                    top_n=None,
+                    candidates_before=candidates_before,
+                    candidates_after=None,
+                    apply_success=False,
+                    error=error
+                )
+            
+            # 실패 시 항상 원본 반환
+            return results
 

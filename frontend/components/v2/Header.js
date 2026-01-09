@@ -16,7 +16,7 @@ export default function Header({ title = "스톡인사이트" }) {
         <div className="flex items-center space-x-4">
           <button 
             onClick={() => router.push('/')}
-            className="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors"
+            className="text-[18px] font-bold text-gray-800 hover:text-blue-600 transition-colors pb-3"
           >
             {title}
           </button>

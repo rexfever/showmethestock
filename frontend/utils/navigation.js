@@ -12,12 +12,22 @@ export const getScannerLink = async () => {
   try {
     const config = getConfig();
     const base = config?.backendUrl || 'http://localhost:8010';
+    
+    // 인증 토큰 가져오기 (사용자별 설정을 위해 필요)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const response = await fetch(`${base}/bottom-nav-link`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: headers,
       mode: 'cors',
       cache: 'no-cache',
     });

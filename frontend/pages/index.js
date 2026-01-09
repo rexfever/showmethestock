@@ -6,23 +6,69 @@ export default function HomePage() {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [scannerLink, setScannerLink] = useState('/v2/scanner-v2'); // 기본값
 
   useEffect(() => {
-    // 디바이스 감지
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-    setIsMobile(isMobileDevice);
-    
-    // 초기화면 설정 확인 및 리다이렉트
-    const initialScreen = localStorage.getItem('initialScreen') || 'korean';
-    if (initialScreen === 'us') {
-      router.push('/v2/us-stocks-scanner');
-    } else {
-      router.push('/v2/scanner-v2');
+    // 디바이스 감지 (브라우저에서만 실행)
+    if (typeof window !== 'undefined' && navigator) {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      setIsMobile(isMobileDevice);
     }
     
-    setLoading(false);
-  }, [router]);
+    // active_engine에 따른 스캐너 링크 가져오기
+    const fetchScannerLink = async () => {
+      let timeoutId;
+      try {
+        // 로컬 환경 감지
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const base = isLocal 
+          ? 'http://localhost:8010'
+          : (process.env.NODE_ENV === 'production' ? 'https://sohntech.ai.kr/api' : 'http://localhost:8010');
+        
+        // 인증 토큰 가져오기 (사용자별 설정을 위해 필요)
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        
+        const headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // 타임아웃 설정 (3초로 단축)
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(`${base}/bottom-nav-link`, {
+          headers: headers,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setScannerLink(data.link_url || '/v2/scanner-v2');
+        } else {
+          console.warn('스캐너 링크 조회 실패, 기본값 사용');
+        }
+      } catch (error) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          console.warn('스캐너 링크 조회 타임아웃, 기본값 사용');
+        } else {
+          console.error('스캐너 링크 조회 실패:', error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchScannerLink();
+  }, []);
 
   if (loading) {
     return (
@@ -53,7 +99,13 @@ export default function HomePage() {
               </h1>
               <p className="text-lg mb-8 opacity-90">AI 기반 주식 스캐너</p>
               <button
-                onClick={() => router.push('/v2/scanner-v2')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const targetPath = scannerLink || '/v2/scanner-v2';
+                  console.log('[HomePage] 스캐너 시작 버튼 클릭:', { scannerLink, targetPath });
+                  window.location.href = targetPath;
+                }}
                 className="inline-block text-white px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 hover:transform hover:-translate-y-0.5"
                 style={{
                   background: '#ff6b6b',
@@ -104,7 +156,13 @@ export default function HomePage() {
               </h1>
               <p className="text-xl mb-10 opacity-90">AI 기반 주식 스캐너로 투자 기회를 발견하세요</p>
               <button
-                onClick={() => router.push('/v2/scanner-v2')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const targetPath = scannerLink || '/v2/scanner-v2';
+                  console.log('[HomePage] 스캐너 시작 버튼 클릭:', { scannerLink, targetPath });
+                  window.location.href = targetPath;
+                }}
                 className="inline-block text-white px-10 py-4 rounded-full font-bold text-xl transition-all duration-300 hover:transform hover:-translate-y-0.5"
                 style={{
                   background: '#ff6b6b',

@@ -183,7 +183,7 @@ def save_scan_snapshot(scan_items: List[Dict], today_as_of: str, scanner_version
     Args:
         scan_items: 스캔 결과 리스트 (returns, recurrence 포함 가능)
         today_as_of: 스캔 날짜 (YYYYMMDD)
-        scanner_version: 스캐너 버전 (v1, v2, 또는 v2-lite), None이면 현재 활성화된 버전 사용
+        scanner_version: 스캐너 버전 (v1, v2, v2-lite, us_v2, v3), None이면 현재 활성화된 버전 사용
     
     Note:
         anchor_close는 추천 생성 시점에 한 번만 결정하여 저장.

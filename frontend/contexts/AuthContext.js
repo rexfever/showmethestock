@@ -125,10 +125,10 @@ export const AuthProvider = ({ children }) => {
       if (user && user.provider === 'kakao') {
         try {
           await logoutWithKakao();
-          console.log('카카오 로그아웃 성공');
+          // 성공/실패 여부와 관계없이 로컬 로그아웃 진행
         } catch (error) {
-          console.error('카카오 로그아웃 실패:', error);
-          // 카카오 로그아웃 실패해도 로컬 로그아웃은 진행
+          // 에러는 이미 logoutWithKakao에서 처리되므로 여기서는 무시
+          console.warn('카카오 로그아웃 중 오류 (무시):', error);
         }
       }
       

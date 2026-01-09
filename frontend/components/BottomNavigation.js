@@ -2,11 +2,12 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import getConfig from '../config';
+import { getScannerLink } from '../utils/navigation';
 
 export default function BottomNavigation() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [scannerLink, setScannerLink] = useState('/customer-scanner');
+  const [scannerLink, setScannerLink] = useState('/v2/scanner-v2'); // 초기값만 설정, 실제 값은 API에서 가져옴
   const [isVisible, setIsVisible] = useState(true);
   const [menuItems, setMenuItems] = useState({
     korean_stocks: true,
@@ -22,13 +23,23 @@ export default function BottomNavigation() {
       try {
         const config = getConfig();
         const base = config.backendUrl;
-        const response = await fetch(`${base}/bottom-nav-visible`);
+        // 타임아웃 설정 (3초)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(`${base}/bottom-nav-visible`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
         if (response.ok) {
           const data = await response.json();
           setIsVisible(data.is_visible !== false);
         }
       } catch (error) {
-        console.error('바텀메뉴 노출 설정 조회 실패:', error);
+        if (error.name !== 'AbortError') {
+          console.error('바텀메뉴 노출 설정 조회 실패:', error);
+        }
         // 에러 시 기본값 사용 (표시)
         setIsVisible(true);
       }
@@ -37,17 +48,18 @@ export default function BottomNavigation() {
     // 바텀메뉴 링크 설정 가져오기
     const fetchBottomNavLink = async () => {
       try {
-        const config = getConfig();
-        const base = config.backendUrl;
-        const response = await fetch(`${base}/bottom-nav-link`);
-        if (response.ok) {
-          const data = await response.json();
-          setScannerLink(data.link_url || '/customer-scanner');
-        }
+        const link = await getScannerLink();
+        setScannerLink(link);
       } catch (error) {
         console.error('바텀메뉴 링크 설정 조회 실패:', error);
-        // 에러 시 기본값 사용
-        setScannerLink('/customer-scanner');
+        // 에러 시 동적으로 다시 시도
+        try {
+          const link = await getScannerLink();
+          setScannerLink(link);
+        } catch (retryError) {
+          // 최종 fallback
+          setScannerLink('/v2/scanner-v2');
+        }
       }
     };
 
@@ -56,7 +68,15 @@ export default function BottomNavigation() {
       try {
         const config = getConfig();
         const base = config.backendUrl;
-        const response = await fetch(`${base}/bottom-nav-menu-items`);
+        // 타임아웃 설정 (3초)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(`${base}/bottom-nav-menu-items`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
         if (response.ok) {
           const data = await response.json();
           setMenuItems({
@@ -68,7 +88,9 @@ export default function BottomNavigation() {
           });
         }
       } catch (error) {
-        console.error('바텀메뉴 메뉴 아이템 설정 조회 실패:', error);
+        if (error.name !== 'AbortError') {
+          console.error('바텀메뉴 메뉴 아이템 설정 조회 실패:', error);
+        }
         // 에러 시 기본값 사용 (모두 표시)
       }
     };
@@ -93,10 +115,8 @@ export default function BottomNavigation() {
               className="flex flex-col items-center py-2 hover:bg-gray-800"
               onClick={() => router.push(scannerLink)}
             >
-              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span className="text-xs">한국주식추천</span>
+              <span className="text-2xl mb-1">🇰🇷</span>
+              <span className="text-xs">한국</span>
             </button>
           )}
           {menuItems.us_stocks && (
@@ -104,10 +124,8 @@ export default function BottomNavigation() {
               className="flex flex-col items-center py-2 hover:bg-gray-800"
               onClick={() => router.push('/v2/us-stocks-scanner')}
             >
-              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-xs">미국주식추천</span>
+              <span className="text-2xl mb-1">🇺🇸</span>
+              <span className="text-xs">미국</span>
             </button>
           )}
           {menuItems.stock_analysis && (

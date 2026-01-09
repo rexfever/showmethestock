@@ -689,7 +689,7 @@ export async function getServerSideProps() {
     
     // Next.js 서버 측 fetch는 timeout 옵션을 지원하지 않으므로 제거
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃으로 단축
     
     const response = await fetch(`${base}/latest-scan?scanner_version=v1`, {
       signal: controller.signal,

@@ -25,8 +25,6 @@ import BrokenRecommendationCard from '../../components/v3/BrokenRecommendationCa
 import StatusSectionHeader from '../../components/v3/StatusSectionHeader';
 import NoRecommendationsCard from '../../components/v3/NoRecommendationsCard';
 import MarketHolidayBanner from '../../components/v3/MarketHolidayBanner';
-import DayStatusBanner from '../../components/v3/DayStatusBanner';
-import DailyDigestCard from '../../components/v3/DailyDigestCard';
 import { BACKEND_STATUS, getSectionType, shouldRenderStatus } from '../../utils/v3StatusMapping';
 import { isMarketHolidayToday } from '../../utils/marketUtils';
 import { isToday, isBeforeRecommendationTime, isTimestampToday } from '../../utils/dayStatusUtils';
@@ -109,7 +107,7 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
   }, []); // 마운트 시 한 번만 실행
   
   // 상태별로 아이템 분류 및 정렬
-  const { brokenItems, activeItems, activeItemsWithNewFlag, limitedActiveItems, todayRecommendations, hasMoreActiveItems, totalActiveCount } = useMemo(() => {
+  const { brokenItems, activeItems, activeItemsWithNewFlag, limitedActiveItems, todayRecommendations, hasMoreActiveItems, totalActiveCount, summaryNewItems, summaryChangedItems } = useMemo(() => {
     const broken = [];
     const activeMap = new Map(); // ticker 중복 제거용
     const todayKey = getTodayKey();
@@ -118,6 +116,10 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
     
     // 신규 뱃지 표시 여부 결정: 15:35 이전이고 오늘 생성된 추천만
     const isBefore1535 = isBeforeRecommendationTime();
+    
+    // 요약 영역용: 신규 추천 및 변화된 추천 (배열로 변경)
+    const summaryNewItems = []; // 오늘 새로 추가된 추천 (anchor_date가 오늘인 ACTIVE/WEAK_WARNING)
+    const summaryChangedItems = []; // 오늘 변화 발생한 항목 (status_changed_at이 오늘인 BROKEN/WEAK_WARNING)
     
     // 디버깅: items 배열 확인
     if (process.env.NODE_ENV === 'development') {
@@ -240,8 +242,22 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
     active.forEach(item => {
       if (item.anchor_date && isToday(item.anchor_date)) {
         todayRecommendationsList.push(item);
+        // 요약 영역용: 신규 추천 종목 (모든 항목 추가)
+        if (item.status === BACKEND_STATUS.ACTIVE || item.status === BACKEND_STATUS.WEAK_WARNING) {
+          summaryNewItems.push(item);
+        }
       }
     });
+    
+    // 요약 영역용: 변화된 추천 확인 (status_changed_at이 오늘인 BROKEN/WEAK_WARNING)
+    const allItems = [...broken, ...active];
+    for (const item of allItems) {
+      if (item.status_changed_at && isTimestampToday(item.status_changed_at)) {
+        if (item.status === BACKEND_STATUS.BROKEN || item.status === BACKEND_STATUS.WEAK_WARNING) {
+          summaryChangedItems.push(item);
+        }
+      }
+    }
     
     // 신규 뱃지 판정: 15:35 이전이고 오늘 생성된 추천만
     // anchor_date가 오늘이어야 신규 (created_at은 백필 시 모두 오늘로 설정될 수 있음)
@@ -289,7 +305,9 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
       limitedActiveItems: limitedActiveItems, // 제한된 아이템 (접힘/펼침 상태에 따라)
       hasMoreActiveItems: hasMoreActiveItems, // 더보기 버튼 표시 여부
       todayRecommendations: todayRecommendationsList,
-      totalActiveCount: active.length
+      totalActiveCount: active.length,
+      summaryNewItems: summaryNewItems, // 요약: 신규 추천 종목 리스트
+      summaryChangedItems: summaryChangedItems // 요약: 변화된 추천 종목 리스트
     };
   }, [items, activeExpanded]);
   
@@ -685,19 +703,18 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
   return (
     <>
       <Head>
-        <title>Scanner V3 - Stock Insight</title>
-        <meta name="description" content="중기+단기 조합 알고리즘으로 찾아낸 추천 종목" />
+        <title>스톡인사이트</title>
       </Head>
-      <Layout headerTitle="스톡인사이트 V3">
-        {/* 정보 배너 */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4">
+      <Layout headerTitle="스톡인사이트">
+        {/* 배너 영역 */}
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 mb-6 opacity-90">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">
-                추천 종목 (V3)
+              <h2 className="text-[20px] font-bold">
+                추천 종목
               </h2>
-              <p className="text-sm opacity-90">
-                상태 기반 추천 종목 관리
+              <p className="text-[14px] font-normal opacity-90 mt-1.5">
+                AI가 추천한 종목을 보여줍니다
               </p>
             </div>
           </div>
@@ -727,19 +744,95 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
         {/* 상태 기반 섹션 */}
         {!loading && (
           <div className="space-y-0">
-            {/* 일일 추천 상태 배너 (최상단, 항상 표시) */}
-            <DayStatusBanner 
-              dailyDigest={dailyDigest}
-              activeItems={activeItems}
-              todayRecommendations={todayRecommendations}
-            />
+            {/* 요약 영역 */}
+            <div>
+              <div className="px-4">
+                {/* 통합 요약 카드 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-[14px] p-5 relative overflow-hidden shadow-sm">
+                  {/* 상단 톤 바 - 카드 상단의 얇은 색상 바 (시각적 앵커) */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-blue-300 rounded-t-[14px]"></div>
+                  
+                  {/* 1) 신규 추천 */}
+                  <div className="pb-4">
+                    <div className="text-lg text-[#111827] mb-2">신규 추천</div>
+                    {summaryNewItems.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {summaryNewItems.map((item) => (
+                          <div
+                            key={item.ticker || item.recommendation_id || item.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // 현재 추천 섹션으로 이동
+                              setActiveCollapsed(false);
+                              setTimeout(() => {
+                                const targetCard = document.querySelector(`[data-ticker="${item.ticker}"]`);
+                                if (targetCard) {
+                                  targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  // 일시적 강조 (0.8~1.0초)
+                                  targetCard.classList.add('bg-yellow-50', 'border-yellow-300');
+                                  setTimeout(() => {
+                                    targetCard.classList.remove('bg-yellow-50', 'border-yellow-300');
+                                  }, 900);
+                                }
+                              }, 100);
+                            }}
+                            className="text-sm text-[#374151] hover:text-gray-900 cursor-pointer underline transition-colors"
+                          >
+                            {item.name || item.ticker}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-[#6B7280]">오늘 새로 추가된 추천은 없습니다</div>
+                    )}
+                  </div>
 
-            {/* NEW 요약 카드 (daily_digest.has_changes = true일 때만) */}
-            {dailyDigest && dailyDigest.has_changes && (
-              <div className="px-4 py-3">
-                <DailyDigestCard dailyDigest={dailyDigest} />
+                  {/* 구분선 */}
+                  <div className="border-t border-blue-200 my-1"></div>
+
+                  {/* 2) 변화된 추천 */}
+                  <div>
+                    <div className="text-lg text-[#111827] mb-2">변화된 추천</div>
+                    {summaryChangedItems.length > 0 ? (
+                      <div className="flex flex-wrap -m-1.5">
+                        {summaryChangedItems.map((item) => (
+                          <div
+                            key={item.ticker || item.recommendation_id || item.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // 상태에 따라 섹션 결정
+                              if (item.status === BACKEND_STATUS.BROKEN) {
+                                // 추천관리 종료 섹션으로 이동
+                                setBrokenCollapsed(false);
+                              } else if (item.status === BACKEND_STATUS.WEAK_WARNING) {
+                                // 현재 추천 섹션으로 이동
+                                setActiveCollapsed(false);
+                              }
+                              setTimeout(() => {
+                                const targetCard = document.querySelector(`[data-ticker="${item.ticker}"]`);
+                                if (targetCard) {
+                                  targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  // 일시적 강조 (0.8~1.0초)
+                                  targetCard.classList.add('bg-yellow-50', 'border-yellow-300');
+                                  setTimeout(() => {
+                                    targetCard.classList.remove('bg-yellow-50', 'border-yellow-300');
+                                  }, 900);
+                                }
+                              }, 100);
+                            }}
+                            className="text-[13px] font-medium px-2.5 py-1.5 bg-white text-[#1F2937] rounded-full inline-block cursor-pointer hover:bg-[#F3F6FB] transition-colors m-1.5 border border-[#E2E8F0]"
+                          >
+                            {item.name || item.ticker}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-[#6B7280]">변화가 발생한 추천은 없습니다</div>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
 
             {/* 렌더링 우선순위 규칙:
                 1) 휴장일이면: 일일 배너 + 기존 추천 카드 유지
@@ -824,7 +917,7 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
                   style={{ pointerEvents: 'auto', position: 'relative' }}
                 >
                   <span className="text-sm text-gray-700">
-                    종료된 추천 보기 ({archivedCount})
+                    종료된 추천 보기 <span className="text-gray-900">({archivedCount})</span>
                   </span>
                   <svg 
                     className="w-5 h-5 text-gray-400" 
@@ -840,9 +933,10 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
 
             {/* 유효한 추천 섹션 (ACTIVE) */}
             {activeItems.length > 0 && (
-              <div className="bg-white border-b border-gray-200">
+              <div className="bg-white border-b border-gray-200 mt-8">
                 <StatusSectionHeader
                   title="현재 추천"
+                  count={activeItems.length}
                   isCollapsed={activeCollapsed}
                   onToggle={handleActiveToggle}
                   sectionType="ACTIVE"

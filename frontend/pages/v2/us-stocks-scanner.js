@@ -224,6 +224,16 @@ export default function USStocksScanner({ initialData, initialScanDate, initialM
     setMounted(true);
   }, []);
 
+  // 개발 중 메시지 표시 및 이전 화면으로 리다이렉트
+  useEffect(() => {
+    // 메시지를 잠깐 보여주고 이전 화면으로 돌아가기
+    const timer = setTimeout(() => {
+      router.back();
+    }, 2000); // 2초 후 이전 화면으로
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
   // 초기 데이터가 없으면 최신 스캔 결과 가져오기
   useEffect(() => {
     if (mounted && Object.keys(dateSections).length === 0) {
@@ -241,6 +251,16 @@ export default function USStocksScanner({ initialData, initialScanDate, initialM
         <meta name="description" content="AI 기반 미국 주식 스캐너 - S&P 500, NASDAQ 100 종목 분석" />
       </Head>
       <Layout headerTitle="미국 주식 추천">
+        {/* 개발 중 메시지 */}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div className="text-6xl mb-4">🚧</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">개발 중입니다</h2>
+            <p className="text-gray-600 mb-4">미국 주식 스캔 기능은 현재 개발 중입니다.</p>
+            <p className="text-sm text-gray-500">잠시 후 이전 화면으로 돌아갑니다...</p>
+          </div>
+        </div>
+
         {/* 정보 배너 */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
           <div className="flex items-center justify-between">

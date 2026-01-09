@@ -146,3 +146,4 @@ const strategyInfo = strategyConfig[normalizedStrategy] || strategyConfig.관찰
 
 
 
+

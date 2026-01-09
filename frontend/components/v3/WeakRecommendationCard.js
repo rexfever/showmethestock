@@ -8,26 +8,18 @@
  * - CTA 허용 (차트 보기)
  */
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { STATUS_COLOR_CLASSES, BACKEND_STATUS, STATUS_TO_UX } from '../../utils/v3StatusMapping';
-import { getTradingDaysElapsed, formatDateForDisplay } from '../../utils/tradingDaysUtils';
+import { StrategyLabel } from '../../utils/strategyLabelUtils';
 
 export default function WeakRecommendationCard({ item, isNew = false }) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [tradingDays, setTradingDays] = useState(0);
-  const [formattedDate, setFormattedDate] = useState('');
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   
   if (!item || !item.status || item.status !== BACKEND_STATUS.WEAK_WARNING) {
     return null;
   }
 
-  const { ticker, name, recommendation_id, id, anchor_date, created_at, current_return, return_pct, returns } = item;
+  const { ticker, name, recommendation_id, id, current_return, return_pct, returns, strategy } = item;
   const recId = recommendation_id || id;
   
   // 수익률 계산 (보조 정보로만 표시)
@@ -49,20 +41,10 @@ export default function WeakRecommendationCard({ item, isNew = false }) {
       return_pct,
       returns_current_return: returns?.current_return,
       returnRate,
-      mounted,
       anchor_close: item.anchor_close
     });
   }
   
-  // 추천일 및 경과 거래일 계산
-  const recommendationDate = anchor_date || created_at;
-  
-  useEffect(() => {
-    if (mounted && recommendationDate) {
-      setTradingDays(getTradingDaysElapsed(recommendationDate));
-      setFormattedDate(formatDateForDisplay(recommendationDate));
-    }
-  }, [mounted, recommendationDate]);
 
   const colors = STATUS_COLOR_CLASSES[BACKEND_STATUS.WEAK_WARNING];
   
@@ -89,9 +71,13 @@ export default function WeakRecommendationCard({ item, isNew = false }) {
 
   return (
     <div
+      data-ticker={ticker}
       onClick={handleClick}
       className={`${colors.cardBg} ${colors.cardBorder} border-2 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow`}
     >
+      {/* 전략 라벨 (본문 위) */}
+      <StrategyLabel strategy={strategy} />
+      
       {/* 상단: 종목명 + 현재 손익률 */}
       <div className="flex items-start justify-between mb-3">
         {/* 종목명 */}
@@ -123,33 +109,11 @@ export default function WeakRecommendationCard({ item, isNew = false }) {
         </div>
       </div>
       
-      {/* 상태 설명 문구 1줄만 */}
+      {/* 본문 - 고정 (1줄) */}
       <div className="mt-3 pt-3 border-t border-gray-200">
         <p className={`text-sm font-medium ${colors.bodyText}`}>
           {summaryText}
         </p>
-      </div>
-      
-      {/* 메타 정보: 추천일 + 경과 거래일 (카드 하단) */}
-      {mounted && formattedDate && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <p className={`text-xs ${colors.bodyText} opacity-70`}>
-            추천일 {formattedDate} · {tradingDays}거래일 경과
-          </p>
-        </div>
-      )}
-
-      {/* 신규 진입 CTA 버튼 (WEAK_WARNING은 허용) */}
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={(e) => {
-            e.stopPropagation(); // 카드 클릭 이벤트 방지
-            handleClick();
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          차트 보기
-        </button>
       </div>
     </div>
   );

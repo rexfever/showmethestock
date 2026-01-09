@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getTradingDaysElapsed, getTradingDaysBetween, formatDateForDisplay } from '../../utils/tradingDaysUtils';
 import { getTerminationReasonText } from '../../utils/v3StatusMapping';
+import { StrategyLabel } from '../../utils/strategyLabelUtils';
 
 export default function ArchivedCardV3({ item }) {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function ArchivedCardV3({ item }) {
     return null;
   }
 
-  const { ticker, name, recommendation_id, id, anchor_date, created_at, current_return, updated_at, archived_at, observation_period_days, archive_return_pct, archive_reason } = item;
+  const { ticker, name, recommendation_id, id, anchor_date, created_at, current_return, updated_at, archived_at, observation_period_days, archive_return_pct, archive_reason, strategy } = item;
   const recId = recommendation_id || id;
   
   // 수익률 계산 (ARCHIVED 스냅샷 우선, 없으면 current_return)
@@ -102,38 +103,63 @@ export default function ArchivedCardV3({ item }) {
       onClick={handleClick}
       className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
     >
-      {/* 상단: 상태 배지 + 메타 정보 */}
+      {/* 전략 라벨 (본문 위) */}
+      <StrategyLabel strategy={strategy} />
+      
+      {/* 상단: 종목명 + 종료 시점 손익률 */}
       <div className="flex items-start justify-between mb-3">
+        {/* 종목명 */}
         <div className="flex-1 min-w-0">
-          {/* 메타 정보: 추천일 + 기간 */}
-          {mounted && formattedDate && (
-            <p className="text-xs text-gray-600 opacity-70 font-medium">
-              추천일 {formattedDate} · {tradingDays}거래일
-            </p>
+          <h3 className="text-lg font-bold text-gray-900 truncate">
+            {displayName}
+          </h3>
+          {ticker && (
+            <div className="mt-1">
+              <span className="text-xs text-gray-500 font-mono">
+                {ticker}
+              </span>
+            </div>
+          )}
+        </div>
+        
+        {/* 종료 시점 손익률 (상단 우측) */}
+        <div className="text-right ml-4 flex-shrink-0">
+          {returnRate !== null && returnRate !== undefined && !isNaN(returnRate) ? (
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">종료 시점</div>
+              <span className={`text-sm font-medium ${returnRate > 0 ? 'text-red-500' : returnRate < 0 ? 'text-blue-500' : 'text-gray-700'}`}>
+                {returnRate > 0 ? '+' : ''}{returnRate.toFixed(2)}%
+              </span>
+            </div>
+          ) : (
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">종료 시점</div>
+              <span className="text-sm text-gray-700 opacity-50">
+                —
+              </span>
+            </div>
           )}
         </div>
       </div>
       
-      {/* 종목명 */}
-      <div className="mb-3">
-        <h3 className="text-lg font-bold text-gray-900 truncate">
-          {displayName}
-        </h3>
-        {ticker && (
-          <div className="mt-1">
-            <span className="text-xs text-gray-500 font-mono">
-              {ticker}
-            </span>
-          </div>
-        )}
-      </div>
-      
-      {/* 종료 사유 (BROKEN의 종료 사유만 표시) */}
+      {/* 본문 - 고정 */}
       <div className="mt-3 pt-3 border-t border-gray-200">
+        <p className="text-sm text-gray-700 mb-1">
+          추천 관리가 종료되었습니다
+        </p>
         <p className="text-sm text-gray-700">
           사유: {reasonText || '관리 기간 종료'}
         </p>
       </div>
+      
+      {/* 종료 일자 */}
+      {archived_at && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <p className="text-xs text-gray-600 opacity-70">
+            {formatDateForDisplay(archived_at)}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

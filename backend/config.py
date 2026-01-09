@@ -97,6 +97,11 @@ class Config:
             # DB 연결 실패 시 .env 사용
             return os.getenv("SCANNER_VERSION", "v1")
     
+    # === Regime v4 정책 설정 ===
+    scanner_v2_use_regime_v4_policy: bool = os.getenv("SCANNER_V2_USE_REGIME_V4_POLICY", "false").lower() == "true"
+    scanner_v2_regime_policy_mode: str = os.getenv("SCANNER_V2_REGIME_POLICY_MODE", "off").lower()
+    # 허용값: "off" (정책 미적용, 레짐 계산 안 함), "on" (정책 적용), "shadow" (정책 미적용하지만 레짐/정책 로그 기록)
+    
     @property
     def scanner_v2_enabled(self) -> bool:
         """스캐너 V2 활성화 여부 (DB 우선, 없으면 .env)"""

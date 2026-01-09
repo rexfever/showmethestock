@@ -15,7 +15,18 @@ export default function InfiniteScrollContainer({
 
   // Intersection Observer 설정
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    if (!hasMore || isLoading) {
+      // hasMore가 false이거나 로딩 중이면 Observer 해제
+      if (observerRef.current && sentinelRef.current) {
+        observerRef.current.unobserve(sentinelRef.current);
+      }
+      return;
+    }
+
+    // 기존 Observer 정리
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
 
     const options = {
       root: null,
@@ -26,18 +37,35 @@ export default function InfiniteScrollContainer({
     observerRef.current = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting && hasMore && !isLoading) {
+          console.log('InfiniteScrollContainer: 센티널 감지, onLoadMore 호출');
           onLoadMore();
         }
       });
     }, options);
 
+    // 센티널 요소가 준비되면 관찰 시작
     if (sentinelRef.current) {
       observerRef.current.observe(sentinelRef.current);
+      console.log('InfiniteScrollContainer: Observer 설정 완료', { hasMore, isLoading });
+    } else {
+      // 센티널이 아직 준비되지 않았으면 약간의 지연 후 재시도
+      const timer = setTimeout(() => {
+        if (sentinelRef.current && observerRef.current) {
+          observerRef.current.observe(sentinelRef.current);
+          console.log('InfiniteScrollContainer: Observer 설정 완료 (지연)');
+        }
+      }, 100);
+      return () => {
+        clearTimeout(timer);
+        if (observerRef.current && sentinelRef.current) {
+          observerRef.current.unobserve(sentinelRef.current);
+        }
+      };
     }
 
     return () => {
-      if (observerRef.current && sentinelRef.current) {
-        observerRef.current.unobserve(sentinelRef.current);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
     };
   }, [hasMore, isLoading, onLoadMore]);

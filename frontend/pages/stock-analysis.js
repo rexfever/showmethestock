@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import getConfig from '../config';
 import Layout from '../layouts/v2/Layout';
+import StockDetailV3 from '../components/v3/StockDetailV3';
 
 export default function StockAnalysis() {
   const router = useRouter();
@@ -12,6 +13,13 @@ export default function StockAnalysis() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // v3에서 온 경우 확인 (query parameter 또는 분석 결과에서)
+  const isFromV3 = router.query.from === 'v3' || router.query.v3 === 'true';
+  
+  // 추천 인스턴스 정보 (query parameter에서)
+  const recDateFromQuery = router.query.rec_date;
+  const recVersionFromQuery = router.query.rec_version;
 
   useEffect(() => {
     // 로그인 체크
@@ -175,6 +183,14 @@ export default function StockAnalysis() {
         {/* 분석 결과 */}
         {analysisResult && !loading && (
           <div className="space-y-6">
+            {/* v3 상세 화면 (v3에서 온 경우 또는 anchor 정보가 있는 경우) */}
+            {(isFromV3 || analysisResult.anchor_date || analysisResult.anchor_close) && (
+              <StockDetailV3 
+                item={null} 
+                analysisResult={analysisResult}
+              />
+            )}
+            
             {/* 종목 기본 정보 헤더 */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">

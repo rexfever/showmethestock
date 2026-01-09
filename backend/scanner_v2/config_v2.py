@@ -62,6 +62,8 @@ class ScannerV2Config:
     # === 기타 V1 호환성 ===
     rsi_setup_min: float = float(_get_env_with_fallback("SCANNER_V2_RSI_SETUP_MIN", "RSI_SETUP_MIN", "57"))
     market_analysis_enable: bool = _get_env_with_fallback("SCANNER_V2_MARKET_ANALYSIS_ENABLE", "MARKET_ANALYSIS_ENABLE", "true").lower() == "true"
+    score_level_strong: int = int(_get_env_with_fallback("SCANNER_V2_SCORE_LEVEL_STRONG", "SCORE_LEVEL_STRONG", "10"))
+    score_level_watch: int = int(_get_env_with_fallback("SCANNER_V2_SCORE_LEVEL_WATCH", "SCORE_LEVEL_WATCH", "7"))
     
     # === 점수 가중치 ===
     score_w_cross: int = int(_get_env_with_fallback("SCANNER_V2_SCORE_W_CROSS", "SCORE_W_CROSS", "3"))
@@ -82,12 +84,38 @@ class ScannerV2Config:
     inverse_etf_keywords: list = None
     bond_etf_keywords: list = None
     
+    # === 미국 주식 전용 설정 (SCANNER_V2_US_ 접두사) ===
+    # 변동성 필터 (미국 주식은 변동성이 크므로 범위 확대)
+    us_atr_pct_min: float = float(os.getenv("SCANNER_V2_US_ATR_PCT_MIN", "0.005"))
+    us_atr_pct_max: float = float(os.getenv("SCANNER_V2_US_ATR_PCT_MAX", "0.06"))
+    
+    # 갭/이격 필터 (미국 주식은 큰 갭이 흔함)
+    us_gap_max: float = float(os.getenv("SCANNER_V2_US_GAP_MAX", "0.03"))
+    us_ext_from_tema20_max: float = float(os.getenv("SCANNER_V2_US_EXT_FROM_TEMA20_MAX", "0.05"))
+    
+    # 거래량 필터 (미국 주식은 거래량 패턴이 다름)
+    us_vol_ma5_mult: float = float(os.getenv("SCANNER_V2_US_VOL_MA5_MULT", "2.0"))
+    us_vol_ma20_mult: float = float(os.getenv("SCANNER_V2_US_VOL_MA20_MULT", "1.0"))
+    
+    # RSI 필터 (미국 주식은 모멘텀 지속력이 강함)
+    us_rsi_threshold: float = float(os.getenv("SCANNER_V2_US_RSI_THRESHOLD", "60"))
+    us_rsi_upper_limit: float = float(os.getenv("SCANNER_V2_US_RSI_UPPER_LIMIT", "85"))
+    us_rsi_setup_min: float = float(os.getenv("SCANNER_V2_US_RSI_SETUP_MIN", "60"))
+    
+    # 과열 필터 (미국 주식은 모멘텀 지속력이 강함)
+    us_overheat_rsi_tema: int = int(os.getenv("SCANNER_V2_US_OVERHEAT_RSI_TEMA", "75"))
+    us_overheat_vol_mult: float = float(os.getenv("SCANNER_V2_US_OVERHEAT_VOL_MULT", "4.0"))
+    
+    # 유동성/가격 필터 (미국 대형주 중심)
+    us_min_turnover_usd: int = int(os.getenv("SCANNER_V2_US_MIN_TURNOVER_USD", "2000000"))
+    us_min_price_usd: float = float(os.getenv("SCANNER_V2_US_MIN_PRICE_USD", "5.0"))
+    
     def __post_init__(self):
         """초기화 후 처리"""
         if self.inverse_etf_keywords is None:
             self.inverse_etf_keywords = ["인버스", "레버리지", "2X", "3X"]
         if self.bond_etf_keywords is None:
-            self.bond_etf_keywords = ["국채", "채권", "회사채"]
+            self.bond_etf_keywords = ["국채", "채권", "회사채", "머니마켓", "금리"]
     
     def get_weights(self) -> dict:
         """점수 가중치 반환"""

@@ -110,10 +110,15 @@ export default function RecommendationCardV3({ item, isNew = false }) {
             )}
           </div>
           
-          {/* 메타 정보: 추천일 + 경과 거래일 (상태 배지 바로 아래, 우선순위 2) */}
+          {/* 메타 정보: 추천일 + 경과 거래일 + ARCHIVED 전이까지 남은 거래일 (상태 배지 바로 아래, 우선순위 2) */}
           {mounted && (status === BACKEND_STATUS.ACTIVE || status === BACKEND_STATUS.WEAK_WARNING) && formattedDate && (
             <p className={`text-xs ${colors.bodyText} opacity-70 font-medium`}>
               추천일 {formattedDate} · 경과 {tradingDays}거래일
+              {item.days_until_archive !== null && item.days_until_archive !== undefined && (
+                <span className="ml-2">
+                  · ARCHIVED 전이까지 {item.days_until_archive}일 남음
+                </span>
+              )}
             </p>
           )}
         </div>

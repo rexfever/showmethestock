@@ -60,12 +60,25 @@ def determine_trading_strategy(flags: dict, adjusted_score: float) -> Tuple[str,
             return "포지션", 0.10, -0.07, "2주~3개월"  # 기본값
     
     elif adjusted_score >= 6:
-        # 장기: 기본 신호 + 추세 지표
-        if trend_score >= 2:
+        # 6-8점 구간 성과 개선됨 (-0.04%, 승률 49.6%)
+        # 장기 전략 조건 강화: trend_score >= 3, RSI < 65
+        rsi_tema = flags.get("rsi_tema", 0) if isinstance(flags, dict) else 0
+        if trend_score >= 3 and rsi_tema < 65:
+            # 추세 지표가 충분하고 RSI가 낮으면 장기
             return "장기", 0.15, -0.10, "3개월 이상"
         else:
-            # adjusted_score >= 6이면 최소한 "장기" 전략 부여 (관찰 대신)
+            # 조건 미충족 시 관찰로 분류 (6-8점 구간도 관찰이 더 안전)
+            return "관찰", None, None, None
+    
+    elif adjusted_score >= 4:
+        # 4-6점 구간이 최우수 성과 (+1.03%, 승률 63.7%)
+        # 추세 지표가 있으면 장기, 없으면 관찰 (관찰 우선)
+        if trend_score >= 2 and flags.get("rsi_tema", 100) < 65:
+            # 추세 지표가 충분하고 RSI가 낮으면 장기
             return "장기", 0.15, -0.10, "3개월 이상"
+        else:
+            # 기본적으로 관찰 전략 우선 (4-6점 구간의 관찰 전략이 좋은 성과)
+            return "관찰", None, None, None
     
     else:
         return "관찰", None, None, None

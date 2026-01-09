@@ -177,7 +177,7 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
             cur.execute("""
                 SELECT 
                     recommendation_id, ticker, status, anchor_date, anchor_close,
-                    strategy, flags, indicators, status_changed_at, reason
+                    strategy, flags, indicators, status_changed_at, reason, broken_return_pct
                 FROM recommendations
                 WHERE status = 'BROKEN'
                 AND scanner_version = 'v3'
@@ -194,11 +194,13 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                         broken_ticker = broken_row.get('ticker')
                         broken_status_changed_at = broken_row.get('status_changed_at')
                         broken_reason = broken_row.get('reason')
+                        broken_return_pct = broken_row.get('broken_return_pct')
                     else:
                         broken_rec_id = broken_row[0]
                         broken_ticker = broken_row[1]
                         broken_status_changed_at = broken_row[8] if len(broken_row) > 8 else None
                         broken_reason = broken_row[9] if len(broken_row) > 9 else None
+                        broken_return_pct = broken_row[10] if len(broken_row) > 10 else None
                     
                     if not broken_ticker or broken_ticker == 'NORESULT':
                         continue
@@ -228,56 +230,77 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                         # reason을 archive_reason으로 사용
                         archive_reason_code = broken_reason if broken_reason in ['TTL_EXPIRED', 'NO_MOMENTUM', 'MANUAL_ARCHIVE'] else 'NO_MOMENTUM'
                         
-                        # 현재 가격 조회 (ARCHIVED 스냅샷용)
-                        try:
-                            df_today = api.get_ohlcv(broken_ticker, 10, today_str)
-                            if not df_today.empty:
-                                today_close = None
-                                if 'date' in df_today.columns:
-                                    df_today['date_str'] = df_today['date'].astype(str).str.replace('-', '').str[:8]
-                                    df_filtered = df_today[df_today['date_str'] == today_str]
-                                    if not df_filtered.empty:
-                                        today_close = float(df_filtered.iloc[-1]['close'])
-                                    else:
-                                        df_sorted = df_today.sort_values('date_str')
-                                        df_before = df_sorted[df_sorted['date_str'] <= today_str]
-                                        if not df_before.empty:
-                                            today_close = float(df_before.iloc[-1]['close'])
-                                        else:
-                                            today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                                else:
-                                    today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                                
-                                # anchor_close 조회
-                                if isinstance(broken_row, dict):
-                                    broken_anchor_close = broken_row.get('anchor_close')
-                                else:
-                                    broken_anchor_close = broken_row[4] if len(broken_row) > 4 else None
-                                
-                                if broken_anchor_close and broken_anchor_close > 0 and today_close:
-                                    archive_return_pct = round(((today_close - float(broken_anchor_close)) / float(broken_anchor_close)) * 100, 2)
-                                    archive_price = today_close
-                                    
-                                    # archive_phase 결정
-                                    if archive_return_pct > 2:
-                                        archive_phase = 'PROFIT'
-                                    elif archive_return_pct < -2:
-                                        archive_phase = 'LOSS'
-                                    else:
-                                        archive_phase = 'FLAT'
-                                else:
-                                    archive_return_pct = None
-                                    archive_price = None
-                                    archive_phase = None
+                        # BROKEN 시점의 스냅샷 사용 (broken_return_pct가 있으면 사용)
+                        archive_return_pct = None
+                        archive_price = None
+                        archive_phase = None
+                        
+                        if broken_return_pct is not None:
+                            # BROKEN 시점의 스냅샷 사용
+                            archive_return_pct = round(float(broken_return_pct), 2)
+                            
+                            # BROKEN 시점의 가격 계산 (anchor_close와 broken_return_pct로 역산)
+                            if isinstance(broken_row, dict):
+                                broken_anchor_close = broken_row.get('anchor_close')
                             else:
+                                broken_anchor_close = broken_row[4] if len(broken_row) > 4 else None
+                            
+                            if broken_anchor_close and broken_anchor_close > 0:
+                                # broken_return_pct = ((broken_price - anchor_close) / anchor_close) * 100
+                                # broken_price = anchor_close * (1 + broken_return_pct / 100)
+                                archive_price = round(float(broken_anchor_close) * (1 + archive_return_pct / 100), 0)
+                            
+                            # archive_phase 결정
+                            if archive_return_pct > 2:
+                                archive_phase = 'PROFIT'
+                            elif archive_return_pct < -2:
+                                archive_phase = 'LOSS'
+                            else:
+                                archive_phase = 'FLAT'
+                        else:
+                            # broken_return_pct가 없으면 현재 가격으로 계산 (fallback)
+                            try:
+                                from kiwoom_api import api
+                                df_today = api.get_ohlcv(broken_ticker, 10, today_str)
+                                if not df_today.empty:
+                                    today_close = None
+                                    if 'date' in df_today.columns:
+                                        df_today['date_str'] = df_today['date'].astype(str).str.replace('-', '').str[:8]
+                                        df_filtered = df_today[df_today['date_str'] == today_str]
+                                        if not df_filtered.empty:
+                                            today_close = float(df_filtered.iloc[-1]['close'])
+                                        else:
+                                            df_sorted = df_today.sort_values('date_str')
+                                            df_before = df_sorted[df_sorted['date_str'] <= today_str]
+                                            if not df_before.empty:
+                                                today_close = float(df_before.iloc[-1]['close'])
+                                            else:
+                                                today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
+                                    else:
+                                        today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
+                                    
+                                    # anchor_close 조회
+                                    if isinstance(broken_row, dict):
+                                        broken_anchor_close = broken_row.get('anchor_close')
+                                    else:
+                                        broken_anchor_close = broken_row[4] if len(broken_row) > 4 else None
+                                    
+                                    if broken_anchor_close and broken_anchor_close > 0 and today_close:
+                                        archive_return_pct = round(((today_close - float(broken_anchor_close)) / float(broken_anchor_close)) * 100, 2)
+                                        archive_price = today_close
+                                        
+                                        # archive_phase 결정
+                                        if archive_return_pct > 2:
+                                            archive_phase = 'PROFIT'
+                                        elif archive_return_pct < -2:
+                                            archive_phase = 'LOSS'
+                                        else:
+                                            archive_phase = 'FLAT'
+                            except Exception as e:
+                                logger.warning(f"[state_transition_service] ARCHIVED 전환 시 가격 조회 실패: {broken_ticker}, {e}")
                                 archive_return_pct = None
                                 archive_price = None
                                 archive_phase = None
-                        except Exception as e:
-                            logger.warning(f"[state_transition_service] ARCHIVED 전환 시 가격 조회 실패: {broken_ticker}, {e}")
-                            archive_return_pct = None
-                            archive_price = None
-                            archive_phase = None
                         
                         # 상태 전이 (BROKEN → ARCHIVED)
                         transition_recommendation_status(
@@ -298,7 +321,7 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                     logger.error(f"[state_transition_service] BROKEN → ARCHIVED 전이 오류 ({broken_ticker}): {e}")
                     import traceback
                     logger.error(traceback.format_exc())
-                        stats['errors'] += 1
+                    stats['errors'] += 1
             
             # ACTIVE/WEAK_WARNING 상태인 추천 조회 (v2 스키마: recommendation_id 사용)
             # anchor_date를 기준으로 조회 (추천 시점 = anchor_date)
@@ -504,11 +527,37 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                             broken_reason = 'TTL_EXPIRED'
                             logger.info(f"[state_transition_service] TTL 종료 → BROKEN 전이: {ticker} ({name}), trading_days={trading_days}, ttl_days={ttl_days}")
                             
+                            # TTL 만료 시점의 수익률 조회 (정책 준수)
+                            ttl_return_pct = round(current_return, 2)  # 기본값: 현재 시점
+                            ttl_close = today_close  # 기본값: 현재 시점
+                            
+                            try:
+                                # TTL 만료일 계산
+                                from services.recommendation_service import get_nth_trading_day_after
+                                anchor_date_str = anchor_date_obj.strftime('%Y%m%d') if hasattr(anchor_date_obj, 'strftime') else str(anchor_date_obj).replace('-', '')[:8]
+                                ttl_expiry_str = get_nth_trading_day_after(anchor_date_str, ttl_days)
+                                
+                                if ttl_expiry_str:
+                                    # TTL 만료 시점의 가격 조회
+                                    df_ttl = api.get_ohlcv(ticker, 30, ttl_expiry_str)
+                                    if not df_ttl.empty:
+                                        if 'date' in df_ttl.columns:
+                                            df_ttl['date_str'] = df_ttl['date'].astype(str).str.replace('-', '').str[:8]
+                                            df_filtered = df_ttl[df_ttl['date_str'] <= ttl_expiry_str].sort_values('date_str')
+                                            if not df_filtered.empty:
+                                                ttl_row = df_filtered.iloc[-1]
+                                                ttl_close = float(ttl_row['close']) if 'close' in ttl_row else today_close
+                                                if anchor_close and anchor_close > 0:
+                                                    ttl_return_pct = round(((ttl_close - float(anchor_close)) / float(anchor_close)) * 100, 2)
+                                                    logger.info(f"[state_transition_service] TTL 시점 수익률 사용: {ticker}, TTL 만료일={ttl_expiry_str}, 수익률={ttl_return_pct:.2f}%")
+                            except Exception as e:
+                                logger.warning(f"[state_transition_service] TTL 시점 가격 조회 실패, 현재 시점 사용: {ticker}, {e}")
+                            
                             # flags 업데이트
                             flags_dict["assumption_broken"] = True
                             flags_dict["broken_at"] = today_str
                             flags_dict["broken_reason"] = "TTL_EXPIRED"
-                            flags_dict["broken_anchor_return"] = round(current_return, 2)
+                            flags_dict["broken_anchor_return"] = ttl_return_pct
                             
                             # flags 업데이트 (v2 스키마: recommendation_id 사용)
                             with db_manager.get_cursor(commit=True) as update_cur:
@@ -521,14 +570,14 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                                     rec_id
                                 ))
                             
-                            # 상태 전이 (ACTIVE/WEAK_WARNING → BROKEN)
+                            # 상태 전이 (ACTIVE/WEAK_WARNING → BROKEN) - TTL 시점 수익률 사용
                             transition_recommendation_status(
                                 rec_id,
                                 'BROKEN',
                                 broken_reason,
                                 {
-                                    "current_return": round(current_return, 2),
-                                    "today_close": today_close,
+                                    "current_return": ttl_return_pct,  # TTL 시점 수익률 사용
+                                    "current_price": ttl_close,  # TTL 시점 가격 사용
                                     "anchor_close": anchor_close,
                                     "reason": broken_reason
                                 }

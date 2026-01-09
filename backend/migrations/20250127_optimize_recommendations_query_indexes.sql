@@ -21,3 +21,4 @@ COMMENT ON INDEX idx_recommendations_status_scanner_version IS 'status + scanner
 COMMENT ON INDEX idx_recommendations_status_scanner_anchor_date IS 'status + scanner_version + anchor_date 정렬 최적화';
 COMMENT ON INDEX idx_recommendations_status_scanner_broken_at IS 'needs-attention 쿼리 최적화 (BROKEN/WEAK_WARNING)';
 
+

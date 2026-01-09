@@ -111,7 +111,7 @@ class USScanner:
             score, flags = self.scorer.calculate_score(df, market_condition)
             
             # 10. 전략 분류 (USScorer에서 이미 결정됨, flags에서 가져오기)
-            strategy = flags.get("trading_strategy", "관찰")
+            strategy = flags.get("trading_strategy", "longterm")  # 기본값을 longterm으로 설정
             
             # 11. 레이블 결정
             score_label = flags.get("label", "후보 종목")
@@ -184,23 +184,47 @@ class USScanner:
         Returns:
             ScanResult 리스트
         """
+        # 레짐별 필터 조건 적용 (약세장: 강화, 중립장: 중간, 강세장: 관대)
+        # us_filter_engine.py에서 레짐별 조건이 자동으로 적용됨
+        if market_condition:
+            regime = getattr(market_condition, 'midterm_regime', None) or \
+                     getattr(market_condition, 'final_regime', None) or \
+                     getattr(market_condition, 'market_sentiment', 'neutral')
+            logger.info(f"📊 시장 레짐: {regime} - 레짐별 필터 조건 적용")
+        
         results = []
+        passed_count = 0
         for symbol in universe:
             result = self.scan_one(symbol, date, market_condition)
             if result:
                 results.append(result)
+                passed_count += 1
+                if passed_count <= 5:  # 처음 5개만 로그
+                    logger.info(f"{symbol} 스캔 통과: 점수 {result.score:.2f}, 전략 {result.strategy}")
+        
+        if len(results) > 0:
+            logger.info(f"스캔 완료: {len(universe)}개 중 {len(results)}개 종목 발견")
         
         # 점수 순으로 정렬
         results.sort(key=lambda x: x.score, reverse=True)
         
         # Global Regime 기반 horizon cutoff 적용
         if market_condition:
+            before_cutoff = len(results)
             results = self._apply_regime_cutoff(results, market_condition)
+            after_cutoff = len(results)
+            if before_cutoff > 0:
+                logger.info(f"레짐 cutoff 적용: {before_cutoff}개 → {after_cutoff}개")
         
         return results
     
     def _apply_regime_cutoff(self, results: List[ScanResult], market_condition: MarketCondition) -> List[ScanResult]:
-        """레짐 기반 cutoff 적용"""
+        """
+        레짐 기반 cutoff 적용 (승률 우선 전략)
+        - 강세장: 관대한 기준 (기본 cutoff - 1.0)
+        - 중립장: 엄격한 기준 (6.0 이상만, 승률 46.7% → 높은 점수만 추천)
+        - 약세장: 매우 엄격한 기준 (6.5 이상만, 승률 18.1% → 최고 점수만 추천)
+        """
         from scanner_v2.config_regime import REGIME_CUTOFFS
         
         regime = getattr(market_condition, 'final_regime', 'neutral')
@@ -208,14 +232,39 @@ class USScanner:
         
         filtered = []
         for result in results:
-            # strategy가 None이거나 빈 문자열인 경우 처리
-            if not result.strategy:
-                cutoff = 999  # 기본값: 모든 종목 제외
+            # strategy가 None이거나 빈 문자열, "관찰"인 경우 처리
+            if not result.strategy or result.strategy == "관찰":
+                # "관찰" 전략은 longterm cutoff 사용
+                strategy = "longterm"
             else:
-                strategy = result.strategy.lower()
-                cutoff = cutoffs.get(strategy, 999)
+                # 한국어 전략명을 영어로 변환
+                strategy_map = {
+                    "스윙": "swing",
+                    "포지션": "position", 
+                    "장기": "longterm"
+                }
+                strategy = strategy_map.get(result.strategy, result.strategy.lower())
             
-            if result.score >= cutoff:
+            # cutoff 가져오기 (없으면 longterm 사용)
+            cutoff = cutoffs.get(strategy, cutoffs.get('longterm', 6.0))
+            
+            # 레짐별 승률을 고려한 cutoff 조정 (승률 우선 전략)
+            if regime == 'bull':
+                # 강세장: 관대한 기준 (승률 88.1%로 매우 높음)
+                cutoff_adjusted = cutoff - 1.0
+            elif regime == 'neutral':
+                # 중립장: 엄격한 기준 (전체 승률 46.7% → 4-6점 구간 승률 63.7%)
+                # 4점 이상만 추천하여 승률 향상 (4-6점 구간이 최우수)
+                cutoff_adjusted = max(4.0, cutoff)
+            elif regime == 'bear':
+                # 약세장: 매우 엄격한 기준 (전체 승률 18.1% → 최고 점수만 추천)
+                # 6.5 이상만 추천하여 승률 향상 시도
+                cutoff_adjusted = max(6.5, cutoff)
+            else:
+                # 기타: 기본 cutoff 사용
+                cutoff_adjusted = cutoff
+            
+            if result.score >= cutoff_adjusted:
                 filtered.append(result)
         
         return filtered

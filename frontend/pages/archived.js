@@ -1,5 +1,5 @@
 // ARCHIVED 추천 전용 화면
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Layout from '../layouts/v2/Layout';
@@ -23,10 +23,13 @@ const getConfig = () => {
 
 export default function Archived({ initialData }) {
   const router = useRouter();
-  const [items, setItems] = useState(initialData || []);
+  const [allItems, setAllItems] = useState(initialData || []); // 전체 데이터 (검색용)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // 검색어
+  const [sortType, setSortType] = useState('date_desc'); // 정렬 타입: 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc'
+  const [isSearchConfirmed, setIsSearchConfirmed] = useState(false); // 검색 확정 여부
 
   // ARCHIVED 추천 목록 가져오기
   const fetchArchived = async () => {
@@ -79,7 +82,7 @@ export default function Archived({ initialData }) {
           return dateB.localeCompare(dateA);
         });
         
-        setItems(normalizedItems);
+        setAllItems(normalizedItems);
         setError(null);
       } else {
         setError(data.error || 'ARCHIVED 추천 조회 실패');
@@ -103,6 +106,91 @@ export default function Archived({ initialData }) {
     }
   }, [mounted, initialData]);
 
+  // 기본 리스트: 최근 1개월 이내 데이터만 필터링 및 정렬
+  const defaultItems = useMemo(() => {
+    if (!allItems || allItems.length === 0) return [];
+    
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const filtered = allItems.filter(item => {
+      const archivedDate = item.archived_at || item.updated_at || item.created_at;
+      if (!archivedDate) return false;
+      
+      const itemDate = new Date(archivedDate);
+      return itemDate >= oneMonthAgo;
+    });
+    
+    // 정렬 적용
+    return filtered.sort((a, b) => {
+      if (sortType === 'date_desc' || sortType === 'date_asc') {
+        // 종료일 기준 정렬
+        const dateA = a.archived_at || a.updated_at || a.created_at || '';
+        const dateB = b.archived_at || b.updated_at || b.created_at || '';
+        if (sortType === 'date_desc') {
+          return dateB.localeCompare(dateA); // 최신 종료일 순
+        } else {
+          return dateA.localeCompare(dateB); // 오래된 종료일 순
+        }
+      } else {
+        // 종목명 기준 정렬
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        if (sortType === 'name_asc') {
+          return nameA.localeCompare(nameB); // 종목명 오름차순
+        } else {
+          return nameB.localeCompare(nameA); // 종목명 내림차순
+        }
+      }
+    });
+  }, [allItems, sortType]);
+
+  // 검색 결과: 입력 중에는 모든 매칭 결과, 확정 시에는 가장 최근 1건만
+  const searchResult = useMemo(() => {
+    if (!searchQuery || !searchQuery.trim()) return null;
+    
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return null;
+    
+    // 종목명 기준 부분 일치 검색 (대소문자 구분 없음)
+    const matched = allItems.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const ticker = (item.ticker || '').toLowerCase();
+      return name.includes(query) || ticker.includes(query);
+    });
+    
+    if (matched.length === 0) return null;
+    
+    // 시간 역순 정렬
+    matched.sort((a, b) => {
+      const dateA = a.archived_at || a.updated_at || a.created_at || '';
+      const dateB = b.archived_at || b.updated_at || b.created_at || '';
+      return dateB.localeCompare(dateA);
+    });
+    
+    // 검색 확정 시에는 가장 최근 1건만 반환, 입력 중에는 모든 매칭 결과 반환
+    if (isSearchConfirmed) {
+      return matched[0];
+    } else {
+      return matched; // 배열 전체 반환
+    }
+  }, [searchQuery, allItems, isSearchConfirmed]);
+
+  // 표시할 아이템 결정: 검색 중이면 검색 결과, 아니면 기본 리스트
+  const displayItems = useMemo(() => {
+    if (searchQuery && searchQuery.trim()) {
+      if (!searchResult) return [];
+      // 검색 확정 시에는 배열이 아닌 단일 객체, 입력 중에는 배열
+      return Array.isArray(searchResult) ? searchResult : [searchResult];
+    }
+    return defaultItems;
+  }, [searchQuery, searchResult, defaultItems]);
+
+  // 검색어 변경 시 검색 확정 상태 초기화
+  useEffect(() => {
+    setIsSearchConfirmed(false);
+  }, [searchQuery]);
+
   return (
     <>
       <Head>
@@ -124,6 +212,49 @@ export default function Archived({ initialData }) {
           </div>
         </div>
 
+        {/* 검색 입력 및 정렬 */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="px-4 py-3">
+            <input
+              type="text"
+              placeholder="종목명으로 검색"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsSearchConfirmed(true);
+                  e.currentTarget.blur();
+                }
+              }}
+              onBlur={() => {
+                if (searchQuery && searchQuery.trim()) {
+                  setIsSearchConfirmed(true);
+                }
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+          
+          {/* 정렬 UI (검색 중이 아닐 때만 표시) */}
+          {!searchQuery || !searchQuery.trim() ? (
+            <div className="px-4 pb-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">정렬:</span>
+                <select
+                  value={sortType}
+                  onChange={(e) => setSortType(e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                >
+                  <option value="date_desc">날짜순 (최신)</option>
+                  <option value="date_asc">날짜순 (오래된)</option>
+                  <option value="name_asc">종목명순 (가나다)</option>
+                  <option value="name_desc">종목명순 (역순)</option>
+                </select>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
         {/* 에러 표시 */}
         {error && (
           <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -138,17 +269,24 @@ export default function Archived({ initialData }) {
         )}
 
         {/* 초기 로딩 */}
-        {loading && items.length === 0 && (
+        {loading && allItems.length === 0 && (
           <div className="p-4 text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
             <p className="text-gray-500 mt-2">데이터를 불러오는 중...</p>
           </div>
         )}
 
+        {/* 검색 결과 없음 */}
+        {!loading && searchQuery && searchQuery.trim() && (!searchResult || (Array.isArray(searchResult) && searchResult.length === 0)) && (
+          <div className="p-4 text-center py-8">
+            <p className="text-gray-500 text-lg mb-2">검색 결과가 없습니다.</p>
+          </div>
+        )}
+
         {/* ARCHIVED 목록 */}
-        {!loading && items.length > 0 && (
+        {!loading && displayItems.length > 0 && (
           <div className="px-4 py-3 space-y-3">
-            {items.map((item) => (
+            {displayItems.map((item) => (
               <ArchivedCardV3 
                 key={`${item.ticker}-${item.recommendation_id || item.id || item.anchor_date || ''}`} 
                 item={item}
@@ -157,8 +295,8 @@ export default function Archived({ initialData }) {
           </div>
         )}
 
-        {/* 데이터가 없는 경우 */}
-        {!loading && items.length === 0 && !error && (
+        {/* 데이터가 없는 경우 (검색 중이 아닐 때만) */}
+        {!loading && displayItems.length === 0 && !error && !searchQuery && (
           <div className="p-4 text-center py-8">
             <p className="text-gray-500 text-lg mb-2">종료된 추천이 없습니다.</p>
           </div>

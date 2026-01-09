@@ -53,3 +53,4 @@ COMMENT ON COLUMN recommendations.archive_price IS 'ARCHIVED 전환 시점 가�
 COMMENT ON COLUMN recommendations.archive_phase IS '전환 시 국면 요약 (PROFIT, LOSS, FLAT)';
 
 
+

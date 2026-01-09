@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
@@ -35,7 +35,9 @@ export default function AdminDashboard() {
   const [visitorStatsLoading, setVisitorStatsLoading] = useState(false);
   const [visitorStatsStartDate, setVisitorStatsStartDate] = useState('');
   const [visitorStatsEndDate, setVisitorStatsEndDate] = useState('');
-  const [authErrorShown, setAuthErrorShown] = useState(false); // 인증 에러 알림 중복 방지
+  const authErrorShownRef = useRef(false); // 인증 에러 알림 중복 방지 (ref 사용)
+  const isRedirectingRef = useRef(false); // 리다이렉트 중 플래그 (ref 사용)
+  const authCheckDoneRef = useRef(false); // 인증 체크 완료 플래그
   
   // 메인트넌스 설정 상태
   const [maintenanceSettings, setMaintenanceSettings] = useState({
@@ -56,11 +58,10 @@ export default function AdminDashboard() {
   const [popupLoading, setPopupLoading] = useState(false);
 
   
-  // 스캐너 설정 상태
+  // 스캐너 설정 상태 (엔진 중심으로 단순화)
   const [scannerSettings, setScannerSettings] = useState({
-    scanner_version: 'v1',
-    regime_version: 'v1',
-    scanner_v2_enabled: false
+    active_engine: 'v1',
+    regime_version: 'v1'
   });
   const [scannerLoading, setScannerLoading] = useState(false);
   
@@ -86,18 +87,33 @@ export default function AdminDashboard() {
   const [scannerLink, setScannerLink] = useState('/customer-scanner'); // 동적 스캐너 링크
 
   useEffect(() => {
+    // 리다이렉트 중이면 추가 체크 안 함
+    if (isRedirectingRef.current) {
+      return;
+    }
+    
+    // 이미 인증 체크를 완료했으면 다시 실행하지 않음
+    if (authCheckDoneRef.current) {
+      return;
+    }
+    
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
     if (!authChecked || authLoading) {
       return;
     }
     
+    // 인증 체크 완료 플래그 설정
+    authCheckDoneRef.current = true;
+    
     if (!isAuthenticated()) {
-      router.push('/login');
+      isRedirectingRef.current = true;
+      router.replace('/login');
       return;
     }
     
     // 사용자 정보가 로드되지 않았으면 대기
     if (!user) {
+      authCheckDoneRef.current = false; // 사용자 정보 로드 대기
       return;
     }
     
@@ -113,19 +129,13 @@ export default function AdminDashboard() {
       // 동적 스캐너 링크를 먼저 가져온 후 리다이렉트
       const redirectToScanner = async () => {
         try {
-          const config = getConfig();
-          const base = config.backendUrl;
-          const response = await fetch(`${base}/bottom-nav-link`);
-          if (response.ok) {
-            const data = await response.json();
-            const linkUrl = data.link_url || '/customer-scanner';
-            router.push(linkUrl);
-          } else {
-            router.push('/customer-scanner');
-          }
+          const { getScannerLink } = await import('../utils/navigation');
+          const scannerLink = await getScannerLink();
+          router.replace(scannerLink);
         } catch (error) {
           console.error('스캐너 링크 조회 실패:', error);
-          router.push('/customer-scanner');
+          // 에러 시 기본값 사용
+          router.replace('/v2/scanner-v2');
         }
       };
       alert('관리자 권한이 필요합니다.');
@@ -143,23 +153,68 @@ export default function AdminDashboard() {
       fetchBottomNavVisible();
       fetchBottomNavMenuItems();
     }
-  }, [authChecked, authLoading, isAuthenticated, router, token]);
-
-  const handleAuthError = () => {
-    if (!authErrorShown) {
-      setAuthErrorShown(true);
-      // 로그아웃 처리
-      if (logout) {
-        logout();
+  }, [authChecked, authLoading, user, token, router]);
+  
+  // router 이벤트 리스너: 리다이렉트 시작 시 추가 실행 방지
+  useEffect(() => {
+    const handleRouteChangeStart = (url) => {
+      isRedirectingRef.current = true;
+      // 로그인 페이지로 이동하는 경우에만 플래그 설정
+      if (url === '/login') {
+        authErrorShownRef.current = true;
       }
-      // 쿠키와 localStorage 정리
-      Cookies.remove('auth_token');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-      router.push('/login');
+    };
+    
+    const handleRouteChangeComplete = (url) => {
+      // 리다이렉트 완료 후 플래그 리셋 (로그인 페이지 도착 시)
+      // url 파라미터와 router.pathname 모두 확인 (Next.js 버전별 차이 대응)
+      const targetUrl = url || router.pathname || router.asPath;
+      if (targetUrl === '/login' || targetUrl.startsWith('/login')) {
+        isRedirectingRef.current = false;
+        authErrorShownRef.current = false;
+        authCheckDoneRef.current = false;
+      }
+    };
+    
+    router.events?.on('routeChangeStart', handleRouteChangeStart);
+    router.events?.on('routeChangeComplete', handleRouteChangeComplete);
+    
+    return () => {
+      router.events?.off('routeChangeStart', handleRouteChangeStart);
+      router.events?.off('routeChangeComplete', handleRouteChangeComplete);
+    };
+  }, [router]);
+
+  const handleAuthError = useCallback(() => {
+    // 이미 리다이렉트 중이거나 에러를 표시한 경우 무시
+    if (isRedirectingRef.current || authErrorShownRef.current) {
+      return;
     }
-  };
+    
+    // 플래그 설정 (동기적으로) - 먼저 설정하여 중복 실행 방지
+    // 이 순서가 중요: 먼저 플래그를 설정한 후 다른 작업 수행
+    authErrorShownRef.current = true;
+    isRedirectingRef.current = true;
+    authCheckDoneRef.current = false; // 인증 체크 재실행 방지 해제
+    
+    // 로그아웃 처리
+    if (logout) {
+      logout();
+    }
+    // 쿠키와 localStorage 정리
+    Cookies.remove('auth_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // 리다이렉트 (replace로 히스토리에 남기지 않음)
+    // alert는 리다이렉트 전에 표시 (리다이렉트 후에는 alert가 표시되지 않을 수 있음)
+    alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+    
+    // 리다이렉트는 alert 확인 후 실행되도록 약간의 지연
+    setTimeout(() => {
+      router.replace('/login');
+    }, 100);
+  }, [logout, router]);
 
   const fetchBottomNavLink = async () => {
     try {
@@ -355,7 +410,8 @@ export default function AdminDashboard() {
           setScannerSettings({
             scanner_version: data.settings.scanner_version || 'v1',
             regime_version: data.settings.regime_version || 'v1',
-            scanner_v2_enabled: data.settings.scanner_v2_enabled === 'true' || data.settings.scanner_v2_enabled === true
+            scanner_v2_enabled: data.settings.scanner_v2_enabled === 'true' || data.settings.scanner_v2_enabled === true,
+            active_engine: data.settings.active_engine || 'v1'
           });
         }
       } else if (response.status === 401) {
@@ -381,8 +437,7 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          scanner_version: scannerSettings.scanner_version,
-          scanner_v2_enabled: scannerSettings.scanner_v2_enabled,
+          active_engine: scannerSettings.active_engine || 'v1',
           regime_version: scannerSettings.regime_version || 'v1'
         })
       });
@@ -945,7 +1000,20 @@ export default function AdminDashboard() {
             <p className="mt-2 text-gray-600">사용자 관리 및 시스템 통계</p>
           </div>
           <button
-            onClick={() => router.push(scannerLink)}
+            onClick={() => {
+              // 동적 메인 링크: active_engine에 따라 적절한 페이지로 이동
+              let targetPath = '/';
+              if (scannerLink && scannerLink !== '/customer-scanner') {
+                targetPath = scannerLink;
+              }
+              console.log('[Admin] 메인으로 돌아가기 클릭:', { scannerLink, targetPath, currentPath: router?.asPath });
+              if (router?.asPath === targetPath) {
+                console.log('[Admin] 같은 페이지이므로 이동하지 않음');
+                return;
+              }
+              console.log('[Admin] 이동 시작:', targetPath);
+              window.location.href = targetPath;
+            }}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-700 border border-gray-300 rounded-md"
           >
             메인으로 돌아가기
@@ -1400,35 +1468,78 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 스캐너 설정 */}
+        {/* 스캐너 엔진 설정 */}
         <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">스캐너 설정</h2>
-            <p className="text-sm text-gray-600">스캐너 버전을 선택하고 관리합니다</p>
+            <h2 className="text-lg font-medium text-gray-900">스캐너 엔진 설정</h2>
+            <p className="text-sm text-gray-600">실행할 엔진을 선택합니다. 엔진은 내부적으로 적절한 스캐너를 선택하여 실행합니다.</p>
           </div>
           <div className="px-6 py-4 space-y-4">
-            {/* 스캐너 버전 선택 */}
+            {/* 활성 엔진 선택 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                스캐너 버전
+                활성 엔진 ⭐
               </label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={scannerSettings.scanner_version}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium bg-gradient-to-br from-blue-50 to-indigo-50"
+                value={scannerSettings.active_engine || 'v1'}
                 onChange={(e) => setScannerSettings({
                   ...scannerSettings,
-                  scanner_version: e.target.value
+                  active_engine: e.target.value
                 })}
               >
-                <option value="v1">V1 (기본 스캐너)</option>
-                <option value="v2">V2 (개선된 스캐너)</option>
+                <option value="v1">V1 엔진 - 레거시 검색기</option>
+                <option value="v2">V2 엔진 - 단기 검색기</option>
+                <option value="v3">V3 엔진 - 중기+단기 조합</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
-                V2는 최근 개선된 로직(신호 우선 원칙, 멀티데이 트렌드 분석 등)을 포함합니다
-              </p>
-              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                💡 <strong>버전 전환 안내:</strong> 버전을 변경하면 다음 스캔부터 적용됩니다. 
-                V2는 매매 가이드(목표 수익률, 손절, 보유기간)를 제공합니다.
+              
+              {/* 엔진별 상세 설명 */}
+              {scannerSettings.active_engine === 'v1' && (
+                <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-800 mb-2">V1 엔진 특징</p>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                    <li>기존 레거시 검색기 사용</li>
+                    <li>안정적인 성능과 검증된 로직</li>
+                    <li>기본적인 기술적 지표 기반 스캔</li>
+                  </ul>
+                </div>
+              )}
+              
+              {scannerSettings.active_engine === 'v2' && (
+                <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-800 mb-2">V2 엔진 특징</p>
+                  <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                    <li>단기 검색기 (5-10거래일 보유 목표)</li>
+                    <li>개선된 로직: 신호 우선 원칙, 멀티데이 트렌드 분석</li>
+                    <li>매매 가이드 제공: 목표 수익률, 손절, 보유기간</li>
+                    <li>레짐 분석 기반 필터링</li>
+                  </ul>
+                </div>
+              )}
+              
+              {scannerSettings.active_engine === 'v3' && (
+                <div className="mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <p className="text-sm font-semibold text-purple-800 mb-2">V3 엔진 특징</p>
+                  <p className="text-xs text-purple-700 mb-2">
+                    V3는 <strong>중기(midterm)</strong>와 <strong>단기(v2-lite)</strong> 스캐너를 조합한 엔진입니다.
+                  </p>
+                  <ul className="text-xs text-purple-700 space-y-1 list-disc list-inside">
+                    <li><strong>Midterm 스캐너:</strong> 항상 실행 (1-4주 보유 목표, 추세 관점)</li>
+                    <li><strong>V2-Lite 스캐너:</strong> neutral/normal 레짐에서만 실행 (5-10거래일, 빠른 반응 관점)</li>
+                    <li>두 스캐너 결과는 분리되어 표시됨 (병합하지 않음)</li>
+                    <li>V1/V2와 완전히 독립된 실행 및 저장</li>
+                  </ul>
+                  <div className="mt-2 p-2 bg-purple-100 rounded text-xs text-purple-800">
+                    💡 <strong>레짐 판정:</strong> neutral/normal 레짐일 때만 단기 스캐너가 실행됩니다.
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800">
+                  ⚠️ <strong>중요:</strong> 엔진을 변경하면 다음 스캔부터 해당 엔진만 실행됩니다. 
+                  다른 엔진은 실행되지 않으며, 각 엔진의 결과는 독립적으로 저장됩니다.
+                </p>
               </div>
             </div>
 
@@ -1447,59 +1558,47 @@ export default function AdminDashboard() {
               >
                 <option value="v1">V1 (기본 장세 분석)</option>
                 <option value="v3">V3 (Global Regime v3)</option>
-                <option value="v4">V4 (Global Regime v4)</option>
+                <option value="v4">V4 (Global Regime v4) - 권장</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                시장 상황 분석 방법을 선택합니다. V4는 한국/미국 시장 + 리스크 분석을 포함합니다
+                시장 상황 분석 방법을 선택합니다. V4는 한국/미국 시장 + 리스크 분석을 포함합니다.
+                모든 엔진에서 공통으로 사용됩니다.
               </p>
             </div>
 
-            {/* V2 활성화 스위치 */}
-            {scannerSettings.scanner_version === 'v2' && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">V2 활성화</label>
-                  <p className="text-xs text-gray-500">V2를 사용하려면 활성화해야 합니다</p>
+            {/* 현재 설정 요약 */}
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+              <p className="text-sm font-semibold text-gray-700 mb-3">현재 설정 요약</p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">활성 엔진:</span>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                    {scannerSettings.active_engine === 'v3' 
+                      ? 'V3 (중기+단기 조합)'
+                      : scannerSettings.active_engine === 'v2'
+                        ? 'V2 (단기 검색기)'
+                        : 'V1 (레거시 검색기)'}
+                  </span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={scannerSettings.scanner_v2_enabled}
-                    onChange={(e) => setScannerSettings({
-                      ...scannerSettings,
-                      scanner_v2_enabled: e.target.checked
-                    })}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-            )}
-
-            {/* 현재 설정 정보 */}
-            <div className="bg-gray-50 rounded-md p-4">
-              <div className="text-sm space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">스캐너 버전:</span>
-                  <span className="font-medium">{scannerSettings.scanner_version === 'v2' && scannerSettings.scanner_v2_enabled ? 'V2 (활성화됨)' : 'V1'}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">레짐 분석:</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    {scannerSettings.regime_version || 'v1'}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">레짐 분석 버전:</span>
-                  <span className="font-medium">{scannerSettings.regime_version || 'v1'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">적용 시점:</span>
-                  <span className="font-medium text-blue-600">다음 스캔부터 적용</span>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <span className="text-sm text-gray-600">적용 시점:</span>
+                  <span className="text-sm font-medium text-blue-600">다음 스캔부터 적용</span>
                 </div>
               </div>
             </div>
 
             {/* 저장 버튼 */}
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2">
               <button
                 onClick={updateScannerSettings}
                 disabled={scannerLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg transition-all"
               >
                 {scannerLoading ? '저장 중...' : '설정 저장'}
               </button>
@@ -1586,7 +1685,7 @@ export default function AdminDashboard() {
                     })}
                     className="mr-2"
                   />
-                  <span>한국주식추천</span>
+                  <span>한국</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -1598,7 +1697,7 @@ export default function AdminDashboard() {
                     })}
                     className="mr-2"
                   />
-                  <span>미국주식추천</span>
+                  <span>미국</span>
                 </label>
                 <label className="flex items-center">
                   <input

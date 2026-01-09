@@ -14,3 +14,4 @@ CREATE INDEX IF NOT EXISTS idx_recommendations_broken_return_pct
 ON recommendations (broken_return_pct)
 WHERE broken_return_pct IS NOT NULL;
 
+

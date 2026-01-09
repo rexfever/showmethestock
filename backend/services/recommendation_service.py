@@ -283,50 +283,111 @@ def create_recommendation(
                     except Exception as e:
                         logger.warning(f"[recommendation_service] 거래일 계산 실패 (ticker={ticker}): {e}")
                 
-                # 현재 가격 조회 (archive_return_pct 계산용)
+                # 현재 가격 조회 (archive_return_pct 계산 및 손절 조건 체크용)
                 current_price = None
                 archive_return_pct = None
                 archive_price = None
                 archive_phase = None
+                current_return = None
+                stop_loss_pct = None  # 변수 스코프 문제 해결
+                
+                # 전략별 손절 기준 설정 (try 블록 밖에서)
+                stop_loss = 0.02  # 기본값
+                if existing_strategy == "v2_lite":
+                    stop_loss = 0.02
+                elif existing_strategy == "midterm":
+                    stop_loss = 0.07
+                stop_loss_pct = -abs(float(stop_loss) * 100)
                 
                 try:
                     from kiwoom_api import api
+                    from services.recommendation_service import get_nth_trading_day_after
                     today_str = get_kst_now().strftime('%Y%m%d')
-                    df_today = api.get_ohlcv(ticker, 1, today_str)
-                    if not df_today.empty:
-                        if 'close' in df_today.columns:
-                            current_price = float(df_today.iloc[-1]['close'])
-                        else:
-                            current_price = float(df_today.iloc[-1].values[0])
-                        
-                        # archive_return_pct 계산
-                        if existing_anchor_close and existing_anchor_close > 0 and current_price:
-                            archive_return_pct = round(((current_price - float(existing_anchor_close)) / float(existing_anchor_close)) * 100, 2)
-                            archive_price = current_price
+                    
+                    # TTL_EXPIRED인 경우: TTL 만료 시점의 가격 조회 (정책 준수)
+                    if archive_reason == 'TTL_EXPIRED' and existing_anchor_date:
+                        try:
+                            # TTL 만료일 계산
+                            anchor_date_str = existing_anchor_date.strftime('%Y%m%d') if hasattr(existing_anchor_date, 'strftime') else str(existing_anchor_date).replace('-', '')[:8]
+                            ttl_expiry_str = get_nth_trading_day_after(anchor_date_str, ttl_days)
                             
-                            # archive_phase 결정
-                            if archive_return_pct > 2:
-                                archive_phase = 'PROFIT'
-                            elif archive_return_pct < -2:
-                                archive_phase = 'LOSS'
+                            if ttl_expiry_str:
+                                # TTL 만료 시점의 가격 조회
+                                df_ttl = api.get_ohlcv(ticker, 30, ttl_expiry_str)
+                                if not df_ttl.empty:
+                                    if 'date' in df_ttl.columns:
+                                        df_ttl['date_str'] = df_ttl['date'].astype(str).str.replace('-', '').str[:8]
+                                        df_filtered = df_ttl[df_ttl['date_str'] <= ttl_expiry_str].sort_values('date_str')
+                                        if not df_filtered.empty:
+                                            ttl_row = df_filtered.iloc[-1]
+                                            current_price = float(ttl_row['close']) if 'close' in ttl_row else None
+                                            logger.info(f"[recommendation_service] TTL 만료 시점 가격 사용: {ticker}, TTL 만료일={ttl_expiry_str}")
+                        except Exception as e:
+                            logger.warning(f"[recommendation_service] TTL 만료 시점 가격 조회 실패, 현재 시점 사용: {ticker}, {e}")
+                    
+                    # TTL_EXPIRED가 아니거나 TTL 시점 가격 조회 실패한 경우: 현재 시점 가격 조회
+                    if current_price is None:
+                        df_today = api.get_ohlcv(ticker, 1, today_str)
+                        if not df_today.empty:
+                            if 'close' in df_today.columns:
+                                current_price = float(df_today.iloc[-1]['close'])
                             else:
-                                archive_phase = 'FLAT'
+                                current_price = float(df_today.iloc[-1].values[0])
+                    
+                    # archive_return_pct 계산
+                    if existing_anchor_close and existing_anchor_close > 0 and current_price:
+                        current_return = round(((current_price - float(existing_anchor_close)) / float(existing_anchor_close)) * 100, 2)
+                        archive_return_pct = current_return
+                        archive_price = current_price
+                        
+                        # 손절 조건 도달 시 NO_MOMENTUM으로 변경
+                        if current_return <= stop_loss_pct:
+                            archive_reason = 'NO_MOMENTUM'
+                            logger.info(f"[recommendation_service] 손절 조건 도달 → NO_MOMENTUM: {ticker}, current_return={current_return:.2f}%, stop_loss={stop_loss_pct:.2f}%")
+                        
+                        # archive_phase 결정
+                        if archive_return_pct > 2:
+                            archive_phase = 'PROFIT'
+                        elif archive_return_pct < -2:
+                            archive_phase = 'LOSS'
+                        else:
+                            archive_phase = 'FLAT'
                 except Exception as e:
                     logger.warning(f"[recommendation_service] 현재 가격 조회 실패 (ticker={ticker}): {e}")
                 
-                # 기존 ACTIVE를 ARCHIVED로 전이 (archive_return_pct 등 포함, TTL 체크 반영)
+                # 손절 조건 만족 시 BROKEN 정보 설정
+                broken_at = None
+                broken_return_pct = None
+                if current_return is not None and stop_loss_pct is not None and current_return <= stop_loss_pct:
+                    from date_helper import get_kst_now
+                    today_str = get_kst_now().strftime('%Y%m%d')
+                    broken_at = today_str
+                    broken_return_pct = current_return
+                    logger.info(f"[recommendation_service] 손절 조건 만족 → BROKEN 정보 설정: {ticker}, broken_at={broken_at}, broken_return_pct={broken_return_pct:.2f}%")
+                    # 정책: broken_return_pct를 archive_return_pct로 사용
+                    archive_return_pct = broken_return_pct
+                    # archive_price 재계산
+                    if existing_anchor_close:
+                        anchor_close_float = float(existing_anchor_close)
+                        archive_price = round(anchor_close_float * (1 + archive_return_pct / 100), 0)
+                
+                # 기존 ACTIVE를 ARCHIVED로 전이 (archive_return_pct 등 포함, TTL 체크 및 손절 조건 반영)
+                # BROKEN 정보도 함께 저장 (broken_at, broken_return_pct)
+                # 정책: broken_return_pct가 있으면 archive_return_pct로 사용
                 cur.execute("""
                     UPDATE recommendations
                     SET status = 'ARCHIVED',
                         archived_at = NOW(),
                         archive_reason = %s,
+                        broken_at = %s,
+                        broken_return_pct = %s,
                         archive_return_pct = %s,
                         archive_price = %s,
                         archive_phase = %s,
                         updated_at = NOW(),
                         status_changed_at = NOW()
                     WHERE recommendation_id = %s
-                """, (archive_reason, archive_return_pct, archive_price, archive_phase, existing_rec_id))
+                """, (archive_reason, broken_at, broken_return_pct, archive_return_pct, archive_price, archive_phase, existing_rec_id))
                 
                 # 상태 변경 이벤트 기록
                 cur.execute("""
@@ -702,7 +763,9 @@ def get_active_recommendations_list(user_id: Optional[int] = None) -> List[Dict]
                 except Exception as e:
                     logger.warning(f"[get_active_recommendations_list] 수익률 배치 계산 실패: {e}")
             
-            # 4단계: 아이템에 종목명/수익률 매핑
+            # 4단계: 아이템에 종목명/수익률/남은 거래일 매핑
+            from services.state_transition_service import get_trading_days_since
+            
             for item in items:
                 # 종목명 매핑
                 # 종목명 매핑 (name이 NULL이거나 빈 문자열인 경우만)
@@ -727,6 +790,29 @@ def get_active_recommendations_list(user_id: Optional[int] = None) -> List[Dict]
                     if item.get("ticker"):
                         logger.warning(f"[get_active_recommendations_list] anchor_close 없음: ticker={item.get('ticker')}, anchor_close={item.get('anchor_close')}")
                     item["current_return"] = None
+                
+                # ARCHIVED 전이까지 남은 거래일 계산 (ACTIVE/WEAK_WARNING만)
+                if item.get("status") in ["ACTIVE", "WEAK_WARNING"] and item.get("anchor_date"):
+                    try:
+                        strategy = item.get("strategy")
+                        anchor_date = item.get("anchor_date")
+                        
+                        # 전략별 TTL 설정
+                        ttl_days = 20  # 기본값
+                        if strategy == "v2_lite":
+                            ttl_days = 15
+                        elif strategy == "midterm":
+                            ttl_days = 25
+                        
+                        # 현재 경과 거래일 계산
+                        trading_days_elapsed = get_trading_days_since(anchor_date)
+                        
+                        # 남은 거래일 계산
+                        days_until_archive = max(0, ttl_days - trading_days_elapsed)
+                        item["days_until_archive"] = days_until_archive
+                    except Exception as e:
+                        logger.debug(f"[get_active_recommendations_list] 남은 거래일 계산 실패 (ticker={item.get('ticker')}): {e}")
+                        item["days_until_archive"] = None
             
             return items
             
@@ -757,7 +843,7 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                         r.recommendation_id, r.ticker, r.name, r.status, r.anchor_date, r.anchor_close,
                         r.strategy, r.scanner_version, r.score, r.score_label,
                         r.indicators, r.flags, r.details,
-                        r.created_at, r.updated_at, r.broken_at, r.reason, r.broken_return_pct,
+                        r.created_at, r.updated_at, r.broken_at, r.status_changed_at, r.reason, r.broken_return_pct,
                         CASE WHEN ua.id IS NOT NULL THEN true ELSE false END as is_acked
                     FROM recommendations r
                     LEFT JOIN user_rec_ack ua ON (
@@ -784,7 +870,7 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                         recommendation_id, ticker, name, status, anchor_date, anchor_close,
                         strategy, scanner_version, score, score_label,
                         indicators, flags, details,
-                        created_at, updated_at, broken_at, reason, broken_return_pct
+                        created_at, updated_at, broken_at, status_changed_at, reason, broken_return_pct
                     FROM recommendations
                     WHERE status IN ('WEAK_WARNING', 'BROKEN')
                     AND scanner_version = 'v3'
@@ -814,7 +900,7 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                         item['id'] = str(item['recommendation_id'])
                 else:
                     # name 컬럼이 있는지 확인 (하위 호환)
-                    if len(row) >= 17:  # name 컬럼 + reason + broken_return_pct 포함
+                    if len(row) >= 18:  # name 컬럼 + status_changed_at + reason + broken_return_pct 포함
                         item = {
                             "id": str(row[0]),
                             "recommendation_id": str(row[0]),
@@ -833,12 +919,38 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                             "created_at": row[13],
                             "updated_at": row[14],
                             "broken_at": row[15] if len(row) > 15 else None,
-                            "reason": row[16] if len(row) > 16 else None,
-                            "broken_return_pct": float(row[17]) if len(row) > 17 and row[17] is not None else None
+                            "status_changed_at": row[16] if len(row) > 16 else None,
+                            "reason": row[17] if len(row) > 17 else None,
+                            "broken_return_pct": float(row[18]) if len(row) > 18 and row[18] is not None else None
+                        }
+                        if len(row) > 19:
+                            item["is_acked"] = row[19]
+                    elif len(row) >= 17:  # name 컬럼 + status_changed_at + reason 포함 (broken_return_pct 없음)
+                        item = {
+                            "id": str(row[0]),
+                            "recommendation_id": str(row[0]),
+                            "ticker": row[1],
+                            "name": row[2],  # name 컬럼
+                            "status": row[3],
+                            "anchor_date": row[4],
+                            "anchor_close": row[5],
+                            "strategy": row[6],
+                            "scanner_version": row[7],
+                            "score": row[8],
+                            "score_label": row[9],
+                            "indicators": row[10],
+                            "flags": row[11],
+                            "details": row[12],
+                            "created_at": row[13],
+                            "updated_at": row[14],
+                            "broken_at": row[15] if len(row) > 15 else None,
+                            "status_changed_at": row[16] if len(row) > 16 else None,
+                            "reason": row[17] if len(row) > 17 else None,
+                            "broken_return_pct": None
                         }
                         if len(row) > 18:
                             item["is_acked"] = row[18]
-                    elif len(row) >= 16:  # name 컬럼 + reason 포함 (broken_return_pct 없음)
+                    elif len(row) >= 16:  # name 컬럼 + status_changed_at 포함 (reason 없음, 하위 호환)
                         item = {
                             "id": str(row[0]),
                             "recommendation_id": str(row[0]),
@@ -857,35 +969,12 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                             "created_at": row[13],
                             "updated_at": row[14],
                             "broken_at": row[15] if len(row) > 15 else None,
-                            "reason": row[16] if len(row) > 16 else None,
+                            "status_changed_at": row[16] if len(row) > 16 else None,
+                            "reason": None,
                             "broken_return_pct": None
                         }
                         if len(row) > 17:
                             item["is_acked"] = row[17]
-                    elif len(row) >= 15:  # name 컬럼이 있지만 reason 없음 (하위 호환)
-                        item = {
-                            "id": str(row[0]),
-                            "recommendation_id": str(row[0]),
-                            "ticker": row[1],
-                            "name": row[2],  # name 컬럼
-                            "status": row[3],
-                            "anchor_date": row[4],
-                            "anchor_close": row[5],
-                            "strategy": row[6],
-                            "scanner_version": row[7],
-                            "score": row[8],
-                            "score_label": row[9],
-                            "indicators": row[10],
-                            "flags": row[11],
-                            "details": row[12],
-                            "created_at": row[13],
-                            "updated_at": row[14],
-                            "broken_at": row[15] if len(row) > 15 else None,
-                            "reason": None,
-                            "broken_return_pct": None
-                        }
-                        if len(row) > 16:
-                            item["is_acked"] = row[16]
                     else:  # name 컬럼이 없는 경우 (하위 호환)
                         item = {
                             "id": str(row[0]),
@@ -905,11 +994,12 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                             "created_at": row[12],
                             "updated_at": row[13],
                             "broken_at": row[14] if len(row) > 14 else None,
-                            "reason": row[15] if len(row) > 15 else None,
-                            "broken_return_pct": float(row[16]) if len(row) > 16 and row[16] is not None else None
+                            "status_changed_at": row[15] if len(row) > 15 else None,
+                            "reason": row[16] if len(row) > 16 else None,
+                            "broken_return_pct": float(row[17]) if len(row) > 17 and row[17] is not None else None
                         }
-                        if len(row) > 17:
-                            item["is_acked"] = row[17]
+                        if len(row) > 18:
+                            item["is_acked"] = row[18]
                 
                 # JSON 필드 파싱
                 if isinstance(item.get("indicators"), str):
@@ -1045,7 +1135,9 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                 except Exception as e:
                     logger.warning(f"[get_needs_attention_recommendations_list] 수익률 배치 계산 실패: {e}")
             
-            # 아이템에 종목명/수익률 매핑
+            # 아이템에 종목명/수익률/남은 거래일 매핑
+            from services.state_transition_service import get_trading_days_since
+            
             for item in items:
                 # 종목명 매핑 (name이 NULL이거나 빈 문자열인 경우만)
                 if item.get("ticker") and (not item.get("name") or (isinstance(item.get("name"), str) and not item.get("name").strip())):
@@ -1072,6 +1164,25 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                             item["current_return"] = None
                     else:
                         item["current_return"] = None
+                    
+                    # 3. ARCHIVED 전이까지 남은 거래일 계산 (BROKEN은 1거래일 후 ARCHIVED로 전이)
+                    try:
+                        # broken_at이 없으면 status_changed_at 사용
+                        broken_at = item.get("broken_at")
+                        if not broken_at:
+                            broken_at = item.get("status_changed_at")
+                        
+                        if broken_at:
+                            # broken_at부터 오늘까지의 거래일 계산
+                            broken_trading_days = get_trading_days_since(broken_at)
+                            # BROKEN은 1거래일 후 ARCHIVED로 전이되므로, 남은 거래일 = max(0, 1 - broken_trading_days)
+                            days_until_archive = max(0, 1 - broken_trading_days)
+                            item["days_until_archive"] = days_until_archive
+                        else:
+                            item["days_until_archive"] = None
+                    except Exception as e:
+                        logger.debug(f"[get_needs_attention_recommendations_list] BROKEN 남은 거래일 계산 실패 (ticker={item.get('ticker')}): {e}")
+                        item["days_until_archive"] = None
                 elif item.get("ticker") and item.get("anchor_close") and item.get("anchor_close") > 0:
                     # BROKEN이 아닌 경우 실시간 계산
                     today_close = ticker_to_today_close.get(item["ticker"])
@@ -1083,6 +1194,29 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                         item["current_return"] = None
                 else:
                     item["current_return"] = None
+                
+                # WEAK_WARNING 상태의 ARCHIVED 전이까지 남은 거래일 계산
+                if item.get("status") == "WEAK_WARNING" and item.get("anchor_date"):
+                    try:
+                        strategy = item.get("strategy")
+                        anchor_date = item.get("anchor_date")
+                        
+                        # 전략별 TTL 설정
+                        ttl_days = 20  # 기본값
+                        if strategy == "v2_lite":
+                            ttl_days = 15
+                        elif strategy == "midterm":
+                            ttl_days = 25
+                        
+                        # 현재 경과 거래일 계산
+                        trading_days_elapsed = get_trading_days_since(anchor_date)
+                        
+                        # 남은 거래일 계산
+                        days_until_archive = max(0, ttl_days - trading_days_elapsed)
+                        item["days_until_archive"] = days_until_archive
+                    except Exception as e:
+                        logger.debug(f"[get_needs_attention_recommendations_list] WEAK_WARNING 남은 거래일 계산 실패 (ticker={item.get('ticker')}): {e}")
+                        item["days_until_archive"] = None
             
             return items
             
@@ -1330,10 +1464,10 @@ def get_archived_recommendations_list(user_id: Optional[int] = None, limit: Opti
                                             ttl_price = float(df_ttl.iloc[-1]['close']) if 'close' in df_ttl.columns else float(df_ttl.iloc[-1].values[0])
                                         
                                         if ttl_price:
-                                            # TTL 시점의 수익률 계산
+                                            # TTL 시점의 수익률 계산 (표시용으로만 사용, archive_return_pct는 DB 스냅샷 유지)
                                             ttl_return_pct = round(((ttl_price - float(anchor_close)) / float(anchor_close)) * 100, 2)
                                             item["current_return"] = ttl_return_pct
-                                            item["archive_return_pct"] = ttl_return_pct  # TTL 시점 수익률로 덮어쓰기
+                                            # archive_return_pct는 DB에 저장된 스냅샷 값이므로 덮어쓰지 않음
                                 except Exception as e:
                                     logger.warning(f"[get_archived_recommendations_list] TTL 시점 수익률 계산 실패 (ticker={item.get('ticker')}): {e}")
                                     # 실패 시 기존 archive_return_pct 유지
@@ -1377,7 +1511,7 @@ def get_archived_recommendations_list(user_id: Optional[int] = None, limit: Opti
                                 if ttl_price:
                                     ttl_return_pct = round(((ttl_price - float(anchor_close)) / float(anchor_close)) * 100, 2)
                                     item["current_return"] = ttl_return_pct
-                                    item["archive_return_pct"] = ttl_return_pct
+                                    # archive_return_pct는 DB에 저장된 스냅샷 값이므로 덮어쓰지 않음
                         except Exception as e:
                             logger.warning(f"[get_archived_recommendations_list] TTL 시점 수익률 계산 실패 (ticker={item.get('ticker')}): {e}")
                 else:

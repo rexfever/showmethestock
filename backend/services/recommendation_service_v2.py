@@ -109,10 +109,20 @@ def create_recommendation_transaction(
                         except Exception as e:
                             logger.warning(f"[create_recommendation_transaction] 거래일 계산 실패 (ticker={ticker}): {e}")
                     
-                    # 현재 가격 조회 (archive_return_pct 계산용)
+                    # 현재 가격 조회 (archive_return_pct 계산 및 손절 조건 체크용)
                     archive_return_pct = None
                     archive_price = None
                     archive_phase = None
+                    current_return = None
+                    stop_loss_pct = None  # 변수 스코프 문제 해결
+                    
+                    # 전략별 손절 기준 설정 (try 블록 밖에서)
+                    stop_loss = 0.02  # 기본값
+                    if existing_strategy == "v2_lite":
+                        stop_loss = 0.02
+                    elif existing_strategy == "midterm":
+                        stop_loss = 0.07
+                    stop_loss_pct = -abs(float(stop_loss) * 100)
                     
                     try:
                         # 전이 시점의 정확한 가격 조회 (today_str 기준)
@@ -146,12 +156,18 @@ def create_recommendation_transaction(
                             
                             # archive_return_pct 계산 (전이 시점의 정확한 가격 사용)
                             if existing_anchor_close and existing_anchor_close > 0 and current_price:
-                                archive_return_pct = round(((current_price - float(existing_anchor_close)) / float(existing_anchor_close)) * 100, 2)
+                                current_return = round(((current_price - float(existing_anchor_close)) / float(existing_anchor_close)) * 100, 2)
+                                archive_return_pct = current_return
                                 archive_price = current_price
                                 
                                 # 로그: 실제 가격이 조회된 날짜 확인
                                 if actual_price_date != today_str:
                                     logger.debug(f"[create_recommendation_transaction] {ticker}: 요청일({today_str})의 데이터가 없어 {actual_price_date} 날짜의 가격 사용")
+                                
+                                # 손절 조건 도달 시 NO_MOMENTUM으로 변경
+                                if current_return <= stop_loss_pct:
+                                    archive_reason = 'NO_MOMENTUM'
+                                    logger.info(f"[create_recommendation_transaction] 손절 조건 도달 → NO_MOMENTUM: {ticker}, current_return={current_return:.2f}%, stop_loss={stop_loss_pct:.2f}%")
                                 
                                 # archive_phase 결정
                                 if archive_return_pct > 2:
@@ -163,20 +179,39 @@ def create_recommendation_transaction(
                     except Exception as e:
                         logger.warning(f"[create_recommendation_transaction] 현재 가격 조회 실패 (ticker={ticker}): {e}")
                     
+                    # 손절 조건 만족 시 BROKEN 정보 설정
+                    broken_at = None
+                    broken_return_pct = None
+                    if current_return is not None and stop_loss_pct is not None and current_return <= stop_loss_pct:
+                        broken_at = today_str
+                        broken_return_pct = current_return
+                        logger.info(f"[create_recommendation_transaction] 손절 조건 만족 → BROKEN 정보 설정: {ticker}, broken_at={broken_at}, broken_return_pct={broken_return_pct:.2f}%")
+                        # 정책: broken_return_pct를 archive_return_pct로 사용
+                        archive_return_pct = broken_return_pct
+                        # archive_price 재계산
+                        if existing_anchor_close:
+                            anchor_close_float = float(existing_anchor_close)
+                            archive_price = round(anchor_close_float * (1 + archive_return_pct / 100), 0)
+                    
                     # REPLACED 상태로 전이 (archive 정보 포함)
+                    # 손절 조건 도달 시에도 REPLACED로 전환하되, archive_reason은 NO_MOMENTUM으로 설정
+                    # BROKEN 정보도 함께 저장 (broken_at, broken_return_pct)
+                    # 정책: broken_return_pct가 있으면 archive_return_pct로 사용
                     cur.execute("""
                         UPDATE recommendations
                         SET status = 'REPLACED',
                             replaced_by_recommendation_id = %s,
                             archived_at = NOW(),
                             archive_reason = %s,
+                            broken_at = %s,
+                            broken_return_pct = %s,
                             archive_return_pct = %s,
                             archive_price = %s,
                             archive_phase = %s,
                             updated_at = NOW(),
                             status_changed_at = NOW()
                         WHERE recommendation_id = %s
-                    """, (new_id, archive_reason, archive_return_pct, archive_price, archive_phase, existing_rec_id))
+                    """, (new_id, archive_reason, broken_at, broken_return_pct, archive_return_pct, archive_price, archive_phase, existing_rec_id))
             
             replaced_count = len(existing_active_rows) if existing_active_rows else 0
             
@@ -362,15 +397,22 @@ def transition_recommendation_status_transaction(
                     if anchor_close > 0:
                         broken_return_pct = round(((current_price - anchor_close) / anchor_close) * 100, 2)
                 
+                # BROKEN 전환 시 broken_at 설정 (정책 준수)
+                broken_at = None
+                if to_status == 'BROKEN':
+                    from date_helper import get_kst_now
+                    broken_at = get_kst_now().strftime('%Y%m%d')
+                
                 cur.execute("""
                     UPDATE recommendations
                     SET status = %s,
                         updated_at = NOW(),
                         status_changed_at = NOW(),
                         reason = %s,
+                        broken_at = %s,
                         broken_return_pct = %s
                     WHERE recommendation_id = %s
-                """, (to_status, broken_reason, broken_return_pct, recommendation_id))
+                """, (to_status, broken_reason, broken_at, broken_return_pct, recommendation_id))
             
             # ARCHIVED 전환 시 스냅샷 저장
             archive_snapshot = None
@@ -385,15 +427,40 @@ def transition_recommendation_status_transaction(
                 # 2) ACTIVE에서 직접 전환된 경우: reason_code 기반으로 결정
                 if from_status == 'BROKEN':
                     # BROKEN의 reason을 archive_reason으로 복사
+                    # BROKEN에서 전환된 경우 broken_return_pct를 archive_return_pct로 사용 (정책 준수)
                     cur.execute("""
-                        SELECT reason FROM recommendations WHERE recommendation_id = %s
+                        SELECT reason, broken_return_pct, broken_at, anchor_close
+                        FROM recommendations WHERE recommendation_id = %s
                     """, (recommendation_id,))
-                    reason_row = cur.fetchone()
-                    if reason_row and reason_row[0]:
-                        archive_reason = reason_row[0]
+                    broken_row = cur.fetchone()
+                    if broken_row:
+                        if broken_row[0]:  # reason
+                            archive_reason = broken_row[0]
+                        else:
+                            archive_reason = 'NO_MOMENTUM'
+                        
+                        # broken_return_pct가 있으면 그것을 archive_return_pct로 사용 (정책: BROKEN 시점 스냅샷)
+                        if broken_row[1] is not None:  # broken_return_pct
+                            archive_return_pct = round(float(broken_row[1]), 2)
+                            # archive_price 계산
+                            if broken_row[3] and broken_row[3] > 0:  # anchor_close
+                                anchor_close_float = float(broken_row[3])
+                                archive_price = round(anchor_close_float * (1 + archive_return_pct / 100), 0)
+                            else:
+                                archive_price = current_price if current_price else None
+                        else:
+                            # broken_return_pct가 없으면 fallback: current_return 사용
+                            if current_return is not None:
+                                archive_return_pct = round(float(current_return), 2)
+                            elif current_price is not None and anchor_close is not None and anchor_close > 0:
+                                archive_return_pct = round(((float(current_price) - float(anchor_close)) / float(anchor_close)) * 100, 2)
+                            else:
+                                archive_return_pct = None
+                            archive_price = current_price if current_price else None
                     else:
-                        # reason이 없으면 기본값
                         archive_reason = 'NO_MOMENTUM'
+                        archive_return_pct = round(float(current_return), 2) if current_return is not None else None
+                        archive_price = current_price if current_price else None
                 else:
                     # ACTIVE에서 직접 전환: reason_code 기반으로 정확한 값 비교
                     if reason_code and isinstance(reason_code, str):
@@ -411,18 +478,15 @@ def transition_recommendation_status_transaction(
                     else:
                         # reason_code가 없거나 유효하지 않으면 기본값
                         archive_reason = 'NO_MOMENTUM'
+                    
+                    # archive_return_pct 계산 (ACTIVE에서 직접 전환)
+                    archive_return_pct = None
+                    if current_return is not None:
+                        archive_return_pct = round(float(current_return), 2)
+                    elif current_price is not None and anchor_close is not None and anchor_close > 0:
+                        archive_return_pct = round(((float(current_price) - float(anchor_close)) / float(anchor_close)) * 100, 2)
+                    archive_price = current_price if current_price else None
                 
-                # archive_return_pct 계산
-                archive_return_pct = None
-                if current_return is not None:
-                    archive_return_pct = round(float(current_return), 2)
-                elif current_price is not None and anchor_close is not None and anchor_close > 0:
-                    archive_return_pct = round(((float(current_price) - float(anchor_close)) / float(anchor_close)) * 100, 2)
-                
-                # archive_price 설정
-                archive_price = None
-                if current_price is not None:
-                    archive_price = float(current_price)
                 
                 # archive_phase 결정
                 archive_phase = None

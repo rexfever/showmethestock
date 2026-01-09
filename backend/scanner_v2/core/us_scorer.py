@@ -12,9 +12,9 @@ class USScorer:
     
     def __init__(self, config):
         self.config = config
-        # USD 기준 필터 값
-        self.min_turnover_usd = getattr(config, 'min_turnover_usd', 1000000)  # $1M
-        self.min_price_usd = getattr(config, 'min_price_usd', 5.0)  # $5
+        # USD 기준 필터 값 (미국 주식 전용 설정 우선 사용)
+        self.min_turnover_usd = getattr(config, 'us_min_turnover_usd', 2000000)  # $2M
+        self.min_price_usd = getattr(config, 'us_min_price_usd', 5.0)  # $5
     
     def calculate_score(self, df: pd.DataFrame, market_condition: Optional[MarketCondition] = None) -> Tuple[float, Dict]:
         """
@@ -45,10 +45,12 @@ class USScorer:
         if cur.get("close", 0) < self.min_price_usd:
             return 0, {"label": "저가종목", "match": False}
         
-        # 과열
+        # 과열 (미국 주식 전용 설정 사용)
+        overheat_rsi = getattr(self.config, 'us_overheat_rsi_tema', 75)
+        overheat_vol_mult = getattr(self.config, 'us_overheat_vol_mult', 4.0)
         overheat = (
-            (cur.get("RSI_TEMA", 0) >= self.config.overheat_rsi_tema) and
-            (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= self.config.overheat_vol_mult * cur.get("VOL_MA5", 0))
+            (cur.get("RSI_TEMA", 0) >= overheat_rsi) and
+            (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= overheat_vol_mult * cur.get("VOL_MA5", 0))
         )
         if overheat:
             return 0, {"label": "과열", "match": False}
@@ -61,8 +63,9 @@ class USScorer:
             gap_max = market_condition.gap_max
             ext_max = market_condition.ext_from_tema20_max
         else:
-            gap_max = getattr(self.config, 'gap_max', 0.015)
-            ext_max = getattr(self.config, 'ext_from_tema20_max', 0.015)
+            # 미국 주식 전용 설정 사용
+            gap_max = getattr(self.config, 'us_gap_max', 0.03)
+            ext_max = getattr(self.config, 'us_ext_from_tema20_max', 0.05)
         
         # 갭 필터: 음수 갭 허용 (최대값만 체크)
         gap_ok = (gap_now <= gap_max)
@@ -85,9 +88,9 @@ class USScorer:
             score += W['cross']
         details['cross'] = {'ok': bool(cross), 'w': W['cross'], 'gain': W['cross'] if cross else 0}
         
-        # 2) 거래량
-        vol_ma5_mult = getattr(self.config, 'vol_ma5_mult', 2.5)
-        vol_ma20_mult = getattr(self.config, 'vol_ma20_mult', 1.2)
+        # 2) 거래량 (미국 주식 전용 설정 사용)
+        vol_ma5_mult = getattr(self.config, 'us_vol_ma5_mult', 2.0)
+        vol_ma20_mult = getattr(self.config, 'us_vol_ma20_mult', 1.0)
         volx = (cur.get("VOL_MA5", 0) and cur.get("volume", 0) >= vol_ma5_mult * cur.get("VOL_MA5", 0)) and \
                (df["volume"].iloc[-20:].mean() > 0 and cur.get("volume", 0) >= vol_ma20_mult * df["volume"].iloc[-20:].mean())
         flags["vol_expand"] = bool(volx)
@@ -107,14 +110,15 @@ class USScorer:
             score += W['macd']
         details['macd'] = {'ok': bool(macd_ok), 'w': W['macd'], 'gain': W['macd'] if macd_ok else 0}
         
-        # 4) RSI
+        # 4) RSI (미국 주식 전용 설정 사용)
         if market_condition and market_analysis_enable:
             rsi_threshold = market_condition.rsi_threshold
         else:
-            rsi_threshold = getattr(self.config, 'rsi_threshold', 58)
+            rsi_threshold = getattr(self.config, 'us_rsi_threshold', 60)
         
         rsi_momentum = (cur.get("RSI_TEMA", 0) > cur.get("RSI_DEMA", 0)) or (abs(cur.get("RSI_TEMA", 0) - cur.get("RSI_DEMA", 0)) < 3 and cur.get("RSI_TEMA", 0) > rsi_threshold)
         flags["rsi_ok"] = bool(rsi_momentum)
+        flags["rsi_tema"] = cur.get("RSI_TEMA", 0)  # 전략 분류에 사용
         if rsi_momentum:
             score += W['rsi']
         details['rsi'] = {'ok': bool(rsi_momentum), 'w': W['rsi'], 'gain': W['rsi'] if rsi_momentum else 0}
@@ -170,6 +174,12 @@ class USScorer:
         signals_sufficient = signals_true >= min_signals
         
         # 신호 우선 원칙: 신호 충족 = 후보군 (점수 무관)
+        # 단, 저점수 종목은 기본 신호 최소 2개 추가 요구
+        if signals_sufficient and score < 4:
+            # 저점수 종목은 기본 신호 최소 2개 추가 요구
+            if basic_signals < 2:
+                signals_sufficient = False
+        
         flags["match"] = signals_sufficient
         flags["signals_count"] = signals_true
         flags["signals_basic"] = basic_signals
@@ -179,8 +189,81 @@ class USScorer:
         # 위험도 점수 계산
         risk_score, risk_flags = self._calculate_risk_score(df)
         
-        # 위험도 차감
-        adjusted_score = score - risk_score
+        # 6점 이상 종목에 추가 필터링 (점수 = 위험도 역설 해결)
+        # 고점수 = 높은 위험도이므로, 더 강한 위험도 차감 필요
+        if score >= 6:
+            cur = df.iloc[-1]
+            additional_risk = 0
+            
+            # RSI 70 이상 추가 차감 (강화)
+            rsi_tema = cur.get("RSI_TEMA", 0)
+            if rsi_tema >= 75:
+                additional_risk += 3  # RSI 75 이상: 3점 추가 차감 (강화)
+            elif rsi_tema >= 70:
+                additional_risk += 2  # RSI 70 이상: 2점 추가 차감 (강화)
+            
+            # 거래량 급증 추가 차감 (강화)
+            vol_ma5 = cur.get("VOL_MA5", 0)
+            if vol_ma5 > 0:
+                vol_ratio = cur.get("volume", 0) / vol_ma5
+                if vol_ratio >= 3.0:
+                    additional_risk += 3  # 거래량 3배 이상: 3점 추가 차감 (강화)
+                elif vol_ratio >= 2.5:
+                    additional_risk += 2  # 거래량 2.5배 이상: 2점 추가 차감 (강화)
+            
+            # 이격률 과도 추가 차감 (강화)
+            tema20 = cur.get("TEMA20", 0)
+            if tema20 > 0:
+                ext_pct = (cur.get("close", 0) - tema20) / tema20
+                if ext_pct >= 0.08:
+                    additional_risk += 3  # 8% 이상 이격: 3점 추가 차감 (강화)
+                elif ext_pct >= 0.05:
+                    additional_risk += 2  # 5% 이상 이격: 2점 추가 차감 (강화)
+            
+            # 과열 상태 종합 판단: 여러 위험 신호가 동시에 있으면 추가 차감
+            overheat_count = sum([
+                rsi_tema >= 70,
+                vol_ratio >= 2.5 if vol_ma5 > 0 else False,
+                ext_pct >= 0.05 if tema20 > 0 else False
+            ])
+            if overheat_count >= 2:  # 2개 이상 위험 신호
+                additional_risk += 2  # 과열 상태 추가 차감
+            
+            risk_score += additional_risk
+            risk_flags["additional_risk_6plus"] = additional_risk
+        
+        # 위험도 차감 (점수 = 위험도 역설 해결: 고점수 = 높은 위험도)
+        # 점수가 높을수록 위험도가 높으므로, 위험도 차감을 더 강하게 적용
+        risk_multiplier = 1.0
+        if score >= 8:
+            # 고점수 종목은 위험도 차감을 2.0배 적용 (고점수 = 높은 위험도)
+            risk_multiplier = 2.0
+        elif score >= 6:
+            # 중고점수 종목은 위험도 차감을 1.5배 적용 (고점수 = 높은 위험도)
+            risk_multiplier = 1.5
+        
+        adjusted_risk_score = int(risk_score * risk_multiplier)
+        adjusted_score = score - adjusted_risk_score
+        
+        # 저점수 종목 품질 검증 강화 (0-4점 구간 성과 악화 해결)
+        # 기본 신호(골든크로스, 거래량, MACD, RSI) 중 최소 2개 이상 요구
+        if adjusted_score < 4:
+            basic_signals_count = sum([
+                bool(flags.get("cross")),
+                bool(flags.get("vol_expand")),
+                bool(flags.get("macd_ok")),
+                bool(flags.get("rsi_ok"))
+            ])
+            # 기본 신호가 2개 미만이면 점수를 0으로 조정 (필터링)
+            if basic_signals_count < 2:
+                adjusted_score = 0
+                flags["low_score_filtered"] = True
+                flags["low_score_reason"] = f"기본 신호 부족 ({basic_signals_count}개)"
+        
+        # 위험도 차감 정보 저장
+        flags["risk_score"] = risk_score
+        flags["risk_multiplier"] = risk_multiplier
+        flags["adjusted_risk_score"] = adjusted_risk_score
         
         # 전략 결정
         from .strategy import determine_trading_strategy
@@ -217,7 +300,6 @@ class USScorer:
         ])
         
         flags["details"] = details
-        flags["risk_score"] = risk_score
         
         return adjusted_score, flags
     
@@ -240,7 +322,7 @@ class USScorer:
             }
     
     def _calculate_risk_score(self, df: pd.DataFrame) -> Tuple[int, Dict]:
-        """위험도 점수 계산 (한국형과 동일)"""
+        """위험도 점수 계산 (과매수 상태 강화 차감)"""
         if len(df) < 21:
             return 0, {}
         
@@ -248,20 +330,40 @@ class USScorer:
         risk_score = 0
         risk_flags = {}
         
-        # 1. 과매수 구간 위험 (RSI_TEMA > 80)
-        rsi_overbought = cur.get("RSI_TEMA", 0) > 80
-        risk_flags["rsi_overbought"] = rsi_overbought
-        if rsi_overbought:
-            risk_score += 2
+        # 1. 과매수 구간 위험 (최적화: 위험도 차감 완화 - 성과 분석 기반)
+        rsi_tema = cur.get("RSI_TEMA", 0)
+        if rsi_tema > 80:
+            # RSI 80 이상: 1점 차감 (최적화: 2점 → 1점, 성과 개선을 위해 완화)
+            risk_score += 1
+            risk_flags["rsi_overbought"] = True
+        elif rsi_tema > 75:
+            # RSI 75-80: 0점 차감 (최적화: 1점 → 0점, 과도한 차감 방지)
+            risk_flags["rsi_overbought"] = False
+        elif rsi_tema > 70:
+            # RSI 70-75: 0점 차감 (과도한 차감 방지)
+            risk_flags["rsi_elevated"] = False
+        else:
+            risk_flags["rsi_overbought"] = False
+            risk_flags["rsi_elevated"] = False
         
-        # 2. 거래량 급증 위험 (평균 대비 3배 이상)
+        # 2. 거래량 급증 위험 (강화: 더 엄격한 기준)
         vol_spike_threshold = getattr(self.config, 'vol_spike_threshold', 3.0)
-        vol_spike = cur.get("volume", 0) > (cur.get("VOL_MA5", 0) * vol_spike_threshold if cur.get("VOL_MA5", 0) else cur.get("volume", 0))
-        risk_flags["vol_spike"] = vol_spike
-        if vol_spike:
-            risk_score += 2
+        vol_ma5 = cur.get("VOL_MA5", 0)
+        if vol_ma5 > 0:
+            vol_ratio = cur.get("volume", 0) / vol_ma5
+            if vol_ratio >= vol_spike_threshold * 1.5:
+                # 거래량이 평균의 4.5배 이상: 1점 차감 (최적화: 2점 → 1점, 성과 개선을 위해 완화)
+                risk_score += 1
+                risk_flags["vol_spike"] = True
+            elif vol_ratio >= vol_spike_threshold:
+                # 거래량이 평균의 3배 이상: 0점 차감 (최적화: 1점 → 0점, 과도한 차감 방지)
+                risk_flags["vol_spike"] = False
+            else:
+                risk_flags["vol_spike"] = False
+        else:
+            risk_flags["vol_spike"] = False
         
-        # 3. 모멘텀 지속성 부족 위험 (MACD 상승 기간이 짧음)
+        # 3. 모멘텀 지속성 부족 위험 (강화)
         macd_trend_duration = 0
         for i in range(min(10, len(df) - 1)):
             if df.iloc[-(i+1)].get("MACD_OSC", 0) > df.iloc[-(i+2)].get("MACD_OSC", 0):
@@ -273,9 +375,10 @@ class USScorer:
         momentum_weak = macd_trend_duration < momentum_duration_min
         risk_flags["momentum_weak"] = momentum_weak
         if momentum_weak:
+            # 모멘텀 약화: 1점 차감 (최적화: 2점 → 1점, 성과 개선을 위해 완화)
             risk_score += 1
         
-        # 4. 가격 급등 후 조정 위험 (최근 5일 중 4일 이상 상승)
+        # 4. 가격 급등 후 조정 위험 (강화)
         recent_up_days = 0
         for i in range(min(5, len(df) - 1)):
             if df.iloc[-(i+1)].get("close", 0) > df.iloc[-(i+2)].get("close", 0):
@@ -284,7 +387,24 @@ class USScorer:
         price_exhaustion = recent_up_days >= 4
         risk_flags["price_exhaustion"] = price_exhaustion
         if price_exhaustion:
+            # 가격 고갈: 1점 차감 (최적화: 2점 → 1점, 성과 개선을 위해 완화)
             risk_score += 1
+        
+        # 5. 신규: 이격률 과도 위험 (TEMA20 대비 가격 상승률)
+        tema20 = cur.get("TEMA20", 0)
+        if tema20 > 0:
+            ext_pct = (cur.get("close", 0) - tema20) / tema20
+            if ext_pct > 0.08:  # 8% 이상 이격
+                risk_score += 0  # 최적화: 1점 → 0점 (과도한 차감 방지)
+                risk_flags["extreme_extension"] = False
+            elif ext_pct > 0.05:  # 5-8% 이격
+                risk_score += 0  # 과도한 차감 방지
+                risk_flags["extreme_extension"] = False
+            else:
+                risk_flags["extreme_extension"] = False
+        
+        # 6. 신규: 점수와 RSI 불일치 위험 (점수가 높은데 RSI도 높으면 위험)
+        # 이건 점수 계산 후에 체크해야 하므로 별도 로직으로 처리
         
         return risk_score, risk_flags
 
