@@ -27,4 +27,4 @@ backup_*/
 *.pem
 
 # Documentation with sensitive info
-docs/
+# docs/
