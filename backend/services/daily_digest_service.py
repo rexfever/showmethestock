@@ -65,7 +65,7 @@ def calculate_daily_digest() -> Dict:
         
         # 집계 쿼리 실행
         with db_manager.get_cursor(commit=False) as cur:
-            # A) 신규 추천 수: anchor_date = todayKST, status IN ('ACTIVE','WEAK_WARNING')
+            # A) 신규 추천 수 및 종목 리스트: anchor_date = todayKST, status IN ('ACTIVE','WEAK_WARNING')
             cur.execute("""
                 SELECT COUNT(*)
                 FROM recommendations
@@ -74,6 +74,89 @@ def calculate_daily_digest() -> Dict:
                   AND scanner_version = 'v3'
             """, (today_kst,))
             new_recommendations = cur.fetchone()[0] if cur.rowcount > 0 else 0
+            
+            # A-2) 신규 추천 종목 리스트 (종목명 포함)
+            cur.execute("""
+                SELECT ticker, name
+                FROM recommendations
+                WHERE anchor_date = %s
+                  AND status IN ('ACTIVE', 'WEAK_WARNING')
+                  AND scanner_version = 'v3'
+                ORDER BY created_at DESC
+            """, (today_kst,))
+            new_rows = cur.fetchall()
+            new_items = []
+            new_tickers_for_name = set()
+            for row in new_rows:
+                if isinstance(row, dict):
+                    ticker = row.get('ticker')
+                    name = row.get('name')
+                else:
+                    ticker = row[0] if len(row) > 0 else None
+                    name = row[1] if len(row) > 1 else None
+                
+                if ticker:
+                    new_items.append({
+                        'ticker': ticker,
+                        'name': name
+                    })
+                    if not name:
+                        new_tickers_for_name.add(ticker)
+            
+            # 종목명이 없는 경우 조회
+            if new_tickers_for_name:
+                def fetch_stock_name_new(ticker):
+                    """종목명 조회 헬퍼 함수 (신규 추천용)"""
+                    try:
+                        from pykrx import stock
+                        result = stock.get_market_ticker_name(ticker)
+                        if isinstance(result, str) and result:
+                            return ticker, result
+                        elif hasattr(result, 'empty') and not result.empty:
+                            if hasattr(result, 'iloc'):
+                                name = str(result.iloc[0]) if len(result) > 0 else None
+                            elif hasattr(result, 'values'):
+                                name = str(result.values[0]) if len(result.values) > 0 else None
+                            else:
+                                name = None
+                            if name:
+                                return ticker, name
+                    except Exception as e:
+                        logger.debug(f"[calculate_daily_digest] pykrx 종목명 조회 실패 (ticker={ticker}): {e}")
+                    
+                    # pykrx 실패 시 kiwoom_api로 fallback
+                    try:
+                        from kiwoom_api import api
+                        stock_name = api.get_stock_name(ticker)
+                        if stock_name:
+                            return ticker, stock_name
+                    except Exception as e:
+                        logger.debug(f"[calculate_daily_digest] kiwoom_api 종목명 조회 실패 (ticker={ticker}): {e}")
+                    
+                    return ticker, None
+                
+                # 병렬 처리로 종목명 조회
+                max_workers = min(10, len(new_tickers_for_name))
+                ticker_to_name_new = {}
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    future_to_ticker = {
+                        executor.submit(fetch_stock_name_new, ticker): ticker 
+                        for ticker in new_tickers_for_name
+                    }
+                    
+                    for future in concurrent.futures.as_completed(future_to_ticker):
+                        try:
+                            ticker, name = future.result()
+                            if name:
+                                ticker_to_name_new[ticker] = name
+                        except Exception as e:
+                            ticker = future_to_ticker[future]
+                            logger.debug(f"[calculate_daily_digest] 종목명 조회 오류 (ticker={ticker}): {e}")
+                
+                # 종목명 업데이트
+                for item in new_items:
+                    if not item['name'] and item['ticker'] in ticker_to_name_new:
+                        item['name'] = ticker_to_name_new[item['ticker']]
             
             # B) 신규 BROKEN 수 및 종목 리스트: status = 'BROKEN', status_changed_at >= todayKST 00:00
             cur.execute("""
@@ -287,6 +370,7 @@ def calculate_daily_digest() -> Dict:
             "as_of": as_of,
             "window": window,
             "new_recommendations": new_recommendations,
+            "new_items": new_items,  # 신규 추천 종목 리스트 추가
             "new_broken": new_broken,
             "new_archived": new_archived,
             "has_changes": has_changes,
@@ -310,6 +394,7 @@ def calculate_daily_digest() -> Dict:
             "as_of": as_of,
             "window": "ERROR",
             "new_recommendations": 0,
+            "new_items": [],  # 에러 시 빈 배열
             "new_broken": 0,
             "new_archived": 0,
             "has_changes": False,

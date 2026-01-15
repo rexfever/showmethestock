@@ -1,5 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import pytz
+import holidays
 
 # KST timezone 상수
 KST = pytz.timezone('Asia/Seoul')
@@ -91,3 +92,98 @@ def timestamp_to_yyyymmdd(dt: datetime, tz=KST) -> str:
         # timezone-aware인 경우 지정된 timezone으로 변환
         dt = dt.astimezone(tz)
     return dt.strftime('%Y%m%d')
+
+def is_trading_day_kr(date_str: str) -> bool:
+    """거래일인지 확인 (주말과 공휴일 제외)
+    
+    Args:
+        date_str: YYYYMMDD 형식의 날짜 문자열
+    
+    Returns:
+        거래일이면 True, 아니면 False
+    """
+    try:
+        if len(date_str) == 8 and date_str.isdigit():
+            date_obj = datetime.strptime(date_str, '%Y%m%d').date()
+        elif len(date_str) == 10 and date_str.count('-') == 2:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        else:
+            return False
+        
+        # 주말 체크
+        if date_obj.weekday() >= 5:  # 토요일(5), 일요일(6)
+            return False
+        
+        # 한국 공휴일 체크
+        kr_holidays = holidays.SouthKorea(years=date_obj.year)
+        if date_obj in kr_holidays:
+            return False
+        
+        return True
+    except Exception:
+        return False
+
+def get_trading_date(date_str: str) -> str:
+    """거래일 결정 (주말/공휴일인 경우 이전 거래일 반환)
+    
+    Args:
+        date_str: YYYYMMDD 형식의 날짜 문자열
+    
+    Returns:
+        YYYYMMDD 형식의 거래일 문자열
+    """
+    # 날짜 정규화
+    if len(date_str) == 8 and date_str.isdigit():
+        date_obj = datetime.strptime(date_str, '%Y%m%d').date()
+    elif len(date_str) == 10 and date_str.count('-') == 2:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+    else:
+        # 정규화 실패 시 원본 반환
+        return normalize_date(date_str)
+    
+    # 이미 거래일이면 그대로 반환
+    if is_trading_day_kr(date_str):
+        return normalize_date(date_str)
+    
+    # 이전 거래일 찾기 (최대 7일 전까지)
+    for i in range(1, 8):
+        prev_date = date_obj - timedelta(days=i)
+        prev_date_str = prev_date.strftime('%Y%m%d')
+        if is_trading_day_kr(prev_date_str):
+            return prev_date_str
+    
+    # 찾지 못하면 원본 반환
+    return normalize_date(date_str)
+
+def get_anchor_close(ticker: str, date_str: str, price_type: str = "CLOSE") -> float:
+    """종목의 특정 날짜 종가 조회
+    
+    Args:
+        ticker: 종목 코드
+        date_str: YYYYMMDD 형식의 날짜 문자열
+        price_type: 가격 타입 ("CLOSE" 또는 "ADJ_CLOSE", 기본값: "CLOSE")
+    
+    Returns:
+        종가 (조회 실패 시 None)
+    """
+    try:
+        from kiwoom_api import api
+        
+        # 날짜 정규화
+        normalized_date = normalize_date(date_str)
+        
+        # OHLCV 데이터 가져오기
+        df = api.get_ohlcv(ticker, 1, normalized_date)
+        if df.empty:
+            return None
+        
+        # 종가 반환
+        if price_type == "ADJ_CLOSE" and "adj_close" in df.columns:
+            return float(df.iloc[-1]["adj_close"])
+        else:
+            return float(df.iloc[-1]["close"])
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"anchor_close 조회 실패 ({ticker}, {date_str}): {e}")
+        return None

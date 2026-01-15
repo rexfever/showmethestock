@@ -32,6 +32,7 @@ class KiwoomAPI:
         self._disk_cache_dir = Path("cache/ohlcv")
         self._disk_cache_dir.mkdir(parents=True, exist_ok=True)
         self._disk_cache_enabled = True  # 디스크 캐시 활성화 여부
+        self._last_ohlcv_leak = False  # base_dt 초과 데이터 감지 플래그
         # 모의 데이터 세트는 항상 준비 (실패 시 폴백용)
         self._mock_kospi = [
             "005930",  # 삼성전자
@@ -610,6 +611,16 @@ class KiwoomAPI:
                     logger.error(f"디스크 캐시도 없음, API 인증 실패: {code}, {e}")
                 raise
         
+        # base_dt가 있으면 기준일 이후 데이터 제거 (누수 방지)
+        self._last_ohlcv_leak = False
+        if base_dt and not df.empty and 'date' in df.columns:
+            df['date_str'] = df['date'].astype(str).str.replace('-', '').str[:8]
+            if (df['date_str'] > base_dt).any():
+                self._last_ohlcv_leak = True
+            df = df[df['date_str'] <= base_dt].copy()
+            df = df.sort_values('date_str').reset_index(drop=True)
+            df = df.drop(columns=['date_str'])
+
         # 4. 캐시 저장 (메모리 + 디스크)
         if not df.empty:
             self._set_cached_ohlcv(code, count, base_dt, df)
@@ -1239,5 +1250,3 @@ class KiwoomAPI:
 
 # 전역 API 인스턴스
 api = KiwoomAPI()
-
-

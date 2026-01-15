@@ -106,19 +106,15 @@ export default function Archived({ initialData }) {
     }
   }, [mounted, initialData]);
 
-  // 기본 리스트: 최근 1개월 이내 데이터만 필터링 및 정렬
+  // 기본 리스트: 모든 ARCHIVED 데이터 표시 및 정렬
   const defaultItems = useMemo(() => {
     if (!allItems || allItems.length === 0) return [];
     
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    
+    // 1개월 필터링 제거: 모든 ARCHIVED 항목 표시
     const filtered = allItems.filter(item => {
+      // archived_at이 없는 항목은 제외
       const archivedDate = item.archived_at || item.updated_at || item.created_at;
-      if (!archivedDate) return false;
-      
-      const itemDate = new Date(archivedDate);
-      return itemDate >= oneMonthAgo;
+      return !!archivedDate;
     });
     
     // 정렬 적용

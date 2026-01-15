@@ -35,14 +35,30 @@ export default function BrokenRecommendationCard({ item }) {
     return null;
   }
 
-  const { ticker, name, recommendation_id, id, reason, broken_return_pct, strategy } = item;
+  const { ticker, name, recommendation_id, id, reason, broken_return_pct, actual_return, strategy } = item;
   const recId = recommendation_id || id;
   
-  // 수익률 계산: 종료 시점 고정 수익률 (broken_return_pct)
+  // 수익률 계산
   let brokenReturnRate = null;
   if (broken_return_pct !== undefined && broken_return_pct !== null && !isNaN(broken_return_pct)) {
     brokenReturnRate = broken_return_pct;
   }
+  
+  // 실제 수익률 (NO_MOMENTUM인 경우 실제 가격 하락률)
+  let actualReturnRate = null;
+  if (actual_return !== undefined && actual_return !== null && !isNaN(actual_return)) {
+    actualReturnRate = actual_return;
+  }
+  
+  // NO_MOMENTUM인 경우: 메인 수익률은 실제 수익률, 참고용으로 손절 기준 표시
+  const isNoMomentum = reason === 'NO_MOMENTUM';
+  
+  // 메인 수익률 결정: NO_MOMENTUM이면 실제 수익률, 아니면 broken_return_pct
+  const mainReturnRate = isNoMomentum && actualReturnRate !== null ? actualReturnRate : brokenReturnRate;
+  
+  // NO_MOMENTUM인 경우 손절 기준을 참고용으로 표시 (차이가 0.1%p 이상일 때만)
+  const showStopLossReference = isNoMomentum && actualReturnRate !== null && brokenReturnRate !== null && 
+                                 Math.abs(actualReturnRate - brokenReturnRate) > 0.1;
   
   // 종료 사유 문구 가져오기 (추가 정보 없이)
   const reasonText = getTerminationReasonText(reason);
@@ -97,12 +113,20 @@ export default function BrokenRecommendationCard({ item }) {
         
         {/* 수익률 (상단 우측) */}
         <div className="text-right ml-4 flex-shrink-0">
-          {brokenReturnRate !== null && brokenReturnRate !== undefined && !isNaN(brokenReturnRate) ? (
+          {mainReturnRate !== null && mainReturnRate !== undefined && !isNaN(mainReturnRate) ? (
             <>
               <div className="text-xs text-gray-500 mb-0.5">수익률</div>
-              <span className={`text-sm font-medium ${brokenReturnRate > 0 ? 'text-red-500' : brokenReturnRate < 0 ? 'text-blue-500' : colors.bodyText}`}>
-                {brokenReturnRate > 0 ? '+' : ''}{brokenReturnRate.toFixed(2)}%
+              <span className={`text-sm font-medium ${mainReturnRate > 0 ? 'text-red-500' : mainReturnRate < 0 ? 'text-blue-500' : colors.bodyText}`}>
+                {mainReturnRate > 0 ? '+' : ''}{mainReturnRate.toFixed(2)}%
               </span>
+              {showStopLossReference && (
+                <div className="mt-1">
+                  <div className="text-xs text-gray-400 mb-0.5">손절 기준</div>
+                  <span className={`text-xs ${brokenReturnRate > 0 ? 'text-red-400' : brokenReturnRate < 0 ? 'text-blue-400' : 'text-gray-400'}`}>
+                    {brokenReturnRate > 0 ? '+' : ''}{brokenReturnRate.toFixed(2)}%
+                  </span>
+                </div>
+              )}
             </>
           ) : (
             <>

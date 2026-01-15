@@ -27,17 +27,25 @@ export default function ArchivedCardV3({ item }) {
     return null;
   }
 
-  const { ticker, name, recommendation_id, id, anchor_date, created_at, current_return, updated_at, archived_at, observation_period_days, archive_return_pct, archive_reason, strategy } = item;
+  const { ticker, name, recommendation_id, id, anchor_date, created_at, current_return, updated_at, archived_at, observation_period_days, archive_return_pct, archive_reason, strategy, actual_return, broken_return_pct } = item;
   const recId = recommendation_id || id;
   
-  // 수익률 계산 (ARCHIVED 스냅샷 우선, 없으면 current_return)
-  // archive_return_pct가 있으면 사용 (ARCHIVED 전환 시점의 수익률 - 종료 시점 고정)
+  // NO_MOMENTUM인 경우: 메인 수익률은 실제 수익률, 참고용으로 손절 기준 표시
+  const isNoMomentum = archive_reason === 'NO_MOMENTUM';
+  
+  // 메인 수익률 결정: NO_MOMENTUM이면 실제 수익률, 아니면 archive_return_pct
   let returnRate = null;
-  if (archive_return_pct !== undefined && archive_return_pct !== null && !isNaN(archive_return_pct)) {
+  if (isNoMomentum && actual_return !== undefined && actual_return !== null && !isNaN(actual_return)) {
+    returnRate = actual_return;
+  } else if (archive_return_pct !== undefined && archive_return_pct !== null && !isNaN(archive_return_pct)) {
     returnRate = archive_return_pct;
   } else if (current_return !== undefined && current_return !== null && !isNaN(current_return)) {
     returnRate = current_return;
   }
+  
+  // NO_MOMENTUM인 경우 손절 기준을 참고용으로 표시 (차이가 0.1%p 이상일 때만)
+  const showStopLossReference = isNoMomentum && actual_return !== null && broken_return_pct !== null && 
+                                 Math.abs(actual_return - broken_return_pct) > 0.1;
   
   // 디버깅: 수익률 확인
   if (process.env.NODE_ENV === 'development') {
@@ -125,12 +133,20 @@ export default function ArchivedCardV3({ item }) {
         {/* 종료 시점 손익률 (상단 우측) */}
         <div className="text-right ml-4 flex-shrink-0">
           {returnRate !== null && returnRate !== undefined && !isNaN(returnRate) ? (
-            <div>
+            <>
               <div className="text-xs text-gray-500 mb-0.5">종료 시점</div>
               <span className={`text-sm font-medium ${returnRate > 0 ? 'text-red-500' : returnRate < 0 ? 'text-blue-500' : 'text-gray-700'}`}>
                 {returnRate > 0 ? '+' : ''}{returnRate.toFixed(2)}%
               </span>
-            </div>
+              {showStopLossReference && (
+                <div className="mt-1">
+                  <div className="text-xs text-gray-400 mb-0.5">손절 기준</div>
+                  <span className={`text-xs ${broken_return_pct > 0 ? 'text-red-400' : broken_return_pct < 0 ? 'text-blue-400' : 'text-gray-400'}`}>
+                    {broken_return_pct > 0 ? '+' : ''}{broken_return_pct.toFixed(2)}%
+                  </span>
+                </div>
+              )}
+            </>
           ) : (
             <div>
               <div className="text-xs text-gray-500 mb-0.5">종료 시점</div>

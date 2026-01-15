@@ -4,7 +4,7 @@ ACTIVE → WEAK_WARNING → BROKEN → ARCHIVED 단방향 전이
 """
 import logging
 from typing import Dict, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import holidays
 
@@ -14,14 +14,15 @@ from date_helper import get_kst_now, yyyymmdd_to_date
 logger = logging.getLogger(__name__)
 
 
-def get_trading_days_since(anchor_date) -> int:
+def get_trading_days_since(anchor_date, as_of_date: Optional[date] = None) -> int:
     """
-    anchor_date부터 오늘까지의 거래일 수 계산
+    anchor_date부터 as_of_date(또는 오늘)까지의 거래일 수 계산
     
     중요: 추천 시점은 anchor_date입니다 (created_at이 아님)
     
     Args:
         anchor_date: datetime.date 또는 datetime 객체 (추천일)
+        as_of_date: 기준일 (재처리 모드용), None이면 오늘
         
     Returns:
         거래일 수 (0 이상)
@@ -32,17 +33,21 @@ def get_trading_days_since(anchor_date) -> int:
         if isinstance(anchor_date, datetime):
             anchor_date = anchor_date.date()
         
-        today = get_kst_now().date()
+        # as_of_date가 없으면 오늘 사용 (운영 모드)
+        if as_of_date is None:
+            target_date = get_kst_now().date()
+        else:
+            target_date = as_of_date
         
-        if anchor_date > today:
+        if anchor_date > target_date:
             return 0
         
         # 한국 공휴일
-        kr_holidays = holidays.SouthKorea(years=range(anchor_date.year, today.year + 2))
+        kr_holidays = holidays.SouthKorea(years=range(anchor_date.year, target_date.year + 2))
         
         trading_days = 0
         current = anchor_date
-        while current <= today:
+        while current <= target_date:
             # 주말 제외 (월요일=0, 일요일=6)
             if current.weekday() < 5:
                 # 공휴일 제외
@@ -143,12 +148,28 @@ def _is_valid_transition(from_status: str, to_status: str) -> bool:
     return to_status in valid_transitions.get(from_status, [])
 
 
-def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
+def evaluate_active_recommendations(
+    today_str: Optional[str] = None,
+    *,
+    mode: str = "OPERATION",
+    filters: Optional[Dict] = None,
+    dry_run: bool = False
+) -> Dict:
     """
     ACTIVE 추천을 평가하여 상태 전이
     
     Args:
-        today_str: 평가 기준일 (YYYYMMDD), None이면 오늘
+        today_str: 평가 기준일 (YYYYMMDD), None이면 오늘 (운영 모드)
+        mode: 평가 모드 ("OPERATION" 또는 "BACKFILL")
+            - OPERATION: 운영 모드 (기존 동작, 오늘 날짜 기준)
+            - BACKFILL: 재처리 모드 (as_of_date 필수, 과거 날짜 기준)
+        filters: 필터 조건 (재처리 모드용)
+            - from_date: anchor_date 시작일 (YYYYMMDD)
+            - to_date: anchor_date 종료일 (YYYYMMDD)
+            - strategy: 전략 필터 (midterm, v2_lite 등)
+            - status: 상태 필터 (ACTIVE, WEAK_WARNING, BROKEN)
+            - limit: 제한 건수
+        dry_run: True면 DB write 없이 결과만 반환
         
     Returns:
         평가 결과 통계
@@ -156,33 +177,75 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
     from kiwoom_api import api
     from date_helper import yyyymmdd_to_date
     
-    if today_str is None:
-        today_str = get_kst_now().strftime('%Y%m%d')
+    # 모드 검증
+    if mode not in ["OPERATION", "BACKFILL"]:
+        raise ValueError(f"잘못된 모드: {mode} (OPERATION 또는 BACKFILL만 허용)")
     
-    logger.info(f"[state_transition_service] 상태 평가 시작: {today_str}")
+    # 재처리 모드에서는 today_str 필수
+    if mode == "BACKFILL":
+        if today_str is None:
+            raise ValueError("재처리 모드(BACKFILL)에서는 today_str(as_of_date)가 필수입니다")
+        as_of_date_obj = yyyymmdd_to_date(today_str.replace('-', '')[:8])
+    else:
+        # 운영 모드: today_str이 None이면 오늘 사용
+        if today_str is None:
+            today_str = get_kst_now().strftime('%Y%m%d')
+        as_of_date_obj = None
+    
+    logger.info(f"[state_transition_service] 상태 평가 시작: mode={mode}, as_of_date={today_str}, dry_run={dry_run}")
     
     stats = {
         'total_active': 0,
         'evaluated': 0,
         'broken': 0,
+        'broken_no_momentum': 0,
+        'broken_ttl_expired': 0,
+        'broken_no_performance': 0,
         'weak_warning': 0,
         'archived_ttl': 0,  # TTL로 인한 ARCHIVED
         'archived_no_performance': 0,  # 무성과로 인한 ARCHIVED
-        'errors': 0
+        'errors': 0,
+        'error_samples': []  # 오류 샘플 (최대 10건)
     }
+    
+    # 필터 조건 준비
+    filters = filters or {}
+    from_date = filters.get('from_date')
+    to_date = filters.get('to_date')
+    strategy_filter = filters.get('strategy')
+    status_filter = filters.get('status', ['ACTIVE', 'WEAK_WARNING', 'BROKEN'])
+    limit = filters.get('limit')
+    
+    # status_filter가 문자열이면 리스트로 변환
+    if isinstance(status_filter, str):
+        status_filter = [status_filter]
     
     try:
         with db_manager.get_cursor(commit=False) as cur:
             # BROKEN 상태인 추천 조회 (1거래일 이상 유지된 경우 ARCHIVED로 전환)
-            cur.execute("""
-                SELECT 
-                    recommendation_id, ticker, status, anchor_date, anchor_close,
-                    strategy, flags, indicators, status_changed_at, reason, broken_return_pct
-                FROM recommendations
-                WHERE status = 'BROKEN'
-                AND scanner_version = 'v3'
-                ORDER BY status_changed_at ASC, ticker
-            """)
+            # 필터 조건 적용
+            query_parts = [
+                "SELECT recommendation_id, ticker, status, anchor_date, anchor_close, strategy, flags, indicators, status_changed_at, reason, broken_return_pct, broken_at",
+                "FROM recommendations",
+                "WHERE status = 'BROKEN' AND scanner_version = 'v3'"
+            ]
+            params = []
+            
+            if from_date:
+                query_parts.append("AND anchor_date >= %s")
+                params.append(from_date)
+            if to_date:
+                query_parts.append("AND anchor_date <= %s")
+                params.append(to_date)
+            if strategy_filter:
+                query_parts.append("AND strategy = %s")
+                params.append(strategy_filter)
+            
+            query_parts.append("ORDER BY status_changed_at ASC, ticker")
+            if limit:
+                query_parts.append(f"LIMIT {limit}")
+            
+            cur.execute(" ".join(query_parts), tuple(params))
             
             broken_rows = cur.fetchall()
             
@@ -195,40 +258,56 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                         broken_status_changed_at = broken_row.get('status_changed_at')
                         broken_reason = broken_row.get('reason')
                         broken_return_pct = broken_row.get('broken_return_pct')
+                        broken_at = broken_row.get('broken_at')
                     else:
                         broken_rec_id = broken_row[0]
                         broken_ticker = broken_row[1]
                         broken_status_changed_at = broken_row[8] if len(broken_row) > 8 else None
                         broken_reason = broken_row[9] if len(broken_row) > 9 else None
                         broken_return_pct = broken_row[10] if len(broken_row) > 10 else None
+                        broken_at = broken_row[11] if len(broken_row) > 11 else None
                     
                     if not broken_ticker or broken_ticker == 'NORESULT':
                         continue
                     
-                    if not broken_status_changed_at:
+                    # 정책: broken_at부터 거래일 계산 (status_changed_at이 아님)
+                    # broken_at이 실제 BROKEN 발생일이므로, broken_at부터 계산해야 함
+                    broken_date = None
+                    if broken_at:
+                        # broken_at 우선 사용 (실제 BROKEN 발생일)
+                        if isinstance(broken_at, str):
+                            broken_date = yyyymmdd_to_date(broken_at.replace('-', '')[:8])
+                        elif isinstance(broken_at, datetime):
+                            broken_date = broken_at.date()
+                        elif hasattr(broken_at, 'date'):
+                            broken_date = broken_at.date()
+                        elif hasattr(broken_at, 'year'):
+                            broken_date = broken_at
+                    
+                    # broken_at이 없으면 status_changed_at 사용 (fallback)
+                    if broken_date is None and broken_status_changed_at:
+                        if isinstance(broken_status_changed_at, str):
+                            broken_date = yyyymmdd_to_date(broken_status_changed_at.replace('-', '')[:8])
+                        elif isinstance(broken_status_changed_at, datetime):
+                            broken_date = broken_status_changed_at.date()
+                        elif hasattr(broken_status_changed_at, 'date'):
+                            broken_date = broken_status_changed_at.date()
+                        elif hasattr(broken_status_changed_at, 'year'):
+                            broken_date = broken_status_changed_at
+                    
+                    if broken_date is None:
+                        logger.warning(f"[state_transition_service] broken_at과 status_changed_at 모두 없음: {broken_ticker}, 건너뜀")
                         continue
                     
-                    # status_changed_at부터 오늘까지의 거래일 계산
-                    if isinstance(broken_status_changed_at, str):
-                        broken_date = yyyymmdd_to_date(broken_status_changed_at.replace('-', '')[:8])
-                    elif isinstance(broken_status_changed_at, datetime):
-                        broken_date = broken_status_changed_at.date()
-                    elif hasattr(broken_status_changed_at, 'date'):
-                        broken_date = broken_status_changed_at.date()
-                    elif hasattr(broken_status_changed_at, 'year'):
-                        broken_date = broken_status_changed_at
-                    else:
-                        continue
-                    
-                    # BROKEN 진입일부터 오늘까지의 거래일 계산
-                    broken_trading_days = get_trading_days_since(broken_date)
+                    # BROKEN 진입일(broken_at)부터 as_of_date(또는 오늘)까지의 거래일 계산
+                    broken_trading_days = get_trading_days_since(broken_date, as_of_date_obj)
                     
                     # 1거래일 이상 유지된 경우 ARCHIVED로 전환
                     if broken_trading_days >= 1:
                         logger.info(f"[state_transition_service] BROKEN → ARCHIVED 전이: {broken_ticker}, BROKEN 유지 기간: {broken_trading_days}거래일")
                         
                         # reason을 archive_reason으로 사용
-                        archive_reason_code = broken_reason if broken_reason in ['TTL_EXPIRED', 'NO_MOMENTUM', 'MANUAL_ARCHIVE'] else 'NO_MOMENTUM'
+                        archive_reason_code = broken_reason if broken_reason in ['TTL_EXPIRED', 'NO_MOMENTUM', 'NO_PERFORMANCE', 'MANUAL_ARCHIVE'] else 'NO_MOMENTUM'
                         
                         # BROKEN 시점의 스냅샷 사용 (broken_return_pct가 있으면 사용)
                         archive_return_pct = None
@@ -258,62 +337,76 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                             else:
                                 archive_phase = 'FLAT'
                         else:
-                            # broken_return_pct가 없으면 현재 가격으로 계산 (fallback)
-                            try:
-                                from kiwoom_api import api
-                                df_today = api.get_ohlcv(broken_ticker, 10, today_str)
-                                if not df_today.empty:
-                                    today_close = None
-                                    if 'date' in df_today.columns:
-                                        df_today['date_str'] = df_today['date'].astype(str).str.replace('-', '').str[:8]
-                                        df_filtered = df_today[df_today['date_str'] == today_str]
-                                        if not df_filtered.empty:
-                                            today_close = float(df_filtered.iloc[-1]['close'])
-                                        else:
-                                            df_sorted = df_today.sort_values('date_str')
-                                            df_before = df_sorted[df_sorted['date_str'] <= today_str]
-                                            if not df_before.empty:
-                                                today_close = float(df_before.iloc[-1]['close'])
+                            # broken_return_pct가 없으면 재처리 모드에서는 스킵 (fallback 금지)
+                            if mode == "BACKFILL":
+                                logger.warning(f"[state_transition_service] 재처리 모드: broken_return_pct 없음, ARCHIVED 전환 스킵: {broken_ticker}")
+                                if len(stats['error_samples']) < 10:
+                                    stats['error_samples'].append({
+                                        'ticker': broken_ticker,
+                                        'rec_id': str(broken_rec_id),
+                                        'error': 'broken_return_pct 없음, ARCHIVED 전환 불가'
+                                    })
+                                stats['errors'] += 1
+                                continue
+                            else:
+                                # 운영 모드: 현재 가격으로 계산 (fallback)
+                                try:
+                                    df_today = api.get_ohlcv(broken_ticker, 10, today_str)
+                                    if not df_today.empty:
+                                        today_close = None
+                                        if 'date' in df_today.columns:
+                                            df_today['date_str'] = df_today['date'].astype(str).str.replace('-', '').str[:8]
+                                            df_filtered = df_today[df_today['date_str'] == today_str]
+                                            if not df_filtered.empty:
+                                                today_close = float(df_filtered.iloc[-1]['close'])
                                             else:
-                                                today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                                    else:
-                                        today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                                    
-                                    # anchor_close 조회
-                                    if isinstance(broken_row, dict):
-                                        broken_anchor_close = broken_row.get('anchor_close')
-                                    else:
-                                        broken_anchor_close = broken_row[4] if len(broken_row) > 4 else None
-                                    
-                                    if broken_anchor_close and broken_anchor_close > 0 and today_close:
-                                        archive_return_pct = round(((today_close - float(broken_anchor_close)) / float(broken_anchor_close)) * 100, 2)
-                                        archive_price = today_close
-                                        
-                                        # archive_phase 결정
-                                        if archive_return_pct > 2:
-                                            archive_phase = 'PROFIT'
-                                        elif archive_return_pct < -2:
-                                            archive_phase = 'LOSS'
+                                                df_sorted = df_today.sort_values('date_str')
+                                                df_before = df_sorted[df_sorted['date_str'] <= today_str]
+                                                if not df_before.empty:
+                                                    today_close = float(df_before.iloc[-1]['close'])
+                                                else:
+                                                    today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
                                         else:
-                                            archive_phase = 'FLAT'
-                            except Exception as e:
-                                logger.warning(f"[state_transition_service] ARCHIVED 전환 시 가격 조회 실패: {broken_ticker}, {e}")
-                                archive_return_pct = None
-                                archive_price = None
-                                archive_phase = None
+                                            today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
+                                        
+                                        # anchor_close 조회
+                                        if isinstance(broken_row, dict):
+                                            broken_anchor_close = broken_row.get('anchor_close')
+                                        else:
+                                            broken_anchor_close = broken_row[4] if len(broken_row) > 4 else None
+                                        
+                                        if broken_anchor_close and broken_anchor_close > 0 and today_close:
+                                            archive_return_pct = round(((today_close - float(broken_anchor_close)) / float(broken_anchor_close)) * 100, 2)
+                                            archive_price = today_close
+                                            
+                                            # archive_phase 결정
+                                            if archive_return_pct > 2:
+                                                archive_phase = 'PROFIT'
+                                            elif archive_return_pct < -2:
+                                                archive_phase = 'LOSS'
+                                            else:
+                                                archive_phase = 'FLAT'
+                                except Exception as e:
+                                    logger.warning(f"[state_transition_service] ARCHIVED 전환 시 가격 조회 실패: {broken_ticker}, {e}")
+                                    archive_return_pct = None
+                                    archive_price = None
+                                    archive_phase = None
                         
                         # 상태 전이 (BROKEN → ARCHIVED)
-                        transition_recommendation_status(
-                            broken_rec_id,
-                            'ARCHIVED',
-                            archive_reason_code,
-                            {
-                                "current_return": archive_return_pct,
-                                "current_price": archive_price,
-                                "archive_phase": archive_phase,
-                                "reason": archive_reason_code
-                            }
-                        )
+                        if not dry_run:
+                            transition_recommendation_status(
+                                broken_rec_id,
+                                'ARCHIVED',
+                                archive_reason_code,
+                                {
+                                    "current_return": archive_return_pct,
+                                    "current_price": archive_price,
+                                    "archive_phase": archive_phase,
+                                    "reason": archive_reason_code
+                                }
+                            )
+                        else:
+                            logger.info(f"[state_transition_service] [DRY RUN] ARCHIVED 전이 예정: {broken_ticker}, reason={archive_reason_code}")
                         
                         stats['archived_ttl'] += 1
                 
@@ -325,15 +418,29 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
             
             # ACTIVE/WEAK_WARNING 상태인 추천 조회 (v2 스키마: recommendation_id 사용)
             # anchor_date를 기준으로 조회 (추천 시점 = anchor_date)
-            cur.execute("""
-                SELECT 
-                    recommendation_id, ticker, status, anchor_date, anchor_close,
-                    strategy, flags, indicators, status_changed_at
-                FROM recommendations
-                WHERE status IN ('ACTIVE', 'WEAK_WARNING')
-                AND scanner_version = 'v3'
-                ORDER BY anchor_date DESC, ticker
-            """)
+            # 필터 조건 적용
+            query_parts = [
+                "SELECT recommendation_id, ticker, status, anchor_date, anchor_close, strategy, flags, indicators, status_changed_at",
+                "FROM recommendations",
+                f"WHERE status IN ({','.join(['%s'] * len(status_filter))}) AND scanner_version = 'v3'"
+            ]
+            params = list(status_filter)
+            
+            if from_date:
+                query_parts.append("AND anchor_date >= %s")
+                params.append(from_date)
+            if to_date:
+                query_parts.append("AND anchor_date <= %s")
+                params.append(to_date)
+            if strategy_filter:
+                query_parts.append("AND strategy = %s")
+                params.append(strategy_filter)
+            
+            query_parts.append("ORDER BY anchor_date DESC, ticker")
+            if limit:
+                query_parts.append(f"LIMIT {limit}")
+            
+            cur.execute(" ".join(query_parts), tuple(params))
             
             rows = cur.fetchall()
             stats['total_active'] = len(rows)
@@ -392,48 +499,80 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                         logger.warning(f"[state_transition_service] anchor_close 없음: {ticker}, 건너뜀")
                         continue
                     
-                    # 전이 시점의 정확한 종가 조회 (today_str 기준)
-                    try:
-                        df_today = api.get_ohlcv(ticker, 10, today_str)
-                        if df_today.empty:
-                            logger.warning(f"[state_transition_service] 오늘 종가 없음: {ticker}, 건너뜀")
-                            continue
-                        
-                        # today_str과 일치하는 행 찾기 (정확한 날짜의 가격 사용)
-                        today_close = None
-                        actual_price_date = today_str
-                        
-                        if 'date' in df_today.columns:
-                            df_today['date_str'] = df_today['date'].astype(str).str.replace('-', '').str[:8]
-                            df_filtered = df_today[df_today['date_str'] == today_str]
-                            if not df_filtered.empty:
-                                today_close = float(df_filtered.iloc[-1]['close'])
-                                actual_price_date = today_str
-                            else:
-                                # 정확히 일치하는 날짜가 없으면 가장 가까운 이전 거래일 데이터 사용
-                                df_sorted = df_today.sort_values('date_str')
-                                df_before = df_sorted[df_sorted['date_str'] <= today_str]
-                                if not df_before.empty:
-                                    today_close = float(df_before.iloc[-1]['close'])
-                                    actual_price_date = df_before.iloc[-1]['date_str']
-                                else:
-                                    # 마지막 행 사용
-                                    today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                                    if 'date_str' in df_today.columns:
-                                        actual_price_date = df_today.iloc[-1]['date_str']
-                        else:
-                            # date 컬럼이 없으면 마지막 행 사용 (base_dt 이하의 최근 데이터)
-                            today_close = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                        
-                        # 로그: 실제 가격이 조회된 날짜 확인
-                        if actual_price_date != today_str:
-                            logger.debug(f"[state_transition_service] {ticker}: 요청일({today_str})의 데이터가 없어 {actual_price_date} 날짜의 가격 사용")
-                    except Exception as e:
-                        logger.warning(f"[state_transition_service] 종가 조회 실패: {ticker}, {e}")
+                    # anchor_date 기준으로 손절 조건 확인
+                    # 백필 실행일(today_str)은 계산에 사용하지 않음
+                    # anchor_date부터 시작하여 매일 확인하여 손절 기준에 도달한 첫 날짜를 찾음
+                    
+                    # anchor_date를 date 객체로 변환
+                    anchor_date_obj = None
+                    if isinstance(anchor_date, str):
+                        anchor_date_obj = yyyymmdd_to_date(anchor_date.replace('-', '')[:8])
+                    elif isinstance(anchor_date, datetime):
+                        anchor_date_obj = anchor_date.date()
+                    elif hasattr(anchor_date, 'date'):
+                        anchor_date_obj = anchor_date.date()
+                    elif hasattr(anchor_date, 'year'):  # date 객체
+                        anchor_date_obj = anchor_date
+                    
+                    if not anchor_date_obj:
+                        logger.warning(f"[state_transition_service] anchor_date 변환 실패: {ticker}, anchor_date={anchor_date}")
                         continue
                     
-                    # current_return 계산
-                    current_return = ((today_close - anchor_close) / anchor_close) * 100
+                    anchor_date_str = anchor_date_obj.strftime('%Y%m%d') if hasattr(anchor_date_obj, 'strftime') else str(anchor_date_obj).replace('-', '')[:8]
+                    
+                    # anchor_date 이후의 OHLCV 데이터 조회 (TTL 기간 + 여유분)
+                    # today_str은 단순히 "이 날짜까지 조회"하는 상한선일 뿐
+                    max_days = 60  # TTL(25일) + 여유분
+                    try:
+                        df_range = api.get_ohlcv(ticker, max_days, today_str if mode == "BACKFILL" else None)
+                        if df_range.empty or 'date' not in df_range.columns:
+                            error_msg = f"OHLCV 데이터 없음: {ticker}, anchor_date={anchor_date_str}"
+                            logger.warning(f"[state_transition_service] {error_msg}")
+                            if mode == "BACKFILL":
+                                if len(stats['error_samples']) < 10:
+                                    stats['error_samples'].append({
+                                        'ticker': ticker,
+                                        'rec_id': str(rec_id),
+                                        'error': error_msg
+                                    })
+                                stats['errors'] += 1
+                                continue
+                            else:
+                                continue
+                        
+                        df_range['date_str'] = df_range['date'].astype(str).str.replace('-', '').str[:8]
+                        # anchor_date 이후 데이터만 필터링
+                        df_after_anchor = df_range[df_range['date_str'] >= anchor_date_str].copy()
+                        df_after_anchor = df_after_anchor.sort_values('date_str')
+                        
+                        if df_after_anchor.empty:
+                            error_msg = f"anchor_date 이후 데이터 없음: {ticker}, anchor_date={anchor_date_str}"
+                            logger.warning(f"[state_transition_service] {error_msg}")
+                            if mode == "BACKFILL":
+                                if len(stats['error_samples']) < 10:
+                                    stats['error_samples'].append({
+                                        'ticker': ticker,
+                                        'rec_id': str(rec_id),
+                                        'error': error_msg
+                                    })
+                                stats['errors'] += 1
+                                continue
+                            else:
+                                continue
+                    except Exception as e:
+                        error_msg = f"OHLCV 조회 실패: {ticker}, anchor_date={anchor_date_str}, error={str(e)}"
+                        logger.warning(f"[state_transition_service] {error_msg}")
+                        if mode == "BACKFILL":
+                            if len(stats['error_samples']) < 10:
+                                stats['error_samples'].append({
+                                    'ticker': ticker,
+                                    'rec_id': str(rec_id),
+                                    'error': error_msg
+                                })
+                            stats['errors'] += 1
+                            continue
+                        else:
+                            continue
                     
                     # stop_loss 확인
                     stop_loss = flags_dict.get("stop_loss")
@@ -450,47 +589,82 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                     
                     stats['evaluated'] += 1
                     
-                    # BROKEN 조건 확인
-                    if current_return <= stop_loss_pct:
+                    # 손절 기준 확인: anchor_date부터 매일 확인하여 손절 기준에 도달한 첫 날짜 찾기
+                    # 백필 실행일(today_str)은 계산에 사용하지 않음
+                    actual_broken_at = None
+                    broken_at_actual_return = None
+                    broken_at_close = None
+                    
+                    # 매일 확인하여 손절 기준에 도달한 첫 날짜 찾기
+                    for idx, row in df_after_anchor.iterrows():
+                        day_close = float(row['close']) if 'close' in row else None
+                        day_date_str = row['date_str']
+                        
+                        if day_close and anchor_close and anchor_close > 0:
+                            day_return = ((day_close - float(anchor_close)) / float(anchor_close)) * 100
+                            
+                            # 손절 기준에 도달한 첫 날짜
+                            if day_return <= stop_loss_pct:
+                                actual_broken_at = day_date_str
+                                broken_at_actual_return = round(day_return, 2)
+                                broken_at_close = day_close
+                                logger.info(f"[state_transition_service] 손절 기준 도달일 발견: {ticker}, 날짜={actual_broken_at}, 수익률={broken_at_actual_return:.2f}%")
+                                break
+                    
+                    # 손절 기준에 도달한 경우 BROKEN 전이
+                    if actual_broken_at:
                         # ACTIVE → BROKEN 전이
-                        logger.info(f"[state_transition_service] BROKEN 전이: {ticker} ({name}), current_return={current_return:.2f}%, stop_loss={stop_loss_pct:.2f}%")
+                        logger.info(f"[state_transition_service] BROKEN 전이: {ticker} ({name}), broken_at={actual_broken_at}, 수익률={broken_at_actual_return:.2f}%, stop_loss={stop_loss_pct:.2f}%")
                         
                         # 종료 사유 결정: 손절 조건 도달 = NO_MOMENTUM
                         broken_reason = 'NO_MOMENTUM'
                         
                         # flags 업데이트
                         flags_dict["assumption_broken"] = True
-                        flags_dict["broken_at"] = today_str
+                        flags_dict["broken_at"] = actual_broken_at  # 손절 기준 도달한 정확한 날짜 (anchor_date 기준)
                         flags_dict["broken_reason"] = "HARD_STOP"
-                        flags_dict["broken_anchor_return"] = round(current_return, 2)
+                        flags_dict["broken_anchor_return"] = broken_at_actual_return  # broken_at 시점의 실제 수익률
                         
                         # flags 업데이트 (v2 스키마: recommendation_id 사용)
-                        with db_manager.get_cursor(commit=True) as update_cur:
-                            update_cur.execute("""
-                                UPDATE recommendations
-                                SET flags = %s
-                                WHERE recommendation_id = %s
-                            """, (
-                                json.dumps(flags_dict, ensure_ascii=False),
-                                rec_id
-                            ))
+                        if not dry_run:
+                            with db_manager.get_cursor(commit=True) as update_cur:
+                                update_cur.execute("""
+                                    UPDATE recommendations
+                                    SET flags = %s
+                                    WHERE recommendation_id = %s
+                                """, (
+                                    json.dumps(flags_dict, ensure_ascii=False),
+                                    rec_id
+                                ))
                         
                         # 상태 전이 (v2 transaction 함수 사용, reason_code에 broken_reason 전달)
-                        transition_recommendation_status(
-                            rec_id,
-                            'BROKEN',
-                            broken_reason,  # reason_code로 전달
-                            {
-                                "current_return": round(current_return, 2),
-                                "stop_loss": stop_loss_pct,
-                                "today_close": today_close,
-                                "anchor_close": anchor_close,
-                                "reason": broken_reason
-                            }
-                        )
+                        # 정책: broken_return_pct는 broken_at 시점의 실제 종가로 계산한 손해율
+                        # 손절 기준(-7%)에 도달했다는 것은 조건이지만, 실제 손해율은 그 시점의 종가로 계산
+                        broken_return_for_db = broken_at_actual_return
+                        
+                        if not dry_run:
+                            transition_recommendation_status(
+                                rec_id,
+                                'BROKEN',
+                                broken_reason,  # reason_code로 전달
+                                {
+                                    "current_return": broken_return_for_db,  # broken_at 시점의 실제 수익률
+                                    "stop_loss": stop_loss_pct,
+                                    "today_close": broken_at_close,  # broken_at 시점의 종가
+                                    "anchor_close": anchor_close,
+                                    "reason": broken_reason,
+                                    "broken_at": actual_broken_at,  # 손절 기준 도달한 정확한 날짜 (anchor_date 기준)
+                                    "actual_return": broken_at_actual_return  # broken_at 시점의 실제 수익률
+                                }
+                            )
+                        else:
+                            logger.info(f"[state_transition_service] [DRY RUN] BROKEN 전이 예정: {ticker}, reason={broken_reason}, broken_at={actual_broken_at}")
                         
                         stats['broken'] += 1
+                        stats['broken_no_momentum'] += 1
                         continue  # BROKEN 전이 후 다음 추천으로
+                    
+                    # 손절 기준에 도달하지 않은 경우, TTL 확인으로 진행
                     
                     # 2) ARCHIVED 조건 확인 (BROKEN이 아닌 경우만)
                     # 추천 시점 = anchor_date (created_at이 아님)
@@ -507,98 +681,78 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                         # midterm: holding_periods = [10, 15, 20] (최대 20거래일), 여유분 포함하여 25거래일
                         ttl_days = 25
                     
-                    if anchor_date:
-                        # anchor_date를 date 객체로 변환
-                        anchor_date_obj = None
-                        if isinstance(anchor_date, str):
-                            anchor_date_obj = yyyymmdd_to_date(anchor_date.replace('-', '')[:8])
-                        elif isinstance(anchor_date, datetime):
-                            anchor_date_obj = anchor_date.date()
-                        elif hasattr(anchor_date, 'date'):
-                            anchor_date_obj = anchor_date.date()
-                        elif hasattr(anchor_date, 'year'):  # date 객체
-                            anchor_date_obj = anchor_date
+                    # TTL 만료일 계산 (anchor_date 기준, 백필 실행일과 무관)
+                    from services.recommendation_service import get_nth_trading_day_after
+                    ttl_expiry_str = get_nth_trading_day_after(anchor_date_str, ttl_days)
+                    
+                    if not ttl_expiry_str:
+                        logger.warning(f"[state_transition_service] TTL 만료일 계산 실패: {ticker}, anchor_date={anchor_date_str}, ttl_days={ttl_days}")
+                        continue
+                    
+                    # TTL 만료일이 anchor_date 이후 데이터 범위 내에 있는지 확인
+                    ttl_expiry_in_range = False
+                    ttl_expiry_close = None
+                    ttl_expiry_return = None
+                    
+                    for idx, row in df_after_anchor.iterrows():
+                        day_date_str = row['date_str']
+                        if day_date_str == ttl_expiry_str:
+                            ttl_expiry_close = float(row['close']) if 'close' in row else None
+                            if ttl_expiry_close and anchor_close and anchor_close > 0:
+                                ttl_expiry_return = round(((ttl_expiry_close - float(anchor_close)) / float(anchor_close)) * 100, 2)
+                                ttl_expiry_in_range = True
+                                break
+                        elif day_date_str > ttl_expiry_str:
+                            # TTL 만료일이 데이터 범위를 벗어남 (너무 미래)
+                            break
+                    
+                    # TTL 만료일이 지났는지 확인
+                    # anchor_date부터 TTL 만료일까지의 거래일 수 계산
+                    ttl_expiry_date_obj = yyyymmdd_to_date(ttl_expiry_str)
+                    trading_days_to_ttl = get_trading_days_since(anchor_date_obj, ttl_expiry_date_obj)
+                    
+                    # A) TTL 종료 (전략별 TTL 이상) → BROKEN으로 전환
+                    # 정책: TTL 만료일 시점에 손절 조건을 확인
+                    # - 손절 조건 충족: NO_MOMENTUM (TTL 만료일 시점 손절)
+                    # - 손절 조건 미충족: TTL_EXPIRED (TTL 만료로 종료)
+                    # 주의: trading_days_to_ttl >= ttl_days가 아니라, TTL 만료일이 지났는지만 확인
+                    # (백필 실행일과 무관하게 anchor_date 기준으로만 계산)
+                    # TTL 만료일이 지났는지 확인 (anchor_date 기준, 백필 실행일과 무관)
+                    # trading_days_to_ttl은 anchor_date부터 ttl_expiry_str까지의 거래일 수
+                    # ttl_days는 25거래일이므로, trading_days_to_ttl >= ttl_days는 항상 True (ttl_expiry_str이 정확히 25거래일 후이므로)
+                    # 따라서 TTL 만료일이 데이터 범위 내에 있는지만 확인하면 됨
+                    if ttl_expiry_in_range:
+                        logger.info(f"[state_transition_service] TTL 종료 확인: {ticker} ({name}), TTL 만료일={ttl_expiry_str}, trading_days_to_ttl={trading_days_to_ttl}, ttl_days={ttl_days}")
                         
-                        if anchor_date_obj:
-                            trading_days = get_trading_days_since(anchor_date_obj)
+                        # TTL 만료일 시점의 수익률 사용 (이미 계산됨)
+                        ttl_return_pct = ttl_expiry_return
+                        ttl_close = ttl_expiry_close
+                        logger.info(f"[state_transition_service] TTL 시점 수익률 사용: {ticker}, TTL 만료일={ttl_expiry_str}, 수익률={ttl_return_pct:.2f}%")
                         
-                        # A) TTL 종료 (전략별 TTL 이상) → BROKEN으로 전환
-                        if trading_days >= ttl_days:
-                            broken_reason = 'TTL_EXPIRED'
-                            logger.info(f"[state_transition_service] TTL 종료 → BROKEN 전이: {ticker} ({name}), trading_days={trading_days}, ttl_days={ttl_days}")
-                            
-                            # TTL 만료 시점의 수익률 조회 (정책 준수)
-                            ttl_return_pct = round(current_return, 2)  # 기본값: 현재 시점
-                            ttl_close = today_close  # 기본값: 현재 시점
-                            
-                            try:
-                                # TTL 만료일 계산
-                                from services.recommendation_service import get_nth_trading_day_after
-                                anchor_date_str = anchor_date_obj.strftime('%Y%m%d') if hasattr(anchor_date_obj, 'strftime') else str(anchor_date_obj).replace('-', '')[:8]
-                                ttl_expiry_str = get_nth_trading_day_after(anchor_date_str, ttl_days)
-                                
-                                if ttl_expiry_str:
-                                    # TTL 만료 시점의 가격 조회
-                                    df_ttl = api.get_ohlcv(ticker, 30, ttl_expiry_str)
-                                    if not df_ttl.empty:
-                                        if 'date' in df_ttl.columns:
-                                            df_ttl['date_str'] = df_ttl['date'].astype(str).str.replace('-', '').str[:8]
-                                            df_filtered = df_ttl[df_ttl['date_str'] <= ttl_expiry_str].sort_values('date_str')
-                                            if not df_filtered.empty:
-                                                ttl_row = df_filtered.iloc[-1]
-                                                ttl_close = float(ttl_row['close']) if 'close' in ttl_row else today_close
-                                                if anchor_close and anchor_close > 0:
-                                                    ttl_return_pct = round(((ttl_close - float(anchor_close)) / float(anchor_close)) * 100, 2)
-                                                    logger.info(f"[state_transition_service] TTL 시점 수익률 사용: {ticker}, TTL 만료일={ttl_expiry_str}, 수익률={ttl_return_pct:.2f}%")
-                            except Exception as e:
-                                logger.warning(f"[state_transition_service] TTL 시점 가격 조회 실패, 현재 시점 사용: {ticker}, {e}")
-                            
-                            # flags 업데이트
-                            flags_dict["assumption_broken"] = True
-                            flags_dict["broken_at"] = today_str
-                            flags_dict["broken_reason"] = "TTL_EXPIRED"
-                            flags_dict["broken_anchor_return"] = ttl_return_pct
-                            
-                            # flags 업데이트 (v2 스키마: recommendation_id 사용)
-                            with db_manager.get_cursor(commit=True) as update_cur:
-                                update_cur.execute("""
-                                    UPDATE recommendations
-                                    SET flags = %s
-                                    WHERE recommendation_id = %s
-                                """, (
-                                    json.dumps(flags_dict, ensure_ascii=False),
-                                    rec_id
-                                ))
-                            
-                            # 상태 전이 (ACTIVE/WEAK_WARNING → BROKEN) - TTL 시점 수익률 사용
-                            transition_recommendation_status(
-                                rec_id,
-                                'BROKEN',
-                                broken_reason,
-                                {
-                                    "current_return": ttl_return_pct,  # TTL 시점 수익률 사용
-                                    "current_price": ttl_close,  # TTL 시점 가격 사용
-                                    "anchor_close": anchor_close,
-                                    "reason": broken_reason
-                                }
-                            )
-                            
-                            stats['broken'] += 1
-                            continue  # BROKEN 전이 후 다음 추천으로
-                        
-                        # B) 무성과 종료 (10거래일 연속 abs(return) < 2%) → BROKEN으로 전환
-                        # 단순화: 현재 abs(return) < 2%이고 10거래일 이상 경과
-                        elif trading_days >= 10 and abs(current_return) < 2.0:
+                        # TTL 만료일 시점의 손절/손익 판정
+                        if ttl_return_pct <= stop_loss_pct:
+                            # TTL 만료일 시점 손절 → NO_MOMENTUM
                             broken_reason = 'NO_MOMENTUM'
-                            logger.info(f"[state_transition_service] 무성과 → BROKEN 전이: {ticker} ({name}), trading_days={trading_days}, return={current_return:.2f}%")
-                            
-                            # flags 업데이트
-                            flags_dict["assumption_broken"] = True
-                            flags_dict["broken_at"] = today_str
-                            flags_dict["broken_reason"] = "NO_PERFORMANCE"
-                            flags_dict["broken_anchor_return"] = round(current_return, 2)
-                            
-                            # flags 업데이트 (v2 스키마: recommendation_id 사용)
+                            logger.info(f"[state_transition_service] TTL 만료일 시점 손절 → BROKEN 전이: {ticker} ({name}), TTL 만료일={ttl_expiry_str}, 수익률={ttl_return_pct:.2f}%, stop_loss={stop_loss_pct:.2f}%")
+                        elif ttl_return_pct < 0:
+                            # 손절은 아니지만 손해 → NO_MOMENTUM
+                            broken_reason = 'NO_MOMENTUM'
+                            logger.info(f"[state_transition_service] TTL 만료일 손해 → BROKEN 전이: {ticker} ({name}), TTL 만료일={ttl_expiry_str}, 수익률={ttl_return_pct:.2f}%")
+                        else:
+                            # 수익이면 TTL_EXPIRED
+                            broken_reason = 'TTL_EXPIRED'
+                            logger.info(f"[state_transition_service] TTL 만료 → BROKEN 전이: {ticker} ({name}), TTL 만료일={ttl_expiry_str}, 수익률={ttl_return_pct:.2f}%")
+                        
+                        # TTL 만료일을 broken_at으로 사용
+                        broken_at_date = ttl_expiry_str
+                        
+                        # flags 업데이트
+                        flags_dict["assumption_broken"] = True
+                        flags_dict["broken_at"] = broken_at_date
+                        flags_dict["broken_reason"] = "HARD_STOP" if broken_reason == 'NO_MOMENTUM' and ttl_return_pct <= stop_loss_pct else broken_reason
+                        flags_dict["broken_anchor_return"] = round(ttl_return_pct, 2)
+                        
+                        if not dry_run:
                             with db_manager.get_cursor(commit=True) as update_cur:
                                 update_cur.execute("""
                                     UPDATE recommendations
@@ -608,30 +762,51 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
                                     json.dumps(flags_dict, ensure_ascii=False),
                                     rec_id
                                 ))
-                            
-                            # 상태 전이 (ACTIVE/WEAK_WARNING → BROKEN)
+                        
+                        if not dry_run:
                             transition_recommendation_status(
                                 rec_id,
                                 'BROKEN',
                                 broken_reason,
                                 {
-                                    "current_return": round(current_return, 2),
-                                    "today_close": today_close,
+                                    "current_return": round(ttl_return_pct, 2),
+                                    "current_price": ttl_close,
                                     "anchor_close": anchor_close,
-                                    "reason": broken_reason
+                                    "reason": broken_reason,
+                                    "broken_at": broken_at_date,
+                                    "stop_loss": stop_loss_pct,
+                                    "actual_return": round(ttl_return_pct, 2)
                                 }
                             )
-                            
-                            stats['broken'] += 1
-                            continue  # BROKEN 전이 후 다음 추천으로
+                        else:
+                            logger.info(f"[state_transition_service] [DRY RUN] BROKEN 전이 예정: {ticker}, reason={broken_reason}, broken_at={broken_at_date}")
+                        
+                        stats['broken'] += 1
+                        if broken_reason == 'TTL_EXPIRED':
+                            stats['broken_ttl_expired'] += 1
+                        else:
+                            stats['broken_no_momentum'] += 1
+                        continue  # BROKEN 전이 후 다음 추천으로
+                    
+                    # B) 무성과 종료는 운영 모드에서만 처리 (백필 모드에서는 제외)
+                    # NO_PERFORMANCE 로직은 anchor_date 기준으로 계산해야 하므로 복잡함
+                    # 현재는 운영 모드에서만 동작하도록 유지
+                    # TODO: 백필 모드에서도 NO_PERFORMANCE 처리 필요 시 별도 구현
                     
                     # 3) ACTIVE 유지
-                    logger.debug(f"[state_transition_service] ACTIVE 유지: {ticker} ({name}), current_return={current_return:.2f}% > {stop_loss_pct:.2f}%, trading_days={trading_days if anchor_date_obj else 'N/A'}")
+                    logger.debug(f"[state_transition_service] ACTIVE 유지: {ticker} ({name}), 손절 기준 미도달, TTL 미만료")
                 
                 except Exception as e:
-                    logger.error(f"[state_transition_service] 평가 오류 ({ticker}): {e}")
+                    error_msg = f"평가 오류: {ticker}, error={str(e)}"
+                    logger.error(f"[state_transition_service] {error_msg}")
                     import traceback
                     logger.error(traceback.format_exc())
+                    if len(stats['error_samples']) < 10:
+                        stats['error_samples'].append({
+                            'ticker': ticker,
+                            'rec_id': str(rec_id) if 'rec_id' in locals() else 'unknown',
+                            'error': error_msg
+                        })
                     stats['errors'] += 1
         
         logger.info(f"[state_transition_service] 상태 평가 완료: {stats}")
@@ -643,4 +818,3 @@ def evaluate_active_recommendations(today_str: Optional[str] = None) -> Dict:
         logger.error(traceback.format_exc())
         stats['errors'] += 1
         return stats
-
