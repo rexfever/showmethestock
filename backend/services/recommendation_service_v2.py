@@ -55,8 +55,6 @@ def create_recommendation_transaction(
     Returns:
         생성된 추천 ID (UUID, 실패 시 None)
     """
-    new_id = uuid.uuid4()
-    
     try:
         with db_manager.get_cursor(commit=True) as cur:
             # (A) 기존 ACTIVE를 잠그고(동시성 제어), 있으면 대체 처리
@@ -72,152 +70,20 @@ def create_recommendation_transaction(
             existing_active_rows = cur.fetchall()
             
             if existing_active_rows:
-                # 거래일 계산 및 archive 정보 준비
-                from services.state_transition_service import get_trading_days_since
-                from kiwoom_api import api
-                from date_helper import get_kst_now
-                
-                today_str = get_kst_now().strftime('%Y%m%d')
-                
                 for existing_row in existing_active_rows:
                     existing_rec_id = existing_row[0] if isinstance(existing_row, (list, tuple)) else existing_row.get('recommendation_id')
-                    existing_anchor_date = existing_row[1] if isinstance(existing_row, (list, tuple)) else existing_row.get('anchor_date')
-                    existing_anchor_close = existing_row[2] if isinstance(existing_row, (list, tuple)) else existing_row.get('anchor_close')
-                    existing_strategy = existing_row[3] if isinstance(existing_row, (list, tuple)) and len(existing_row) > 3 else existing_row.get('strategy')
-                    
-                    # 전략별 TTL 설정
-                    ttl_days = 20  # 기본값
-                    if existing_strategy == "v2_lite":
-                        # v2_lite: holding_period = 14일 (약 10거래일), 여유분 포함하여 15거래일
-                        ttl_days = 15
-                    elif existing_strategy == "midterm":
-                        # midterm: holding_periods = [10, 15, 20] (최대 20거래일), 여유분 포함하여 25거래일
-                        ttl_days = 25
-                    
-                    # 거래일 계산 (TTL 체크용)
-                    trading_days = 0
-                    archive_reason = 'REPLACED'  # 기본값
-                    
-                    if existing_anchor_date:
-                        try:
-                            trading_days = get_trading_days_since(existing_anchor_date)
-                            # TTL 체크: 전략별 TTL 이상이면 TTL_EXPIRED로 설정
-                            if trading_days >= ttl_days:
-                                archive_reason = 'TTL_EXPIRED'
-                            else:
-                                archive_reason = 'REPLACED'
-                        except Exception as e:
-                            logger.warning(f"[create_recommendation_transaction] 거래일 계산 실패 (ticker={ticker}): {e}")
-                    
-                    # 현재 가격 조회 (archive_return_pct 계산 및 손절 조건 체크용)
-                    archive_return_pct = None
-                    archive_price = None
-                    archive_phase = None
-                    current_return = None
-                    stop_loss_pct = None  # 변수 스코프 문제 해결
-                    
-                    # 전략별 손절 기준 설정 (try 블록 밖에서)
-                    stop_loss = 0.02  # 기본값
-                    if existing_strategy == "v2_lite":
-                        stop_loss = 0.02
-                    elif existing_strategy == "midterm":
-                        stop_loss = 0.07
-                    stop_loss_pct = -abs(float(stop_loss) * 100)
-                    
-                    try:
-                        # 전이 시점의 정확한 가격 조회 (today_str 기준)
-                        df_today = api.get_ohlcv(ticker, 10, today_str)
-                        if not df_today.empty:
-                            # today_str과 일치하는 행 찾기 (정확한 날짜의 가격 사용)
-                            current_price = None
-                            actual_price_date = today_str
-                            
-                            if 'date' in df_today.columns:
-                                df_today['date_str'] = df_today['date'].astype(str).str.replace('-', '').str[:8]
-                                df_filtered = df_today[df_today['date_str'] == today_str]
-                                if not df_filtered.empty:
-                                    current_price = float(df_filtered.iloc[-1]['close'])
-                                    actual_price_date = today_str
-                                else:
-                                    # 정확히 일치하는 날짜가 없으면 가장 가까운 이전 거래일 데이터 사용
-                                    df_sorted = df_today.sort_values('date_str')
-                                    df_before = df_sorted[df_sorted['date_str'] <= today_str]
-                                    if not df_before.empty:
-                                        current_price = float(df_before.iloc[-1]['close'])
-                                        actual_price_date = df_before.iloc[-1]['date_str']
-                                    else:
-                                        # 마지막 행 사용
-                                        current_price = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                                        if 'date_str' in df_today.columns:
-                                            actual_price_date = df_today.iloc[-1]['date_str']
-                            else:
-                                # date 컬럼이 없으면 마지막 행 사용 (base_dt 이하의 최근 데이터)
-                                current_price = float(df_today.iloc[-1]['close']) if 'close' in df_today.columns else float(df_today.iloc[-1].values[0])
-                            
-                            # archive_return_pct 계산 (전이 시점의 정확한 가격 사용)
-                            if existing_anchor_close and existing_anchor_close > 0 and current_price:
-                                current_return = round(((current_price - float(existing_anchor_close)) / float(existing_anchor_close)) * 100, 2)
-                                archive_return_pct = current_return
-                                archive_price = current_price
-                                
-                                # 로그: 실제 가격이 조회된 날짜 확인
-                                if actual_price_date != today_str:
-                                    logger.debug(f"[create_recommendation_transaction] {ticker}: 요청일({today_str})의 데이터가 없어 {actual_price_date} 날짜의 가격 사용")
-                                
-                                # 손절 조건 도달 시 NO_MOMENTUM으로 변경
-                                if current_return <= stop_loss_pct:
-                                    archive_reason = 'NO_MOMENTUM'
-                                    logger.info(f"[create_recommendation_transaction] 손절 조건 도달 → NO_MOMENTUM: {ticker}, current_return={current_return:.2f}%, stop_loss={stop_loss_pct:.2f}%")
-                                
-                                # archive_phase 결정
-                                if archive_return_pct > 2:
-                                    archive_phase = 'PROFIT'
-                                elif archive_return_pct < -2:
-                                    archive_phase = 'LOSS'
-                                else:
-                                    archive_phase = 'FLAT'
-                    except Exception as e:
-                        logger.warning(f"[create_recommendation_transaction] 현재 가격 조회 실패 (ticker={ticker}): {e}")
-                    
-                    # 손절 조건 만족 시 BROKEN 정보 설정
-                    broken_at = None
-                    broken_return_pct = None
-                    if current_return is not None and stop_loss_pct is not None and current_return <= stop_loss_pct:
-                        broken_at = today_str
-                        broken_return_pct = current_return
-                        logger.info(f"[create_recommendation_transaction] 손절 조건 만족 → BROKEN 정보 설정: {ticker}, broken_at={broken_at}, broken_return_pct={broken_return_pct:.2f}%")
-                        # 정책: broken_return_pct를 archive_return_pct로 사용
-                        archive_return_pct = broken_return_pct
-                        # archive_price 재계산
-                        if existing_anchor_close:
-                            anchor_close_float = float(existing_anchor_close)
-                            archive_price = round(anchor_close_float * (1 + archive_return_pct / 100), 0)
-                    
-                    # REPLACED 상태로 전이 (archive 정보 포함)
-                    # 손절 조건 도달 시에도 REPLACED로 전환하되, archive_reason은 NO_MOMENTUM으로 설정
-                    # BROKEN 정보도 함께 저장 (broken_at, broken_return_pct)
-                    # 정책: broken_return_pct가 있으면 archive_return_pct로 사용
                     cur.execute("""
-                        UPDATE recommendations
-                        SET status = 'REPLACED',
-                            replaced_by_recommendation_id = %s,
-                            archived_at = NOW(),
-                            archive_reason = %s,
-                            broken_at = %s,
-                            broken_return_pct = %s,
-                            archive_return_pct = %s,
-                            archive_price = %s,
-                            archive_phase = %s,
-                            updated_at = NOW(),
-                            status_changed_at = NOW()
-                        WHERE recommendation_id = %s
-                    """, (new_id, archive_reason, broken_at, broken_return_pct, archive_return_pct, archive_price, archive_phase, existing_rec_id))
+                        INSERT INTO recommendation_state_events (
+                            event_id, recommendation_id, from_status, to_status, reason_code, reason_text
+                        )
+                        VALUES (
+                            gen_random_uuid(), %s, 'ACTIVE', 'ACTIVE', 'REPEAT_SIGNAL', 'REPEAT_SIGNAL'
+                        )
+                    """, (existing_rec_id,))
+                logger.info(f"[create_recommendation_transaction] 기존 ACTIVE 유지, REPEAT_SIGNAL 기록: {ticker}")
+                return None
             
-            replaced_count = len(existing_active_rows) if existing_active_rows else 0
-            
-            replaced_count = cur.rowcount
-            if replaced_count > 0:
-                logger.info(f"[create_recommendation_transaction] 기존 ACTIVE {replaced_count}개를 REPLACED로 전환: {ticker}")
+            new_id = uuid.uuid4()
             
             # (B) 신규 추천 이벤트 생성 (ACTIVE)
             # 기존 REPLACED 추천의 ID를 찾아서 replaces_recommendation_id에 설정
@@ -380,7 +246,7 @@ def transition_recommendation_status_transaction(
                 # reason_code를 정확한 값으로 검증
                 if reason_code and isinstance(reason_code, str):
                     broken_reason = reason_code.upper().strip()
-                    if broken_reason not in ['TTL_EXPIRED', 'NO_MOMENTUM', 'MANUAL_ARCHIVE']:
+                    if broken_reason not in ['TTL_EXPIRED', 'NO_MOMENTUM', 'NO_PERFORMANCE', 'MANUAL_ARCHIVE']:
                         # 기본값: NO_MOMENTUM (손절 조건 도달)
                         broken_reason = 'NO_MOMENTUM'
                 else:
@@ -388,20 +254,38 @@ def transition_recommendation_status_transaction(
                     broken_reason = 'NO_MOMENTUM'
                 
                 # broken_return_pct 계산 (종료 시점 고정)
+                # 정책: broken_return_pct는 broken_at 시점의 실제 종가로 계산한 손해율
+                # 손절 기준(-7%)에 도달했다는 것은 조건이지만, 실제 손해율은 그 시점의 종가로 계산
+                # - NO_MOMENTUM: broken_at 시점의 실제 수익률 사용
+                # - NO_PERFORMANCE: 실제 수익률 사용 (무성과 종료)
+                # - TTL_EXPIRED: TTL 시점 수익률 사용
                 broken_return_pct = None
                 if metadata and metadata.get('current_return') is not None:
+                    # current_return은 broken_at 시점의 실제 수익률
                     broken_return_pct = round(float(metadata.get('current_return')), 2)
+                elif metadata and metadata.get('actual_return') is not None:
+                    # actual_return이 있으면 사용 (broken_at 시점의 실제 수익률)
+                    broken_return_pct = round(float(metadata.get('actual_return')), 2)
                 elif metadata and metadata.get('current_price') is not None and metadata.get('anchor_close') is not None:
                     current_price = float(metadata.get('current_price'))
                     anchor_close = float(metadata.get('anchor_close'))
                     if anchor_close > 0:
+                        # broken_at 시점의 종가로 계산
                         broken_return_pct = round(((current_price - anchor_close) / anchor_close) * 100, 2)
                 
                 # BROKEN 전환 시 broken_at 설정 (정책 준수)
                 broken_at = None
                 if to_status == 'BROKEN':
-                    from date_helper import get_kst_now
-                    broken_at = get_kst_now().strftime('%Y%m%d')
+                    # metadata에서 broken_at이 전달되면 사용 (TTL_EXPIRED의 경우 실제 TTL 만료일)
+                    # 없으면 오늘 날짜 사용 (NO_MOMENTUM의 경우)
+                    if metadata and metadata.get('broken_at'):
+                        broken_at = metadata.get('broken_at')
+                        # YYYY-MM-DD 형식이면 YYYYMMDD로 변환
+                        if isinstance(broken_at, str) and '-' in broken_at:
+                            broken_at = broken_at.replace('-', '')[:8]
+                    else:
+                        from date_helper import get_kst_now
+                        broken_at = get_kst_now().strftime('%Y%m%d')
                 
                 cur.execute("""
                     UPDATE recommendations
@@ -694,4 +578,3 @@ def check_duplicate_active_recommendations() -> List[Dict]:
         import traceback
         logger.error(traceback.format_exc())
         return []
-

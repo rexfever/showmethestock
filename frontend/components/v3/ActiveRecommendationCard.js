@@ -10,7 +10,6 @@
 
 import { useRouter } from 'next/router';
 import { STATUS_COLOR_CLASSES, BACKEND_STATUS, STATUS_TO_UX } from '../../utils/v3StatusMapping';
-import { StrategyLabel } from '../../utils/strategyLabelUtils';
 
 export default function ActiveRecommendationCard({ item, isNew = false }) {
   const router = useRouter();
@@ -19,7 +18,7 @@ export default function ActiveRecommendationCard({ item, isNew = false }) {
     return null;
   }
 
-  const { ticker, name, recommendation_id, id, current_return, return_pct, returns, strategy } = item;
+  const { ticker, name, recommendation_id, id, current_return, return_pct, returns } = item;
   const recId = recommendation_id || id;
   
   // 수익률 계산 (보조 정보로만 표시)
@@ -75,9 +74,6 @@ export default function ActiveRecommendationCard({ item, isNew = false }) {
       onClick={handleClick}
       className={`${colors.cardBg} ${colors.cardBorder} border-2 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow`}
     >
-      {/* 전략 라벨 (본문 위) */}
-      <StrategyLabel strategy={strategy} />
-      
       {/* 상단: 종목명 + 현재 손익률 */}
       <div className="flex items-start justify-between mb-3">
         {/* 종목명 */}
@@ -118,5 +114,4 @@ export default function ActiveRecommendationCard({ item, isNew = false }) {
     </div>
   );
 }
-
 

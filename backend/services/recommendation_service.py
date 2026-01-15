@@ -392,13 +392,14 @@ def create_recommendation(
                 # 상태 변경 이벤트 기록
                 cur.execute("""
                     INSERT INTO recommendation_state_events (
-                        recommendation_id, from_status, to_status, reason, metadata
-                    ) VALUES (%s, %s, %s, %s, %s)
+                        recommendation_id, from_status, to_status, reason_code, reason_text, metadata
+                    ) VALUES (%s, %s, %s, %s, %s, %s)
                 """, (
                     existing_rec_id,
                     'ACTIVE',
                     'ARCHIVED',
-                    'REPLACED',
+                    archive_reason,  # reason_code
+                    archive_reason,  # reason_text (동일 값 사용)
                     json.dumps({
                         "new_recommendation_date": scan_date,
                         "archive_return_pct": archive_return_pct,
@@ -442,13 +443,14 @@ def create_recommendation(
             # 상태 변경 이벤트 기록 (생성)
             cur.execute("""
                 INSERT INTO recommendation_state_events (
-                    recommendation_id, from_status, to_status, reason, metadata
-                ) VALUES (%s, %s, %s, %s, %s)
+                    recommendation_id, from_status, to_status, reason_code, reason_text, metadata
+                ) VALUES (%s, %s, %s, %s, %s, %s)
             """, (
                 new_rec_id,
                 None,
                 'ACTIVE',
-                '새 추천 생성',
+                'RECOMMEND_CREATED',  # reason_code
+                '새 추천 생성',  # reason_text
                 json.dumps({"scan_date": scan_date, "anchor_date": anchor_date_str}, ensure_ascii=False)
             ))
             
@@ -552,6 +554,7 @@ def get_active_recommendations_list(user_id: Optional[int] = None) -> List[Dict]
                     )
                     WHERE r.status IN ('ACTIVE', 'WEAK_WARNING')
                     AND r.scanner_version = 'v3'
+                    AND r.strategy != 'v2_lite'
                     ORDER BY r.anchor_date DESC, r.ticker
                 """, (user_id,))
             else:
@@ -566,6 +569,7 @@ def get_active_recommendations_list(user_id: Optional[int] = None) -> List[Dict]
                     FROM recommendations
                     WHERE status IN ('ACTIVE', 'WEAK_WARNING')
                     AND scanner_version = 'v3'
+                    AND strategy != 'v2_lite'
                     ORDER BY anchor_date DESC, ticker
                 """)
             
@@ -854,6 +858,7 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                     )
                     WHERE r.status IN ('WEAK_WARNING', 'BROKEN')
                     AND r.scanner_version = 'v3'
+                    AND r.strategy != 'v2_lite'
                     ORDER BY 
                         CASE r.status
                             WHEN 'BROKEN' THEN 1
@@ -874,6 +879,7 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                     FROM recommendations
                     WHERE status IN ('WEAK_WARNING', 'BROKEN')
                     AND scanner_version = 'v3'
+                    AND strategy != 'v2_lite'
                     ORDER BY 
                         CASE status
                             WHEN 'BROKEN' THEN 1
@@ -1020,6 +1026,24 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                     except:
                         item["details"] = {}
                 
+                # BROKEN 항목의 reason과 flags.broken_reason 동기화
+                # reason 컬럼이 있으면 flags.broken_reason을 업데이트
+                # flags.broken_reason이 있으면 reason을 업데이트 (reason이 없는 경우)
+                if item.get("status") == "BROKEN":
+                    reason = item.get("reason")
+                    flags = item.get("flags", {})
+                    if isinstance(flags, dict):
+                        broken_reason = flags.get("broken_reason")
+                        
+                        # reason이 있고 flags.broken_reason과 다르면 flags 업데이트
+                        if reason and broken_reason and broken_reason != reason:
+                            flags["broken_reason"] = reason
+                            item["flags"] = flags
+                        
+                        # reason이 없고 flags.broken_reason이 있으면 reason 업데이트
+                        elif not reason and broken_reason:
+                            item["reason"] = broken_reason
+                
                 # ticker 수집 (name이 NULL이거나 빈 문자열인 경우만)
                 if item.get("ticker") and (not item.get("name") or (isinstance(item.get("name"), str) and not item.get("name").strip())):
                     tickers_for_name.add(item["ticker"])
@@ -1145,25 +1169,43 @@ def get_needs_attention_recommendations_list(user_id: Optional[int] = None) -> L
                     if not item["name"]:
                         logger.warning(f"[get_needs_attention_recommendations_list] 종목명 조회 실패: ticker={item['ticker']}")
                 
-                # 수익률 계산: BROKEN 상태일 때 두 가지 손익률 제공
+                # 수익률 계산: BROKEN 상태일 때 정책에 맞는 수익률 사용
                 if item.get("status") == "BROKEN":
-                    # 1. 판단 당시 손익률 (종료 시점 고정)
+                    # 정책: broken_return_pct가 있으면 그것을 current_return으로 사용 (종료 시점 고정)
+                    # NO_MOMENTUM: broken_at 날짜의 수익률
+                    # TTL_EXPIRED: TTL 만료일의 수익률
                     if item.get("broken_return_pct") is not None:
-                        item["broken_return_pct"] = item["broken_return_pct"]  # 이미 있음
+                        # broken_return_pct를 current_return으로 사용 (정책 준수)
+                        item["current_return"] = round(float(item["broken_return_pct"]), 2)
+                        item["broken_return_pct"] = item["broken_return_pct"]  # 원본 유지
                     else:
+                        # broken_return_pct가 없으면 현재 시점 계산 (fallback)
                         item["broken_return_pct"] = None
-                    
-                    # 2. 현재 시점 손익률 (실시간 계산)
-                    if item.get("ticker") and item.get("anchor_close") and item.get("anchor_close") > 0:
-                        today_close = ticker_to_today_close.get(item["ticker"])
-                        if today_close:
-                            anchor_close = float(item["anchor_close"])
-                            current_return = ((today_close - anchor_close) / anchor_close) * 100
-                            item["current_return"] = round(current_return, 2)
+                        if item.get("ticker") and item.get("anchor_close") and item.get("anchor_close") > 0:
+                            today_close = ticker_to_today_close.get(item["ticker"])
+                            if today_close:
+                                anchor_close = float(item["anchor_close"])
+                                current_return = ((today_close - anchor_close) / anchor_close) * 100
+                                item["current_return"] = round(current_return, 2)
+                            else:
+                                item["current_return"] = None
                         else:
                             item["current_return"] = None
-                    else:
-                        item["current_return"] = None
+                    
+                    # 실제 수익률 추가 (flags에서 추출)
+                    # NO_MOMENTUM인 경우 실제 가격 하락률이 손절 기준보다 클 수 있음
+                    flags = item.get("flags", {})
+                    if isinstance(flags, dict):
+                        actual_return = flags.get("broken_anchor_return")
+                        if actual_return is not None:
+                            item["actual_return"] = round(float(actual_return), 2)
+                        else:
+                            # metadata에서 actual_return 확인
+                            metadata = flags.get("metadata") or {}
+                            if isinstance(metadata, dict):
+                                actual_return_meta = metadata.get("actual_return")
+                                if actual_return_meta is not None:
+                                    item["actual_return"] = round(float(actual_return_meta), 2)
                     
                     # 3. ARCHIVED 전이까지 남은 거래일 계산 (BROKEN은 1거래일 후 ARCHIVED로 전이)
                     try:
@@ -1246,7 +1288,7 @@ def get_archived_recommendations_list(user_id: Optional[int] = None, limit: Opti
                         recommendation_id, ticker, name, status, anchor_date, anchor_close,
                         strategy, scanner_version, score, score_label,
                         indicators, flags, details,
-                        created_at, updated_at, archived_at, archive_reason, archive_return_pct
+                        created_at, updated_at, broken_at, archived_at, archive_reason, archive_return_pct, broken_return_pct
                     FROM recommendations
                     WHERE status = 'ARCHIVED'
                     AND scanner_version = 'v3'
@@ -1270,8 +1312,8 @@ def get_archived_recommendations_list(user_id: Optional[int] = None, limit: Opti
                     if 'recommendation_id' in item and 'id' not in item:
                         item['id'] = str(item['recommendation_id'])
                 else:
-                    # name 컬럼이 있는 경우 (18개 컬럼: archive_at, archive_reason, archive_return_pct 포함)
-                    if len(row) >= 18:
+                    # name 컬럼이 있는 경우 (20개 컬럼: broken_at, archived_at, archive_reason, archive_return_pct, broken_return_pct 포함)
+                    if len(row) >= 20:
                         item = {
                             "id": str(row[0]),
                             "recommendation_id": str(row[0]),
@@ -1289,9 +1331,36 @@ def get_archived_recommendations_list(user_id: Optional[int] = None, limit: Opti
                             "details": row[12],
                             "created_at": row[13],
                             "updated_at": row[14],
+                            "broken_at": row[15] if len(row) > 15 else None,
+                            "archived_at": row[16] if len(row) > 16 else None,
+                            "archive_reason": row[17] if len(row) > 17 else None,
+                            "archive_return_pct": float(row[18]) if len(row) > 18 and row[18] is not None else None,
+                            "broken_return_pct": float(row[19]) if len(row) > 19 and row[19] is not None else None
+                        }
+                    elif len(row) >= 18:
+                        # 하위 호환: broken_at과 broken_return_pct가 없는 경우
+                        item = {
+                            "id": str(row[0]),
+                            "recommendation_id": str(row[0]),
+                            "ticker": row[1],
+                            "name": row[2],  # name 컬럼
+                            "status": row[3],  # status는 row[3]
+                            "anchor_date": row[4],
+                            "anchor_close": row[5],
+                            "strategy": row[6],
+                            "scanner_version": row[7],
+                            "score": row[8],
+                            "score_label": row[9],
+                            "indicators": row[10],
+                            "flags": row[11],
+                            "details": row[12],
+                            "created_at": row[13],
+                            "updated_at": row[14],
+                            "broken_at": None,
                             "archived_at": row[15] if len(row) > 15 else None,
                             "archive_reason": row[16] if len(row) > 16 else None,
-                            "archive_return_pct": float(row[17]) if len(row) > 17 and row[17] is not None else None
+                            "archive_return_pct": float(row[17]) if len(row) > 17 and row[17] is not None else None,
+                            "broken_return_pct": None
                         }
                     elif len(row) >= 16:  # name 컬럼이 있지만 archive 필드 없음 (하위 호환)
                         item = {
@@ -1357,6 +1426,21 @@ def get_archived_recommendations_list(user_id: Optional[int] = None, limit: Opti
                         item["details"] = json.loads(item["details"])
                     except:
                         item["details"] = {}
+                
+                # 실제 수익률 추가 (flags에서 추출)
+                # NO_MOMENTUM인 경우 실제 가격 하락률이 손절 기준보다 클 수 있음
+                flags = item.get("flags", {})
+                if isinstance(flags, dict):
+                    actual_return = flags.get("broken_anchor_return")
+                    if actual_return is not None:
+                        item["actual_return"] = round(float(actual_return), 2)
+                    else:
+                        # metadata에서 actual_return 확인
+                        metadata = flags.get("metadata") or {}
+                        if isinstance(metadata, dict):
+                            actual_return_meta = metadata.get("actual_return")
+                            if actual_return_meta is not None:
+                                item["actual_return"] = round(float(actual_return_meta), 2)
                 
                 # ticker 수집 (name이 NULL이거나 빈 문자열인 경우만)
                 if item.get("ticker") and (not item.get("name") or (isinstance(item.get("name"), str) and not item.get("name").strip())):
@@ -1624,6 +1708,24 @@ def get_recommendation_by_id(recommendation_id: int, user_id: Optional[int] = No
                 except:
                     item["details"] = {}
             
+            # BROKEN 항목의 reason과 flags.broken_reason 동기화
+            # reason 컬럼이 있으면 flags.broken_reason을 업데이트
+            # flags.broken_reason이 있으면 reason을 업데이트 (reason이 없는 경우)
+            if item.get("status") == "BROKEN":
+                reason = item.get("reason")
+                flags = item.get("flags", {})
+                if isinstance(flags, dict):
+                    broken_reason = flags.get("broken_reason")
+                    
+                    # reason이 있고 flags.broken_reason과 다르면 flags 업데이트
+                    if reason and broken_reason != reason:
+                        flags["broken_reason"] = reason
+                        item["flags"] = flags
+                    
+                    # reason이 없고 flags.broken_reason이 있으면 reason 업데이트
+                    elif not reason and broken_reason:
+                        item["reason"] = broken_reason
+            
             return item
             
     except Exception as e:
@@ -1631,4 +1733,3 @@ def get_recommendation_by_id(recommendation_id: int, user_id: Optional[int] = No
         import traceback
         logger.error(traceback.format_exc())
         return None
-

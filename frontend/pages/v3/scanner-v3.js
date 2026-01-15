@@ -52,7 +52,7 @@ const STORAGE_KEYS = {
   AUTO_EXPAND_ACTIVE_LAST_DATE: 'v3.autoExpand.active.lastDate'
 };
 
-export default function ScannerV3({ initialData, initialScanDate, initialMarketCondition, initialV3CaseInfo, initialDailyDigest, initialArchivedCount }) {
+export default function ScannerV3({ initialData, initialScanDate, initialMarketCondition, initialV3CaseInfo, initialDailyDigest, initialWeeklyDigest, initialArchivedCount }) {
   const router = useRouter();
   
   // 상태 기반 데이터 구조: items 배열을 상태별로 분류
@@ -78,6 +78,7 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [dailyDigest, setDailyDigest] = useState(initialDailyDigest || null);
+  const [weeklyDigest, setWeeklyDigest] = useState(initialWeeklyDigest || null);
   
   // 자동 펼침이 이미 실행되었는지 추적 (무한 루프 방지)
   const autoExpandExecuted = useRef({ broken: false, active: false });
@@ -238,22 +239,95 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
       return tickerA.localeCompare(tickerB);
     });
     
-    // 오늘 생성된 추천 이벤트 확인 (anchor_date가 오늘)
-    active.forEach(item => {
-      if (item.anchor_date && isToday(item.anchor_date)) {
-        todayRecommendationsList.push(item);
-        // 요약 영역용: 신규 추천 종목 (모든 항목 추가)
-        if (item.status === BACKEND_STATUS.ACTIVE || item.status === BACKEND_STATUS.WEAK_WARNING) {
-          summaryNewItems.push(item);
+    // 오늘 생성된 추천 이벤트 확인
+    // daily_digest.new_items 우선 사용 (서버에서 계산된 신규 추천 목록)
+    if (dailyDigest && dailyDigest.new_items && Array.isArray(dailyDigest.new_items) && dailyDigest.new_items.length > 0) {
+      dailyDigest.new_items.forEach(newItem => {
+        const ticker = newItem.ticker;
+        const name = newItem.name;
+        if (ticker) {
+          // items 배열에서 해당 항목 찾기 (전체 items에서 검색)
+          const foundItem = items.find(item => item && item.ticker === ticker);
+          if (foundItem) {
+            // items에 있으면 그대로 사용
+            summaryNewItems.push(foundItem);
+            // active 배열에도 있으면 todayRecommendationsList에 추가
+            const activeItem = active.find(item => item.ticker === ticker);
+            if (activeItem) {
+              todayRecommendationsList.push(activeItem);
+            }
+          } else {
+            // items에 없으면 new_items 정보로 객체 생성 (name 필수)
+            const newItemObj = {
+              ticker: ticker,
+              name: name || ticker, // name이 없으면 ticker 사용
+              anchor_date: new Date().toISOString().split('T')[0],
+              status: BACKEND_STATUS.ACTIVE,
+              recommendation_id: `new_${ticker}`, // 임시 ID
+              id: `new_${ticker}` // 임시 ID
+            };
+            summaryNewItems.push(newItemObj);
+          }
         }
-      }
-    });
+      });
+    } else {
+      // daily_digest.new_items가 없으면 기존 로직 사용 (fallback)
+      active.forEach(item => {
+        if (item.anchor_date && isToday(item.anchor_date)) {
+          todayRecommendationsList.push(item);
+          // 요약 영역용: 신규 추천 종목 (모든 항목 추가)
+          if (item.status === BACKEND_STATUS.ACTIVE || item.status === BACKEND_STATUS.WEAK_WARNING) {
+            summaryNewItems.push(item);
+          }
+        }
+      });
+    }
     
-    // 요약 영역용: 변화된 추천 확인 (status_changed_at이 오늘인 BROKEN/WEAK_WARNING)
+    // 요약 영역용: 변화된 추천 확인
+    // 정책: BROKEN 발생 시점에 1일간만 노출
+    // broken_at 기준으로 필터링 (실제 변화 발생일)
+    // 백필 항목 제외: broken_at과 status_changed_at의 차이가 1거래일 이내인 항목만 표시
     const allItems = [...broken, ...active];
     for (const item of allItems) {
-      if (item.status_changed_at && isTimestampToday(item.status_changed_at)) {
-        if (item.status === BACKEND_STATUS.BROKEN || item.status === BACKEND_STATUS.WEAK_WARNING) {
+      if (item.status === BACKEND_STATUS.BROKEN || item.status === BACKEND_STATUS.WEAK_WARNING) {
+        let isChangedToday = false;
+        
+        // broken_at이 있으면 broken_at 기준으로 확인 (실제 변화 발생일)
+        if (item.broken_at) {
+          let brokenDate = null;
+          if (typeof item.broken_at === 'string') {
+            if (item.broken_at.length === 8) {
+              // YYYYMMDD 형식
+              brokenDate = `${item.broken_at.slice(0, 4)}-${item.broken_at.slice(4, 6)}-${item.broken_at.slice(6, 8)}`;
+            } else if (item.broken_at.includes('-')) {
+              // ISO 형식
+              brokenDate = item.broken_at.slice(0, 10);
+            }
+          }
+          if (brokenDate) {
+            isChangedToday = isToday(brokenDate);
+            
+            // 백필 항목 제외: broken_at과 status_changed_at의 차이가 1거래일 이내인지 확인
+            if (isChangedToday && item.status_changed_at) {
+              const brokenDateObj = new Date(brokenDate);
+              const changedDateStr = item.status_changed_at.slice(0, 10);
+              const changedDateObj = new Date(changedDateStr);
+              const diffDays = Math.abs((changedDateObj - brokenDateObj) / (1000 * 60 * 60 * 24));
+              
+              // 차이가 2일 이상이면 백필 항목으로 간주하여 제외
+              if (diffDays > 2) {
+                isChangedToday = false;
+              }
+            }
+          }
+        }
+        
+        // broken_at이 없거나 오늘이 아닌 경우, status_changed_at 확인 (fallback)
+        if (!isChangedToday && item.status_changed_at) {
+          isChangedToday = isTimestampToday(item.status_changed_at);
+        }
+        
+        if (isChangedToday) {
           summaryChangedItems.push(item);
         }
       }
@@ -309,7 +383,7 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
       summaryNewItems: summaryNewItems, // 요약: 신규 추천 종목 리스트
       summaryChangedItems: summaryChangedItems // 요약: 변화된 추천 종목 리스트
     };
-  }, [items, activeExpanded]);
+  }, [items, activeExpanded, dailyDigest]);
   
   // ACTIVE 기본 접힘 상태 결정 (항상 접힘으로 시작)
   // 초기 렌더링 시에만 실행 (localStorage에 값이 없을 때만)
@@ -348,6 +422,36 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
   
   const handleActiveCollapse = useCallback(() => {
     setActiveExpanded(false);
+  }, []);
+
+  const formatWeekRange = useCallback((weekStart, weekEnd) => {
+    if (!weekStart || !weekEnd) return '';
+    const format = (dateStr) => {
+      const base = String(dateStr).split('T')[0];
+      const parts = base.split('-');
+      if (parts.length < 3) return '';
+      const month = Number(parts[1]);
+      const day = Number(parts[2]);
+      if (!month || !day) return '';
+      return `${month}/${day}`;
+    };
+    const startLabel = format(weekStart);
+    const endLabel = format(weekEnd);
+    if (!startLabel || !endLabel) return '';
+    return `${startLabel}–${endLabel}`;
+  }, []);
+
+  const formatDigestDateLabel = useCallback((dateStr) => {
+    const base = dateStr ? String(dateStr).split('T')[0] : null;
+    const parts = base ? base.split('-') : [];
+    if (parts.length >= 3) {
+      return `${parts[0]}년${parts[1]}월${parts[2]}일`;
+    }
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}년${month}월${day}일`;
   }, []);
   
 
@@ -474,6 +578,9 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
       if (activeData.daily_digest) {
         setDailyDigest(activeData.daily_digest);
       }
+      if (activeData.weekly_digest) {
+        setWeeklyDigest(activeData.weekly_digest);
+      }
       
       console.log('[fetchRecommendations] API 응답:', {
         activeOk: activeData.ok,
@@ -481,7 +588,8 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
         needsAttentionOk: needsAttentionData.ok,
         needsAttentionCount: needsAttentionData.data?.items?.length || 0,
         archivedCount: archivedCount,
-        dailyDigest: activeData.daily_digest
+        dailyDigest: activeData.daily_digest,
+        weeklyDigest: activeData.weekly_digest
       });
       
       // API 응답 형식 처리
@@ -544,9 +652,12 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
       });
       
           // 방어적 status 필터: ACTIVE, WEAK_WARNING, BROKEN만 허용 (ARCHIVED, REPLACED 제외)
+          // v2_lite는 UI에서 숨김 (백데이터로만 저장)
           const filteredItems = allItems
             .filter(item => {
               if (!item || item.ticker === 'NORESULT') return false;
+              // v2_lite는 UI에서 숨김
+              if (item.strategy === 'v2_lite') return false;
               // REPLACED는 절대 노출하지 않음
               if (item.status === BACKEND_STATUS.REPLACED) return false;
               // ARCHIVED는 메인 화면에서 제외
@@ -746,15 +857,17 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
           <div className="space-y-0">
             {/* 요약 영역 */}
             <div>
-              <div className="px-4">
-                {/* 통합 요약 카드 */}
+              <div className="px-4 space-y-4">
+                <div className="text-lg text-[#111827]">
+                  {formatDigestDateLabel(dailyDigest?.date_kst)} 추천 현황
+                </div>
+                {/* 통합 요약 카드 - 오늘의 변화 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-[14px] p-5 relative overflow-hidden shadow-sm">
-                  {/* 상단 톤 바 - 카드 상단의 얇은 색상 바 (시각적 앵커) */}
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-blue-300 rounded-t-[14px]"></div>
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-300 rounded-t-[14px]"></div>
                   
                   {/* 1) 신규 추천 */}
                   <div className="pb-4">
-                    <div className="text-lg text-[#111827] mb-2">신규 추천</div>
+                    <div className="text-sm text-[#6B7280] mb-2">신규 추천 종목</div>
                     {summaryNewItems.length > 0 ? (
                       <div className="space-y-1.5">
                         {summaryNewItems.map((item) => (
@@ -792,7 +905,7 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
 
                   {/* 2) 변화된 추천 */}
                   <div>
-                    <div className="text-lg text-[#111827] mb-2">변화된 추천</div>
+                    <div className="text-sm text-[#6B7280] mb-2">상태 변화 종목</div>
                     {summaryChangedItems.length > 0 ? (
                       <div className="flex flex-wrap -m-1.5">
                         {summaryChangedItems.map((item) => (
@@ -827,8 +940,48 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
                         ))}
                       </div>
                     ) : (
-                      <div className="text-sm text-[#6B7280]">변화가 발생한 추천은 없습니다</div>
+                      <div className="text-sm text-[#6B7280]">오늘 변화된 추천은 없습니다</div>
                     )}
+                  </div>
+                </div>
+
+                <div className="text-lg text-[#111827] flex items-baseline justify-between">
+                  <span>주간 추천 현황</span>
+                  <span className="text-xs text-[#6B7280]">
+                    {weeklyDigest ? formatWeekRange(weeklyDigest.week_start, weeklyDigest.week_end) : ''}
+                  </span>
+                </div>
+                {/* 주간 추천 현황 카드 */}
+                <div className="bg-white border border-gray-200 rounded-[14px] p-5 shadow-sm">
+                  <div className="text-xs text-[#6B7280]">월–금 기준 유니크 종목 집계</div>
+                  <div className="grid grid-cols-3 gap-3 mt-4">
+                    <div className="bg-[#F8FAFC] rounded-lg px-3 py-2">
+                      <div className="text-xs text-[#6B7280]">신규 추천</div>
+                      <div className="text-lg font-semibold text-[#111827]">
+                        {weeklyDigest ? weeklyDigest.new_recommendations : 0}
+                      </div>
+                    </div>
+                    <div className="bg-[#F8FAFC] rounded-lg px-3 py-2">
+                      <div className="text-xs text-[#6B7280]">종료</div>
+                      <div className="text-lg font-semibold text-[#111827]">
+                        {weeklyDigest ? weeklyDigest.archived : 0}
+                      </div>
+                    </div>
+                    <div className="bg-[#F8FAFC] rounded-lg px-3 py-2">
+                      <div className="text-xs text-[#6B7280]">재추천</div>
+                      <div className="text-lg font-semibold text-[#111827]">
+                        {weeklyDigest ? weeklyDigest.repeat_signals : 0}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => router.push('/v3/weekly-summary')}
+                      className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                    >
+                      상세 보기
+                    </button>
                   </div>
                 </div>
               </div>
@@ -898,44 +1051,11 @@ export default function ScannerV3({ initialData, initialScanDate, initialMarketC
               )}
             </div>
 
-            {/* ARCHIVED 진입 행 (관리 필요 영역 바로 아래) */}
-            {archivedCount > 0 && (
-              <div className="bg-white border-b border-gray-200">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('[ScannerV3] ARCHIVED 진입 행 클릭:', { archivedCount, router: !!router });
-                    
-                    // window.location.href를 직접 사용 (가장 확실한 방법)
-                    const targetUrl = '/archived';
-                    console.log('[ScannerV3] 네비게이션 시작:', targetUrl);
-                    window.location.href = targetUrl;
-                  }}
-                  className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer active:bg-gray-100 relative z-10"
-                  style={{ pointerEvents: 'auto', position: 'relative' }}
-                >
-                  <span className="text-sm text-gray-700">
-                    종료된 추천 보기 <span className="text-gray-900">({archivedCount})</span>
-                  </span>
-                  <svg 
-                    className="w-5 h-5 text-gray-400" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            )}
-
             {/* 유효한 추천 섹션 (ACTIVE) */}
             {activeItems.length > 0 && (
               <div className="bg-white border-b border-gray-200 mt-8">
                 <StatusSectionHeader
-                  title="현재 추천"
+                  title="유지 중인 추천"
                   count={activeItems.length}
                   isCollapsed={activeCollapsed}
                   onToggle={handleActiveToggle}
@@ -1056,6 +1176,7 @@ export async function getServerSideProps() {
     
     // daily_digest 추출 (activeData에서)
     const dailyDigest = activeData.daily_digest || null;
+    const weeklyDigest = activeData.weekly_digest || null;
     
     console.log('[SSR] API 응답:', {
       activeOk: activeData.ok,
@@ -1063,7 +1184,8 @@ export async function getServerSideProps() {
       needsAttentionOk: needsAttentionData.ok,
       needsAttentionCount: needsAttentionData.data?.items?.length || 0,
       archivedCount: archivedCount,
-      dailyDigest: dailyDigest
+      dailyDigest: dailyDigest,
+      weeklyDigest: weeklyDigest
     });
 
     if (activeData.ok && needsAttentionData.ok) {
@@ -1093,6 +1215,7 @@ export async function getServerSideProps() {
           initialMarketCondition: null, // recommendations 테이블에는 market_condition이 없음
           initialV3CaseInfo: null, // recommendations 테이블에는 v3_case_info가 없음
           initialDailyDigest: dailyDigest, // daily_digest 전달
+          initialWeeklyDigest: weeklyDigest, // weekly_digest 전달
           initialArchivedCount: archivedCount // ARCHIVED 개수 전달
         },
       };
@@ -1112,6 +1235,7 @@ export async function getServerSideProps() {
           initialMarketCondition: null,
           initialV3CaseInfo: null,
           initialDailyDigest: null,
+          initialWeeklyDigest: null,
           initialArchivedCount: 0,
         },
       };
@@ -1128,6 +1252,7 @@ export async function getServerSideProps() {
         initialMarketCondition: null,
         initialV3CaseInfo: null,
         initialDailyDigest: null,
+        initialWeeklyDigest: null,
         initialArchivedCount: 0,
       },
     };

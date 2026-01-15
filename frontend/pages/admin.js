@@ -19,6 +19,27 @@ export default function AdminDashboard() {
     if (!dateStr || dateStr.length !== 8) return '';
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
   };
+
+  const formatBytes = (bytes) => {
+    if (!bytes || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / Math.pow(1024, idx);
+    return `${value.toFixed(1)} ${units[idx]}`;
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('ko-KR');
+  };
+
+  const formatDateRange = (start, end) => {
+    if (!start && !end) return '-';
+    if (start && end) return `${start} ~ ${end}`;
+    return start || end || '-';
+  };
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +48,18 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [backtestScanner, setBacktestScanner] = useState('v3');
+  const [backtestStartDate, setBacktestStartDate] = useState('');
+  const [backtestEndDate, setBacktestEndDate] = useState('');
+  const [backtestLoading, setBacktestLoading] = useState(false);
+  const [backtestResult, setBacktestResult] = useState(null);
+  const [scanRangeScanner, setScanRangeScanner] = useState('v3');
+  const [scanRangeStartDate, setScanRangeStartDate] = useState('');
+  const [scanRangeEndDate, setScanRangeEndDate] = useState('');
+  const [scanRangeLoading, setScanRangeLoading] = useState(false);
+  const [scanRangeResult, setScanRangeResult] = useState(null);
+  const [cacheStatus, setCacheStatus] = useState([]);
+  const [cacheStatusLoading, setCacheStatusLoading] = useState(false);
   
   // 방문자 통계 상태
   const [dailyVisitorStats, setDailyVisitorStats] = useState([]);
@@ -392,6 +425,78 @@ export default function AdminDashboard() {
     }
   };
 
+  const runBacktest = async () => {
+    if (!backtestStartDate || !backtestEndDate) {
+      alert('시작일과 종료일을 입력하세요.');
+      return;
+    }
+    try {
+      setBacktestLoading(true);
+      setBacktestResult(null);
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/backtest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          scanner: backtestScanner,
+          start_date: convertToYYYYMMDD(backtestStartDate),
+          end_date: convertToYYYYMMDD(backtestEndDate)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || data.ok === false) {
+        alert(data.error || '백테스트 실행에 실패했습니다.');
+        return;
+      }
+      setBacktestResult(data);
+    } catch (error) {
+      console.error('백테스트 실행 실패:', error);
+      alert('백테스트 실행 중 오류가 발생했습니다.');
+    } finally {
+      setBacktestLoading(false);
+    }
+  };
+
+  const runScanRange = async () => {
+    if (!scanRangeStartDate || !scanRangeEndDate) {
+      alert('시작일과 종료일을 입력하세요.');
+      return;
+    }
+    try {
+      setScanRangeLoading(true);
+      setScanRangeResult(null);
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/scan-range`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          scanner: scanRangeScanner,
+          start_date: convertToYYYYMMDD(scanRangeStartDate),
+          end_date: convertToYYYYMMDD(scanRangeEndDate)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || data.ok === false) {
+        alert(data.error || '기간 스캔 실행에 실패했습니다.');
+        return;
+      }
+      setScanRangeResult(data);
+    } catch (error) {
+      console.error('기간 스캔 실행 실패:', error);
+      alert('기간 스캔 실행 중 오류가 발생했습니다.');
+    } finally {
+      setScanRangeLoading(false);
+    }
+  };
+
   const fetchScannerSettings = async () => {
     setScannerLoading(true);
     try {
@@ -557,7 +662,7 @@ export default function AdminDashboard() {
       const config = getConfig();
       const base = config.backendUrl;
 
-      const [statsResponse, usersResponse, maintenanceResponse, popupResponse] = await Promise.all([
+      const [statsResponse, usersResponse, maintenanceResponse, popupResponse, cacheResponse] = await Promise.all([
         fetch(`${base}/admin/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -574,6 +679,11 @@ export default function AdminDashboard() {
           }
         }),
         fetch(`${base}/admin/popup-notice`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${base}/admin/cache-status`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -621,10 +731,42 @@ export default function AdminDashboard() {
         handleAuthError();
         return;
       }
+
+      if (cacheResponse.ok) {
+        const cacheData = await cacheResponse.json();
+        setCacheStatus(cacheData.data || []);
+      } else if (cacheResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
     } catch (error) {
       console.error('관리자 데이터 로딩 오류:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCacheStatus = async () => {
+    setCacheStatusLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/cache-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const cacheData = await response.json();
+        setCacheStatus(cacheData.data || []);
+      } else if (response.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('캐시 현황 조회 실패:', error);
+    } finally {
+      setCacheStatusLoading(false);
     }
   };
 
@@ -1080,6 +1222,69 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* 캐시 현황 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">🧊 캐시 현황</h2>
+                <p className="text-sm text-gray-600">주요 캐시 디렉토리의 파일 수 및 최신 갱신 시간</p>
+              </div>
+              <button
+                onClick={fetchCacheStatus}
+                disabled={cacheStatusLoading}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {cacheStatusLoading ? '조회 중...' : '🔄 새로고침'}
+              </button>
+            </div>
+          </div>
+          <div className="px-6 py-4">
+            {cacheStatus.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">캐시</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">파일 수</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">용량</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">데이터 기간</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최신 갱신</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최초 갱신</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {cacheStatus.map((cacheItem) => (
+                      <tr key={cacheItem.name} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {cacheItem.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {cacheItem.file_count?.toLocaleString() || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatBytes(cacheItem.total_size_bytes)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatDateRange(cacheItem.data_start, cacheItem.data_end)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatDateTime(cacheItem.newest_mtime)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatDateTime(cacheItem.oldest_mtime)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">조회된 캐시 정보가 없습니다.</div>
+            )}
+          </div>
+        </div>
 
         {/* 방문자 통계 */}
         <div className="bg-white shadow rounded-lg mb-8">
@@ -1603,6 +1808,125 @@ export default function AdminDashboard() {
                 {scannerLoading ? '저장 중...' : '설정 저장'}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* 백테스트 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">백테스트</h2>
+            <p className="text-sm text-gray-600">기간/스캐너를 선택해 백테스트 리포트를 생성합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">스캐너</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={backtestScanner}
+                onChange={(e) => setBacktestScanner(e.target.value)}
+              >
+                <option value="v2">V2</option>
+                <option value="v3">V3</option>
+                <option value="v3_midterm">V3 - midterm</option>
+                <option value="v3_v2_lite">V3 - v2_lite</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={backtestStartDate}
+                  onChange={(e) => setBacktestStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={backtestEndDate}
+                  onChange={(e) => setBacktestEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={runBacktest}
+                disabled={backtestLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {backtestLoading ? '실행 중...' : '백테스트 실행'}
+              </button>
+            </div>
+            {backtestResult && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">결과</p>
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words">
+{JSON.stringify(backtestResult, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 기간 스캔 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">기간 스캔</h2>
+            <p className="text-sm text-gray-600">기간/스캐너를 선택해 스캔을 실행합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">스캐너</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={scanRangeScanner}
+                onChange={(e) => setScanRangeScanner(e.target.value)}
+              >
+                <option value="v1">V1</option>
+                <option value="v2">V2</option>
+                <option value="v3">V3</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={scanRangeStartDate}
+                  onChange={(e) => setScanRangeStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={scanRangeEndDate}
+                  onChange={(e) => setScanRangeEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={runScanRange}
+                disabled={scanRangeLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {scanRangeLoading ? '실행 중...' : '기간 스캔 실행'}
+              </button>
+            </div>
+            {scanRangeResult && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">결과</p>
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words">
+{JSON.stringify(scanRangeResult, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
 

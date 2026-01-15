@@ -102,7 +102,7 @@ def create_maintenance_settings_table(cur):
         CREATE TABLE IF NOT EXISTS maintenance_settings(
             id SERIAL PRIMARY KEY,
             is_enabled BOOLEAN DEFAULT FALSE,
-            end_date TEXT,
+            end_date TIMESTAMP WITH TIME ZONE,
             message TEXT DEFAULT '서비스 점검 중입니다.',
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
@@ -113,7 +113,7 @@ def create_maintenance_settings_table(cur):
     if cur.fetchone()[0] == 0:
         cur.execute("""
             INSERT INTO maintenance_settings (is_enabled, end_date, message)
-            VALUES (FALSE, '', '서비스 점검 중입니다.')
+            VALUES (FALSE, NULL, '서비스 점검 중입니다.')
         """)
 
 def create_popup_notice_table(cur):
@@ -198,20 +198,13 @@ def get_cors_origins():
         return [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            "http://localhost:3001",  # 추가 포트 지원
         ]
     else:
         return [
             "https://sohntech.ai.kr",
             "https://www.sohntech.ai.kr",
         ]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=get_cors_origins(),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # 접속 기록 미들웨어
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -288,6 +281,18 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         
         return response
 
+# CORS 미들웨어 추가 (AccessLogMiddleware보다 먼저 실행되도록)
+# FastAPI는 add_middleware를 역순으로 실행하므로, CORS를 나중에 추가해야 먼저 실행됨
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
+# 접속 기록 미들웨어 (CORS 이후에 추가하여 CORS가 먼저 실행되도록)
 app.add_middleware(AccessLogMiddleware)
 
 api = KiwoomAPI()
@@ -648,7 +653,7 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         try:
             # DB에서 장세 분석 결과 먼저 확인 (스케줄러에서 이미 완료했을 수 있음)
             from db_manager import db_manager
-            from models import MarketCondition
+            from market_analyzer import MarketCondition
             from date_helper import yyyymmdd_to_date
             import json
             
@@ -678,14 +683,29 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 ], row))
                 
                 sentiment_score = float(values.get("sentiment_score", 0.0)) if values.get("sentiment_score") is not None else 0.0
-                trend_metrics = json.loads(values.get("trend_metrics")) if values.get("trend_metrics") else None
-                breadth_metrics = json.loads(values.get("breadth_metrics")) if values.get("breadth_metrics") else None
-                flow_metrics = json.loads(values.get("flow_metrics")) if values.get("flow_metrics") else None
-                sector_metrics = json.loads(values.get("sector_metrics")) if values.get("sector_metrics") else None
-                volatility_metrics = json.loads(values.get("volatility_metrics")) if values.get("volatility_metrics") else None
-                adjusted_params = json.loads(values.get("adjusted_params")) if values.get("adjusted_params") else None
+                
+                # JSON 필드 파싱 (이미 dict인 경우 처리)
+                def _ensure_json(value):
+                    if value is None:
+                        return None
+                    if isinstance(value, dict):
+                        return value
+                    if isinstance(value, str):
+                        try:
+                            return json.loads(value)
+                        except:
+                            return None
+                    return None
+                
+                trend_metrics = _ensure_json(values.get("trend_metrics"))
+                breadth_metrics = _ensure_json(values.get("breadth_metrics"))
+                flow_metrics = _ensure_json(values.get("flow_metrics"))
+                sector_metrics = _ensure_json(values.get("sector_metrics"))
+                volatility_metrics = _ensure_json(values.get("volatility_metrics"))
+                adjusted_params = _ensure_json(values.get("adjusted_params"))
                 
                 market_condition = MarketCondition(
+                    date=today_as_of,
                     market_sentiment=values.get("market_sentiment"),
                     sentiment_score=sentiment_score,
                     kospi_return=values.get("kospi_return"),
@@ -906,14 +926,14 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         # V2 엔진 명시적 실행
         from scanner_factory import scan_with_scanner
         all_items = scan_with_scanner(universe, None, today_as_of, market_condition, version='v2')
-        # V2 결과 필터링 및 정렬 (10점 이상, 상위 N개)
-        items_10_plus = [item for item in all_items if item.get("score", 0) >= 10]
-        items_10_plus.sort(key=lambda x: x.get("score", 0), reverse=True)
-        items = items_10_plus[:config.top_k] if hasattr(config, 'top_k') else items_10_plus[:50]
+        # V2 결과 정렬 및 상위 N개 선택 (점수 필터 없이)
+        all_items.sort(key=lambda x: x.get("score", 0), reverse=True)
+        top_k = getattr(config, 'top_k', 50)
+        items = all_items[:top_k]
         # V2는 fallback 없이 실행
         chosen_step = None
         scanner_version = 'v2'
-        print(f"📈 V2 스캔 완료: {len(items)}개 종목 발견 (전체: {len(all_items)}개, 10점 이상: {len(items_10_plus)}개, 날짜: {today_as_of})")
+        print(f"📈 V2 스캔 완료: {len(items)}개 종목 발견 (전체: {len(all_items)}개, 상위 {top_k}개 선택, 날짜: {today_as_of})")
     else:
         # V1 엔진 (기존 로직)
         result = execute_scan_with_fallback(universe, today_as_of, market_condition)
@@ -1036,8 +1056,9 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                 trend=trend_payload,
                 flags=score_flags,
                 score_label=item.get("score_label", ""),
-                details={**(flags_data.get("details", {}) if isinstance(flags_data, dict) else {}), "close": item["indicators"].get("close", 0.0), "recurrence": recurrence},
+                details={**(flags_data.get("details", {}) if isinstance(flags_data, dict) else {}), "close": item["indicators"].get("close", 0.0)},
                 strategy=item.get("strategy", ""),
+                recurrence=recurrence,  # recurrence 필드에 직접 할당
                 returns=returns,
                 current_price=item["indicators"].get("close", 0.0),  # 현재가
                 change_rate=cr,  # 등락률
@@ -1046,7 +1067,10 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
         except Exception as e:
             print(f"ScanItem 생성 오류 ({item.get('ticker', 'unknown')}): {e}")
             continue
-
+    
+    # v2_lite 결과 필터링 (UI에서 숨김, 백데이터로만 저장)
+    scan_items = [item for item in scan_items if item.strategy != "v2_lite"]
+    
     # 시장 가이드 생성
     scan_result_dict = {
         'matched_count': len(scan_items),
@@ -1147,6 +1171,8 @@ def scan(kospi_limit: int = None, kosdaq_limit: int = None, save_snapshot: bool 
                     'score_label': it.score_label,
                     'strategy': strategy_value,
                     'flags': original_flags if isinstance(original_flags, dict) else (it.flags.__dict__ if hasattr(it.flags, '__dict__') else {}),
+                    'recurrence': it.recurrence if hasattr(it, 'recurrence') else None,
+                    'returns': it.returns if hasattr(it, 'returns') else None,
                 })
             save_scan_snapshot(scan_items_dict, resp.as_of, scanner_version)
             
@@ -2404,19 +2430,20 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
         with db_manager.get_cursor(commit=False) as cur:
             # us_v2, v2-lite, v3는 절대 다른 버전으로 fallback하지 않음
             if target_scanner_version == 'v3':
-                # v3는 strategy로 구분 (v2_lite 먼저, midterm 나중)
+                # v3는 strategy로 구분 (v2_lite는 UI에서 숨김, 백데이터로만 저장)
                 cur.execute("""
                     SELECT code, name, score, score_label, close_price AS current_price, volume,
                            change_rate, market, strategy, indicators, trend, flags, details, returns, recurrence,
                            scanner_version, anchor_date, anchor_close, anchor_price_type, anchor_source
                     FROM scan_rank
-                    WHERE date = %s AND scanner_version = 'v3' AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                    WHERE date = %s AND scanner_version = 'v3' 
+                      AND strategy != 'v2_lite'
+                      AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
                     ORDER BY 
                         CASE WHEN code = 'NORESULT' THEN 0 ELSE 1 END,
                         CASE strategy
-                            WHEN 'v2_lite' THEN 1
-                            WHEN 'midterm' THEN 2
-                            ELSE 3
+                            WHEN 'midterm' THEN 1
+                            ELSE 2
                         END,
                         CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
                 """, (target_date,))
@@ -2509,6 +2536,19 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
         
         if not rows:
             return {"ok": False, "error": f"{date} 날짜의 스캔 결과가 없습니다."}
+
+        # recurrence 보강: DB에 저장된 recurrence가 비어있는 경우에도 v2 화면에서 재등장 정보를 노출할 수 있도록
+        # scan_rank 이력 기반으로 계산한 recurrence를 주입한다. (저장값 우선, 없으면 계산값)
+        try:
+            codes_for_recurrence = []
+            for r in rows:
+                d = _row_to_dict(r)
+                c = d.get("code")
+                if c and c != "NORESULT":
+                    codes_for_recurrence.append(c)
+            recurrence_data_map = get_recurrence_data(list(set(codes_for_recurrence)), formatted_date)
+        except Exception:
+            recurrence_data_map = {}
         
         # DB에 저장된 returns 데이터 우선 사용 (성능 최적화)
         # 필요한 경우에만 실시간 계산
@@ -2811,8 +2851,7 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             if flags_dict.get("stop_loss") is None:
                 flags_dict["stop_loss"] = 0.02  # 2% 기본값
             
-            # flags_dict를 item에 반영 (stop_loss 등 추가된 값이 반영되도록)
-            item["flags"] = flags_dict
+            # flags_dict는 나중에 item 생성 시 사용됨 (item은 아직 정의되지 않음)
             
             details_dict = details
             if isinstance(details, str) and details:
@@ -2832,6 +2871,10 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                     recurrence_dict = {}
             elif not recurrence_raw:
                 recurrence_dict = {}
+            
+            # DB 저장값이 비어있으면 이력 기반 계산값으로 보강 (v2 스캔 화면 재등장 정보 노출)
+            if (not recurrence_dict) and code and code != "NORESULT":
+                recurrence_dict = recurrence_data_map.get(code, {}) or {}
             
             # days_since_last 실시간 계산 (last_as_of가 있으면 현재 날짜 기준으로 업데이트)
             if recurrence_dict and recurrence_dict.get("appeared_before") and recurrence_dict.get("last_as_of"):
@@ -3066,20 +3109,16 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
             from dataclasses import asdict
             market_condition_dict = asdict(market_condition)
         
-        # v3 케이스 판별 필드 추가 (v3일 때만)
+        # v3 케이스 판별 필드 추가 (v3일 때만, v2_lite는 UI에서 숨김)
         v3_case_info = None
         if detected_version == 'v3':
-            # strategy별로 분류
-            v2lite_items = [item for item in items if item.get("strategy") == "v2_lite" and item.get("ticker") != "NORESULT"]
+            # strategy별로 분류 (v2_lite 제외)
             midterm_items = [item for item in items if item.get("strategy") == "midterm" and item.get("ticker") != "NORESULT"]
             
-            has_v2lite = len(v2lite_items) > 0
             has_midterm = len(midterm_items) > 0
-            has_recommendations = has_v2lite or has_midterm
+            has_recommendations = has_midterm
             
             active_engines = []
-            if has_v2lite:
-                active_engines.append("v2lite")
             if has_midterm:
                 active_engines.append("midterm")
             
@@ -3091,7 +3130,6 @@ async def get_scan_by_date(date: str, scanner_version: Optional[str] = None):
                 "active_engines": active_engines,
                 "scan_date": scan_date_formatted,
                 "engine_labels": {
-                    "v2lite": "단기 반응형",
                     "midterm": "중기 추세형"
                 }
             }
@@ -3219,7 +3257,7 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                 cur.execute("""
                     SELECT date, scanner_version
                     FROM scan_rank
-                    WHERE scanner_version = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                    WHERE scanner_version = %s AND code != 'NORESULT'
                     ORDER BY date DESC
                     LIMIT 1
                 """, (fallback_version,))
@@ -3231,7 +3269,7 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                     cur.execute("""
                         SELECT date, scanner_version
                         FROM scan_rank
-                        WHERE scanner_version IN ('v1', 'v2') AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                        WHERE scanner_version IN ('v1', 'v2') AND code != 'NORESULT'
                         ORDER BY date DESC, scanner_version DESC
                         LIMIT 1
                     """)
@@ -3274,7 +3312,7 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
             formatted_date = str(raw_date).replace('-', '')
         
         with db_manager.get_cursor(commit=False) as cur:
-            # v3는 strategy로 구분 (v2_lite 먼저, midterm 나중)
+            # v3는 strategy로 구분 (v2_lite는 UI에서 숨김, 백데이터로만 저장)
             if final_version == 'v3':
                 cur.execute("""
                     SELECT date,
@@ -3298,13 +3336,14 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                            anchor_price_type,
                            anchor_source
                     FROM scan_rank
-                    WHERE date = %s AND scanner_version = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                    WHERE date = %s AND scanner_version = %s 
+                      AND strategy != 'v2_lite'
+                      AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
                     ORDER BY 
                         CASE WHEN code = 'NORESULT' THEN 0 ELSE 1 END,
                         CASE strategy
-                            WHEN 'v2_lite' THEN 1
-                            WHEN 'midterm' THEN 2
-                            ELSE 3
+                            WHEN 'midterm' THEN 1
+                            ELSE 2
                         END,
                         CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
                 """, (raw_date, final_version))
@@ -3351,6 +3390,19 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
         
         logger.info(f"[get_latest_scan_from_db] 아이템 처리 시작: {len(rows)}개")
         
+        # recurrence 보강: DB에 저장된 recurrence가 비어있는 경우에도 v2 화면에서 재등장 정보를 노출할 수 있도록
+        # scan_rank 이력 기반으로 계산한 recurrence를 주입한다. (저장값 우선, 없으면 계산값)
+        try:
+            codes_for_recurrence = []
+            for r in rows:
+                d = _row_to_dict(r)
+                c = d.get("code")
+                if c and c != "NORESULT":
+                    codes_for_recurrence.append(c)
+            recurrence_data_map = get_recurrence_data(list(set(codes_for_recurrence)), formatted_date)
+        except Exception:
+            recurrence_data_map = {}
+        
         # JSON 파싱 최적화: 한 번만 파싱하는 헬퍼 함수 (루프 밖에서 정의)
         def _parse_json_field(field_value):
             if isinstance(field_value, str) and field_value:
@@ -3367,6 +3419,7 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                 elapsed = time.time() - item_process_start
                 logger.info(f"[get_latest_scan_from_db] 아이템 처리 중: {idx}/{len(rows)}, elapsed={elapsed:.2f}s")
             data = _row_to_dict(row)  # 중복 제거
+            code = data.get("code")
             flags = data.get("flags")
             indicators = data.get("indicators")
             trend = data.get("trend")
@@ -3394,6 +3447,10 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
             elif not recurrence:
                 recurrence_dict = {}
             
+            # DB 저장값이 비어있으면 이력 기반 계산값으로 보강 (v2 스캔 화면 재등장 정보 노출)
+            if (not recurrence_dict) and code and code != "NORESULT":
+                recurrence_dict = recurrence_data_map.get(code, {}) or {}
+            
             # days_since_last 실시간 계산 (last_as_of가 있으면 현재 날짜 기준으로 업데이트)
             if recurrence_dict and recurrence_dict.get("appeared_before") and recurrence_dict.get("last_as_of"):
                 try:
@@ -3405,8 +3462,6 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                 except Exception as e:
                     # 계산 실패 시 기존 값 유지
                     pass
-            
-            code = data.get("code")  # code 변수 정의
             
             # 디버깅: anchor_close 확인 (047810만)
             if code == "047810":
@@ -4056,20 +4111,16 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
             from dataclasses import asdict
             market_condition_dict = asdict(market_condition)
         
-        # v3 케이스 판별 필드 추가 (v3일 때만)
+        # v3 케이스 판별 필드 추가 (v3일 때만, v2_lite는 UI에서 숨김)
         v3_case_info = None
         if final_version == 'v3':
-            # strategy별로 분류
-            v2lite_items = [item for item in items if item.get("strategy") == "v2_lite" and item.get("ticker") != "NORESULT"]
+            # strategy별로 분류 (v2_lite 제외)
             midterm_items = [item for item in items if item.get("strategy") == "midterm" and item.get("ticker") != "NORESULT"]
             
-            has_v2lite = len(v2lite_items) > 0
             has_midterm = len(midterm_items) > 0
-            has_recommendations = has_v2lite or has_midterm
+            has_recommendations = has_midterm
             
             active_engines = []
-            if has_v2lite:
-                active_engines.append("v2lite")
             if has_midterm:
                 active_engines.append("midterm")
             
@@ -4081,7 +4132,6 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                 "active_engines": active_engines,
                 "scan_date": scan_date_formatted,
                 "engine_labels": {
-                    "v2lite": "단기 반응형",
                     "midterm": "중기 추세형"
                 }
             }
@@ -4187,7 +4237,7 @@ async def get_latest_scan(
 @app.get("/api/v3/recommendations/active")
 async def get_active_recommendations(user_id: Optional[int] = None):
     """
-    ACTIVE 상태인 추천 목록 조회 (daily_digest 포함)
+    ACTIVE 상태인 추천 목록 조회 (daily_digest, weekly_digest 포함)
     
     Returns:
         {
@@ -4204,15 +4254,25 @@ async def get_active_recommendations(user_id: Optional[int] = None):
                 "new_broken": 1,
                 "new_archived": 3,
                 "has_changes": true
+            },
+            "weekly_digest": {
+                "week_start": "2026-01-13",
+                "week_end": "2026-01-17",
+                "as_of": "2026-01-17T18:00:00+09:00",
+                "new_recommendations": 12,
+                "archived": 4,
+                "repeat_signals": 3
             }
         }
     """
     try:
         from services.recommendation_service import get_active_recommendations_list
         from services.daily_digest_service import calculate_daily_digest
+        from services.weekly_digest_service import calculate_weekly_digest
         
         items = get_active_recommendations_list(user_id=user_id)
         daily_digest = calculate_daily_digest()
+        weekly_digest = calculate_weekly_digest()
         
         return {
             "ok": True,
@@ -4220,7 +4280,8 @@ async def get_active_recommendations(user_id: Optional[int] = None):
                 "items": items,
                 "count": len(items)
             },
-            "daily_digest": daily_digest
+            "daily_digest": daily_digest,
+            "weekly_digest": weekly_digest
         }
     except Exception as e:
         logger.error(f"[get_active_recommendations] 오류: {e}")
@@ -4257,6 +4318,44 @@ async def get_needs_attention_recommendations(user_id: Optional[int] = None):
         }
     except Exception as e:
         logger.error(f"[get_needs_attention_recommendations] 오류: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v3/recommendations/weekly-detail")
+async def get_weekly_recommendation_detail(reference_date: Optional[str] = None):
+    """
+    주간 추천 상세 리스트 (월~금, KST)
+    
+    Returns:
+        {
+            "ok": true,
+            "data": {
+                "week_start": "2026-01-12",
+                "week_end": "2026-01-16",
+                "as_of": "2026-01-15T18:00:00+09:00",
+                "new_items": [...],
+                "archived_items": [...],
+                "repeat_items": [...]
+            }
+        }
+    """
+    try:
+        from services.weekly_digest_service import calculate_weekly_detail
+        from datetime import datetime
+        
+        ref_date_obj = None
+        if reference_date:
+            ref_date_obj = datetime.strptime(reference_date, "%Y-%m-%d").date()
+        
+        detail = calculate_weekly_detail(reference_date=ref_date_obj)
+        return {
+            "ok": True,
+            "data": detail
+        }
+    except Exception as e:
+        logger.error(f"[get_weekly_recommendation_detail] 오류: {e}")
         import traceback
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -5716,6 +5815,237 @@ async def get_admin_stats(admin_user: User = Depends(get_admin_user)):
             detail=f"관리자 통계 조회 중 오류가 발생했습니다: {str(e)}"
         )
 
+
+@app.get("/admin/cache-status")
+async def get_cache_status(admin_user: User = Depends(get_admin_user)):
+    """캐시 현황 조회 (관리자 전용)"""
+    try:
+        import os
+        import re
+        from datetime import datetime
+        
+        base_dir = os.path.dirname(__file__)
+        cache_targets = {
+            "ohlcv_cache": os.path.join(base_dir, "cache", "ohlcv"),
+            "us_futures_cache": os.path.join(base_dir, "cache", "us_futures"),
+            "us_stocks_ohlcv_cache": os.path.join(base_dir, "cache", "us_stocks_ohlcv"),
+            "us_universe_cache": os.path.join(base_dir, "cache", "us_stocks"),
+            "regime_cache": os.path.join(base_dir, "cache", "regime"),
+            "data_cache_ohlcv": os.path.join(base_dir, "data_cache", "ohlcv"),
+            "data_cache": os.path.join(base_dir, "data_cache")
+        }
+        
+        def _format_ts(ts: float) -> str:
+            return datetime.fromtimestamp(ts).isoformat() if ts else None
+        
+        def _read_last_line(path: str) -> str:
+            with open(path, 'rb') as fh:
+                fh.seek(0, os.SEEK_END)
+                position = fh.tell()
+                if position == 0:
+                    return ''
+                while position > 0:
+                    position -= 1
+                    fh.seek(position)
+                    if fh.read(1) == b'\n':
+                        line = fh.readline().strip()
+                        if line:
+                            return line.decode(errors='ignore')
+                fh.seek(0)
+                return fh.readline().decode(errors='ignore').strip()
+
+        def _parse_date(value: str):
+            if not value:
+                return None
+            value = value.strip()
+            if not value:
+                return None
+            if re.match(r"^\d{8}$", value):
+                return datetime.strptime(value, "%Y%m%d").date()
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", value):
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            try:
+                return datetime.fromisoformat(value).date()
+            except ValueError:
+                return None
+
+        def _update_range(current_range, candidate):
+            if candidate is None:
+                return current_range
+            if current_range[0] is None or candidate < current_range[0]:
+                current_range[0] = candidate
+            if current_range[1] is None or candidate > current_range[1]:
+                current_range[1] = candidate
+            return current_range
+
+        def _csv_date_range(path: str):
+            try:
+                with open(path, 'r', encoding='utf-8', errors='ignore') as fh:
+                    header = fh.readline()
+                    first_line = ''
+                    while True:
+                        line = fh.readline()
+                        if not line:
+                            break
+                        if line.strip():
+                            first_line = line.strip()
+                            break
+                last_line = _read_last_line(path)
+                first_date = _parse_date(first_line.split(',')[0]) if first_line else None
+                last_date = _parse_date(last_line.split(',')[0]) if last_line else None
+                return first_date, last_date
+            except Exception:
+                return None, None
+
+        def _pkl_date_range(path: str):
+            try:
+                import pandas as pd
+            except Exception:
+                return None, None
+            try:
+                data = pd.read_pickle(path)
+            except Exception:
+                return None, None
+            try:
+                if hasattr(data, 'index'):
+                    index = data.index
+                    if hasattr(index, 'min') and hasattr(index, 'max'):
+                        start = index.min()
+                        end = index.max()
+                        start_date = start.date() if hasattr(start, 'date') else _parse_date(str(start))
+                        end_date = end.date() if hasattr(end, 'date') else _parse_date(str(end))
+                        return start_date, end_date
+                if isinstance(data, dict):
+                    date_value = data.get('date')
+                    parsed = _parse_date(date_value) if date_value else None
+                    return parsed, parsed
+            except Exception:
+                return None, None
+            return None, None
+
+        def _scan_path(path: str, cache_name: str) -> dict:
+            if not os.path.exists(path):
+                return {
+                    "path": path,
+                    "exists": False,
+                    "type": None,
+                    "file_count": 0,
+                    "total_size_bytes": 0,
+                    "newest_mtime": None,
+                    "oldest_mtime": None,
+                    "data_start": None,
+                    "data_end": None
+                }
+            
+            if cache_name == "ohlcv_cache" and os.path.isdir(path):
+                file_count = 0
+                total_size = 0
+                newest = None
+                oldest = None
+                date_range = [None, None]
+                for entry in os.scandir(path):
+                    if not entry.is_file():
+                        continue
+                    try:
+                        stat = entry.stat()
+                    except OSError:
+                        continue
+                    file_count += 1
+                    total_size += stat.st_size
+                    mtime = stat.st_mtime
+                    newest = mtime if newest is None else max(newest, mtime)
+                    oldest = mtime if oldest is None else min(oldest, mtime)
+                    name_parts = entry.name.rsplit('_', 1)
+                    if len(name_parts) == 2 and name_parts[1].endswith('.pkl'):
+                        date_part = name_parts[1][:-4]
+                        if len(date_part) == 8 and date_part.isdigit():
+                            date_value = _parse_date(date_part)
+                            _update_range(date_range, date_value)
+                return {
+                    "path": path,
+                    "exists": True,
+                    "type": "dir",
+                    "file_count": file_count,
+                    "total_size_bytes": total_size,
+                    "newest_mtime": _format_ts(newest),
+                    "oldest_mtime": _format_ts(oldest),
+                    "data_start": date_range[0].isoformat() if date_range[0] else None,
+                    "data_end": date_range[1].isoformat() if date_range[1] else None
+                }
+
+            if os.path.isfile(path):
+                size = os.path.getsize(path)
+                mtime = os.path.getmtime(path)
+                data_start, data_end = (None, None)
+                if path.endswith('.csv'):
+                    data_start, data_end = _csv_date_range(path)
+                elif path.endswith('.pkl'):
+                    data_start, data_end = _pkl_date_range(path)
+                return {
+                    "path": path,
+                    "exists": True,
+                    "type": "file",
+                    "file_count": 1,
+                    "total_size_bytes": size,
+                    "newest_mtime": _format_ts(mtime),
+                    "oldest_mtime": _format_ts(mtime),
+                    "data_start": data_start.isoformat() if data_start else None,
+                    "data_end": data_end.isoformat() if data_end else None
+                }
+            
+            file_count = 0
+            total_size = 0
+            newest = None
+            oldest = None
+            date_range = [None, None]
+            for root, _, files in os.walk(path):
+                for filename in files:
+                    filepath = os.path.join(root, filename)
+                    try:
+                        stat = os.stat(filepath)
+                    except OSError:
+                        continue
+                    file_count += 1
+                    total_size += stat.st_size
+                    mtime = stat.st_mtime
+                    newest = mtime if newest is None else max(newest, mtime)
+                    oldest = mtime if oldest is None else min(oldest, mtime)
+                    if filename.endswith('.csv'):
+                        start_date, end_date = _csv_date_range(filepath)
+                        _update_range(date_range, start_date)
+                        _update_range(date_range, end_date)
+                    elif filename.endswith('.pkl'):
+                        start_date, end_date = _pkl_date_range(filepath)
+                        _update_range(date_range, start_date)
+                        _update_range(date_range, end_date)
+            return {
+                "path": path,
+                "exists": True,
+                "type": "dir",
+                "file_count": file_count,
+                "total_size_bytes": total_size,
+                "newest_mtime": _format_ts(newest),
+                "oldest_mtime": _format_ts(oldest),
+                "data_start": date_range[0].isoformat() if date_range[0] else None,
+                "data_end": date_range[1].isoformat() if date_range[1] else None
+            }
+        
+        results = []
+        for name, path in cache_targets.items():
+            stats = _scan_path(path, name)
+            stats["name"] = name
+            results.append(stats)
+        
+        return {
+            "ok": True,
+            "data": results
+        }
+    except Exception as e:
+        logger.error(f"[get_cache_status] 오류: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/admin/access-logs")
 async def get_access_logs(
     user_id: Optional[int] = None,
@@ -5946,10 +6276,13 @@ async def get_maintenance_settings(admin_user: User = Depends(get_admin_user)):
             cur.execute("SELECT * FROM maintenance_settings ORDER BY id DESC LIMIT 1")
             row = cur.fetchone()
         if row:
+            end_date_value = row[2]
+            if end_date_value and hasattr(end_date_value, "strftime"):
+                end_date_value = end_date_value.strftime("%Y%m%d")
             settings = {
                 "id": row[0],
                 "is_enabled": bool(row[1]),
-                "end_date": row[2],
+                "end_date": end_date_value,
                 "message": row[3],
                 "created_at": row[4].isoformat() if row[4] else None,
                 "updated_at": row[5].isoformat() if row[5] else None,
@@ -6120,6 +6453,15 @@ async def update_maintenance_settings(
 ):
     """메인트넌스 설정 업데이트"""
     try:
+        end_date_value = None
+        if settings.end_date:
+            try:
+                if len(settings.end_date) == 8:
+                    end_date_value = datetime.strptime(settings.end_date, "%Y%m%d")
+                elif len(settings.end_date) == 10 and "-" in settings.end_date:
+                    end_date_value = datetime.strptime(settings.end_date, "%Y-%m-%d")
+            except Exception:
+                end_date_value = None
         with db_manager.get_connection() as conn:
             cur = conn.cursor()
             create_maintenance_settings_table(cur)
@@ -6129,7 +6471,7 @@ async def update_maintenance_settings(
                 VALUES (%s, %s, %s, NOW())
             """, (
                 settings.is_enabled,
-                settings.end_date,
+                end_date_value,
                 settings.message or "서비스 점검 중입니다."
             ))
             conn.commit()
@@ -6160,9 +6502,11 @@ async def get_maintenance_status():
             
             # 종료 날짜가 설정되어 있고 현재 날짜가 종료 날짜를 지났으면 자동으로 비활성화
             if is_enabled and end_date:
-                from datetime import datetime
                 try:
-                    end_datetime = datetime.strptime(end_date, "%Y%m%d")
+                    if isinstance(end_date, str):
+                        end_datetime = datetime.strptime(end_date, "%Y%m%d")
+                    else:
+                        end_datetime = end_date
                     if datetime.now() > end_datetime:
                         is_enabled = False
                         # 자동으로 비활성화
@@ -6885,6 +7229,110 @@ async def update_scanner_settings(
     except Exception as e:
         import traceback
         traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/admin/backtest")
+async def run_backtest_admin(
+    payload: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """백테스트 실행 (관리자 전용)"""
+    try:
+        scanner = payload.get("scanner")
+        start_date = payload.get("start_date")
+        end_date = payload.get("end_date")
+        
+        if scanner not in ["v2", "v3", "v3_midterm", "v3_v2_lite"]:
+            return {"ok": False, "error": "scanner는 v2, v3, v3_midterm, v3_v2_lite만 가능합니다."}
+        if not start_date or not end_date:
+            return {"ok": False, "error": "start_date, end_date는 필수입니다."}
+        if not (len(start_date) == 8 and start_date.isdigit() and len(end_date) == 8 and end_date.isdigit()):
+            return {"ok": False, "error": "날짜 형식은 YYYYMMDD 입니다."}
+        
+        from pathlib import Path
+        from services.backtest_service import run_backtest, write_backtest_report
+        
+        Path("backend/reports/backtest").mkdir(parents=True, exist_ok=True)
+        output_path = f"backend/reports/backtest/backtest_{scanner}_{start_date}_{end_date}.json"
+        report = run_backtest(scanner, start_date, end_date)
+        write_backtest_report(scanner, start_date, end_date, output_path)
+        
+        return {
+            "ok": True,
+            "report": report,
+            "output_path": output_path
+        }
+    except Exception as e:
+        logger.error(f"[run_backtest_admin] 오류: {e}", exc_info=True)
+        return {"ok": False, "error": str(e)}
+
+
+@app.post("/admin/scan-range")
+async def run_scan_range_admin(
+    payload: dict,
+    admin_user: User = Depends(get_admin_user)
+):
+    """기간 스캔 실행 (관리자 전용)"""
+    try:
+        scanner = payload.get("scanner")
+        start_date = payload.get("start_date")
+        end_date = payload.get("end_date")
+        if scanner not in ["v1", "v2", "v3"]:
+            return {"ok": False, "error": "scanner는 v1, v2, v3만 가능합니다."}
+        if not start_date or not end_date:
+            return {"ok": False, "error": "start_date, end_date는 필수입니다."}
+        if not (len(start_date) == 8 and start_date.isdigit() and len(end_date) == 8 and end_date.isdigit()):
+            return {"ok": False, "error": "날짜 형식은 YYYYMMDD 입니다."}
+        
+        start_obj = yyyymmdd_to_date(start_date)
+        end_obj = yyyymmdd_to_date(end_date)
+        if start_obj > end_obj:
+            return {"ok": False, "error": "start_date는 end_date보다 이전이어야 합니다."}
+        
+        today_str = get_kst_now().strftime('%Y%m%d')
+        if end_date > today_str:
+            return {"ok": False, "error": "end_date는 오늘 이후일 수 없습니다."}
+        
+        current = start_obj
+        scanned_days = 0
+        skipped_days = 0
+        total_matched = 0
+        errors = []
+        
+        while current <= end_obj:
+            day_str = current.strftime('%Y%m%d')
+            if not is_trading_day(day_str):
+                skipped_days += 1
+                current += timedelta(days=1)
+                continue
+            try:
+                resp = scan(
+                    kospi_limit=None,
+                    kosdaq_limit=None,
+                    save_snapshot=True,
+                    sort_by='score',
+                    date=day_str,
+                    scanner_version=scanner
+                )
+                scanned_days += 1
+                total_matched += getattr(resp, "matched_count", 0)
+            except Exception as e:
+                errors.append({"date": day_str, "error": str(e)})
+            current += timedelta(days=1)
+        
+        return {
+            "ok": True,
+            "scanner": scanner,
+            "start_date": start_date,
+            "end_date": end_date,
+            "scanned_days": scanned_days,
+            "skipped_days": skipped_days,
+            "total_matched": total_matched,
+            "errors": errors
+        }
+    except Exception as e:
+        logger.error(f"[run_scan_range_admin] 오류: {e}", exc_info=True)
         return {"ok": False, "error": str(e)}
 
 
