@@ -78,11 +78,13 @@ export default function KakaoCallback() {
             const config = getConfig();
             const base = config?.backendUrl || 'http://localhost:8010';
             try {
+              const authToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
               const linkResponse = await fetch(`${base}/bottom-nav-link`, {
                 method: 'GET',
                 headers: {
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
+                  ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                 },
                 mode: 'cors',
                 cache: 'no-cache',
