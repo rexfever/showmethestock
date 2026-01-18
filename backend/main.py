@@ -7078,53 +7078,39 @@ async def get_bottom_nav_link_public(current_user: Optional[User] = Depends(get_
     
     try:
         from scanner_settings_manager import get_active_engine, get_scanner_setting
-        
-        # 1. 사용자별 설정 우선 확인 (인증된 사용자인 경우)
-        if current_user:
-            try:
-                with db_manager.get_cursor(commit=False) as cur:
-                    cur.execute("""
-                        SELECT recommendation_type
-                        FROM user_preferences
-                        WHERE user_id = %s
-                    """, (current_user.id,))
-                    
-                    row = cur.fetchone()
-                    if row:
-                        recommendation_type = row[0]
-                        # 'daily' -> v2, 'conditional' -> v3
-                        if recommendation_type == 'conditional':
-                            return {
-                                "link_type": "v3",
-                                "link_url": "/v3/scanner-v3"
-                            }
-                        elif recommendation_type == 'daily':
-                            return {
-                                "link_type": "v2",
-                                "link_url": "/v2/scanner-v2"
-                            }
-                    else:
-                        # 사용자별 설정이 없으면 기본값 'daily' (v2) 반환
-                        return {
-                            "link_type": "v2",
-                            "link_url": "/v2/scanner-v2"
-                        }
-            except Exception as e:
-                logger.warning(f"[get_bottom_nav_link_public] 사용자별 설정 조회 실패: {e}")
-                # 사용자별 설정 조회 실패 시 기본값 'daily' (v2) 반환
-                return {
-                    "link_type": "v2",
-                    "link_url": "/v2/scanner-v2"
-                }
-        
-        # 2. 전역 설정 확인 (active_engine 우선)
-        # 로그인하지 않은 사용자는 기본값으로 v2(일일 추천) 사용
+        # 1) 로그인하지 않은 사용자는 항상 v2
         if not current_user:
             return {
                 "link_type": "v2",
                 "link_url": "/v2/scanner-v2"
             }
+
+        # 2) 로그인한 사용자는 개인 설정 우선
+        try:
+            with db_manager.get_cursor(commit=False) as cur:
+                cur.execute("""
+                    SELECT recommendation_type
+                    FROM user_preferences
+                    WHERE user_id = %s
+                """, (current_user.id,))
+                row = cur.fetchone()
+                if row:
+                    recommendation_type = row[0]
+                    # 'daily' -> v2, 'conditional' -> v3
+                    if recommendation_type == 'conditional':
+                        return {
+                            "link_type": "v3",
+                            "link_url": "/v3/scanner-v3"
+                        }
+                    if recommendation_type == 'daily':
+                        return {
+                            "link_type": "v2",
+                            "link_url": "/v2/scanner-v2"
+                        }
+        except Exception as e:
+            logger.warning(f"[get_bottom_nav_link_public] 사용자별 설정 조회 실패: {e}")
         
+        # 3) 개인 설정이 없으면 전역 설정 확인 (active_engine 우선)
         active_engine = get_active_engine()
         
         # active_engine에 따라 링크 결정
@@ -7142,9 +7128,14 @@ async def get_bottom_nav_link_public(current_user: Optional[User] = Depends(get_
         else:
             # v1 또는 기존 설정 사용
             link_type = get_scanner_setting('bottom_nav_scanner_link', 'v1')
+            link_url_map = {
+                "v1": "/customer-scanner",
+                "v2": "/v2/scanner-v2",
+                "v3": "/v3/scanner-v3",
+            }
             return {
-                "link_type": link_type,  # 'v1' 또는 'v2'
-                "link_url": "/customer-scanner" if link_type == "v1" else "/v2/scanner-v2"
+                "link_type": link_type,
+                "link_url": link_url_map.get(link_type, "/customer-scanner")
             }
     except Exception as e:
         logger.error(f"[get_bottom_nav_link_public] 오류: {e}")
@@ -7186,8 +7177,8 @@ async def update_scanner_settings(
             
             # 값 검증
             if key == 'scanner_version':
-                if value not in ['v1', 'v2', 'v2-lite']:
-                    return {"ok": False, "error": f"scanner_version은 'v1', 'v2', 또는 'v2-lite'만 가능합니다."}
+                if value not in ['v1', 'v2', 'v2-lite', 'v3']:
+                    return {"ok": False, "error": f"scanner_version은 'v1', 'v2', 'v2-lite', 또는 'v3'만 가능합니다."}
             elif key == 'regime_version':
                 if value not in ['v1', 'v3', 'v4']:
                     return {"ok": False, "error": f"regime_version은 'v1', 'v3', 또는 'v4'만 가능합니다."}

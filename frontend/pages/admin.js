@@ -1984,9 +1984,10 @@ export default function AdminDashboard() {
               >
                 <option value="v1">V1 화면 (/customer-scanner)</option>
                 <option value="v2">V2 화면 (/v2/scanner-v2)</option>
+                <option value="v3">V3 화면 (/v3/scanner-v3)</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                V1: 기존 스캐너 화면 | V2: 인피니티 스크롤 스캐너 화면
+                V1: 기존 스캐너 화면 | V2: 인피니티 스크롤 스캐너 화면 | V3: 신규 스캐너 화면
               </p>
               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
                 💡 <strong>설정 안내:</strong> 변경 사항은 즉시 적용됩니다. 사용자가 바텀메뉴의 "추천종목" 버튼을 클릭하면 선택한 화면으로 이동합니다.
