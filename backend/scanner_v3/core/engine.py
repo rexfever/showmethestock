@@ -4,6 +4,7 @@ Scanner V3 엔진 - midterm + v2-lite 조합
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,8 @@ class ScannerV3:
         midterm_result = self._run_midterm(universe, scan_date)
         
         # Step 3: v2-lite 실행 (neutral/normal일 때만)
-        v2_lite_enabled = (final_regime == "neutral" and risk_label == "normal")
+        disable_v2_lite = os.getenv("V3_DISABLE_V2_LITE", "false").lower() == "true"
+        v2_lite_enabled = (final_regime == "neutral" and risk_label == "normal") and not disable_v2_lite
         v2_lite_result = None
         if v2_lite_enabled:
             v2_lite_result = self._run_v2_lite(universe, scan_date)
@@ -252,8 +254,6 @@ class ScannerV3:
                 "candidates": [],
                 "error": str(e)
             }
-
-
 
 
 

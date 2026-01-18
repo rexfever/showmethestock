@@ -402,9 +402,9 @@ def load_full_data(date: str) -> Dict[str, pd.DataFrame]:
                 # 날짜 필터링: 해당 날짜까지의 데이터만 사용
                 kospi_df = kospi_df[kospi_df.index <= target_date]
                 
-                # 데이터 검증: KOSPI 지수 범위 확인
+                # 데이터 검증: KOSPI 지수 범위 확인 (ETF 대체 사용 시에는 생략)
                 try:
-                    if not kospi_df.empty:
+                    if not kospi_df.empty and kospi_df.attrs.get("source") != "etf":
                         kospi_recent = kospi_df.iloc[-1]['close']
                         # KOSPI 지수는 보통 2000~4000 범위
                         if not (2000 <= kospi_recent <= 4000):
