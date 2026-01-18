@@ -4169,12 +4169,19 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
         return {"ok": False, "error": f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}"}
 
 # Optional 인증을 위한 헬퍼 함수
-async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))) -> Optional[User]:
+async def get_optional_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))
+) -> Optional[User]:
     """선택적 인증: 토큰이 있으면 사용자 반환, 없으면 None"""
-    if not credentials:
+    token = None
+    if credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get('auth_token')
+    if not token:
         return None
     try:
-        token = credentials.credentials
         token_data = auth_service.verify_token(token)
         if token_data:
             user = auth_service.get_user_by_id(token_data.user_id)

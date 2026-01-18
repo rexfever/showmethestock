@@ -117,7 +117,7 @@ export default function AdminDashboard() {
     more: true
   });
   const [bottomNavMenuItemsLoading, setBottomNavMenuItemsLoading] = useState(false);
-  const [scannerLink, setScannerLink] = useState('/customer-scanner'); // 동적 스캐너 링크
+  const [scannerLink, setScannerLink] = useState('/v2/scanner-v2'); // 동적 스캐너 링크
 
   useEffect(() => {
     // 리다이렉트 중이면 추가 체크 안 함
@@ -273,7 +273,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('바텀메뉴 링크 설정 조회 실패:', error);
       // 에러 시 기본값 사용
-      setScannerLink('/customer-scanner');
+      setScannerLink('/v2/scanner-v2');
     }
   };
 
@@ -1144,10 +1144,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => {
               // 동적 메인 링크: active_engine에 따라 적절한 페이지로 이동
-              let targetPath = '/';
-              if (scannerLink && scannerLink !== '/customer-scanner') {
-                targetPath = scannerLink;
-              }
+              let targetPath = scannerLink || '/v2/scanner-v2';
               console.log('[Admin] 메인으로 돌아가기 클릭:', { scannerLink, targetPath, currentPath: router?.asPath });
               if (router?.asPath === targetPath) {
                 console.log('[Admin] 같은 페이지이므로 이동하지 않음');
