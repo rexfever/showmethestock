@@ -2072,7 +2072,11 @@ export default function AdminDashboard() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">현재 링크:</span>
                   <span className="font-medium">
-                    {bottomNavLink.link_type === 'v1' ? 'V1 화면 (/customer-scanner)' : 'V2 화면 (/v2/scanner-v2)'}
+                    {bottomNavLink.link_type === 'v1'
+                      ? 'V1 화면 (/customer-scanner)'
+                      : bottomNavLink.link_type === 'v3'
+                        ? 'V3 화면 (/v3/scanner-v3)'
+                        : 'V2 화면 (/v2/scanner-v2)'}
                   </span>
                 </div>
               </div>

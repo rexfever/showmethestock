@@ -6835,12 +6835,21 @@ async def update_bottom_nav_link(
         
         from scanner_settings_manager import set_scanner_setting
         
-        # v3는 active_engine으로 관리되므로 별도 저장 불필요
+        # v3는 active_engine으로 관리되므로 active_engine을 v3로 설정
         if link_type == 'v3':
+            from scanner_settings_manager import set_active_engine
+            if not set_active_engine(
+                'v3',
+                updated_by=admin_user.email if admin_user else None
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="active_engine을 v3로 저장하는 데 실패했습니다."
+                )
             return {
-                "message": "V3 엔진은 active_engine 설정으로 관리됩니다.",
+                "message": "V3 엔진으로 전환되었습니다.",
                 "link_type": "v3",
-                "link_url": "/v3"
+                "link_url": "/v3/scanner-v3"
             }
         
         success = set_scanner_setting(
