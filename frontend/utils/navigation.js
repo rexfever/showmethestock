@@ -2,6 +2,7 @@
  * 네비게이션 유틸리티
  * 동적 스캐너 링크를 가져오는 함수
  */
+import Cookies from 'js-cookie';
 import getConfig from '../config';
 
 /**
@@ -15,14 +16,16 @@ export const getScannerLink = async () => {
     
     // 인증 토큰 가져오기 (사용자별 설정을 위해 필요)
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const cookieToken = typeof window !== 'undefined' ? Cookies.get('auth_token') : null;
+    const authToken = token || cookieToken;
     
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
     
     const response = await fetch(`${base}/bottom-nav-link`, {
@@ -47,4 +50,3 @@ export const getScannerLink = async () => {
   console.warn('[getScannerLink] fallback 사용: /v2/scanner-v2');
   return '/v2/scanner-v2';
 };
-
