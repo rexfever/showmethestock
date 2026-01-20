@@ -4,6 +4,7 @@ import Head from 'next/head';
 import getConfig from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import Cookies from 'js-cookie';
+import { getScannerLink } from '../utils/navigation';
 
 export default function KakaoCallback() {
   const router = useRouter();
@@ -63,9 +64,56 @@ export default function KakaoCallback() {
           setUser(data.user);
           
           setStatus('로그인 성공! 메인 페이지로 이동합니다.');
-          setTimeout(() => {
-            router.push('/customer-scanner');
-          }, 2000);
+          
+          // 리다이렉트 경로 확인 (localStorage에서)
+          const redirectPath = localStorage.getItem('login_redirect');
+          if (redirectPath) {
+            // 저장된 리다이렉트 경로 사용
+            localStorage.removeItem('login_redirect'); // 사용 후 삭제
+            setTimeout(() => {
+              router.push(decodeURIComponent(redirectPath));
+            }, 2000);
+          } else {
+            // 기본값: 동적으로 스캐너 링크 가져오기
+            const config = getConfig();
+            const base = config?.backendUrl || 'http://localhost:8010';
+            try {
+              const authToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+              const linkResponse = await fetch(`${base}/bottom-nav-link`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                },
+                mode: 'cors',
+                cache: 'no-cache',
+              });
+              
+              let scannerLink = '/v2/scanner-v2'; // 기본값
+              if (linkResponse.ok) {
+                const linkData = await linkResponse.json();
+                scannerLink = linkData.link_url || scannerLink;
+              }
+              
+              setTimeout(() => {
+                router.push(scannerLink);
+              }, 2000);
+            } catch (error) {
+              console.error('스캐너 링크 조회 실패:', error);
+              // 에러 시에도 기본값을 동적으로 가져오기 시도
+              getScannerLink().then(fallbackLink => {
+                setTimeout(() => {
+                  router.push(fallbackLink);
+                }, 2000);
+              }).catch(() => {
+                // 최종 fallback
+                setTimeout(() => {
+                  router.push('/v2/scanner-v2');
+                }, 2000);
+              });
+            }
+          }
         } else {
           setStatus('로그인 처리 중 오류가 발생했습니다.');
           setTimeout(() => {

@@ -14,17 +14,28 @@ def _calculate_start_date(days: int) -> str:
     return start_date
 
 
-def _fetch_scan_rows(start_date: str) -> List[Dict[str, Any]]:
+def _fetch_scan_rows(start_date: str, scanner_version: str = None) -> List[Dict[str, Any]]:
     with db_manager.get_cursor(commit=False) as cur:
-        cur.execute(
-            """
-            SELECT code, name, date, score, score_label, close_price
-            FROM scan_rank
-            WHERE date >= %s
-            ORDER BY date DESC, score DESC
-            """,
-            (start_date,),
-        )
+        if scanner_version:
+            cur.execute(
+                """
+                SELECT code, name, date, score, score_label, close_price
+                FROM scan_rank
+                WHERE date >= %s AND scanner_version = %s
+                ORDER BY date DESC, score DESC
+                """,
+                (start_date, scanner_version),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT code, name, date, score, score_label, close_price
+                FROM scan_rank
+                WHERE date >= %s
+                ORDER BY date DESC, score DESC
+                """,
+                (start_date,),
+            )
         rows = cur.fetchall()
     return rows
 
@@ -32,13 +43,14 @@ def _fetch_scan_rows(start_date: str) -> List[Dict[str, Any]]:
 @router.get("/recurring-stocks")
 async def get_recurring_stocks(
     days: int = Query(7, description="최근 몇 일간의 데이터를 확인할지"),
-    min_appearances: int = Query(2, description="최소 등장 횟수")
+    min_appearances: int = Query(2, description="최소 등장 횟수"),
+    scanner_version: str = Query(None, description="스캐너 버전 ('v1', 'v2', 'us_v2')")
 ) -> Dict[str, Any]:
     """
     최근 N일간 재등장한 종목들을 조회하는 API
     """
     start_date = _calculate_start_date(days)
-    rows = _fetch_scan_rows(start_date)
+    rows = _fetch_scan_rows(start_date, scanner_version)
 
     stock_appearances = defaultdict(list)
     for row in rows:

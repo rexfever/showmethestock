@@ -1,0 +1,66 @@
+{
+  "date": "20251125",
+  "market_sentiment": "neutral",
+  "fallback_profile": {
+    "target_min": 1,
+    "target_max": 5,
+    "presets": [
+      {},
+      {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.0
+      },
+      {
+        "min_signals": 2,
+        "vol_ma5_mult": 1.8
+      },
+      {
+        "min_signals": 2,
+        "vol_ma5_mult": 1.5,
+        "vol_ma20_mult": 1.1
+      },
+      {
+        "min_signals": 2,
+        "vol_ma5_mult": 1.5,
+        "gap_max": 0.025,
+        "ext_from_tema20_max": 0.025
+      },
+      {
+        "min_signals": 1,
+        "vol_ma5_mult": 1.3,
+        "require_dema_slope": "optional"
+      }
+    ]
+  },
+  "chosen_step": null,
+  "universe_count": 200,
+  "steps": {
+    "0": {
+      "preset": {},
+      "items": []
+    },
+    "1": {
+      "preset": {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.0
+      },
+      "items": []
+    },
+    "2": {
+      "preset": {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.0
+      },
+      "items": []
+    },
+    "3": {
+      "preset": {
+        "min_signals": 2,
+        "vol_ma5_mult": 1.8
+      },
+      "items": []
+    }
+  },
+  "final_items": [],
+  "enriched_final": []
+}

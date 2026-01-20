@@ -179,7 +179,7 @@ python main.py
 ### 7.2 테스트 API 호출
 ```bash
 # 수동 테스트 발송
-curl -X POST "http://localhost:8000/send_scan_result?to=010-1111-2222"
+curl -X POST "http://localhost:8010/send_scan_result?to=010-1111-2222"
 ```
 
 ### 7.3 결과 확인

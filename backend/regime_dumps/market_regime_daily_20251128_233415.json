@@ -1,0 +1,5826 @@
+[
+  {
+    "date": "2025-11-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-28 15:54:15.799864+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-28 15:54:17.229537+09:00"
+  },
+  {
+    "date": "2025-11-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-27 15:40:30.558294+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-27 15:42:30.882407+09:00"
+  },
+  {
+    "date": "2025-11-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-26 15:40:31.169738+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 15:42:31.495570+09:00"
+  },
+  {
+    "date": "2025-11-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:36.531015+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:08.967556+09:00"
+  },
+  {
+    "date": "2025-11-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:35.550164+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:07.996277+09:00"
+  },
+  {
+    "date": "2025-11-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:34.589714+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:07.023736+09:00"
+  },
+  {
+    "date": "2025-11-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:33.620759+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:06.038034+09:00"
+  },
+  {
+    "date": "2025-11-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:32.651055+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:05.072944+09:00"
+  },
+  {
+    "date": "2025-11-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:31.682736+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:03.933778+09:00"
+  },
+  {
+    "date": "2025-11-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:30.709702+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:02.876305+09:00"
+  },
+  {
+    "date": "2025-11-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:29.726785+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:01.899472+09:00"
+  },
+  {
+    "date": "2025-11-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:28.712842+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:05:00.858694+09:00"
+  },
+  {
+    "date": "2025-11-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:27.750042+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:59.877042+09:00"
+  },
+  {
+    "date": "2025-11-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:26.778136+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:58.906317+09:00"
+  },
+  {
+    "date": "2025-11-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:25.806881+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:57.920366+09:00"
+  },
+  {
+    "date": "2025-11-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:24.831660+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:56.944353+09:00"
+  },
+  {
+    "date": "2025-11-06",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:23.858427+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:55.971599+09:00"
+  },
+  {
+    "date": "2025-11-05",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:22.886526+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:54.983976+09:00"
+  },
+  {
+    "date": "2025-11-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:21.904241+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:53.996790+09:00"
+  },
+  {
+    "date": "2025-11-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:20.942365+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:53.025512+09:00"
+  },
+  {
+    "date": "2025-10-31",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:19.982589+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:52.039937+09:00"
+  },
+  {
+    "date": "2025-10-30",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:19.001947+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:51.054798+09:00"
+  },
+  {
+    "date": "2025-10-29",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:17.981276+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:49.894479+09:00"
+  },
+  {
+    "date": "2025-10-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:17.002165+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:48.920488+09:00"
+  },
+  {
+    "date": "2025-10-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:16.024687+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:47.942886+09:00"
+  },
+  {
+    "date": "2025-10-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:15.060864+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:46.974685+09:00"
+  },
+  {
+    "date": "2025-10-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:14.091166+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:45.996847+09:00"
+  },
+  {
+    "date": "2025-10-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:13.115061+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:45.018136+09:00"
+  },
+  {
+    "date": "2025-10-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:12.147370+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:44.038168+09:00"
+  },
+  {
+    "date": "2025-10-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:11.324509+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:43.237339+09:00"
+  },
+  {
+    "date": "2025-10-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:10.340644+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:42.267157+09:00"
+  },
+  {
+    "date": "2025-10-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:09.371078+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:41.292332+09:00"
+  },
+  {
+    "date": "2025-10-15",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:08.409169+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:40.321298+09:00"
+  },
+  {
+    "date": "2025-10-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:07.442250+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:39.333384+09:00"
+  },
+  {
+    "date": "2025-10-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:06.418444+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:38.259157+09:00"
+  },
+  {
+    "date": "2025-10-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:05.450484+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:37.189203+09:00"
+  },
+  {
+    "date": "2025-10-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:04.479665+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:36.147465+09:00"
+  },
+  {
+    "date": "2025-10-01",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:03.496869+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:35.083288+09:00"
+  },
+  {
+    "date": "2025-09-30",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:02.521662+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:34.063407+09:00"
+  },
+  {
+    "date": "2025-09-29",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:01.566658+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:32.969134+09:00"
+  },
+  {
+    "date": "2025-09-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:33:00.601383+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:31.855772+09:00"
+  },
+  {
+    "date": "2025-09-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:59.610709+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:30.766041+09:00"
+  },
+  {
+    "date": "2025-09-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:58.653153+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:29.681278+09:00"
+  },
+  {
+    "date": "2025-09-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:57.681979+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:28.604380+09:00"
+  },
+  {
+    "date": "2025-09-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:56.702771+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:27.564136+09:00"
+  },
+  {
+    "date": "2025-09-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:55.665610+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:26.439211+09:00"
+  },
+  {
+    "date": "2025-09-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:54.686538+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:25.367325+09:00"
+  },
+  {
+    "date": "2025-09-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:53.694313+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:24.276502+09:00"
+  },
+  {
+    "date": "2025-09-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:52.559761+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:23.177841+09:00"
+  },
+  {
+    "date": "2025-09-15",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:51.752308+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:22.310713+09:00"
+  },
+  {
+    "date": "2025-09-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:50.935569+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:21.455009+09:00"
+  },
+  {
+    "date": "2025-09-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:49.964038+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:20.400851+09:00"
+  },
+  {
+    "date": "2025-09-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:48.979273+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:19.354060+09:00"
+  },
+  {
+    "date": "2025-09-09",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:48.002987+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:18.294967+09:00"
+  },
+  {
+    "date": "2025-09-08",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:47.032407+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:17.234882+09:00"
+  },
+  {
+    "date": "2025-09-05",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:46.061847+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:16.192079+09:00"
+  },
+  {
+    "date": "2025-09-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:45.086853+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:15.140539+09:00"
+  },
+  {
+    "date": "2025-09-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:44.125963+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:14.066158+09:00"
+  },
+  {
+    "date": "2025-09-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:43.111900+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:12.961828+09:00"
+  },
+  {
+    "date": "2025-09-01",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:42.138342+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:11.906893+09:00"
+  },
+  {
+    "date": "2025-08-29",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:41.178835+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:10.826733+09:00"
+  },
+  {
+    "date": "2025-08-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:40.195633+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:09.757873+09:00"
+  },
+  {
+    "date": "2025-08-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:39.215468+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:08.709093+09:00"
+  },
+  {
+    "date": "2025-08-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:38.251517+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:07.648920+09:00"
+  },
+  {
+    "date": "2025-08-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:37.279246+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:06.590091+09:00"
+  },
+  {
+    "date": "2025-08-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:36.308633+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:05.540023+09:00"
+  },
+  {
+    "date": "2025-08-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:35.349117+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:04.484724+09:00"
+  },
+  {
+    "date": "2025-08-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:34.375201+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:03.450883+09:00"
+  },
+  {
+    "date": "2025-08-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:33.407082+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:02.369567+09:00"
+  },
+  {
+    "date": "2025-08-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:32.391721+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:01.277442+09:00"
+  },
+  {
+    "date": "2025-08-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:31.408573+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:04:00.230862+09:00"
+  },
+  {
+    "date": "2025-08-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:30.437948+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:59.174422+09:00"
+  },
+  {
+    "date": "2025-08-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:29.477762+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:58.132887+09:00"
+  },
+  {
+    "date": "2025-08-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:28.498201+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:57.059653+09:00"
+  },
+  {
+    "date": "2025-08-08",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:27.531724+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:55.950956+09:00"
+  },
+  {
+    "date": "2025-08-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:26.554554+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:54.858494+09:00"
+  },
+  {
+    "date": "2025-08-06",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:25.576149+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:53.760787+09:00"
+  },
+  {
+    "date": "2025-08-05",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:24.611557+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:52.726330+09:00"
+  },
+  {
+    "date": "2025-08-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:23.650402+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:51.674226+09:00"
+  },
+  {
+    "date": "2025-08-01",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:22.687012+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:50.617344+09:00"
+  },
+  {
+    "date": "2025-07-31",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:21.661800+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:49.521545+09:00"
+  },
+  {
+    "date": "2025-07-30",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:20.689956+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:48.495608+09:00"
+  },
+  {
+    "date": "2025-07-29",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:19.713500+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:47.473212+09:00"
+  },
+  {
+    "date": "2025-07-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:18.745716+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:46.421726+09:00"
+  },
+  {
+    "date": "2025-07-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:17.779018+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:45.400037+09:00"
+  },
+  {
+    "date": "2025-07-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:16.805060+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:44.371710+09:00"
+  },
+  {
+    "date": "2025-07-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:15.834170+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:43.335719+09:00"
+  },
+  {
+    "date": "2025-07-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:14.858677+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:42.308538+09:00"
+  },
+  {
+    "date": "2025-07-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:13.895123+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:41.246631+09:00"
+  },
+  {
+    "date": "2025-07-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:12.934399+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:39.907905+09:00"
+  },
+  {
+    "date": "2025-07-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:11.953380+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:38.552490+09:00"
+  },
+  {
+    "date": "2025-07-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:10.984661+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:37.186891+09:00"
+  },
+  {
+    "date": "2025-07-15",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:09.959926+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:35.981046+09:00"
+  },
+  {
+    "date": "2025-07-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:08.982291+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:34.794455+09:00"
+  },
+  {
+    "date": "2025-07-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:08.008036+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:33.336831+09:00"
+  },
+  {
+    "date": "2025-07-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:07.032248+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:32.045455+09:00"
+  },
+  {
+    "date": "2025-07-09",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:06.054277+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:30.781966+09:00"
+  },
+  {
+    "date": "2025-07-08",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:05.077684+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:29.517439+09:00"
+  },
+  {
+    "date": "2025-07-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:04.105407+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:28.286323+09:00"
+  },
+  {
+    "date": "2025-07-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:03.126813+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:26.948750+09:00"
+  },
+  {
+    "date": "2025-07-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:02.173013+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:25.511468+09:00"
+  },
+  {
+    "date": "2025-07-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:01.204266+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:23.938098+09:00"
+  },
+  {
+    "date": "2025-07-01",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:32:00.233049+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 13:03:21.861611+09:00"
+  },
+  {
+    "date": "2025-06-30",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:59.208149+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:34.230509+09:00"
+  },
+  {
+    "date": "2025-06-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:58.230487+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:33.258468+09:00"
+  },
+  {
+    "date": "2025-06-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:57.269630+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:32.276117+09:00"
+  },
+  {
+    "date": "2025-06-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:56.299943+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:31.302192+09:00"
+  },
+  {
+    "date": "2025-06-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:55.326744+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:30.330911+09:00"
+  },
+  {
+    "date": "2025-06-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:54.370867+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:29.362315+09:00"
+  },
+  {
+    "date": "2025-06-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:53.395611+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:28.361986+09:00"
+  },
+  {
+    "date": "2025-06-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:52.410888+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:27.375830+09:00"
+  },
+  {
+    "date": "2025-06-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:51.611148+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:26.573755+09:00"
+  },
+  {
+    "date": "2025-06-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:50.642116+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:46:25.607946+09:00"
+  },
+  {
+    "date": "2025-06-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:49.652000+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:10.603700+09:00"
+  },
+  {
+    "date": "2025-06-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:48.694466+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:09.573387+09:00"
+  },
+  {
+    "date": "2025-06-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:47.680484+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:08.580409+09:00"
+  },
+  {
+    "date": "2025-06-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:46.677180+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:07.613478+09:00"
+  },
+  {
+    "date": "2025-06-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:45.695961+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:06.619976+09:00"
+  },
+  {
+    "date": "2025-06-09",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:44.729641+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:05.624001+09:00"
+  },
+  {
+    "date": "2025-06-05",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:43.756937+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:04.589851+09:00"
+  },
+  {
+    "date": "2025-06-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:42.783272+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:03.581383+09:00"
+  },
+  {
+    "date": "2025-06-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:41.819170+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 12:20:02.519164+09:00"
+  },
+  {
+    "date": "2025-06-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:40.848765+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:31.102273+09:00"
+  },
+  {
+    "date": "2025-05-30",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:39.880978+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:30.142844+09:00"
+  },
+  {
+    "date": "2025-05-29",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:38.898518+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:29.107346+09:00"
+  },
+  {
+    "date": "2025-05-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:37.926193+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:28.133370+09:00"
+  },
+  {
+    "date": "2025-05-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:36.902176+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:27.145381+09:00"
+  },
+  {
+    "date": "2025-05-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:35.929330+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:26.169018+09:00"
+  },
+  {
+    "date": "2025-05-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:34.945899+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:25.188907+09:00"
+  },
+  {
+    "date": "2025-05-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:33.986106+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:24.218480+09:00"
+  },
+  {
+    "date": "2025-05-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:33.010613+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:23.229390+09:00"
+  },
+  {
+    "date": "2025-05-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:32.028346+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:50:22.140728+09:00"
+  },
+  {
+    "date": "2025-05-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:31.057742+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:40.272965+09:00"
+  },
+  {
+    "date": "2025-05-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:30.096555+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:37.519180+09:00"
+  },
+  {
+    "date": "2025-05-15",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:29.116257+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:34.826169+09:00"
+  },
+  {
+    "date": "2025-05-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:28.154245+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:32.183957+09:00"
+  },
+  {
+    "date": "2025-05-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:27.184887+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:31.195842+09:00"
+  },
+  {
+    "date": "2025-05-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:26.158092+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:30.237851+09:00"
+  },
+  {
+    "date": "2025-05-09",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:25.190979+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:29.204372+09:00"
+  },
+  {
+    "date": "2025-05-08",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:24.222334+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:28.133762+09:00"
+  },
+  {
+    "date": "2025-05-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:23.247078+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:26.809281+09:00"
+  },
+  {
+    "date": "2025-05-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:22.270026+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:25.541354+09:00"
+  },
+  {
+    "date": "2025-05-01",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:21.294083+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 11:45:24.384921+09:00"
+  },
+  {
+    "date": "2025-04-30",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:20.320985+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:58:18.216381+09:00"
+  },
+  {
+    "date": "2025-04-29",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:19.337841+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:57:53.842713+09:00"
+  },
+  {
+    "date": "2025-04-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:18.366178+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:57:27.787586+09:00"
+  },
+  {
+    "date": "2025-04-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:17.395122+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:57:02.161058+09:00"
+  },
+  {
+    "date": "2025-04-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:16.424188+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:56:29.738200+09:00"
+  },
+  {
+    "date": "2025-04-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:15.380372+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:56:08.321997+09:00"
+  },
+  {
+    "date": "2025-04-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:14.413165+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:55:47.414846+09:00"
+  },
+  {
+    "date": "2025-04-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:13.444661+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:55:23.272567+09:00"
+  },
+  {
+    "date": "2025-04-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:12.461793+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:55:03.502294+09:00"
+  },
+  {
+    "date": "2025-04-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:11.506329+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:54:41.646802+09:00"
+  },
+  {
+    "date": "2025-04-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:10.536905+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:54:17.290388+09:00"
+  },
+  {
+    "date": "2025-04-15",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:09.555839+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:53:57.105087+09:00"
+  },
+  {
+    "date": "2025-04-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:08.562395+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:53:33.342276+09:00"
+  },
+  {
+    "date": "2025-04-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:07.583246+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:53:14.526036+09:00"
+  },
+  {
+    "date": "2025-04-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:06.604999+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:52:53.582122+09:00"
+  },
+  {
+    "date": "2025-04-09",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:05.635824+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:52:28.180632+09:00"
+  },
+  {
+    "date": "2025-04-08",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:04.602237+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:52:02.425783+09:00"
+  },
+  {
+    "date": "2025-04-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:03.630665+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:51:36.689488+09:00"
+  },
+  {
+    "date": "2025-04-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:02.663905+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:51:14.532189+09:00"
+  },
+  {
+    "date": "2025-04-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:01.681391+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:50:52.430847+09:00"
+  },
+  {
+    "date": "2025-04-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:31:00.709461+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:50:26.504803+09:00"
+  },
+  {
+    "date": "2025-04-01",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:59.741592+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:50:00.962095+09:00"
+  },
+  {
+    "date": "2025-03-31",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:58.759689+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:49:36.464219+09:00"
+  },
+  {
+    "date": "2025-03-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:57.787457+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:49:18.487862+09:00"
+  },
+  {
+    "date": "2025-03-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:56.814525+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:48:59.810502+09:00"
+  },
+  {
+    "date": "2025-03-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:55.840113+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:48:40.118083+09:00"
+  },
+  {
+    "date": "2025-03-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:54.873905+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:48:11.849742+09:00"
+  },
+  {
+    "date": "2025-03-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:53.841465+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:47:36.384002+09:00"
+  },
+  {
+    "date": "2025-03-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:52.864442+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:47:14.223667+09:00"
+  },
+  {
+    "date": "2025-03-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:51.884265+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:46:55.246157+09:00"
+  },
+  {
+    "date": "2025-03-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:50.901269+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:46:29.441023+09:00"
+  },
+  {
+    "date": "2025-03-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:49.913900+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:46:08.074673+09:00"
+  },
+  {
+    "date": "2025-03-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:48.925885+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:45:47.945262+09:00"
+  },
+  {
+    "date": "2025-03-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:47.929275+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:45:27.724250+09:00"
+  },
+  {
+    "date": "2025-03-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:46.957097+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:45:07.003788+09:00"
+  },
+  {
+    "date": "2025-03-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:46.150872+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:44:41.879752+09:00"
+  },
+  {
+    "date": "2025-03-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:45.152845+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:44:15.092463+09:00"
+  },
+  {
+    "date": "2025-03-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:44.143555+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:43:50.507528+09:00"
+  },
+  {
+    "date": "2025-03-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:43.165743+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:43:26.678389+09:00"
+  },
+  {
+    "date": "2025-03-06",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:42.353998+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:43:11.136553+09:00"
+  },
+  {
+    "date": "2025-03-05",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:41.313075+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:42:49.628954+09:00"
+  },
+  {
+    "date": "2025-03-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:40.328097+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:42:25.149281+09:00"
+  },
+  {
+    "date": "2025-02-28",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:39.345656+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:42:05.989095+09:00"
+  },
+  {
+    "date": "2025-02-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:38.502356+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:41:50.080421+09:00"
+  },
+  {
+    "date": "2025-02-26",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:37.523063+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:41:29.584154+09:00"
+  },
+  {
+    "date": "2025-02-25",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:36.559568+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:41:08.539355+09:00"
+  },
+  {
+    "date": "2025-02-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:35.589910+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:40:48.064083+09:00"
+  },
+  {
+    "date": "2025-02-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:34.620845+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:40:28.553536+09:00"
+  },
+  {
+    "date": "2025-02-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:33.642616+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:40:08.063242+09:00"
+  },
+  {
+    "date": "2025-02-19",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:32.562427+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:39:47.098467+09:00"
+  },
+  {
+    "date": "2025-02-18",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:31.608297+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:39:18.445812+09:00"
+  },
+  {
+    "date": "2025-02-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:30.641803+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:38:54.811056+09:00"
+  },
+  {
+    "date": "2025-02-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:29.610835+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:38:33.813885+09:00"
+  },
+  {
+    "date": "2025-02-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:28.648931+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:38:14.698986+09:00"
+  },
+  {
+    "date": "2025-02-12",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:27.680094+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:37:55.550300+09:00"
+  },
+  {
+    "date": "2025-02-11",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:26.701068+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:37:29.931600+09:00"
+  },
+  {
+    "date": "2025-02-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:25.728991+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:37:02.143065+09:00"
+  },
+  {
+    "date": "2025-02-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:24.756449+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:36:38.186810+09:00"
+  },
+  {
+    "date": "2025-02-06",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:23.787751+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:36:19.684833+09:00"
+  },
+  {
+    "date": "2025-02-05",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:22.816921+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:35:52.546974+09:00"
+  },
+  {
+    "date": "2025-02-04",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:21.835667+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:35:25.828302+09:00"
+  },
+  {
+    "date": "2025-02-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:20.869515+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:34:58.479440+09:00"
+  },
+  {
+    "date": "2025-01-31",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:19.901667+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:34:29.414058+09:00"
+  },
+  {
+    "date": "2025-01-27",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:18.861830+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:34:01.868316+09:00"
+  },
+  {
+    "date": "2025-01-24",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:17.893952+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:33:41.784172+09:00"
+  },
+  {
+    "date": "2025-01-23",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:16.932356+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:33:20.246248+09:00"
+  },
+  {
+    "date": "2025-01-22",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:30:15.946544+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:33:00.143332+09:00"
+  },
+  {
+    "date": "2025-01-21",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:29:30.445849+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:32:38.459407+09:00"
+  },
+  {
+    "date": "2025-01-20",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:29:04.844642+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:32:17.328200+09:00"
+  },
+  {
+    "date": "2025-01-17",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:28:44.013327+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:31:57.842096+09:00"
+  },
+  {
+    "date": "2025-01-16",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:28:15.736991+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:31:35.106998+09:00"
+  },
+  {
+    "date": "2025-01-15",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:27:47.622677+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:31:06.241306+09:00"
+  },
+  {
+    "date": "2025-01-14",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 18:27:21.261745+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:30:39.373467+09:00"
+  },
+  {
+    "date": "2025-01-13",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:34:36.423758+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:30:13.551422+09:00"
+  },
+  {
+    "date": "2025-01-10",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:32:22.018311+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:29:46.937509+09:00"
+  },
+  {
+    "date": "2025-01-09",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:32:11.295973+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:29:20.685327+09:00"
+  },
+  {
+    "date": "2025-01-08",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:31:58.796091+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:28:53.971181+09:00"
+  },
+  {
+    "date": "2025-01-07",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:31:46.673279+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:28:34.598683+09:00"
+  },
+  {
+    "date": "2025-01-06",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:31:35.990097+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:28:12.688444+09:00"
+  },
+  {
+    "date": "2025-01-03",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:31:25.522836+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:27:47.792045+09:00"
+  },
+  {
+    "date": "2025-01-02",
+    "us_prev_sentiment": "neutral",
+    "kr_sentiment": "bull",
+    "us_preopen_sentiment": "none",
+    "final_regime": "neutral",
+    "us_metrics": {
+      "regime": "neutral",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 1.0
+    },
+    "kr_metrics": {
+      "regime": "bull",
+      "risk_label": "normal",
+      "risk_score": 0.0,
+      "trend_score": 2.0
+    },
+    "us_preopen_metrics": {},
+    "run_timestamp": "2025-11-25 17:57:03.249725+09:00",
+    "version": "regime_v4",
+    "us_futures_score": 1.0,
+    "us_futures_regime": "neutral",
+    "dxy": 0.0,
+    "updated_at": "2025-11-26 10:27:15.861917+09:00"
+  }
+]

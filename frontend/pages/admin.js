@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import Head from 'next/head';
 import getConfig from '../config';
-import MarketConditionDetailCard from '../components/MarketConditionDetailCard';
+import Cookies from 'js-cookie';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isAuthenticated, user, token, loading: authLoading, authChecked } = useAuth();
+  const { isAuthenticated, user, token, loading: authLoading, authChecked, logout } = useAuth();
   
   // 날짜 형식 변환 함수
   const convertToYYYYMMDD = (dateStr) => {
@@ -19,6 +19,27 @@ export default function AdminDashboard() {
     if (!dateStr || dateStr.length !== 8) return '';
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
   };
+
+  const formatBytes = (bytes) => {
+    if (!bytes || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / Math.pow(1024, idx);
+    return `${value.toFixed(1)} ${units[idx]}`;
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('ko-KR');
+  };
+
+  const formatDateRange = (start, end) => {
+    if (!start && !end) return '-';
+    if (start && end) return `${start} ~ ${end}`;
+    return start || end || '-';
+  };
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,10 +48,29 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [scanDates, setScanDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [rescanLoading, setRescanLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [backtestScanner, setBacktestScanner] = useState('v3');
+  const [backtestStartDate, setBacktestStartDate] = useState('');
+  const [backtestEndDate, setBacktestEndDate] = useState('');
+  const [backtestLoading, setBacktestLoading] = useState(false);
+  const [backtestResult, setBacktestResult] = useState(null);
+  const [scanRangeScanner, setScanRangeScanner] = useState('v3');
+  const [scanRangeStartDate, setScanRangeStartDate] = useState('');
+  const [scanRangeEndDate, setScanRangeEndDate] = useState('');
+  const [scanRangeLoading, setScanRangeLoading] = useState(false);
+  const [scanRangeResult, setScanRangeResult] = useState(null);
+  const [cacheStatus, setCacheStatus] = useState([]);
+  const [cacheStatusLoading, setCacheStatusLoading] = useState(false);
+  
+  // 방문자 통계 상태
+  const [dailyVisitorStats, setDailyVisitorStats] = useState([]);
+  const [dailyVisitorStatsByPath, setDailyVisitorStatsByPath] = useState([]);
+  const [cumulativeVisitorStats, setCumulativeVisitorStats] = useState(null);
+  const [visitorStatsLoading, setVisitorStatsLoading] = useState(false);
+  const [visitorStatsStartDate, setVisitorStatsStartDate] = useState('');
+  const [visitorStatsEndDate, setVisitorStatsEndDate] = useState('');
+  const authErrorShownRef = useRef(false); // 인증 에러 알림 중복 방지 (ref 사용)
+  const isRedirectingRef = useRef(false); // 리다이렉트 중 플래그 (ref 사용)
+  const authCheckDoneRef = useRef(false); // 인증 체크 완료 플래그
   
   // 메인트넌스 설정 상태
   const [maintenanceSettings, setMaintenanceSettings] = useState({
@@ -50,28 +90,63 @@ export default function AdminDashboard() {
   });
   const [popupLoading, setPopupLoading] = useState(false);
 
-  // 추세 변동 대응 상태
-  const [trendAnalysis, setTrendAnalysis] = useState(null);
-  const [trendLoading, setTrendLoading] = useState(false);
-  const [trendApplyLoading, setTrendApplyLoading] = useState(false);
   
-  // 장세 분석 상태
-  const [marketCondition, setMarketCondition] = useState(null);
-  const [marketLoading, setMarketLoading] = useState(false);
+  // 스캐너 설정 상태 (엔진 중심으로 단순화)
+  const [scannerSettings, setScannerSettings] = useState({
+    active_engine: 'v1',
+    regime_version: 'v1'
+  });
+  const [scannerLoading, setScannerLoading] = useState(false);
+  
+  // 바텀메뉴 링크 설정 상태
+  const [bottomNavLink, setBottomNavLink] = useState({
+    link_type: 'v1'  // 'v1' 또는 'v2'
+  });
+  const [bottomNavLinkLoading, setBottomNavLinkLoading] = useState(false);
+  
+  // 바텀메뉴 노출 설정 상태
+  const [bottomNavVisible, setBottomNavVisible] = useState(true);
+  const [bottomNavVisibleLoading, setBottomNavVisibleLoading] = useState(false);
+  
+  // 바텀메뉴 개별 메뉴 아이템 설정 상태
+  const [bottomNavMenuItems, setBottomNavMenuItems] = useState({
+    korean_stocks: true,
+    us_stocks: true,
+    stock_analysis: true,
+    portfolio: true,
+    more: true
+  });
+  const [bottomNavMenuItemsLoading, setBottomNavMenuItemsLoading] = useState(false);
+  const [scannerLink, setScannerLink] = useState('/v2/scanner-v2'); // 동적 스캐너 링크
 
   useEffect(() => {
+    // 리다이렉트 중이면 추가 체크 안 함
+    if (isRedirectingRef.current) {
+      return;
+    }
+    
+    // 이미 인증 체크를 완료했으면 다시 실행하지 않음
+    if (authCheckDoneRef.current) {
+      return;
+    }
+    
     // 인증 체크가 완료되지 않았거나 로딩 중이면 대기
     if (!authChecked || authLoading) {
       return;
     }
     
+    // 인증 체크 완료 플래그 설정
+    authCheckDoneRef.current = true;
+    
     if (!isAuthenticated()) {
-      router.push('/login');
+      isRedirectingRef.current = true;
+      router.replace('/login');
       return;
     }
     
     // 사용자 정보가 로드되지 않았으면 대기
     if (!user) {
+      authCheckDoneRef.current = false; // 사용자 정보 로드 대기
       return;
     }
     
@@ -84,8 +159,20 @@ export default function AdminDashboard() {
     );
     
     if (!isAdmin) {
+      // 동적 스캐너 링크를 먼저 가져온 후 리다이렉트
+      const redirectToScanner = async () => {
+        try {
+          const { getScannerLink } = await import('../utils/navigation');
+          const scannerLink = await getScannerLink();
+          router.replace(scannerLink);
+        } catch (error) {
+          console.error('스캐너 링크 조회 실패:', error);
+          // 에러 시 기본값 사용
+          router.replace('/v2/scanner-v2');
+        }
+      };
       alert('관리자 권한이 필요합니다.');
-      router.push('/customer-scanner');
+      redirectToScanner();
       return;
     }
     
@@ -94,19 +181,329 @@ export default function AdminDashboard() {
       performAnalysis(router.query.analyze);
     } else {
       fetchAdminData();
-      fetchScanDates();
-      fetchTrendAnalysis();
-      fetchMarketCondition();
+      fetchScannerSettings();
+      fetchBottomNavLink();
+      fetchBottomNavVisible();
+      fetchBottomNavMenuItems();
     }
-  }, [authChecked, authLoading, isAuthenticated, user, router, router.query.analyze]);
+  }, [authChecked, authLoading, user, token, router]);
+  
+  // router 이벤트 리스너: 리다이렉트 시작 시 추가 실행 방지
+  useEffect(() => {
+    const handleRouteChangeStart = (url) => {
+      isRedirectingRef.current = true;
+      // 로그인 페이지로 이동하는 경우에만 플래그 설정
+      if (url === '/login') {
+        authErrorShownRef.current = true;
+      }
+    };
+    
+    const handleRouteChangeComplete = (url) => {
+      // 리다이렉트 완료 후 플래그 리셋 (로그인 페이지 도착 시)
+      // url 파라미터와 router.pathname 모두 확인 (Next.js 버전별 차이 대응)
+      const targetUrl = url || router.pathname || router.asPath;
+      if (targetUrl === '/login' || targetUrl.startsWith('/login')) {
+        isRedirectingRef.current = false;
+        authErrorShownRef.current = false;
+        authCheckDoneRef.current = false;
+      }
+    };
+    
+    router.events?.on('routeChangeStart', handleRouteChangeStart);
+    router.events?.on('routeChangeComplete', handleRouteChangeComplete);
+    
+    return () => {
+      router.events?.off('routeChangeStart', handleRouteChangeStart);
+      router.events?.off('routeChangeComplete', handleRouteChangeComplete);
+    };
+  }, [router]);
 
-  const fetchTrendAnalysis = async () => {
-    setTrendLoading(true);
+  const handleAuthError = useCallback(() => {
+    // 이미 리다이렉트 중이거나 에러를 표시한 경우 무시
+    if (isRedirectingRef.current || authErrorShownRef.current) {
+      return;
+    }
+    
+    // 플래그 설정 (동기적으로) - 먼저 설정하여 중복 실행 방지
+    // 이 순서가 중요: 먼저 플래그를 설정한 후 다른 작업 수행
+    authErrorShownRef.current = true;
+    isRedirectingRef.current = true;
+    authCheckDoneRef.current = false; // 인증 체크 재실행 방지 해제
+    
+    // 로그아웃 처리
+    if (logout) {
+      logout();
+    }
+    // 쿠키와 localStorage 정리
+    Cookies.remove('auth_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // 리다이렉트 (replace로 히스토리에 남기지 않음)
+    // alert는 리다이렉트 전에 표시 (리다이렉트 후에는 alert가 표시되지 않을 수 있음)
+    alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+    
+    // 리다이렉트는 alert 확인 후 실행되도록 약간의 지연
+    setTimeout(() => {
+      router.replace('/login');
+    }, 100);
+  }, [logout, router]);
+
+  const fetchBottomNavLink = async () => {
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-link`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBottomNavLink({
+          link_type: data.link_type || 'v1'
+        });
+        // 동적 스캐너 링크 설정
+        const linkUrl = data.link_url || (data.link_type === 'v2' ? '/v2/scanner-v2' : '/customer-scanner');
+        setScannerLink(linkUrl);
+      } else if (response.status === 401) {
+        handleAuthError();
+      }
+    } catch (error) {
+      console.error('바텀메뉴 링크 설정 조회 실패:', error);
+      // 에러 시 기본값 사용
+      setScannerLink('/v2/scanner-v2');
+    }
+  };
+
+  const fetchBottomNavVisible = async () => {
+    setBottomNavVisibleLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-visible`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBottomNavVisible(data.is_visible !== false);
+      } else if (response.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('바텀메뉴 노출 설정 조회 실패:', error);
+    } finally {
+      setBottomNavVisibleLoading(false);
+    }
+  };
+
+  const updateBottomNavVisible = async () => {
+    setBottomNavVisibleLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-visible`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_visible: bottomNavVisible })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        fetchBottomNavVisible();
+        return { success: true, message: data.message || '바텀메뉴 노출 설정이 저장되었습니다.' };
+      } else if (response.status === 401) {
+        handleAuthError();
+        return { success: false, error: '인증 오류' };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || '바텀메뉴 노출 설정 저장에 실패했습니다.' };
+      }
+    } catch (error) {
+      console.error('바텀메뉴 노출 설정 저장 실패:', error);
+      return { success: false, error: '바텀메뉴 노출 설정 저장 중 오류가 발생했습니다.' };
+    } finally {
+      setBottomNavVisibleLoading(false);
+    }
+  };
+
+  const fetchBottomNavMenuItems = async () => {
+    setBottomNavMenuItemsLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-menu-items`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBottomNavMenuItems({
+          korean_stocks: data.korean_stocks === true,
+          us_stocks: data.us_stocks === true,
+          stock_analysis: data.stock_analysis === true,
+          portfolio: data.portfolio === true,
+          more: data.more === true
+        });
+      } else if (response.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('바텀메뉴 메뉴 아이템 설정 조회 실패:', error);
+    } finally {
+      setBottomNavMenuItemsLoading(false);
+    }
+  };
+
+  const updateBottomNavMenuItems = async () => {
+    setBottomNavMenuItemsLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-menu-items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ menu_items: bottomNavMenuItems })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        fetchBottomNavMenuItems();
+        return { success: true, message: data.message || '바텀메뉴 메뉴 아이템 설정이 저장되었습니다.' };
+      } else if (response.status === 401) {
+        handleAuthError();
+        return { success: false, error: '인증 오류' };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || '바텀메뉴 메뉴 아이템 설정 저장에 실패했습니다.' };
+      }
+    } catch (error) {
+      console.error('바텀메뉴 메뉴 아이템 설정 저장 실패:', error);
+      return { success: false, error: '바텀메뉴 메뉴 아이템 설정 저장 중 오류가 발생했습니다.' };
+    } finally {
+      setBottomNavMenuItemsLoading(false);
+    }
+  };
+
+  const updateBottomNavLink = async () => {
+    setBottomNavLinkLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/bottom-nav-link`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ link_type: bottomNavLink.link_type }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // 설정 다시 불러오기
+        fetchBottomNavLink();
+        return { success: true, message: data.message || '바텀메뉴 링크 설정이 저장되었습니다.' };
+      } else {
+        const data = await response.json();
+        return { success: false, error: `저장 실패: ${data.detail || '알 수 없는 오류'}` };
+      }
+    } catch (error) {
+      console.error('바텀메뉴 링크 설정 저장 실패:', error);
+      return { success: false, error: '저장 중 오류가 발생했습니다.' };
+    } finally {
+      setBottomNavLinkLoading(false);
+    }
+  };
+
+  const runBacktest = async () => {
+    if (!backtestStartDate || !backtestEndDate) {
+      alert('시작일과 종료일을 입력하세요.');
+      return;
+    }
+    try {
+      setBacktestLoading(true);
+      setBacktestResult(null);
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/backtest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          scanner: backtestScanner,
+          start_date: convertToYYYYMMDD(backtestStartDate),
+          end_date: convertToYYYYMMDD(backtestEndDate)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || data.ok === false) {
+        alert(data.error || '백테스트 실행에 실패했습니다.');
+        return;
+      }
+      setBacktestResult(data);
+    } catch (error) {
+      console.error('백테스트 실행 실패:', error);
+      alert('백테스트 실행 중 오류가 발생했습니다.');
+    } finally {
+      setBacktestLoading(false);
+    }
+  };
+
+  const runScanRange = async () => {
+    if (!scanRangeStartDate || !scanRangeEndDate) {
+      alert('시작일과 종료일을 입력하세요.');
+      return;
+    }
+    try {
+      setScanRangeLoading(true);
+      setScanRangeResult(null);
+      const config = getConfig();
+      const base = config.backendUrl;
+      const response = await fetch(`${base}/admin/scan-range`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          scanner: scanRangeScanner,
+          start_date: convertToYYYYMMDD(scanRangeStartDate),
+          end_date: convertToYYYYMMDD(scanRangeEndDate)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || data.ok === false) {
+        alert(data.error || '기간 스캔 실행에 실패했습니다.');
+        return;
+      }
+      setScanRangeResult(data);
+    } catch (error) {
+      console.error('기간 스캔 실행 실패:', error);
+      alert('기간 스캔 실행 중 오류가 발생했습니다.');
+    } finally {
+      setScanRangeLoading(false);
+    }
+  };
+
+  const fetchScannerSettings = async () => {
+    setScannerLoading(true);
     try {
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/admin/trend-analysis`, {
+      const response = await fetch(`${base}/admin/scanner-settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -114,82 +511,60 @@ export default function AdminDashboard() {
       
       if (response.ok) {
         const data = await response.json();
-        if (data.ok) {
-          setTrendAnalysis(data.data);
+        if (data.ok && data.settings) {
+          setScannerSettings({
+            scanner_version: data.settings.scanner_version || 'v1',
+            regime_version: data.settings.regime_version || 'v1',
+            scanner_v2_enabled: data.settings.scanner_v2_enabled === 'true' || data.settings.scanner_v2_enabled === true,
+            active_engine: data.settings.active_engine || 'v1'
+          });
         }
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       }
     } catch (error) {
-      console.error('추세 분석 조회 실패:', error);
+      console.error('스캐너 설정 조회 실패:', error);
     } finally {
-      setTrendLoading(false);
+      setScannerLoading(false);
     }
   };
   
-  const fetchMarketCondition = async () => {
-    setMarketLoading(true);
+  const updateScannerSettings = async () => {
+    setScannerLoading(true);
     try {
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/latest-scan`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && data.data && data.data.market_condition) {
-          setMarketCondition(data.data.market_condition);
-        }
-      }
-    } catch (error) {
-      console.error('장세 분석 조회 실패:', error);
-    } finally {
-      setMarketLoading(false);
-    }
-  };
-
-  const applyTrendParams = async () => {
-    if (!trendAnalysis || !trendAnalysis.recommended_params) {
-      alert('권장 파라미터가 없습니다.');
-      return;
-    }
-
-    if (!confirm('권장 파라미터를 적용하시겠습니까? .env 파일이 백업되고 업데이트됩니다.')) {
-      return;
-    }
-
-    setTrendApplyLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/admin/trend-apply`, {
+      const response = await fetch(`${base}/admin/scanner-settings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(trendAnalysis.recommended_params)
+        body: JSON.stringify({
+          active_engine: scannerSettings.active_engine || 'v1',
+          regime_version: scannerSettings.regime_version || 'v1'
+        })
       });
       
-      const data = await response.json();
-      
-      if (data.ok) {
-        const changesText = Array.isArray(data.changes) && data.changes.length > 0
-          ? data.changes.join('\n')
-          : '변경 사항 없음';
-        alert(`파라미터 적용 완료!\n변경 사항:\n${changesText}\n\n서버 재시작이 필요할 수 있습니다.`);
-        // 분석 데이터 다시 불러오기
-        fetchTrendAnalysis();
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok) {
+          alert(data.message || '스캐너 설정이 업데이트되었습니다.');
+        } else {
+          alert(data.error || '설정 업데이트에 실패했습니다.');
+        }
+      } else if (response.status === 401) {
+        handleAuthError();
       } else {
-        alert(`파라미터 적용 실패: ${data.error || '알 수 없는 오류'}`);
+        const data = await response.json();
+        alert(data.error || '설정 업데이트에 실패했습니다.');
       }
     } catch (error) {
-      console.error('파라미터 적용 실패:', error);
-      alert('파라미터 적용 중 오류가 발생했습니다.');
+      console.error('스캐너 설정 업데이트 실패:', error);
+      alert('설정 업데이트 중 오류가 발생했습니다.');
     } finally {
-      setTrendApplyLoading(false);
+      setScannerLoading(false);
     }
   };
 
@@ -214,12 +589,80 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchVisitorStats = async () => {
+    setVisitorStatsLoading(true);
+    try {
+      const config = getConfig();
+      const base = config.backendUrl;
+      
+      const params = new URLSearchParams();
+      if (visitorStatsStartDate) {
+        params.append('start_date', visitorStatsStartDate);
+      }
+      if (visitorStatsEndDate) {
+        params.append('end_date', visitorStatsEndDate);
+      }
+      
+      const [dailyResponse, dailyByPathResponse, cumulativeResponse] = await Promise.all([
+        fetch(`${base}/admin/access-logs/daily-stats?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${base}/admin/access-logs/daily-stats-by-path?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        fetch(`${base}/admin/access-logs/cumulative-stats?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      ]);
+      
+      if (dailyResponse.ok) {
+        const dailyData = await dailyResponse.json();
+        if (dailyData.ok) {
+          setDailyVisitorStats(dailyData.stats || []);
+        }
+      } else if (dailyResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+      
+      if (dailyByPathResponse.ok) {
+        const dailyByPathData = await dailyByPathResponse.json();
+        if (dailyByPathData.ok) {
+          setDailyVisitorStatsByPath(dailyByPathData.stats || []);
+        }
+      } else if (dailyByPathResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+      
+      if (cumulativeResponse.ok) {
+        const cumulativeData = await cumulativeResponse.json();
+        if (cumulativeData.ok) {
+          setCumulativeVisitorStats(cumulativeData.data);
+        }
+      } else if (cumulativeResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+    } catch (error) {
+      console.error('방문자 통계 조회 실패:', error);
+    } finally {
+      setVisitorStatsLoading(false);
+    }
+  };
+
   const fetchAdminData = async () => {
     try {
       const config = getConfig();
       const base = config.backendUrl;
 
-      const [statsResponse, usersResponse, maintenanceResponse, popupResponse] = await Promise.all([
+      const [statsResponse, usersResponse, maintenanceResponse, popupResponse, cacheResponse] = await Promise.all([
         fetch(`${base}/admin/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -239,6 +682,11 @@ export default function AdminDashboard() {
           headers: {
             'Authorization': `Bearer ${token}`
           }
+        }),
+        fetch(`${base}/admin/cache-status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         })
       ]);
 
@@ -246,14 +694,16 @@ export default function AdminDashboard() {
         const statsData = await statsResponse.json();
         setStats(statsData);
       } else if (statsResponse.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
         return;
       }
 
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         setUsers(usersData.users);
+      } else if (usersResponse.status === 401) {
+        handleAuthError();
+        return;
       }
 
       if (maintenanceResponse.ok) {
@@ -263,6 +713,9 @@ export default function AdminDashboard() {
           end_date: convertToYYYYMMDD_Display(maintenanceData.end_date) || '',
           message: maintenanceData.message || '서비스 점검 중입니다.'
         });
+      } else if (maintenanceResponse.status === 401) {
+        handleAuthError();
+        return;
       }
 
       if (popupResponse.ok) {
@@ -274,6 +727,17 @@ export default function AdminDashboard() {
           start_date: convertToYYYYMMDD_Display(popupData.start_date) || '',
           end_date: convertToYYYYMMDD_Display(popupData.end_date) || ''
         });
+      } else if (popupResponse.status === 401) {
+        handleAuthError();
+        return;
+      }
+
+      if (cacheResponse.ok) {
+        const cacheData = await cacheResponse.json();
+        setCacheStatus(cacheData.data || []);
+      } else if (cacheResponse.status === 401) {
+        handleAuthError();
+        return;
       }
     } catch (error) {
       console.error('관리자 데이터 로딩 오류:', error);
@@ -282,19 +746,27 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchScanDates = async () => {
+  const fetchCacheStatus = async () => {
+    setCacheStatusLoading(true);
     try {
       const config = getConfig();
       const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/available-scan-dates`);
-      const data = await response.json();
-      
-      if (data.ok) {
-        setScanDates(data.dates || []);
-      } else {
+      const response = await fetch(`${base}/admin/cache-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const cacheData = await response.json();
+        setCacheStatus(cacheData.data || []);
+      } else if (response.status === 401) {
+        handleAuthError();
+        return;
       }
     } catch (error) {
+      console.error('캐시 현황 조회 실패:', error);
+    } finally {
+      setCacheStatusLoading(false);
     }
   };
 
@@ -319,8 +791,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         alert('메인트넌스 설정이 업데이트되었습니다.');
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       } else {
         alert('메인트넌스 설정 업데이트에 실패했습니다.');
       }
@@ -354,8 +825,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         alert('팝업 공지 설정이 업데이트되었습니다.');
       } else if (response.status === 401) {
-        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-        router.push('/login');
+        handleAuthError();
       } else {
         alert('팝업 공지 설정 업데이트에 실패했습니다.');
       }
@@ -367,70 +837,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRescan = async () => {
-    if (!selectedDate) {
-      alert('날짜를 선택해주세요.');
-      return;
-    }
-
-    if (!confirm(`${selectedDate} 날짜로 재스캔을 실행하시겠습니까?`)) {
-      return;
-    }
-
-    setRescanLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/scan?date=${convertToYYYYMMDD(selectedDate)}&save_snapshot=true`);
-      const data = await response.json();
-      
-      if (data.ok) {
-        alert(`${selectedDate} 재스캔이 완료되었습니다. 추천 종목: ${data.items.length}개`);
-        fetchScanDates(); // 날짜 목록 새로고침
-      } else {
-        alert(`재스캔 실패: ${data.error || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      alert('재스캔 중 오류가 발생했습니다.');
-    } finally {
-      setRescanLoading(false);
-    }
-  };
-
-  const handleDeleteScan = async () => {
-    if (!selectedDate) {
-      alert('날짜를 선택해주세요.');
-      return;
-    }
-
-    if (!confirm(`${selectedDate} 날짜의 스캔 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
-      return;
-    }
-
-    setDeleteLoading(true);
-    try {
-      const config = getConfig();
-      const base = config.backendUrl;
-      
-      const response = await fetch(`${base}/scan/${convertToYYYYMMDD(selectedDate)}`, {
-        method: 'DELETE'
-      });
-      const data = await response.json();
-      
-      if (data.ok) {
-        alert(`${selectedDate} 스캔 데이터가 삭제되었습니다. (삭제된 레코드: ${data.deleted_records}개)`);
-        fetchScanDates(); // 날짜 목록 새로고침
-        setSelectedDate(''); // 선택 초기화
-      } else {
-        alert(`삭제 실패: ${data.error || '알 수 없는 오류'}`);
-      }
-    } catch (error) {
-      alert('삭제 중 오류가 발생했습니다.');
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   const handleUserEdit = (user) => {
     setEditingUser({ ...user });
@@ -736,7 +1142,17 @@ export default function AdminDashboard() {
             <p className="mt-2 text-gray-600">사용자 관리 및 시스템 통계</p>
           </div>
           <button
-            onClick={() => router.push('/customer-scanner')}
+            onClick={() => {
+              // 동적 메인 링크: active_engine에 따라 적절한 페이지로 이동
+              let targetPath = scannerLink || '/v2/scanner-v2';
+              console.log('[Admin] 메인으로 돌아가기 클릭:', { scannerLink, targetPath, currentPath: router?.asPath });
+              if (router?.asPath === targetPath) {
+                console.log('[Admin] 같은 페이지이므로 이동하지 않음');
+                return;
+              }
+              console.log('[Admin] 이동 시작:', targetPath);
+              window.location.href = targetPath;
+            }}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-700 border border-gray-300 rounded-md"
           >
             메인으로 돌아가기
@@ -804,101 +1220,267 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 스캔 데이터 관리 */}
-        <div className="bg-white rounded-lg shadow mb-8">
+        {/* 캐시 현황 */}
+        <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">스캔 데이터 관리</h2>
-            <p className="text-sm text-gray-600">날짜별 스캔 데이터 삭제 및 재스캔</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">🧊 캐시 현황</h2>
+                <p className="text-sm text-gray-600">주요 캐시 디렉토리의 파일 수 및 최신 갱신 시간</p>
+              </div>
+              <button
+                onClick={fetchCacheStatus}
+                disabled={cacheStatusLoading}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {cacheStatusLoading ? '조회 중...' : '🔄 새로고침'}
+              </button>
+            </div>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 날짜 선택 */}
+          <div className="px-6 py-4">
+            {cacheStatus.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">캐시</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">파일 수</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">용량</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">데이터 기간</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최신 갱신</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">최초 갱신</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {cacheStatus.map((cacheItem) => (
+                      <tr key={cacheItem.name} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {cacheItem.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {cacheItem.file_count?.toLocaleString() || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatBytes(cacheItem.total_size_bytes)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatDateRange(cacheItem.data_start, cacheItem.data_end)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatDateTime(cacheItem.newest_mtime)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {formatDateTime(cacheItem.oldest_mtime)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">조회된 캐시 정보가 없습니다.</div>
+            )}
+          </div>
+        </div>
+
+        {/* 방문자 통계 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">📊 방문자 통계</h2>
+                <p className="text-sm text-gray-600">일별 방문자 수 및 누적 방문자 수 조회</p>
+              </div>
+              <button
+                onClick={fetchVisitorStats}
+                disabled={visitorStatsLoading}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {visitorStatsLoading ? '조회 중...' : '🔄 새로고침'}
+              </button>
+            </div>
+          </div>
+          <div className="px-6 py-4 space-y-6">
+            {/* 날짜 범위 선택 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  스캔 날짜 선택
+                  시작 날짜
                 </label>
-                <select
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                <input
+                  type="date"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">날짜를 선택하세요</option>
-                  {scanDates.map((date) => (
-                    <option key={date} value={date}>
-                      {date}
-                    </option>
-                  ))}
-                </select>
+                  value={visitorStatsStartDate}
+                  onChange={(e) => setVisitorStatsStartDate(e.target.value)}
+                />
               </div>
-
-              {/* 액션 버튼들 */}
-              <div className="flex flex-col space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  종료 날짜
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={visitorStatsEndDate}
+                  onChange={(e) => setVisitorStatsEndDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-end">
                 <button
-                  onClick={handleRescan}
-                  disabled={!selectedDate || rescanLoading}
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  onClick={fetchVisitorStats}
+                  disabled={visitorStatsLoading}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {rescanLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      재스캔 중...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      재스캔 실행
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleDeleteScan}
-                  disabled={!selectedDate || deleteLoading}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {deleteLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      삭제 중...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      스캔 데이터 삭제
-                    </>
-                  )}
+                  {visitorStatsLoading ? '조회 중...' : '조회'}
                 </button>
               </div>
             </div>
 
-            {/* 스캔 날짜 목록 */}
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">사용 가능한 스캔 날짜 ({scanDates.length}개)</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {scanDates.map((date) => (
-                  <button
-                    key={date}
-                    onClick={() => setSelectedDate(date)}
-                    className={`px-3 py-2 text-sm rounded-md border ${
-                      selectedDate === date
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {date}
-                  </button>
-                ))}
+            {/* 누적 방문자 수 */}
+            {cumulativeVisitorStats && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">누적 방문자 수</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">기간</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {cumulativeVisitorStats.start_date || '전체'} ~ {cumulativeVisitorStats.end_date || '전체'}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">고유 방문자 수</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {cumulativeVisitorStats.total_unique_visitors?.toLocaleString() || 0}명
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">총 방문 횟수</p>
+                    <p className="text-2xl font-bold text-indigo-600">
+                      {cumulativeVisitorStats.total_visits?.toLocaleString() || 0}회
+                    </p>
+                  </div>
+                </div>
               </div>
+            )}
+
+            {/* 일별 방문자 수 테이블 */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">일별 방문자 수</h3>
+              {visitorStatsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">조회 중...</p>
+                </div>
+              ) : dailyVisitorStats.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          날짜
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          고유 방문자 수
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          총 방문 횟수
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {dailyVisitorStats.map((stat, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {stat.date}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {stat.unique_visitors?.toLocaleString() || 0}명
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {stat.total_visits?.toLocaleString() || 0}회
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>조회된 데이터가 없습니다.</p>
+                  <p className="text-sm mt-2">날짜 범위를 선택하고 조회 버튼을 클릭하세요.</p>
+                </div>
+              )}
+            </div>
+
+            {/* 화면별 방문자 수 테이블 */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">화면별 방문자 수</h3>
+              {visitorStatsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">조회 중...</p>
+                </div>
+              ) : dailyVisitorStatsByPath.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          날짜
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          화면
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          고유 방문자 수
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          총 방문 횟수
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {dailyVisitorStatsByPath.map((stat, index) => {
+                        // 경로를 화면명으로 변환
+                        const getPathName = (path) => {
+                          const pathMap = {
+                            '/v2/us-stocks-scanner': '미국주식추천',
+                            '/v2/scanner-v2': '한국주식추천 (V2)',
+                            '/customer-scanner': '한국주식추천 (V1)',
+                            '/stock-analysis': '종목분석',
+                            '/portfolio': '나의투자종목',
+                            '/my-stocks': '나의투자종목 (대체)',
+                            '/more': '더보기'
+                          };
+                          return pathMap[path] || path;
+                        };
+                        
+                        return (
+                          <tr key={`${stat.date}-${stat.path}-${index}`} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {stat.date}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {getPathName(stat.path)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {stat.unique_visitors?.toLocaleString() || 0}명
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {stat.total_visits?.toLocaleString() || 0}회
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>조회된 데이터가 없습니다.</p>
+                  <p className="text-sm mt-2">날짜 범위를 선택하고 조회 버튼을 클릭하세요.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1008,250 +1590,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 장세 분석 */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">📊 오늘의 장세 분석</h2>
-                <p className="text-sm text-gray-600">시장 상황 및 스캔 파라미터</p>
-              </div>
-              <button
-                onClick={fetchMarketCondition}
-                disabled={marketLoading}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
-              >
-                {marketLoading ? '조회 중...' : '🔄 새로고침'}
-              </button>
-            </div>
-          </div>
-          <div className="px-6 py-4">
-            {marketLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-600">조회 중...</p>
-              </div>
-            ) : marketCondition ? (
-              <MarketConditionDetailCard marketCondition={marketCondition} />
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>장세 분석 데이터가 없습니다.</p>
-                <p className="text-sm mt-2">스캔이 실행되면 자동으로 표시됩니다.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 추세 변동 대응 */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-gray-900">📊 추세 변동 대응</h2>
-                <p className="text-sm text-gray-600">성과 분석 및 파라미터 자동 조정</p>
-              </div>
-              <button
-                onClick={fetchTrendAnalysis}
-                disabled={trendLoading}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
-              >
-                {trendLoading ? '분석 중...' : '🔄 새로고침'}
-              </button>
-            </div>
-          </div>
-          <div className="px-6 py-4">
-            {trendLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-600">분석 중...</p>
-              </div>
-            ) : trendAnalysis ? (
-              <div className="space-y-6">
-                {/* 성과 지표 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* 최근 4주간 성과 */}
-                  <div className="border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">최근 4주간 성과</h3>
-                    {trendAnalysis.recent_4weeks.avg_return !== null ? (
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">평균 수익률:</span>
-                          <span className={`font-semibold ${trendAnalysis.recent_4weeks.avg_return >= 30 ? 'text-green-600' : trendAnalysis.recent_4weeks.avg_return >= 20 ? 'text-blue-600' : trendAnalysis.recent_4weeks.avg_return >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {trendAnalysis.recent_4weeks.avg_return?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">승률:</span>
-                          <span className={`font-semibold ${trendAnalysis.recent_4weeks.win_rate >= 90 ? 'text-green-600' : trendAnalysis.recent_4weeks.win_rate >= 80 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {trendAnalysis.recent_4weeks.win_rate?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">추천 종목:</span>
-                          <span className="font-medium">{trendAnalysis.recent_4weeks.total_stocks}개</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">데이터 없음</p>
-                    )}
-                  </div>
-
-                  {/* 현재 월 성과 */}
-                  <div className="border rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">현재 월 성과</h3>
-                    {trendAnalysis.current_month.avg_return !== null ? (
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">평균 수익률:</span>
-                          <span className={`font-semibold ${trendAnalysis.current_month.avg_return >= 30 ? 'text-green-600' : trendAnalysis.current_month.avg_return >= 20 ? 'text-blue-600' : trendAnalysis.current_month.avg_return >= 10 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {trendAnalysis.current_month.avg_return?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">승률:</span>
-                          <span className={`font-semibold ${trendAnalysis.current_month.win_rate >= 90 ? 'text-green-600' : trendAnalysis.current_month.win_rate >= 80 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {trendAnalysis.current_month.win_rate?.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">추천 종목:</span>
-                          <span className="font-medium">{trendAnalysis.current_month.total_stocks}개</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">데이터 없음</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 평가 결과 */}
-                <div className={`border-l-4 rounded p-4 ${
-                  trendAnalysis.evaluation === 'excellent' ? 'bg-green-50 border-green-500' :
-                  trendAnalysis.evaluation === 'good' ? 'bg-blue-50 border-blue-500' :
-                  trendAnalysis.evaluation === 'fair' ? 'bg-yellow-50 border-yellow-500' :
-                  'bg-red-50 border-red-500'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        평가: {
-                          trendAnalysis.evaluation === 'excellent' ? '⭐ 매우 우수' :
-                          trendAnalysis.evaluation === 'good' ? '✅ 양호' :
-                          trendAnalysis.evaluation === 'fair' ? '⚠️ 보통' :
-                          '❌ 저조'
-                        }
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {trendAnalysis.evaluation === 'poor' && '즉시 파라미터 조정을 권장합니다.'}
-                        {trendAnalysis.evaluation === 'fair' && '파라미터 조정을 검토하세요.'}
-                        {trendAnalysis.evaluation === 'good' && '현재 성과가 양호합니다.'}
-                        {trendAnalysis.evaluation === 'excellent' && '현재 성과가 매우 우수합니다!'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 파라미터 비교 */}
-                <div className="border rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4">권장 파라미터 조정</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3 font-medium text-gray-700">파라미터</th>
-                          <th className="text-right py-2 px-3 font-medium text-gray-700">현재 값</th>
-                          <th className="text-right py-2 px-3 font-medium text-gray-700">권장 값</th>
-                          <th className="text-center py-2 px-3 font-medium text-gray-700">변경</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.keys(trendAnalysis.current_params).map((key) => {
-                          const current = trendAnalysis.current_params[key];
-                          const recommended = trendAnalysis.recommended_params[key];
-                          const changed = current !== recommended;
-                          return (
-                            <tr key={key} className="border-b">
-                              <td className="py-2 px-3 text-gray-700">{key}</td>
-                              <td className="py-2 px-3 text-right font-medium">{current}</td>
-                              <td className={`py-2 px-3 text-right font-medium ${changed ? 'text-blue-600' : ''}`}>
-                                {recommended}
-                              </td>
-                              <td className="py-2 px-3 text-center">
-                                {changed ? (
-                                  <span className="text-orange-600 font-semibold">변경</span>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Fallback 정보 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Fallback 설정</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">활성화:</span>
-                      <span className={`ml-2 font-medium ${trendAnalysis.fallback_enabled ? 'text-green-600' : 'text-gray-400'}`}>
-                        {trendAnalysis.fallback_enabled ? '✅ 활성화' : '❌ 비활성화'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">최소 목표:</span>
-                      <span className="ml-2 font-medium">{trendAnalysis.fallback_target_min}개</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">최대 목표:</span>
-                      <span className="ml-2 font-medium">{trendAnalysis.fallback_target_max}개</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 적용 버튼 */}
-                <div className="flex justify-end">
-                  <button
-                    onClick={applyTrendParams}
-                    disabled={trendApplyLoading || !trendAnalysis.recommended_params}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {trendApplyLoading ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        적용 중...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        권장 파라미터 적용
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-gray-500">분석 데이터를 불러올 수 없습니다.</p>
-                <button
-                  onClick={fetchTrendAnalysis}
-                  className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  다시 시도
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* 메인트넌스 설정 */}
         <div className="bg-white shadow rounded-lg mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -1327,6 +1665,444 @@ export default function AdminDashboard() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {maintenanceLoading ? '저장 중...' : '설정 저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 스캐너 엔진 설정 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">스캐너 엔진 설정</h2>
+            <p className="text-sm text-gray-600">실행할 엔진을 선택합니다. 엔진은 내부적으로 적절한 스캐너를 선택하여 실행합니다.</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            {/* 활성 엔진 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                활성 엔진 ⭐
+              </label>
+              <select
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium bg-gradient-to-br from-blue-50 to-indigo-50"
+                value={scannerSettings.active_engine || 'v1'}
+                onChange={(e) => setScannerSettings({
+                  ...scannerSettings,
+                  active_engine: e.target.value
+                })}
+              >
+                <option value="v1">V1 엔진 - 레거시 검색기</option>
+                <option value="v2">V2 엔진 - 단기 검색기</option>
+                <option value="v3">V3 엔진 - 중기+단기 조합</option>
+              </select>
+              
+              {/* 엔진별 상세 설명 */}
+              {scannerSettings.active_engine === 'v1' && (
+                <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-800 mb-2">V1 엔진 특징</p>
+                  <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                    <li>기존 레거시 검색기 사용</li>
+                    <li>안정적인 성능과 검증된 로직</li>
+                    <li>기본적인 기술적 지표 기반 스캔</li>
+                  </ul>
+                </div>
+              )}
+              
+              {scannerSettings.active_engine === 'v2' && (
+                <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-800 mb-2">V2 엔진 특징</p>
+                  <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                    <li>단기 검색기 (5-10거래일 보유 목표)</li>
+                    <li>개선된 로직: 신호 우선 원칙, 멀티데이 트렌드 분석</li>
+                    <li>매매 가이드 제공: 목표 수익률, 손절, 보유기간</li>
+                    <li>레짐 분석 기반 필터링</li>
+                  </ul>
+                </div>
+              )}
+              
+              {scannerSettings.active_engine === 'v3' && (
+                <div className="mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <p className="text-sm font-semibold text-purple-800 mb-2">V3 엔진 특징</p>
+                  <p className="text-xs text-purple-700 mb-2">
+                    V3는 <strong>중기(midterm)</strong>와 <strong>단기(v2-lite)</strong> 스캐너를 조합한 엔진입니다.
+                  </p>
+                  <ul className="text-xs text-purple-700 space-y-1 list-disc list-inside">
+                    <li><strong>Midterm 스캐너:</strong> 항상 실행 (1-4주 보유 목표, 추세 관점)</li>
+                    <li><strong>V2-Lite 스캐너:</strong> neutral/normal 레짐에서만 실행 (5-10거래일, 빠른 반응 관점)</li>
+                    <li>두 스캐너 결과는 분리되어 표시됨 (병합하지 않음)</li>
+                    <li>V1/V2와 완전히 독립된 실행 및 저장</li>
+                  </ul>
+                  <div className="mt-2 p-2 bg-purple-100 rounded text-xs text-purple-800">
+                    💡 <strong>레짐 판정:</strong> neutral/normal 레짐일 때만 단기 스캐너가 실행됩니다.
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800">
+                  ⚠️ <strong>중요:</strong> 엔진을 변경하면 다음 스캔부터 해당 엔진만 실행됩니다. 
+                  다른 엔진은 실행되지 않으며, 각 엔진의 결과는 독립적으로 저장됩니다.
+                </p>
+              </div>
+            </div>
+
+            {/* 레짐 분석 버전 선택 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                레짐 분석 버전
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={scannerSettings.regime_version || 'v1'}
+                onChange={(e) => setScannerSettings({
+                  ...scannerSettings,
+                  regime_version: e.target.value
+                })}
+              >
+                <option value="v1">V1 (기본 장세 분석)</option>
+                <option value="v3">V3 (Global Regime v3)</option>
+                <option value="v4">V4 (Global Regime v4) - 권장</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                시장 상황 분석 방법을 선택합니다. V4는 한국/미국 시장 + 리스크 분석을 포함합니다.
+                모든 엔진에서 공통으로 사용됩니다.
+              </p>
+            </div>
+
+            {/* 현재 설정 요약 */}
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+              <p className="text-sm font-semibold text-gray-700 mb-3">현재 설정 요약</p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">활성 엔진:</span>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                    {scannerSettings.active_engine === 'v3' 
+                      ? 'V3 (중기+단기 조합)'
+                      : scannerSettings.active_engine === 'v2'
+                        ? 'V2 (단기 검색기)'
+                        : 'V1 (레거시 검색기)'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">레짐 분석:</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    {scannerSettings.regime_version || 'v1'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <span className="text-sm text-gray-600">적용 시점:</span>
+                  <span className="text-sm font-medium text-blue-600">다음 스캔부터 적용</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 저장 버튼 */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={updateScannerSettings}
+                disabled={scannerLoading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg transition-all"
+              >
+                {scannerLoading ? '저장 중...' : '설정 저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 백테스트 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">백테스트</h2>
+            <p className="text-sm text-gray-600">기간/스캐너를 선택해 백테스트 리포트를 생성합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">스캐너</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={backtestScanner}
+                onChange={(e) => setBacktestScanner(e.target.value)}
+              >
+                <option value="v2">V2</option>
+                <option value="v3">V3</option>
+                <option value="v3_midterm">V3 - midterm</option>
+                <option value="v3_v2_lite">V3 - v2_lite</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={backtestStartDate}
+                  onChange={(e) => setBacktestStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={backtestEndDate}
+                  onChange={(e) => setBacktestEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={runBacktest}
+                disabled={backtestLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {backtestLoading ? '실행 중...' : '백테스트 실행'}
+              </button>
+            </div>
+            {backtestResult && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">결과</p>
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words">
+{JSON.stringify(backtestResult, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 기간 스캔 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">기간 스캔</h2>
+            <p className="text-sm text-gray-600">기간/스캐너를 선택해 스캔을 실행합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">스캐너</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={scanRangeScanner}
+                onChange={(e) => setScanRangeScanner(e.target.value)}
+              >
+                <option value="v1">V1</option>
+                <option value="v2">V2</option>
+                <option value="v3">V3</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={scanRangeStartDate}
+                  onChange={(e) => setScanRangeStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={scanRangeEndDate}
+                  onChange={(e) => setScanRangeEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={runScanRange}
+                disabled={scanRangeLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {scanRangeLoading ? '실행 중...' : '기간 스캔 실행'}
+              </button>
+            </div>
+            {scanRangeResult && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">결과</p>
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words">
+{JSON.stringify(scanRangeResult, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 바텀메뉴 설정 */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">바텀메뉴 설정</h2>
+            <p className="text-sm text-gray-600">바텀메뉴의 노출 여부 및 링크 설정을 관리합니다</p>
+          </div>
+          <div className="px-6 py-4 space-y-6">
+            {/* 바텀메뉴 노출 설정 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                바텀메뉴 노출
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="bottomNavVisible"
+                    checked={bottomNavVisible === true}
+                    onChange={() => setBottomNavVisible(true)}
+                    className="mr-2"
+                  />
+                  <span>표시</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="bottomNavVisible"
+                    checked={bottomNavVisible === false}
+                    onChange={() => setBottomNavVisible(false)}
+                    className="mr-2"
+                  />
+                  <span>숨김</span>
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                💡 <strong>설정 안내:</strong> "숨김"으로 설정하면 모든 화면에서 바텀메뉴가 표시되지 않습니다.
+              </p>
+            </div>
+
+            {/* 바텀메뉴 링크 설정 */}
+            <div className="border-t pt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                추천종목 링크
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={bottomNavLink.link_type}
+                onChange={(e) => setBottomNavLink({
+                  ...bottomNavLink,
+                  link_type: e.target.value
+                })}
+              >
+                <option value="v1">V1 화면 (/customer-scanner)</option>
+                <option value="v2">V2 화면 (/v2/scanner-v2)</option>
+                <option value="v3">V3 화면 (/v3/scanner-v3)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                V1: 기존 스캐너 화면 | V2: 인피니티 스크롤 스캐너 화면 | V3: 신규 스캐너 화면
+              </p>
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                💡 <strong>설정 안내:</strong> 변경 사항은 즉시 적용됩니다. 사용자가 바텀메뉴의 "추천종목" 버튼을 클릭하면 선택한 화면으로 이동합니다.
+              </div>
+            </div>
+
+            {/* 개별 메뉴 아이템 설정 */}
+            <div className="border-t pt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                개별 메뉴 아이템 표시
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.korean_stocks}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      korean_stocks: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>한국</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.us_stocks}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      us_stocks: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>미국</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.stock_analysis}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      stock_analysis: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>종목분석</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.portfolio}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      portfolio: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>나의투자종목</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={bottomNavMenuItems.more}
+                    onChange={(e) => setBottomNavMenuItems({
+                      ...bottomNavMenuItems,
+                      more: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  <span>더보기</span>
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                💡 <strong>설정 안내:</strong> 체크 해제된 메뉴는 바텀메뉴에서 표시되지 않습니다. 관리자 메뉴는 관리자 권한이 있는 사용자에게만 자동으로 표시됩니다.
+              </p>
+            </div>
+
+            {/* 현재 설정 정보 */}
+            <div className="bg-gray-50 rounded-md p-4">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">현재 링크:</span>
+                  <span className="font-medium">
+                    {bottomNavLink.link_type === 'v1'
+                      ? 'V1 화면 (/customer-scanner)'
+                      : bottomNavLink.link_type === 'v3'
+                        ? 'V3 화면 (/v3/scanner-v3)'
+                        : 'V2 화면 (/v2/scanner-v2)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 저장 버튼 */}
+            <div className="flex justify-end">
+              <button
+                onClick={async () => {
+                  const results = await Promise.all([
+                    updateBottomNavLink(),
+                    updateBottomNavVisible(),
+                    updateBottomNavMenuItems()
+                  ]);
+                  
+                  // 모든 결과 확인
+                  const allSuccess = results.every(r => r && r.success);
+                  const errors = results.filter(r => r && !r.success).map(r => r.error);
+                  
+                  if (allSuccess) {
+                    alert('바텀메뉴 설정이 모두 저장되었습니다.');
+                  } else {
+                    alert(`일부 설정 저장에 실패했습니다:\n${errors.join('\n')}`);
+                  }
+                }}
+                disabled={bottomNavLinkLoading || bottomNavVisibleLoading || bottomNavMenuItemsLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {(bottomNavLinkLoading || bottomNavVisibleLoading || bottomNavMenuItemsLoading) ? '저장 중...' : '설정 저장'}
               </button>
             </div>
           </div>

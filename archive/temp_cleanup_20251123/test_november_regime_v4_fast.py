@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""
+11월 v4 레짐 분석 (캐시만 사용)
+"""
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
+
+from scanner_v2.regime_v4 import analyze_regime_v4
+
+def test_november_regime_v4_fast():
+    """11월 v4 레짐 분석 (캐시 직접 사용)"""
+    print("📊 11월 Global Regime v4 분석 (캐시 전용)")
+    print("=" * 50)
+    
+    # 11월 거래일 (주말 제외)
+    november_dates = [
+        "20251101", "20251104", "20251105", "20251106", "20251107",
+        "20251108", "20251111", "20251112", "20251113", "20251114",
+        "20251115", "20251118", "20251119", "20251120", "20251121",
+        "20251122", "20251125", "20251126", "20251127", "20251128"
+    ]
+    
+    results = []
+    
+    for date in november_dates:
+        try:
+            result = analyze_regime_v4(date)
+            results.append(result)
+            
+            print(f"{date}: {result['final_regime']:>7} (trend:{result['global_trend_score']:+5.1f}, risk:{result['global_risk_score']:+5.1f}) KR:{result['kr_regime']:>7} US:{result['us_prev_regime']:>7}")
+            
+        except Exception as e:
+            print(f"{date}: ERROR - {e}")
+    
+    print("\n📈 11월 레짐 통계:")
+    regime_counts = {}
+    for r in results:
+        regime = r["final_regime"]
+        regime_counts[regime] = regime_counts.get(regime, 0) + 1
+    
+    total = len(results)
+    for regime, count in sorted(regime_counts.items()):
+        pct = count / total * 100
+        print(f"  {regime:>7}: {count:2d}일 ({pct:4.1f}%)")
+    
+    print(f"\n총 분석일: {total}일")
+    
+    # 추세별 평균 점수
+    trend_scores = [r["global_trend_score"] for r in results]
+    risk_scores = [r["global_risk_score"] for r in results]
+    
+    print(f"평균 추세 점수: {sum(trend_scores)/len(trend_scores):+5.2f}")
+    print(f"평균 리스크 점수: {sum(risk_scores)/len(risk_scores):+5.2f}")
+
+if __name__ == "__main__":
+    test_november_regime_v4_fast()

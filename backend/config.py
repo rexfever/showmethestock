@@ -83,6 +83,45 @@ class Config:
     fallback_target_min: int = int(os.getenv("FALLBACK_TARGET_MIN", "3"))  # 기본 최소 개수
     fallback_target_max: int = int(os.getenv("FALLBACK_TARGET_MAX", "5"))  # 기본 최대 개수
     
+    # === 스캐너 버전 선택 ===
+    # DB에서 우선 조회, 없으면 .env에서 읽기
+    _scanner_settings = None
+    
+    @property
+    def scanner_version(self) -> str:
+        """스캐너 버전 (DB 우선, 없으면 .env)"""
+        try:
+            from scanner_settings_manager import get_scanner_version
+            return get_scanner_version()
+        except Exception:
+            # DB 연결 실패 시 .env 사용
+            return os.getenv("SCANNER_VERSION", "v1")
+    
+    # === Regime v4 정책 설정 ===
+    scanner_v2_use_regime_v4_policy: bool = os.getenv("SCANNER_V2_USE_REGIME_V4_POLICY", "false").lower() == "true"
+    scanner_v2_regime_policy_mode: str = os.getenv("SCANNER_V2_REGIME_POLICY_MODE", "off").lower()
+    # 허용값: "off" (정책 미적용, 레짐 계산 안 함), "on" (정책 적용), "shadow" (정책 미적용하지만 레짐/정책 로그 기록)
+    
+    @property
+    def scanner_v2_enabled(self) -> bool:
+        """스캐너 V2 활성화 여부 (DB 우선, 없으면 .env)"""
+        try:
+            from scanner_settings_manager import get_scanner_v2_enabled
+            return get_scanner_v2_enabled()
+        except Exception:
+            # DB 연결 실패 시 .env 사용
+            return os.getenv("SCANNER_V2_ENABLED", "false").lower() == "true"
+    
+    @property
+    def regime_version(self) -> str:
+        """레짐 분석 버전 (DB 우선, 없으면 .env)"""
+        try:
+            from scanner_settings_manager import get_regime_version
+            return get_regime_version()
+        except Exception:
+            # DB 연결 실패 시 .env 사용
+            return os.getenv("REGIME_VERSION", "v1")
+    
     # === 시장 상황 연동 설정 ===
     market_analysis_enable: bool = os.getenv("MARKET_ANALYSIS_ENABLE", "true").lower() == "true"
     market_analysis_interval: int = int(os.getenv("MARKET_ANALYSIS_INTERVAL", "60"))  # 분 단위
@@ -187,62 +226,23 @@ class Config:
             "above_cnt5": self.score_w_above_cnt,
         }
     
-    # 단계별 완화 프리셋 (중립 기준 - 기존 호환용)
+    # 단계별 완화 프리셋 (상수 테이블)
     @property
     def fallback_presets(self) -> list:
         return [
+            # step 0: current strict (현 설정 그대로 사용)
             {},
-            {"min_signals": 3, "vol_ma5_mult": 2.0},
-            {"min_signals": 2, "vol_ma5_mult": 1.8},
-            {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1},
-            {"min_signals": 2, "vol_ma5_mult": 1.5, "gap_max": 0.025, "ext_from_tema20_max": 0.025},
-            {"min_signals": 1, "vol_ma5_mult": 1.3, "require_dema_slope": "optional"},
+            # step 1: 신호 및 거래량 약간 완화 (현재 강화된 파라미터 고려)
+            {"min_signals": 3, "vol_ma5_mult": 2.0},  # 완화 (현재 5/2.2 → 3/2.0)
+            # step 2: 추가 완화
+            {"min_signals": 2, "vol_ma5_mult": 1.8},  # 더 완화
+            # step 3: 거래량 현실적 완화 + 갭/이격 완화
+            {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.1, "gap_max": 0.025, "ext_from_tema20_max": 0.025},  # 거래량 + 갭/이격 완화
+            # step 4: 갭/이격 범위 추가 완화
+            {"min_signals": 2, "vol_ma5_mult": 1.5, "gap_max": 0.030, "ext_from_tema20_max": 0.030},  # 갭/이격 추가 완화
+            # step 5: 최종 현실적 완화 (DEMA 슬로프도 완화)
+            {"min_signals": 1, "vol_ma5_mult": 1.3, "require_dema_slope": "optional"},  # 최종 완화
         ]
-
-    @property
-    def fallback_profiles(self) -> dict:
-        """장세별 Fallback 프리셋"""
-        neutral_profile = {
-            "target_min": self.fallback_target_min,
-            "target_max": self.fallback_target_max,
-            "presets": self.fallback_presets,
-        }
-        bull_profile = {
-            "target_min": self.fallback_target_min_bull,
-            "target_max": self.fallback_target_max_bull,
-            "presets": [
-                {},
-                {"min_signals": 3, "vol_ma5_mult": 2.0},
-                {"min_signals": 2, "vol_ma5_mult": 1.8},
-                {"min_signals": 2, "vol_ma5_mult": 1.5, "vol_ma20_mult": 1.05},
-                {"min_signals": 2, "vol_ma5_mult": 1.4, "gap_max": 0.02, "ext_from_tema20_max": 0.02},
-                {"min_signals": 1, "vol_ma5_mult": 1.25, "gap_max": 0.025, "ext_from_tema20_max": 0.025, "require_dema_slope": "optional"},
-            ],
-        }
-        bear_profile = {
-            "target_min": self.fallback_target_min_bear,
-            "target_max": self.fallback_target_max_bear,
-            "presets": [
-                {},
-                {"min_signals": 3, "vol_ma5_mult": 2.2},
-                {"min_signals": 3, "vol_ma5_mult": 2.0, "gap_max": 0.012, "ext_from_tema20_max": 0.012},
-                {"min_signals": 2, "vol_ma5_mult": 1.8, "vol_ma20_mult": 1.1},
-                {"min_signals": 2, "vol_ma5_mult": 1.6, "gap_max": 0.02, "ext_from_tema20_max": 0.02},
-                {"min_signals": 1, "vol_ma5_mult": 1.4, "require_dema_slope": "optional"},
-            ],
-        }
-        return {
-            "bull": bull_profile,
-            "neutral": neutral_profile,
-            "bear": bear_profile,
-            "crash": {"target_min": 0, "target_max": 0, "presets": []},
-        }
-
-    def get_fallback_profile(self, sentiment: str) -> dict:
-        """장세별 Fallback Profile 조회"""
-        sentiment = (sentiment or "neutral").lower()
-        profiles = self.fallback_profiles
-        return profiles.get(sentiment, profiles["neutral"])
 
 
 config = Config()

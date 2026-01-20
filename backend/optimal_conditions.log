@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "analyze_optimal_conditions.py", line 32, in <module>
+    from kiwoom_api import kiwoom_api  # noqa: E402
+ImportError: cannot import name 'kiwoom_api' from 'kiwoom_api' (/Users/rexsmac/workspace/stock-finder/backend/kiwoom_api.py)

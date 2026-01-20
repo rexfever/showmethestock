@@ -94,14 +94,20 @@ if USE_POSTGRES:
 
         @staticmethod
         def _convert_value(value: Any) -> Any:
+            """값 변환 (PostgreSQL용)
+            
+            Note: date와 datetime 객체는 변환하지 않고 그대로 전달합니다.
+            psycopg가 자동으로 PostgreSQL 타입으로 변환합니다.
+            """
             if value is None:
                 return None
             if isinstance(value, bool):
                 return value
-            if isinstance(value, datetime):
-                return value.strftime("%Y-%m-%d %H:%M:%S")
-            if isinstance(value, date):
-                return value.strftime("%Y%m%d")
+            # date와 datetime은 변환하지 않고 그대로 전달 (psycopg가 자동 처리)
+            # if isinstance(value, datetime):
+            #     return value.strftime("%Y-%m-%d %H:%M:%S")  # 제거: psycopg가 자동 처리
+            # if isinstance(value, date):
+            #     return value.strftime("%Y%m%d")  # 제거: psycopg가 자동 처리
             if isinstance(value, Decimal):
                 return float(value)
             if isinstance(value, (dict, list)):
@@ -109,8 +115,17 @@ if USE_POSTGRES:
             return value
 
         def _convert_row(self, row):
+            """행 변환 (PostgreSQL용)
+            
+            Note: PostgreSQL에서 조회한 date/datetime은 이미 Python 객체로 변환되어 있으므로
+            추가 변환이 필요 없습니다. psycopg가 자동으로 처리합니다.
+            Decimal, dict, list 등은 여전히 변환이 필요할 수 있으므로 _convert_value를 사용합니다.
+            """
             if row is None:
                 return None
+            # PostgreSQL에서 조회한 값은 이미 적절한 Python 타입으로 변환되어 있음
+            # date/datetime 객체는 그대로 반환 (추가 변환 불필요)
+            # Decimal, dict, list 등은 여전히 변환 필요
             return tuple(self._convert_value(v) for v in row)
 
         def execute(self, query: str, params: Optional[Sequence[Any]] = None):

@@ -125,10 +125,10 @@ export const AuthProvider = ({ children }) => {
       if (user && user.provider === 'kakao') {
         try {
           await logoutWithKakao();
-          console.log('카카오 로그아웃 성공');
+          // 성공/실패 여부와 관계없이 로컬 로그아웃 진행
         } catch (error) {
-          console.error('카카오 로그아웃 실패:', error);
-          // 카카오 로그아웃 실패해도 로컬 로그아웃은 진행
+          // 에러는 이미 logoutWithKakao에서 처리되므로 여기서는 무시
+          console.warn('카카오 로그아웃 중 오류 (무시):', error);
         }
       }
       
@@ -158,7 +158,16 @@ export const AuthProvider = ({ children }) => {
     }
     
     // 현재 상태에서 토큰과 사용자 정보 확인
-    return !!token && !!user;
+    if (token && user) {
+      return true;
+    }
+    
+    // 상태가 없으면 localStorage와 쿠키에서 확인
+    const localToken = localStorage.getItem('token');
+    const localUser = localStorage.getItem('user');
+    const cookieToken = Cookies.get('auth_token');
+    
+    return !!(localToken || cookieToken) && !!localUser;
   };
 
   const getToken = () => {
@@ -187,6 +196,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
+    authLoading: loading, // Header 컴포넌트 호환성
     authChecked,
     login,
     logout,

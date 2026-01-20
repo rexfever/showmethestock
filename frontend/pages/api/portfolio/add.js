@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   try {
     // CSRF 토큰 검증
     const csrfToken = req.headers['x-csrf-token'];
-    if (!validateCSRFToken(csrfToken)) {
+    if (!(await validateCSRFToken(csrfToken))) {
       return res.status(403).json({ message: 'CSRF token validation failed' });
     }
     

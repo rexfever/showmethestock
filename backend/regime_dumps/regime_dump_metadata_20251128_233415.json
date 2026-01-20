@@ -1,0 +1,12 @@
+{
+  "dump_timestamp": "20251128_233415",
+  "dump_date": "2025-11-28T23:34:15.851772",
+  "market_conditions": {
+    "file": "market_conditions_20251128_233415.json",
+    "record_count": 0
+  },
+  "market_regime_daily": {
+    "file": "market_regime_daily_20251128_233415.json",
+    "record_count": 224
+  }
+}

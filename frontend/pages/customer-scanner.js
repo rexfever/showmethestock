@@ -129,7 +129,8 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       const config = getConfig();
       const base = config.backendUrl;
       
-      const response = await fetch(`${base}/latest-scan`, {
+      // V1 페이지는 항상 V1 데이터만 요청
+      const response = await fetch(`${base}/latest-scan?scanner_version=v1`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -510,31 +511,75 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
                       {item.current_price > 0 ? `${item.current_price.toLocaleString()}원` : '데이터 없음'}
                     </div>
                     <div className={`text-sm font-semibold ${item.change_rate > 0 ? 'text-red-500' : item.change_rate < 0 ? 'text-blue-500' : 'text-gray-500'}`}>
-                      {item.change_rate !== 0 ? `${item.change_rate > 0 ? '+' : ''}${item.change_rate}%` : '데이터 없음'}
+                      {(() => {
+                        const rate = item.change_rate;
+                        if (rate === null || rate === undefined) return '데이터 없음';
+                        if (rate === 0) return '0%';
+                        
+                        // 백엔드에서 이미 퍼센트 형태로 반환됨 (0.57 = 0.57%)
+                        // 안전장치: 매우 작은 소수 형태(0.0057)가 올 경우에만 변환
+                        // 0.01 미만이고 0이 아닌 경우만 소수 형태로 간주
+                        const displayRate = Math.abs(rate) < 0.01 && rate !== 0.0 ? rate * 100 : rate;
+                        return `${rate > 0 ? '+' : ''}${displayRate.toFixed(2)}%`;
+                      })()}
                     </div>
                   </div>
                 </div>
 
 
-                {/* 재등장 정보 (재등장 종목인 경우) */}
-                {recurringStocks[item.ticker] && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="text-xs text-yellow-700 font-medium">🔄 재등장 정보</div>
-                      <div className="text-xs text-yellow-600">
-                        최근 2주간
-                      </div>
+                {/* 재등장 정보 카드 */}
+                {(item.recurrence?.appeared_before || recurringStocks[item.ticker]) && (
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4 mb-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xl">🔄</span>
+                      <h4 className="font-semibold text-purple-900">재등장 정보</h4>
+                      {item.recurrence?.days_since_last && item.recurrence.days_since_last <= 3 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 ml-auto">
+                          ⚡ {item.recurrence.days_since_last}일 만에 재등장
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs text-yellow-600">
-                      <div className="mb-1">
-                        <span className="font-medium">재등장 횟수:</span> {recurringStocks[item.ticker].appearances}회
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">재등장 횟수:</span>
+                        <span className="font-bold text-purple-700">{item.recurrence?.appear_count || recurringStocks[item.ticker]?.appearances || 0}회</span>
                       </div>
-                      <div>
-                        <span className="font-medium">등장 날짜:</span> {recurringStocks[item.ticker].dates.slice(0, 3).map(date => 
-                          `${date.slice(5,7)}/${date.slice(8,10)}`
-                        ).join(', ')}
-                        {recurringStocks[item.ticker].dates.length > 3 && '...'}
-                      </div>
+                      {item.recurrence?.first_as_of && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">첫 등장:</span>
+                          <span className="font-medium text-gray-800">
+                            {item.recurrence.first_as_of.slice(0,4)}년 {item.recurrence.first_as_of.slice(4,6)}월 {item.recurrence.first_as_of.slice(6,8)}일
+                          </span>
+                        </div>
+                      )}
+                      {item.recurrence?.last_as_of && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">마지막 등장:</span>
+                          <span className="font-medium text-gray-800">
+                            {item.recurrence.last_as_of.slice(0,4)}년 {item.recurrence.last_as_of.slice(4,6)}월 {item.recurrence.last_as_of.slice(6,8)}일
+                          </span>
+                        </div>
+                      )}
+                      {item.recurrence?.days_since_last !== null && item.recurrence.days_since_last !== undefined && (
+                        <div className="flex justify-between pt-2 border-t border-purple-200">
+                          <span className="text-gray-600 font-semibold">등장 간격:</span>
+                          <span className="font-bold text-purple-700">{item.recurrence.days_since_last}일</span>
+                        </div>
+                      )}
+                      {/* recurringStocks 데이터가 있는 경우 추가 정보 */}
+                      {recurringStocks[item.ticker] && recurringStocks[item.ticker].dates && (
+                        <div className="pt-2 border-t border-purple-200">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-gray-600 font-semibold">등장 날짜:</span>
+                          </div>
+                          <div className="text-gray-800 text-xs">
+                            {recurringStocks[item.ticker].dates.slice(0, 3).map(date => 
+                              `${date.slice(0,4)}년 ${date.slice(4,6)}월 ${date.slice(6,8)}일`
+                            ).join(', ')}
+                            {recurringStocks[item.ticker].dates.length > 3 && ` 외 ${recurringStocks[item.ticker].dates.length - 3}일`}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -650,13 +695,14 @@ export async function getServerSideProps() {
     const config = getConfig();
     const base = config.backendUrl;
     
-    console.log('SSR: Fetching from', `${base}/latest-scan`);
+    // V1 페이지는 항상 V1 데이터만 요청
+    console.log('SSR: Fetching from', `${base}/latest-scan?scanner_version=v1`);
     
     // Next.js 서버 측 fetch는 timeout 옵션을 지원하지 않으므로 제거
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃으로 단축
     
-    const response = await fetch(`${base}/latest-scan`, {
+    const response = await fetch(`${base}/latest-scan?scanner_version=v1`, {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',

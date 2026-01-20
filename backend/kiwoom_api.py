@@ -1,13 +1,18 @@
 import time
 from datetime import datetime
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple
 import requests
 import pandas as pd
 import numpy as np
+import pickle
+from pathlib import Path
+import logging
 
 from auth import KiwoomAuth
 from config import config
+
+logger = logging.getLogger(__name__)
 
 
 class KiwoomAPI:
@@ -17,6 +22,17 @@ class KiwoomAPI:
         self.auth = KiwoomAuth()
         self._code_to_name: Dict[str, str] = {}
         self._name_to_code: Dict[str, str] = {}
+        # OHLCV 캐시: {(code, count, base_dt, hour_key): (df, timestamp)}
+        # hour_key: 장중일 때만 시간대 구분 (예: "15:00"), 장 마감 후는 None
+        self._ohlcv_cache: Dict[Tuple[str, int, Optional[str], Optional[str]], Tuple[pd.DataFrame, float]] = {}
+        self._cache_ttl = 300  # 기본 5분 (초) - 상황에 따라 동적으로 계산됨
+        self._cache_maxsize = 1000  # 최대 캐시 항목 수
+        
+        # 디스크 캐시 설정
+        self._disk_cache_dir = Path("cache/ohlcv")
+        self._disk_cache_dir.mkdir(parents=True, exist_ok=True)
+        self._disk_cache_enabled = True  # 디스크 캐시 활성화 여부
+        self._last_ohlcv_leak = False  # base_dt 초과 데이터 감지 플래그
         # 모의 데이터 세트는 항상 준비 (실패 시 폴백용)
         self._mock_kospi = [
             "005930",  # 삼성전자
@@ -246,12 +262,582 @@ class KiwoomAPI:
                     break
                 next_key = h.get("next-key")
 
+    def _get_cache_key(self, code: str, count: int, base_dt: Optional[str]) -> Tuple[str, int, Optional[str], Optional[str]]:
+        """캐시 키 생성
+        
+        base_dt가 None인 경우, 시간대별로 구분하여 캐싱
+        - 08:00 ~ 20:00: 시간별 구분 (애프터마켓 포함, 주가 변동 가능)
+        - 20:00 ~ 08:00: 당일로 통합 (데이터 변경 없음)
+        """
+        # base_dt가 None인 경우
+        if base_dt is None:
+            from datetime import datetime
+            import pytz
+            KST = pytz.timezone('Asia/Seoul')
+            now = datetime.now(KST)
+            hour = now.hour
+            
+            # 08:00 ~ 20:00: 시간대별 구분 (애프터마켓 포함)
+            if 8 <= hour < 20:
+                hour_key = f"{now.hour:02d}:{now.minute // 10 * 10:02d}"  # 10분 단위
+                return (code, count, base_dt, hour_key)
+            # 20:00 ~ 08:00: 당일로 통합
+            else:
+                return (code, count, base_dt, None)
+        
+        # base_dt가 명시된 경우: 날짜만 사용
+        return (code, count, base_dt, None)
+    
+    def _calculate_ttl(self, base_dt: Optional[str]) -> int:
+        """상황에 맞는 TTL 계산
+        
+        - 과거 날짜: 1년 (변경되지 않음)
+        - 장중: 1분 (실시간성 필요)
+        - 장 마감 후: 24시간 (다음 거래일까지)
+        """
+        if base_dt:
+            try:
+                from datetime import datetime
+                base_date = datetime.strptime(base_dt, "%Y%m%d").date()
+                now_date = datetime.now().date()
+                if base_date < now_date:
+                    # 과거 날짜: 1년 캐싱
+                    return 365 * 24 * 3600
+            except:
+                pass
+        
+        # 현재 날짜: 시간대에 따라
+        from datetime import datetime
+        import pytz
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        hour = now.hour
+        
+        # 08:00 ~ 20:00: 애프터마켓 포함, 주가 변동 가능
+        if 8 <= hour < 20:
+            return 60  # 1분
+        # 20:00 ~ 08:00: 데이터 변경 없음
+        else:
+            return self._get_ttl_until_next_trading_day()
+    
+    def _get_ttl_until_next_trading_day(self) -> int:
+        """다음 거래일 시작 전까지의 TTL 계산"""
+        from datetime import datetime, timedelta
+        import pytz
+        
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        
+        # 다음 거래일 찾기
+        next_date = now.date() + timedelta(days=1)
+        
+        # 공휴일 체크 (holidays 모듈이 있으면 사용)
+        try:
+            import holidays
+            kr_holidays = holidays.SouthKorea()
+            # 주말과 공휴일 제외
+            while next_date.weekday() >= 5 or next_date in kr_holidays:
+                next_date += timedelta(days=1)
+        except ImportError:
+            # holidays 모듈이 없으면 주말만 체크
+            while next_date.weekday() >= 5:
+                next_date += timedelta(days=1)
+        
+        # 다음 거래일 09:00까지의 시간 계산
+        next_trading_day_start = KST.localize(
+            datetime.combine(next_date, datetime.min.time().replace(hour=9))
+        )
+        
+        # 현재 시간부터 다음 거래일 09:00까지의 초
+        ttl_seconds = int((next_trading_day_start - now).total_seconds())
+        
+        # 최소 1시간, 최대 72시간 (주말 건너뛰는 경우)
+        return max(3600, min(ttl_seconds, 72 * 3600))
+    
+    def _is_market_open(self) -> bool:
+        """장중 여부 확인 (09:00 ~ 15:30, 평일만)"""
+        from datetime import datetime
+        import pytz
+        
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        
+        # 주말 제외
+        if now.weekday() >= 5:  # 토요일(5), 일요일(6)
+            return False
+        
+        hour = now.hour
+        minute = now.minute
+        
+        # 장중: 09:00 ~ 15:30
+        return (9 <= hour < 15) or (hour == 15 and minute <= 30)
+    
+    def _is_aftermarket_hours(self) -> bool:
+        """애프터마켓 시간대 확인 (08:00 ~ 20:00)"""
+        from datetime import datetime
+        import pytz
+        
+        KST = pytz.timezone('Asia/Seoul')
+        now = datetime.now(KST)
+        hour = now.hour
+        
+        # 애프터마켓: 08:00 ~ 20:00 (장전 시간외 + 장중 + 장후 시간외)
+        return 8 <= hour < 20
+    
+    def _get_cached_ohlcv(self, code: str, count: int, base_dt: Optional[str]) -> Optional[pd.DataFrame]:
+        """캐시에서 OHLCV 데이터 조회"""
+        cache_key = self._get_cache_key(code, count, base_dt)
+        
+        if cache_key not in self._ohlcv_cache:
+            return None
+        
+        cached_df, timestamp = self._ohlcv_cache[cache_key]
+        
+        # base_dt가 None인 경우, DataFrame의 실제 날짜 확인
+        actual_date = base_dt
+        if actual_date is None and not cached_df.empty and 'date' in cached_df.columns:
+            try:
+                # DataFrame의 마지막 날짜 추출
+                last_date_str = str(cached_df.iloc[-1]['date'])
+                # YYYYMMDD 형식인지 확인
+                if len(last_date_str) == 8 and last_date_str.isdigit():
+                    actual_date = last_date_str
+            except:
+                pass
+        
+        # 실제 날짜를 사용하여 TTL 계산
+        ttl = self._calculate_ttl(actual_date)
+        
+        # TTL 확인
+        if time.time() - timestamp > ttl:
+            del self._ohlcv_cache[cache_key]
+            return None
+        
+        # 복사본 반환 (원본 데이터 보호)
+        return cached_df.copy()
+    
+    def _set_cached_ohlcv(self, code: str, count: int, base_dt: Optional[str], df: pd.DataFrame) -> None:
+        """OHLCV 데이터를 캐시에 저장"""
+        if df.empty:
+            return
+        
+        cache_key = self._get_cache_key(code, count, base_dt)
+        
+        # 캐시 크기 제한 (LRU 방식)
+        if len(self._ohlcv_cache) >= self._cache_maxsize:
+            # 가장 오래된 항목 제거
+            oldest_key = min(self._ohlcv_cache.items(), key=lambda x: x[1][1])[0]
+            del self._ohlcv_cache[oldest_key]
+        
+        # 캐시 저장 (복사본 저장)
+        self._ohlcv_cache[cache_key] = (df.copy(), time.time())
+    
+    def clear_ohlcv_cache(self, code: str = None) -> None:
+        """OHLCV 캐시 클리어
+        
+        Args:
+            code: 특정 종목 코드 (None이면 전체 캐시 클리어)
+        """
+        # 메모리 캐시 클리어
+        if code is None:
+            self._ohlcv_cache.clear()
+        else:
+            # 특정 종목의 모든 캐시 항목 제거
+            keys_to_remove = [
+                key for key in self._ohlcv_cache.keys()
+                if key[0] == code  # key[0] = code
+            ]
+            for key in keys_to_remove:
+                del self._ohlcv_cache[key]
+        
+        # 디스크 캐시 클리어
+        if code is None:
+            # 전체 디스크 캐시 삭제
+            for cache_file in self._disk_cache_dir.glob("*.pkl"):
+                cache_file.unlink()
+        else:
+            # 특정 종목의 디스크 캐시 삭제
+            pattern = f"{code}_*.pkl"
+            for cache_file in self._disk_cache_dir.glob(pattern):
+                cache_file.unlink()
+    
+    def get_ohlcv_cache_stats(self) -> Dict:
+        """캐시 통계 반환"""
+        current_time = time.time()
+        valid_count = sum(
+            1 for _, (_, timestamp) in self._ohlcv_cache.items()
+            if current_time - timestamp <= self._cache_ttl
+        )
+        expired_count = len(self._ohlcv_cache) - valid_count
+        
+        # 디스크 캐시 통계
+        disk_cache_files = list(self._disk_cache_dir.glob("*.pkl")) if self._disk_cache_enabled else []
+        disk_cache_size = sum(f.stat().st_size for f in disk_cache_files) if disk_cache_files else 0
+        
+        # 기존 형식 유지 (하위 호환성)
+        stats = {
+            "total": len(self._ohlcv_cache),
+            "valid": valid_count,
+            "expired": expired_count,
+            "maxsize": self._cache_maxsize,
+            "ttl": self._cache_ttl,
+            # 디스크 캐시 정보 추가
+            "disk": {
+                "enabled": self._disk_cache_enabled,
+                "total_files": len(disk_cache_files),
+                "total_size_bytes": disk_cache_size,
+                "total_size_mb": round(disk_cache_size / (1024 * 1024), 2),
+                "cache_dir": str(self._disk_cache_dir)
+            }
+        }
+        
+        return stats
+    
     def get_ohlcv(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
         """일봉 OHLCV DataFrame(date, open, high, low, close, volume) 반환
         base_dt가 지정되면 해당 기준일을 마지막 행으로 하는 시계열을 우선 시도한다(YYYYMMDD).
+        
+        캐싱 적용:
+        - 메모리 캐시 우선 확인
+        - base_dt가 있는 경우: 해당 base_dt의 디스크 캐시 확인
+        - base_dt가 None인 경우: 최신 디스크 캐시 확인 후 증분 업데이트
+        - 캐시 미스 시 API 호출 후 메모리 + 디스크 저장
         """
+        # 1. 메모리 캐시 확인
+        cached_df = self._get_cached_ohlcv(code, count, base_dt)
+        if cached_df is not None:
+            return cached_df
+        
+        # 2. 디스크 캐시 확인
+        if self._disk_cache_enabled:
+            if base_dt:
+                # base_dt가 지정된 경우: 해당 base_dt의 캐시 확인
+                cached_df = self._load_from_disk_cache(code, count, base_dt)
+                if cached_df is not None:
+                    # 메모리 캐시에도 저장
+                    self._set_cached_ohlcv(code, count, base_dt, cached_df)
+                    return cached_df
+            else:
+                # base_dt가 None인 경우: 최신 디스크 캐시 찾아서 증분 업데이트
+                cached_df, latest_base_dt = self._find_latest_disk_cache(code, count)
+                if cached_df is not None:
+                    # 캐시의 최신 날짜 확인
+                    if 'date' in cached_df.columns:
+                        cached_df['date'] = pd.to_datetime(cached_df['date'])
+                        latest_cache_date = cached_df['date'].max()
+                    else:
+                        # date가 인덱스인 경우
+                        if isinstance(cached_df.index, pd.DatetimeIndex):
+                            latest_cache_date = cached_df.index.max()
+                        else:
+                            latest_cache_date = None
+                    
+                    # 오늘 날짜
+                    today = pd.Timestamp.now().normalize()
+                    
+                    # 캐시의 최신 날짜가 오늘보다 오래된 경우에만 당일 데이터 추가
+                    if latest_cache_date is not None and latest_cache_date < today:
+                        logger.debug(f"{code} 캐시가 오래됨 (최신: {latest_cache_date.date()}, 오늘: {today.date()}), 당일 데이터 추가")
+                        # 당일 데이터만 API로 가져오기
+                        today_data = self._fetch_today_data_from_api(code)
+                        if not today_data.empty:
+                            # 기존 데이터와 병합
+                            combined = pd.concat([cached_df, today_data])
+                            # 중복 제거 (최신 데이터 우선)
+                            if 'date' in combined.columns:
+                                combined = combined.drop_duplicates(subset=['date'], keep='last')
+                                combined = combined.sort_values('date').reset_index(drop=True)
+                            else:
+                                combined = combined[~combined.index.duplicated(keep='last')]
+                                combined = combined.sort_index()
+                            
+                            # count만큼만 반환
+                            if len(combined) > count:
+                                combined = combined.tail(count)
+                            
+                            # 메모리 캐시 저장
+                            self._set_cached_ohlcv(code, count, base_dt, combined)
+                            
+                            # 디스크 캐시 업데이트
+                            # combined의 최신 날짜를 base_dt로 사용
+                            if 'date' in combined.columns:
+                                combined_latest_date = pd.to_datetime(combined['date']).max()
+                            elif isinstance(combined.index, pd.DatetimeIndex):
+                                combined_latest_date = combined.index.max()
+                            else:
+                                combined_latest_date = None
+                            
+                            if combined_latest_date is not None:
+                                # 과거 날짜인 경우만 디스크 캐시 저장
+                                today = pd.Timestamp.now().normalize()
+                                if combined_latest_date < today:
+                                    combined_base_dt = combined_latest_date.strftime('%Y%m%d')
+                                    self._save_to_disk_cache(code, count, combined_base_dt, combined)
+                            
+                            return combined
+                    
+                    # 캐시가 최신이면 그대로 반환
+                    if len(cached_df) >= count:
+                        result = cached_df.tail(count)
+                        # 메모리 캐시에도 저장
+                        self._set_cached_ohlcv(code, count, base_dt, result)
+                        return result
+        
+        # 3. 캐시 미스: API 호출
         if self.force_mock:
-            return self._gen_mock_ohlcv(code, count, base_dt)
+            df = self._gen_mock_ohlcv(code, count, base_dt)
+        else:
+            try:
+                df = self._fetch_ohlcv_from_api(code, count, base_dt)
+            except RuntimeError as e:
+                # 키움 API 인증 실패 시 디스크 캐시 재시도
+                if "인증에 실패" in str(e) or "Token error" in str(e):
+                    logger.warning(f"키움 API 인증 실패, 디스크 캐시 재시도: {code}")
+                    if base_dt and self._disk_cache_enabled:
+                        # base_dt가 있는 경우: 해당 base_dt의 캐시 재시도
+                        cached_df = self._load_from_disk_cache(code, count, base_dt)
+                        if cached_df is not None and not cached_df.empty:
+                            logger.info(f"디스크 캐시에서 로드 성공: {code}, {base_dt}")
+                            self._set_cached_ohlcv(code, count, base_dt, cached_df)
+                            return cached_df
+                    # base_dt가 None인 경우: 최신 디스크 캐시 재시도
+                    if not base_dt and self._disk_cache_enabled:
+                        cached_df, _ = self._find_latest_disk_cache(code, count)
+                        if cached_df is not None and not cached_df.empty:
+                            logger.info(f"최신 디스크 캐시에서 로드 성공: {code}")
+                            result = cached_df.tail(count) if len(cached_df) >= count else cached_df
+                            self._set_cached_ohlcv(code, count, base_dt, result)
+                            return result
+                    logger.error(f"디스크 캐시도 없음, API 인증 실패: {code}, {e}")
+                raise
+        
+        # base_dt가 있으면 기준일 이후 데이터 제거 (누수 방지)
+        self._last_ohlcv_leak = False
+        if base_dt and not df.empty and 'date' in df.columns:
+            df['date_str'] = df['date'].astype(str).str.replace('-', '').str[:8]
+            if (df['date_str'] > base_dt).any():
+                self._last_ohlcv_leak = True
+            df = df[df['date_str'] <= base_dt].copy()
+            df = df.sort_values('date_str').reset_index(drop=True)
+            df = df.drop(columns=['date_str'])
+
+        # 4. 캐시 저장 (메모리 + 디스크)
+        if not df.empty:
+            self._set_cached_ohlcv(code, count, base_dt, df)
+            # base_dt가 있는 경우 디스크에도 저장 (과거 날짜)
+            if base_dt and self._disk_cache_enabled:
+                self._save_to_disk_cache(code, count, base_dt, df)
+            elif base_dt is None and self._disk_cache_enabled:
+                # base_dt가 None인 경우: DataFrame의 최신 날짜를 base_dt로 사용
+                if 'date' in df.columns:
+                    latest_date = pd.to_datetime(df['date']).max()
+                elif isinstance(df.index, pd.DatetimeIndex):
+                    latest_date = df.index.max()
+                else:
+                    latest_date = None
+                
+                if latest_date is not None:
+                    # 과거 날짜인 경우만 디스크 캐시 저장
+                    today = pd.Timestamp.now().normalize()
+                    if latest_date < today:
+                        base_dt_str = latest_date.strftime('%Y%m%d')
+                        self._save_to_disk_cache(code, count, base_dt_str, df)
+        
+        return df
+    
+    def _get_disk_cache_file_path(self, code: str, count: int, base_dt: str) -> Path:
+        """디스크 캐시 파일 경로 생성
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+            base_dt: 기준일 (YYYYMMDD)
+        
+        Returns:
+            캐시 파일 경로
+        """
+        # 파일명: {code}_{count}_{base_dt}.pkl
+        filename = f"{code}_{count}_{base_dt}.pkl"
+        return self._disk_cache_dir / filename
+    
+    def _load_from_disk_cache(self, code: str, count: int, base_dt: str) -> Optional[pd.DataFrame]:
+        """디스크 캐시에서 OHLCV 데이터 로드
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+            base_dt: 기준일 (YYYYMMDD)
+        
+        Returns:
+            DataFrame 또는 None (캐시 없음/만료)
+        """
+        if not self._disk_cache_enabled:
+            return None
+        
+        cache_file = self._get_disk_cache_file_path(code, count, base_dt)
+        
+        if not cache_file.exists():
+            return None
+        
+        try:
+            # 파일에서 로드
+            with open(cache_file, 'rb') as f:
+                cached_data = pickle.load(f)
+                df, timestamp = cached_data
+            
+            # TTL 확인 (과거 날짜는 1년)
+            ttl = self._calculate_ttl(base_dt)
+            if time.time() - timestamp > ttl:
+                # 만료된 캐시 삭제
+                cache_file.unlink()
+                return None
+            
+            # 복사본 반환
+            return df.copy()
+        except Exception as e:
+            # 로드 실패 시 파일 삭제
+            try:
+                cache_file.unlink()
+            except:
+                pass
+            return None
+    
+    def _find_latest_disk_cache(self, code: str, count: int) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
+        """최신 디스크 캐시 찾기 (base_dt=None일 때 사용)
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+        
+        Returns:
+            (DataFrame, base_dt) 또는 (None, None)
+        """
+        if not self._disk_cache_enabled:
+            return None, None
+        
+        try:
+            # 캐시 디렉토리에서 해당 종목의 모든 캐시 파일 찾기
+            pattern = f"{code}_{count}_*.pkl"
+            cache_files = list(self._disk_cache_dir.glob(pattern))
+            
+            if not cache_files:
+                return None, None
+            
+            # base_dt 기준으로 정렬 (최신 날짜 우선)
+            cache_files_with_dt = []
+            for cache_file in cache_files:
+                try:
+                    # 파일명에서 base_dt 추출: {code}_{count}_{base_dt}.pkl
+                    base_dt = cache_file.stem.split('_')[-1]
+                    if len(base_dt) == 8 and base_dt.isdigit():
+                        cache_files_with_dt.append((cache_file, base_dt))
+                except:
+                    continue
+            
+            if not cache_files_with_dt:
+                return None, None
+            
+            # base_dt 기준 내림차순 정렬 (최신 날짜 우선)
+            cache_files_with_dt.sort(key=lambda x: x[1], reverse=True)
+            
+            # 최신 캐시 파일 로드 시도
+            for cache_file, base_dt in cache_files_with_dt:
+                try:
+                    with open(cache_file, 'rb') as f:
+                        cached_data = pickle.load(f)
+                        df, timestamp = cached_data
+                    
+                    # TTL 확인 (과거 날짜는 1년)
+                    ttl = self._calculate_ttl(base_dt)
+                    if time.time() - timestamp > ttl:
+                        # 만료된 캐시는 건너뛰기
+                        continue
+                    
+                    # 복사본 반환
+                    return df.copy(), base_dt
+                except Exception as e:
+                    logger.debug(f"{code} 캐시 파일 로드 실패: {cache_file}, {e}")
+                    continue
+            
+            return None, None
+        except Exception as e:
+            logger.debug(f"{code} 최신 캐시 찾기 실패: {e}")
+            return None, None
+    
+    def _fetch_today_data_from_api(self, code: str) -> pd.DataFrame:
+        """당일 데이터만 API로 가져오기
+        
+        Args:
+            code: 종목 코드
+        
+        Returns:
+            DataFrame (당일 데이터만, 비어있을 수 있음)
+        """
+        try:
+            # 최근 5일 데이터를 가져와서 당일 데이터만 필터링
+            df = self._fetch_ohlcv_from_api(code, count=5, base_dt=None)
+            if df.empty:
+                return df
+            
+            # 오늘 날짜
+            today = pd.Timestamp.now().normalize()
+            
+            # date 컬럼이 있는 경우
+            if 'date' in df.columns:
+                df['date'] = pd.to_datetime(df['date'])
+                today_df = df[df['date'].dt.normalize() == today]
+            # date가 인덱스인 경우
+            elif isinstance(df.index, pd.DatetimeIndex):
+                today_df = df[df.index.normalize() == today]
+            else:
+                # date 정보가 없으면 빈 DataFrame 반환
+                return pd.DataFrame()
+            
+            return today_df
+        except Exception as e:
+            logger.warning(f"{code} 당일 데이터 가져오기 실패: {e}")
+            return pd.DataFrame()
+    
+    def _save_to_disk_cache(self, code: str, count: int, base_dt: str, df: pd.DataFrame) -> None:
+        """디스크 캐시에 OHLCV 데이터 저장
+        
+        Args:
+            code: 종목 코드
+            count: 데이터 개수
+            base_dt: 기준일 (YYYYMMDD)
+            df: DataFrame
+        """
+        if not self._disk_cache_enabled or df.empty:
+            return
+        
+        # base_dt가 과거 날짜인 경우만 디스크 캐시 저장
+        try:
+            from datetime import datetime
+            base_date = datetime.strptime(base_dt, "%Y%m%d").date()
+            now_date = datetime.now().date()
+            
+            # 현재 날짜 또는 미래 날짜는 디스크 캐시 저장 안 함
+            if base_date >= now_date:
+                return
+        except:
+            # 날짜 파싱 실패 시 저장 안 함
+            return
+        
+        cache_file = self._get_disk_cache_file_path(code, count, base_dt)
+        
+        try:
+            # 디렉토리 생성 (이미 있지만 안전을 위해)
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # 파일에 저장
+            with open(cache_file, 'wb') as f:
+                pickle.dump((df.copy(), time.time()), f)
+        except Exception:
+            # 저장 실패해도 계속 진행 (디스크 문제 등)
+            pass
+    
+    def _fetch_ohlcv_from_api(self, code: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
+        """API에서 OHLCV 데이터를 직접 가져오기 (캐싱 없음)"""
         api_id = config.kiwoom_tr_ohlcv_id
         path = config.kiwoom_tr_ohlcv_path
         # ka10081: stk_cd, base_dt(YYYYMMDD), upd_stkpc_tp(0|1)
@@ -424,6 +1010,159 @@ class KiwoomAPI:
                 pass
             return {"error": str(e)}
 
+    def get_overseas_ohlcv(self, symbol: str, count: int = 220, base_dt: str = None) -> pd.DataFrame:
+        """해외주식 일봉 OHLCV 조회 (미국 주식/ETF/지수)"""
+        if self.force_mock:
+            return self._gen_mock_overseas_ohlcv(symbol, count, base_dt)
+        
+        try:
+            # 해외주식 일봉 조회 API (예: ka10082)
+            api_id = getattr(config, 'kiwoom_tr_overseas_ohlcv_id', 'ka10082')
+            path = getattr(config, 'kiwoom_tr_overseas_ohlcv_path', '/api/dostk/overseas')
+            
+            # 미국 주식 심볼 매핑
+            symbol_map = {
+                'SPY': 'SPY',
+                'QQQ': 'QQQ', 
+                '^VIX': 'VIX',
+                'VIX': 'VIX',
+                '^TNX': 'TNX',
+                'TNX': 'TNX',
+                'ES=F': 'ES',
+                'NQ=F': 'NQ',
+                'VX=F': 'VX',
+                'KRW=X': 'USDKRW'
+            }
+            
+            overseas_symbol = symbol_map.get(symbol, symbol)
+            
+            payload = {
+                'symbol': overseas_symbol,
+                'market': 'US',  # 미국 시장
+                'period': 'D',   # 일봉
+                'count': str(count)
+            }
+            
+            if base_dt:
+                payload['end_date'] = base_dt
+            
+            data = self._post(api_id, path, payload)
+            
+            # 응답 데이터 파싱
+            rows = data.get('output', []) or data.get('data', []) or data.get('list', [])
+            
+            if not rows:
+                return pd.DataFrame()
+            
+            df_data = []
+            for row in rows:
+                df_data.append({
+                    'date': row.get('date') or row.get('dt') or row.get('trade_date'),
+                    'open': float(row.get('open') or row.get('open_price') or 0),
+                    'high': float(row.get('high') or row.get('high_price') or 0),
+                    'low': float(row.get('low') or row.get('low_price') or 0),
+                    'close': float(row.get('close') or row.get('close_price') or 0),
+                    'volume': int(row.get('volume') or row.get('trade_volume') or 0)
+                })
+            
+            df = pd.DataFrame(df_data)
+            
+            if df.empty:
+                return df
+            
+            # 유효 데이터 필터링
+            df = df[(df['close'] > 0) & (df['volume'] > 0)]
+            
+            # 날짜 정렬
+            df = df.sort_values('date').reset_index(drop=True).tail(count)
+            
+            return df
+            
+        except Exception as e:
+            # API 실패 시 모의 데이터로 fallback
+            return self._gen_mock_overseas_ohlcv(symbol, count, base_dt)
+    
+    def _gen_mock_overseas_ohlcv(self, symbol: str, count: int, base_dt: str = None) -> pd.DataFrame:
+        """해외주식 모의 데이터 생성"""
+        import numpy as np
+        
+        # 시드 설정
+        seed = hash(symbol) % 1000
+        np.random.seed(seed)
+        
+        # 기준 날짜 설정
+        if base_dt:
+            try:
+                end_date = pd.to_datetime(base_dt, format='%Y%m%d').normalize()
+            except:
+                end_date = pd.Timestamp.today().normalize()
+        else:
+            end_date = pd.Timestamp.today().normalize()
+        
+        # 영업일 기준 날짜 생성
+        dates = pd.bdate_range(end=end_date, periods=count)
+        
+        # 심볼별 기본 가격 및 특성
+        symbol_config = {
+            'SPY': {'base_price': 450.0, 'volatility': 0.015, 'trend': 0.0005},
+            'QQQ': {'base_price': 380.0, 'volatility': 0.020, 'trend': 0.0008},
+            '^VIX': {'base_price': 20.0, 'volatility': 0.05, 'trend': -0.001, 'mean_revert': True},
+            'VIX': {'base_price': 20.0, 'volatility': 0.05, 'trend': -0.001, 'mean_revert': True},
+            '^TNX': {'base_price': 4.5, 'volatility': 0.02, 'trend': 0.0002},
+            'TNX': {'base_price': 4.5, 'volatility': 0.02, 'trend': 0.0002},
+            'ES=F': {'base_price': 4500.0, 'volatility': 0.018, 'trend': 0.0005},
+            'NQ=F': {'base_price': 15000.0, 'volatility': 0.022, 'trend': 0.0008},
+            'VX=F': {'base_price': 20.0, 'volatility': 0.05, 'trend': -0.001, 'mean_revert': True},
+            'KRW=X': {'base_price': 1300.0, 'volatility': 0.008, 'trend': 0.0001}
+        }
+        
+        config = symbol_config.get(symbol, {'base_price': 100.0, 'volatility': 0.015, 'trend': 0.0})
+        
+        # 가격 시계열 생성
+        returns = np.random.normal(config['trend'], config['volatility'], len(dates))
+        
+        # VIX 계열은 평균 회귀 특성 적용
+        if config.get('mean_revert'):
+            for i in range(1, len(returns)):
+                current_price = config['base_price'] * np.exp(returns[:i].sum())
+                if current_price > 35:  # VIX 35 이상에서 하락 압력
+                    returns[i] = -abs(returns[i])
+                elif current_price < 12:  # VIX 12 이하에서 상승 압력
+                    returns[i] = abs(returns[i])
+        
+        # 누적 수익률로 가격 계산
+        prices = config['base_price'] * np.exp(np.cumsum(returns))
+        
+        # OHLCV 데이터 생성
+        data = []
+        for i, (date, close) in enumerate(zip(dates, prices)):
+            daily_vol = np.random.uniform(0.005, 0.02)
+            high = close * (1 + daily_vol)
+            low = close * (1 - daily_vol)
+            open_price = close * (1 + np.random.uniform(-0.01, 0.01))
+            
+            # 거래량 (심볼별 차등)
+            if 'VIX' in symbol or 'VX' in symbol:
+                volume = int(np.random.uniform(50000, 500000))  # VIX는 거래량 적음
+            elif symbol in ['SPY', 'QQQ']:
+                volume = int(np.random.uniform(10000000, 100000000))  # ETF는 거래량 많음
+            else:
+                volume = int(np.random.uniform(1000000, 10000000))
+            
+            data.append({
+                'date': date.strftime('%Y%m%d'),
+                'open': round(open_price, 2),
+                'high': round(high, 2),
+                'low': round(low, 2),
+                'close': round(close, 2),
+                'volume': volume
+            })
+        
+        df = pd.DataFrame(data)
+        df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
+        
+        return df
+
     def get_stock_name(self, code: str) -> str:
         """코드→이름 매핑 (캐시 우선). 실패 시 코드 그대로 반환"""
         if code in self._code_to_name:
@@ -511,5 +1250,3 @@ class KiwoomAPI:
 
 # 전역 API 인스턴스
 api = KiwoomAPI()
-
-

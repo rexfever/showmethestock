@@ -1,0 +1,266 @@
+{
+  "analysis_date": "2025-11-23T17:12:49.104653",
+  "period": "20251101 ~ 20251123",
+  "total_days": 23,
+  "regime_distribution": {
+    "bull": 10,
+    "bear": 7,
+    "crash": 6
+  },
+  "daily_results": {
+    "20251101": {
+      "date": "20251101",
+      "final_regime": "bull",
+      "final_score": 1.7999999999999998,
+      "kr_regime": "bull",
+      "kr_score": 3.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251102": {
+      "date": "20251102",
+      "final_regime": "bull",
+      "final_score": 1.7999999999999998,
+      "kr_regime": "bull",
+      "kr_score": 3.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251103": {
+      "date": "20251103",
+      "final_regime": "bull",
+      "final_score": 2.4,
+      "kr_regime": "bull",
+      "kr_score": 4.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251104": {
+      "date": "20251104",
+      "final_regime": "bear",
+      "final_score": -0.6,
+      "kr_regime": "neutral",
+      "kr_score": -1.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251105": {
+      "date": "20251105",
+      "final_regime": "crash",
+      "final_score": -2.9,
+      "kr_regime": "bear",
+      "kr_score": -2.0,
+      "us_prev_regime": "bear",
+      "us_prev_score": -4.0,
+      "us_futures_regime": "bear",
+      "us_futures_score": -4.5
+    },
+    "20251106": {
+      "date": "20251106",
+      "final_regime": "bull",
+      "final_score": 0.6000000000000001,
+      "kr_regime": "neutral",
+      "kr_score": 0.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 1.0,
+      "us_futures_regime": "bull",
+      "us_futures_score": 2.0
+    },
+    "20251107": {
+      "date": "20251107",
+      "final_regime": "crash",
+      "final_score": -3.3,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "bear",
+      "us_prev_score": -3.0,
+      "us_futures_regime": "bear",
+      "us_futures_score": -4.5
+    },
+    "20251108": {
+      "date": "20251108",
+      "final_regime": "bear",
+      "final_score": -1.7999999999999998,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251109": {
+      "date": "20251109",
+      "final_regime": "bear",
+      "final_score": -1.7999999999999998,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251110": {
+      "date": "20251110",
+      "final_regime": "bull",
+      "final_score": 1.2,
+      "kr_regime": "bull",
+      "kr_score": 2.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251111": {
+      "date": "20251111",
+      "final_regime": "bull",
+      "final_score": 2.0,
+      "kr_regime": "neutral",
+      "kr_score": 1.0,
+      "us_prev_regime": "bull",
+      "us_prev_score": 3.0,
+      "us_futures_regime": "bull",
+      "us_futures_score": 4.0
+    },
+    "20251112": {
+      "date": "20251112",
+      "final_regime": "bull",
+      "final_score": 1.2,
+      "kr_regime": "bull",
+      "kr_score": 2.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251113": {
+      "date": "20251113",
+      "final_regime": "bull",
+      "final_score": 0.6,
+      "kr_regime": "neutral",
+      "kr_score": 1.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251114": {
+      "date": "20251114",
+      "final_regime": "crash",
+      "final_score": -2.9,
+      "kr_regime": "bear",
+      "kr_score": -2.0,
+      "us_prev_regime": "bear",
+      "us_prev_score": -4.0,
+      "us_futures_regime": "bear",
+      "us_futures_score": -4.5
+    },
+    "20251115": {
+      "date": "20251115",
+      "final_regime": "bear",
+      "final_score": -1.2,
+      "kr_regime": "bear",
+      "kr_score": -2.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251116": {
+      "date": "20251116",
+      "final_regime": "bear",
+      "final_score": -1.2,
+      "kr_regime": "bear",
+      "kr_score": -2.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251117": {
+      "date": "20251117",
+      "final_regime": "bull",
+      "final_score": 1.2,
+      "kr_regime": "bull",
+      "kr_score": 2.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 0.0
+    },
+    "20251118": {
+      "date": "20251118",
+      "final_regime": "crash",
+      "final_score": -2.9,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "bear",
+      "us_prev_score": -2.0,
+      "us_futures_regime": "bear",
+      "us_futures_score": -3.5
+    },
+    "20251119": {
+      "date": "20251119",
+      "final_regime": "crash",
+      "final_score": -3.1,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "bear",
+      "us_prev_score": -3.0,
+      "us_futures_regime": "bear",
+      "us_futures_score": -3.5
+    },
+    "20251120": {
+      "date": "20251120",
+      "final_regime": "bull",
+      "final_score": 0.9,
+      "kr_regime": "neutral",
+      "kr_score": 1.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 0.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 1.5
+    },
+    "20251121": {
+      "date": "20251121",
+      "final_regime": "crash",
+      "final_score": -3.4999999999999996,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "bear",
+      "us_prev_score": -4.0,
+      "us_futures_regime": "bear",
+      "us_futures_score": -4.5
+    },
+    "20251122": {
+      "date": "20251122",
+      "final_regime": "bear",
+      "final_score": -1.4,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 1.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 1.0
+    },
+    "20251123": {
+      "date": "20251123",
+      "final_regime": "bear",
+      "final_score": -1.4,
+      "kr_regime": "bear",
+      "kr_score": -3.0,
+      "us_prev_regime": "neutral",
+      "us_prev_score": 1.0,
+      "us_futures_regime": "neutral",
+      "us_futures_score": 1.0
+    }
+  },
+  "cache_based": true
+}

@@ -1,0 +1,281 @@
+INFO:     Will watch for changes in these directories: ['/Users/a201808029/sandbox/showmethestock/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [42139] using WatchFiles
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [42143]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+INFO:     127.0.0.1:63696 - "GET /health HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "midterm_regime" does not exist
+LINE 7:                                midterm_regime, short_term_ri...
+                                       ^
+INFO:     127.0.0.1:63752 - "GET /latest-scan?scanner_version=v2 HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "midterm_regime" does not exist
+LINE 7:                                midterm_regime, short_term_ri...
+                                       ^
+INFO:     127.0.0.1:63754 - "GET /latest-scan?scanner_version=v2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63764 - "GET /bottom-nav-link HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63765 - "GET /popup-notice/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63764 - "GET /bottom-nav-link HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63767 - "OPTIONS /scan-by-date/20251127?scanner_version=v2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63761 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63765 - "GET /popup-notice/status HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "midterm_regime" does not exist
+LINE 7:                                midterm_regime, short_term_ri...
+                                       ^
+INFO:     127.0.0.1:63764 - "GET /scan-by-date/20251127?scanner_version=v2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63764 - "OPTIONS /scan-by-date/20251126?scanner_version=v2 HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "midterm_regime" does not exist
+LINE 7:                                midterm_regime, short_term_ri...
+                                       ^
+INFO:     127.0.0.1:63764 - "GET /scan-by-date/20251126?scanner_version=v2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63764 - "OPTIONS /scan-by-date/20251125?scanner_version=v2 HTTP/1.1" 200 OK
+⚠️ 시장 상황 DB 조회 실패: column "midterm_regime" does not exist
+LINE 7:                                midterm_regime, short_term_ri...
+                                       ^
+INFO:     127.0.0.1:63764 - "GET /scan-by-date/20251125?scanner_version=v2 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'venv/lib/python3.9/site-packages/soupsieve/css_types.py', 'venv/lib/python3.9/site-packages/soupsieve/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/descriptor_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/well_known_types.py', 'venv/lib/python3.9/site-packages/soupsieve/util.py', 'venv/lib/python3.9/site-packages/google/protobuf/descriptor_pool.py', 'venv/lib/python3.9/site-packages/google/protobuf/proto_builder.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/python_edition_defaults.py', 'venv/lib/python3.9/site-packages/google/protobuf/timestamp.py', 'venv/lib/python3.9/site-packages/soupsieve/__meta__.py', 'venv/lib/python3.9/site-packages/google/protobuf/message.py', 'venv/lib/python3.9/site-packages/soupsieve/css_match.py', 'venv/lib/python3.9/site-packages/google/protobuf/source_context_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/testdata/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/encoder.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/wire_format.py', 'venv/lib/python3.9/site-packages/google/protobuf/unknown_fields.py', 'venv/lib/python3.9/site-packages/google/protobuf/wrappers_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/descriptor_database.py', 'venv/lib/python3.9/site-packages/soupsieve/pretty.py', 'venv/lib/python3.9/site-packages/soupsieve/css_parser.py', 'venv/lib/python3.9/site-packages/google/protobuf/reflection.py', 'venv/lib/python3.9/site-packages/google/protobuf/any_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/field_mask_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/type_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/pyext/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/api_implementation.py', 'venv/lib/python3.9/site-packages/google/protobuf/proto_json.py', 'venv/lib/python3.9/site-packages/google/protobuf/proto.py', 'venv/lib/python3.9/site-packages/google/protobuf/pyext/cpp_message.py', 'venv/lib/python3.9/site-packages/google/protobuf/empty_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/json_format.py', 'venv/lib/python3.9/site-packages/google/protobuf/proto_text.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/message_listener.py', 'venv/lib/python3.9/site-packages/google/protobuf/service_reflection.py', 'venv/lib/python3.9/site-packages/google/protobuf/struct_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/decoder.py', 'venv/lib/python3.9/site-packages/google/protobuf/text_encoding.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/type_checkers.py', 'venv/lib/python3.9/site-packages/google/protobuf/util/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/containers.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/python_message.py', 'venv/lib/python3.9/site-packages/google/protobuf/symbol_database.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/extension_dict.py', 'venv/lib/python3.9/site-packages/google/protobuf/compiler/plugin_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/compiler/__init__.py', 'venv/lib/python3.9/site-packages/google/protobuf/duration_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/timestamp_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/runtime_version.py', 'venv/lib/python3.9/site-packages/google/protobuf/descriptor.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/field_mask.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/builder.py', 'venv/lib/python3.9/site-packages/google/protobuf/duration.py', 'venv/lib/python3.9/site-packages/google/protobuf/message_factory.py', 'venv/lib/python3.9/site-packages/google/protobuf/api_pb2.py', 'venv/lib/python3.9/site-packages/google/protobuf/text_format.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/enum_type_wrapper.py', 'venv/lib/python3.9/site-packages/google/protobuf/any.py', 'venv/lib/python3.9/site-packages/google/protobuf/internal/testing_refleaks.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42143]
+WARNING:  WatchFiles detected changes in 'venv/lib/python3.9/site-packages/playhouse/mysql_ext.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/errors.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/holders.py', 'venv/lib/python3.9/site-packages/bs4/_typing.py', 'venv/bin/pwiz.py', 'venv/lib/python3.9/site-packages/yfinance/shared.py', 'venv/lib/python3.9/site-packages/yfinance/live.py', 'venv/lib/python3.9/site-packages/bs4/dammit.py', 'venv/lib/python3.9/site-packages/yfinance/utils.py', 'venv/lib/python3.9/site-packages/yfinance/lookup.py', 'venv/lib/python3.9/site-packages/bs4/exceptions.py', 'venv/lib/python3.9/site-packages/platformdirs/windows.py', 'venv/lib/python3.9/site-packages/platformdirs/__init__.py', 'venv/lib/python3.9/site-packages/platformdirs/macos.py', 'venv/lib/python3.9/site-packages/bs4/_deprecation.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/models.py', 'venv/lib/python3.9/site-packages/bs4/diagnose.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/headers.py', 'venv/lib/python3.9/site-packages/yfinance/domain/__init__.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/__init__.py', 'venv/lib/python3.9/site-packages/bs4/css.py', 'venv/lib/python3.9/site-packages/playhouse/hybrid.py', 'venv/lib/python3.9/site-packages/playhouse/sqlcipher_ext.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/utils.py', 'venv/lib/python3.9/site-packages/playhouse/kv.py', 'venv/lib/python3.9/site-packages/yfinance/screener/query.py', 'venv/lib/python3.9/site-packages/curl_cffi/const.py', 'venv/lib/python3.9/site-packages/yfinance/multi.py', 'venv/lib/python3.9/site-packages/yfinance/const.py', 'venv/lib/python3.9/site-packages/yfinance/domain/industry.py', 'venv/lib/python3.9/site-packages/playhouse/shortcuts.py', 'venv/lib/python3.9/site-packages/yfinance/domain/domain.py', 'venv/lib/python3.9/site-packages/platformdirs/unix.py', 'venv/lib/python3.9/site-packages/platformdirs/version.py', 'venv/lib/python3.9/site-packages/playhouse/flask_utils.py', 'venv/lib/python3.9/site-packages/bs4/__init__.py', 'venv/lib/python3.9/site-packages/curl_cffi/utils.py', 'venv/lib/python3.9/site-packages/bs4/element.py', 'venv/lib/python3.9/site-packages/yfinance/data.py', 'venv/lib/python3.9/site-packages/yfinance/domain/sector.py', 'venv/lib/python3.9/site-packages/playhouse/pool.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/impersonate.py', 'venv/lib/python3.9/site-packages/curl_cffi/_asyncio_selector.py', 'venv/lib/python3.9/site-packages/platformdirs/android.py', 'venv/lib/python3.9/site-packages/playhouse/__init__.py', 'venv/lib/python3.9/site-packages/bs4/builder/_html5lib.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/exceptions.py', 'venv/lib/python3.9/site-packages/playhouse/sqlite_changelog.py', 'venv/lib/python3.9/site-packages/playhouse/db_url.py', 'venv/lib/python3.9/site-packages/yfinance/cache.py', 'venv/lib/python3.9/site-packages/pwiz.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/history.py', 'venv/lib/python3.9/site-packages/bs4/filter.py', 'venv/lib/python3.9/site-packages/multitasking/__init__.py', 'venv/lib/python3.9/site-packages/frozendict/core.py', 'venv/lib/python3.9/site-packages/playhouse/postgres_ext.py', 'venv/lib/python3.9/site-packages/yfinance/screener/screener.py', 'venv/lib/python3.9/site-packages/frozendict/__init__.py', 'venv/lib/python3.9/site-packages/playhouse/sqlite_ext.py', 'venv/lib/python3.9/site-packages/playhouse/signals.py', 'venv/lib/python3.9/site-packages/bs4/_warnings.py', 'venv/lib/python3.9/site-packages/playhouse/fields.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/cookies.py', 'venv/lib/python3.9/site-packages/yfinance/domain/market.py', 'venv/lib/python3.9/site-packages/playhouse/dataset.py', 'venv/lib/python3.9/site-packages/yfinance/exceptions.py', 'venv/lib/python3.9/site-packages/curl_cffi/__version__.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/__init__.py', 'venv/lib/python3.9/site-packages/bs4/formatter.py', 'venv/lib/python3.9/site-packages/playhouse/apsw_ext.py', 'venv/lib/python3.9/site-packages/curl_cffi/aio.py', 'venv/lib/python3.9/site-packages/frozendict/monkeypatch.py', 'venv/lib/python3.9/site-packages/bs4/builder/_lxml.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/session.py', 'venv/lib/python3.9/site-packages/yfinance/tickers.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/funds.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/fundamentals.py', 'venv/lib/python3.9/site-packages/frozendict/version.py', 'venv/lib/python3.9/site-packages/bs4/builder/__init__.py', 'venv/lib/python3.9/site-packages/yfinance/screener/__init__.py', 'venv/lib/python3.9/site-packages/platformdirs/__main__.py', 'venv/lib/python3.9/site-packages/curl_cffi/__init__.py', 'venv/lib/python3.9/site-packages/peewee.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/quote.py', 'venv/lib/python3.9/site-packages/frozendict/cool.py', 'venv/lib/python3.9/site-packages/playhouse/sqlite_udf.py', 'venv/lib/python3.9/site-packages/platformdirs/api.py', 'venv/lib/python3.9/site-packages/playhouse/migrate.py', 'venv/lib/python3.9/site-packages/yfinance/__init__.py', 'venv/lib/python3.9/site-packages/curl_cffi/curl.py', 'venv/lib/python3.9/site-packages/playhouse/reflection.py', 'venv/lib/python3.9/site-packages/curl_cffi/requests/websockets.py', 'venv/lib/python3.9/site-packages/playhouse/cockroachdb.py', 'venv/lib/python3.9/site-packages/playhouse/psycopg3_ext.py', 'venv/lib/python3.9/site-packages/yfinance/scrapers/analysis.py', 'venv/lib/python3.9/site-packages/frozendict/_frozendict_py.py', 'venv/lib/python3.9/site-packages/playhouse/sqliteq.py', 'venv/lib/python3.9/site-packages/bs4/builder/_htmlparser.py', 'venv/lib/python3.9/site-packages/yfinance/search.py', 'venv/lib/python3.9/site-packages/yfinance/pricing_pb2.py', 'venv/lib/python3.9/site-packages/yfinance/base.py', 'venv/lib/python3.9/site-packages/yfinance/version.py', 'venv/lib/python3.9/site-packages/playhouse/test_utils.py', 'venv/lib/python3.9/site-packages/yfinance/ticker.py'. Reloading...
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [48536]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner_v2/regime_v4.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [48536]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [57443]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner_v2/regime_v4.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57443]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [59193]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner_v2/regime_v4.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [59193]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [60162]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner_v2/regime_v4.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [60162]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [60304]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [60304]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [64729]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64729]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [70360]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70360]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [70500]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70500]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [70640]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70640]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [70765]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70765]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [70870]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner_v2/regime_v4.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70870]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [71081]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:     Application startup complete.
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+WARNING:  WatchFiles detected changes in 'scanner_v2/regime_v4.py', 'tests/test_regime_v4_chart_api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:main:🛑 FastAPI 앱 종료 중...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71081]
+/Users/a201808029/sandbox/showmethestock/backend/venv/lib/python3.9/site-packages/boto3/compat.py:84: PythonDeprecationWarning: Boto3 will no longer support Python 3.9 starting April 29, 2026. To continue receiving service updates, bug fixes, and security updates please upgrade to Python 3.10 or later. More information can be found here: https://aws.amazon.com/blogs/developer/python-support-policy-updates-for-aws-sdks-and-tools/
+  warnings.warn(warning, PythonDeprecationWarning)
+INFO:     Started server process [73309]
+INFO:     Waiting for application startup.
+INFO:main:🚀 FastAPI 앱 시작 - 스케줄러 초기화 중...
+INFO:scheduler:자동 스케줄러가 설정되었습니다.
+INFO:scheduler:- 매일 오후 3:31~3:40 KST: 데이터 검증 (매분)
+INFO:scheduler:- 매일 오후 3:40 KST: 장세 분석 실행
+INFO:scheduler:- 매일 오후 3:42 KST: 스캔 실행
+INFO:scheduler:- 주말과 공휴일은 자동으로 제외됩니다.
+INFO:main:✅ 스케줄러 백그라운드 스레드 시작 완료
+INFO:     Application startup complete.

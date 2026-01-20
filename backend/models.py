@@ -4,8 +4,8 @@ from datetime import datetime
 
 
 class IndicatorPayload(BaseModel):
-    TEMA20: float  # TEMA20 (20일 삼중지수이동평균)
-    DEMA10: float  # DEMA10 (10일 이중지수이동평균)
+    TEMA: float  # TEMA (V2) 또는 TEMA20 (V1) - 20일 삼중지수이동평균
+    DEMA: float  # DEMA (V2) 또는 DEMA10 (V1) - 10일 이중지수이동평균
     MACD_OSC: float
     MACD_LINE: float
     MACD_SIGNAL: float
@@ -84,6 +84,9 @@ class ScanItem(BaseModel):
     recurrence: Optional[dict] = None
     # 수익률 정보 (과거 스캔 검증용)
     returns: Optional[dict] = None
+    # 현재가 및 등락률 (프론트엔드 호환성)
+    current_price: Optional[float] = None
+    change_rate: Optional[float] = None
 
 
 class ScanResponse(BaseModel):
@@ -103,6 +106,8 @@ class ScanResponse(BaseModel):
     require_dema_slope: Optional[str] = None
     # market guide
     market_guide: Optional[dict] = None
+    # scanner version (DB 설정 기반)
+    scanner_version: Optional[str] = None
 
 
 class AnalyzeResponse(BaseModel):

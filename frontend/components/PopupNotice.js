@@ -9,7 +9,17 @@ const PopupNotice = () => {
     const checkNotice = async () => {
       try {
         const config = getConfig();
-        const response = await fetch(`${config.backendUrl}/popup-notice/status`);
+        const backendUrl = config?.backendUrl || 'http://localhost:8010';
+        
+        // 타임아웃 설정 (3초)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(`${backendUrl}/popup-notice/status`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
         const data = await response.json();
         
         if (data.is_enabled && data.title && data.message) {
@@ -23,7 +33,10 @@ const PopupNotice = () => {
           }
         }
       } catch (error) {
-        console.error('팝업 공지 확인 실패:', error);
+        if (error.name !== 'AbortError') {
+          console.error('팝업 공지 확인 실패:', error);
+        }
+        // 타임아웃이나 에러 시 팝업 표시 안 함
       }
     };
 

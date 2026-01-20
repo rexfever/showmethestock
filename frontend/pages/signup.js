@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { loginWithKakao, isKakaoSDKReady } from '../utils/kakaoAuth';
 import getConfig from '../config';
+import { getScannerLink } from '../utils/navigation';
 
 export default function Signup() {
   const [agreed, setAgreed] = useState(false);
@@ -61,8 +62,9 @@ export default function Signup() {
           localStorage.setItem('token', data.access_token);
           localStorage.setItem('user', JSON.stringify(data.user));
           
-          // 메인 페이지로 이동
-          router.push('/customer-scanner');
+          // 동적으로 스캐너 링크 가져오기
+          const scannerLink = await getScannerLink();
+          router.push(scannerLink);
         } else {
           setMessage(data.detail || '로그인에 실패했습니다.');
         }

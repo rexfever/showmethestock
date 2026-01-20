@@ -1,0 +1,343 @@
+{
+  "date": "20251106",
+  "market_sentiment": "neutral",
+  "baseline_config": {
+    "min_signals": 3,
+    "vol_ma5_mult": 1.8,
+    "score_level_strong": 10,
+    "score_level_watch": 8
+  },
+  "universe_count": 200,
+  "matched_count": 1,
+  "final_count": 1,
+  "all_matched": [
+    {
+      "ticker": "015760",
+      "name": "한국전력",
+      "match": true,
+      "score": 10,
+      "indicators": {
+        "TEMA": 45805.299398519324,
+        "DEMA": 45367.96453563225,
+        "MACD_OSC": 148.05947365451925,
+        "MACD_LINE": 1865.7786807288212,
+        "MACD_SIGNAL": 1717.719207074302,
+        "RSI_TEMA": 67.31123369003554,
+        "RSI_DEMA": 66.05023749623038,
+        "OBV": 133915129.0,
+        "VOL": 10936326,
+        "VOL_MA5": 4811121.8,
+        "close": 46100.0,
+        "change_rate": 5.98
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 590.4069734925728,
+        "OBV_SLOPE20": 1471971.2639097725,
+        "ABOVE_CNT5": 5,
+        "DEMA10_SLOPE20": 534.0475948421318
+      },
+      "strategy": "상승시작 / 관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": true,
+        "macd_golden_cross": false,
+        "macd_line_up": true,
+        "rsi_ok": true,
+        "rsi_mode": "tema_dema_momentum",
+        "rsi_thr": "momentum",
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "risk_score": 1,
+        "risk_flags": {
+          "rsi_overbought": false,
+          "vol_spike": false,
+          "momentum_weak": true,
+          "price_exhaustion": false
+        },
+        "overheated_rsi_tema": false,
+        "gap_now": 0.0095,
+        "gap_ok": true,
+        "ext_pct": 0.0064,
+        "ext_ok": true,
+        "label": "강한 매수",
+        "match": true,
+        "fallback": false,
+        "signals_count": 3,
+        "min_signals_required": 3,
+        "adjusted_score": 9,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 9,
+          "original_score": 10,
+          "risk_penalty": 1
+        }
+      },
+      "score_label": "강한 매수",
+      "date": "20251106"
+    }
+  ],
+  "final_items": [
+    {
+      "ticker": "015760",
+      "name": "한국전력",
+      "match": true,
+      "score": 10,
+      "indicators": {
+        "TEMA": 45805.299398519324,
+        "DEMA": 45367.96453563225,
+        "MACD_OSC": 148.05947365451925,
+        "MACD_LINE": 1865.7786807288212,
+        "MACD_SIGNAL": 1717.719207074302,
+        "RSI_TEMA": 67.31123369003554,
+        "RSI_DEMA": 66.05023749623038,
+        "OBV": 133915129.0,
+        "VOL": 10936326,
+        "VOL_MA5": 4811121.8,
+        "close": 46100.0,
+        "change_rate": 5.98
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 590.4069734925728,
+        "OBV_SLOPE20": 1471971.2639097725,
+        "ABOVE_CNT5": 5,
+        "DEMA10_SLOPE20": 534.0475948421318
+      },
+      "strategy": "상승시작 / 관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": true,
+        "macd_golden_cross": false,
+        "macd_line_up": true,
+        "rsi_ok": true,
+        "rsi_mode": "tema_dema_momentum",
+        "rsi_thr": "momentum",
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "risk_score": 1,
+        "risk_flags": {
+          "rsi_overbought": false,
+          "vol_spike": false,
+          "momentum_weak": true,
+          "price_exhaustion": false
+        },
+        "overheated_rsi_tema": false,
+        "gap_now": 0.0095,
+        "gap_ok": true,
+        "ext_pct": 0.0064,
+        "ext_ok": true,
+        "label": "강한 매수",
+        "match": true,
+        "fallback": false,
+        "signals_count": 3,
+        "min_signals_required": 3,
+        "adjusted_score": 9,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 9,
+          "original_score": 10,
+          "risk_penalty": 1
+        }
+      },
+      "score_label": "강한 매수",
+      "date": "20251106"
+    }
+  ],
+  "enriched_final": [
+    {
+      "ticker": "015760",
+      "name": "한국전력",
+      "match": true,
+      "score": 10,
+      "indicators": {
+        "TEMA": 45805.299398519324,
+        "DEMA": 45367.96453563225,
+        "MACD_OSC": 148.05947365451925,
+        "MACD_LINE": 1865.7786807288212,
+        "MACD_SIGNAL": 1717.719207074302,
+        "RSI_TEMA": 67.31123369003554,
+        "RSI_DEMA": 66.05023749623038,
+        "OBV": 133915129.0,
+        "VOL": 10936326,
+        "VOL_MA5": 4811121.8,
+        "close": 46100.0,
+        "change_rate": 5.98
+      },
+      "trend": {
+        "TEMA20_SLOPE20": 590.4069734925728,
+        "OBV_SLOPE20": 1471971.2639097725,
+        "ABOVE_CNT5": 5,
+        "DEMA10_SLOPE20": 534.0475948421318
+      },
+      "strategy": "상승시작 / 관심증가 / 상승추세정착",
+      "flags": {
+        "cross": false,
+        "vol_expand": true,
+        "macd_ok": true,
+        "macd_golden_cross": false,
+        "macd_line_up": true,
+        "rsi_ok": true,
+        "rsi_mode": "tema_dema_momentum",
+        "rsi_thr": "momentum",
+        "tema_slope_ok": true,
+        "obv_slope_ok": true,
+        "above_cnt5_ok": true,
+        "dema_slope_ok": true,
+        "risk_score": 1,
+        "risk_flags": {
+          "rsi_overbought": false,
+          "vol_spike": false,
+          "momentum_weak": true,
+          "price_exhaustion": false
+        },
+        "overheated_rsi_tema": false,
+        "gap_now": 0.0095,
+        "gap_ok": true,
+        "ext_pct": 0.0064,
+        "ext_ok": true,
+        "label": "강한 매수",
+        "match": true,
+        "fallback": false,
+        "signals_count": 3,
+        "min_signals_required": 3,
+        "adjusted_score": 9,
+        "details": {
+          "cross": {
+            "ok": false,
+            "w": 3,
+            "gain": 0
+          },
+          "volume": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "macd": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "rsi": {
+            "ok": true,
+            "w": 1,
+            "gain": 1
+          },
+          "tema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "obv_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "above_cnt5": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "dema_slope": {
+            "ok": true,
+            "w": 2,
+            "gain": 2
+          },
+          "total": 9,
+          "original_score": 10,
+          "risk_penalty": 1
+        }
+      },
+      "score_label": "강한 매수",
+      "date": "20251106",
+      "buy_price": 46100.0,
+      "current_return": 2.82,
+      "max_return": 9.33,
+      "min_return": -6.29,
+      "days_elapsed": 6,
+      "status": "take_profit"
+    }
+  ]
+}

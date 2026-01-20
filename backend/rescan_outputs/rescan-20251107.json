@@ -1,0 +1,70 @@
+{
+  "date": "20251107",
+  "market_sentiment": "bear",
+  "fallback_profile": {
+    "target_min": 2,
+    "target_max": 3,
+    "presets": [
+      {},
+      {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.2
+      },
+      {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.0,
+        "gap_max": 0.012,
+        "ext_from_tema20_max": 0.012
+      },
+      {
+        "min_signals": 2,
+        "vol_ma5_mult": 1.8,
+        "vol_ma20_mult": 1.1
+      },
+      {
+        "min_signals": 2,
+        "vol_ma5_mult": 1.6,
+        "gap_max": 0.02,
+        "ext_from_tema20_max": 0.02
+      },
+      {
+        "min_signals": 1,
+        "vol_ma5_mult": 1.4,
+        "require_dema_slope": "optional"
+      }
+    ]
+  },
+  "chosen_step": null,
+  "universe_count": 200,
+  "steps": {
+    "0": {
+      "preset": {},
+      "items": []
+    },
+    "1": {
+      "preset": {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.2
+      },
+      "items": []
+    },
+    "2": {
+      "preset": {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.2
+      },
+      "items": []
+    },
+    "3": {
+      "preset": {
+        "min_signals": 3,
+        "vol_ma5_mult": 2.0,
+        "gap_max": 0.012,
+        "ext_from_tema20_max": 0.012
+      },
+      "items": []
+    }
+  },
+  "final_items": [],
+  "enriched_final": []
+}

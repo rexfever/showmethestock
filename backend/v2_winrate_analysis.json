@@ -1,0 +1,2724 @@
+{
+  "stats_5d": {
+    "total": 135,
+    "wins": 73,
+    "losses": 62,
+    "win_rate": 54.074074074074076,
+    "avg_return": -0.3957256240188723,
+    "max_return": 34.67741935483871,
+    "min_return": -37.64705882352941
+  },
+  "stats_10d": {
+    "total": 135,
+    "wins": 71,
+    "losses": 64,
+    "win_rate": 52.59259259259259,
+    "avg_return": 0.3784048691100999,
+    "max_return": 37.220843672456574,
+    "min_return": -36.470588235294116
+  },
+  "results_5d": [
+    {
+      "date": "2025-09-08",
+      "code": "036540",
+      "name": "SFA반도체",
+      "score": 7.0,
+      "entry_price": 4105.0,
+      "exit_5d_price": 3595.0,
+      "return_5d": -12.423873325213155,
+      "win": false
+    },
+    {
+      "date": "2025-09-08",
+      "code": "278470",
+      "name": "에이피알",
+      "score": 5.0,
+      "entry_price": 237000.0,
+      "exit_5d_price": 215500.0,
+      "return_5d": -9.071729957805907,
+      "win": false
+    },
+    {
+      "date": "2025-09-08",
+      "code": "195940",
+      "name": "HK이노엔",
+      "score": 5.0,
+      "entry_price": 51000.0,
+      "exit_5d_price": 46200.0,
+      "return_5d": -9.411764705882353,
+      "win": false
+    },
+    {
+      "date": "2025-09-11",
+      "code": "033500",
+      "name": "동성화인텍",
+      "score": 7.0,
+      "entry_price": 27900.0,
+      "exit_5d_price": 30850.0,
+      "return_5d": 10.57347670250896,
+      "win": true
+    },
+    {
+      "date": "2025-09-11",
+      "code": "249420",
+      "name": "일동제약",
+      "score": 7.0,
+      "entry_price": 31100.0,
+      "exit_5d_price": 27850.0,
+      "return_5d": -10.45016077170418,
+      "win": false
+    },
+    {
+      "date": "2025-09-11",
+      "code": "329180",
+      "name": "HD현대중공업",
+      "score": 5.0,
+      "entry_price": 583000.0,
+      "exit_5d_price": 499500.0,
+      "return_5d": -14.322469982847341,
+      "win": false
+    },
+    {
+      "date": "2025-09-11",
+      "code": "466920",
+      "name": "SOL 조선TOP3플러스",
+      "score": 5.0,
+      "entry_price": 35500.0,
+      "exit_5d_price": 32410.0,
+      "return_5d": -8.704225352112676,
+      "win": false
+    },
+    {
+      "date": "2025-09-12",
+      "code": "140410",
+      "name": "메지온",
+      "score": 6.0,
+      "entry_price": 69300.0,
+      "exit_5d_price": 59600.0,
+      "return_5d": -13.997113997113997,
+      "win": false
+    },
+    {
+      "date": "2025-09-12",
+      "code": "237690",
+      "name": "에스티팜",
+      "score": 5.0,
+      "entry_price": 102000.0,
+      "exit_5d_price": 94000.0,
+      "return_5d": -7.8431372549019605,
+      "win": false
+    },
+    {
+      "date": "2025-09-12",
+      "code": "352820",
+      "name": "하이브",
+      "score": 5.0,
+      "entry_price": 296000.0,
+      "exit_5d_price": 289500.0,
+      "return_5d": -2.195945945945946,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "138610",
+      "name": "나이벡",
+      "score": 8.0,
+      "entry_price": 38900.0,
+      "exit_5d_price": 27150.0,
+      "return_5d": -30.205655526992288,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 8.0,
+      "entry_price": 27150.0,
+      "exit_5d_price": 26000.0,
+      "return_5d": -4.23572744014733,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "012330",
+      "name": "현대모비스",
+      "score": 7.0,
+      "entry_price": 296000.0,
+      "exit_5d_price": 301000.0,
+      "return_5d": 1.6891891891891893,
+      "win": true
+    },
+    {
+      "date": "2025-09-18",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 6.0,
+      "entry_price": 79700.0,
+      "exit_5d_price": 72100.0,
+      "return_5d": -9.535759096612297,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "058610",
+      "name": "에스피지",
+      "score": 6.0,
+      "entry_price": 42500.0,
+      "exit_5d_price": 27200.0,
+      "return_5d": -36.0,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "228760",
+      "name": "지노믹트리",
+      "score": 8.0,
+      "entry_price": 25700.0,
+      "exit_5d_price": 22050.0,
+      "return_5d": -14.202334630350194,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 8.0,
+      "entry_price": 79700.0,
+      "exit_5d_price": 70500.0,
+      "return_5d": -11.543287327478042,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "138610",
+      "name": "나이벡",
+      "score": 8.0,
+      "entry_price": 38900.0,
+      "exit_5d_price": 31250.0,
+      "return_5d": -19.665809768637533,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "462900",
+      "name": "KoAct 바이오헬스케어액티브",
+      "score": 8.0,
+      "entry_price": 22620.0,
+      "exit_5d_price": 17305.0,
+      "return_5d": -23.49690539345712,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "237690",
+      "name": "에스티팜",
+      "score": 7.0,
+      "entry_price": 102000.0,
+      "exit_5d_price": 88900.0,
+      "return_5d": -12.84313725490196,
+      "win": false
+    },
+    {
+      "date": "2025-09-22",
+      "code": "138610",
+      "name": "나이벡",
+      "score": 8.0,
+      "entry_price": 38900.0,
+      "exit_5d_price": 33050.0,
+      "return_5d": -15.038560411311053,
+      "win": false
+    },
+    {
+      "date": "2025-09-22",
+      "code": "358570",
+      "name": "지아이이노베이션",
+      "score": 8.0,
+      "entry_price": 18520.0,
+      "exit_5d_price": 18950.0,
+      "return_5d": 2.3218142548596115,
+      "win": true
+    },
+    {
+      "date": "2025-09-22",
+      "code": "310210",
+      "name": "보로노이",
+      "score": 6.0,
+      "entry_price": 239000.0,
+      "exit_5d_price": 156500.0,
+      "return_5d": -34.51882845188285,
+      "win": false
+    },
+    {
+      "date": "2025-09-22",
+      "code": "058610",
+      "name": "에스피지",
+      "score": 6.0,
+      "entry_price": 42500.0,
+      "exit_5d_price": 26500.0,
+      "return_5d": -37.64705882352941,
+      "win": false
+    },
+    {
+      "date": "2025-09-23",
+      "code": "358570",
+      "name": "지아이이노베이션",
+      "score": 8.0,
+      "entry_price": 18520.0,
+      "exit_5d_price": 18570.0,
+      "return_5d": 0.26997840172786175,
+      "win": true
+    },
+    {
+      "date": "2025-09-23",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 6.0,
+      "entry_price": 27150.0,
+      "exit_5d_price": 27800.0,
+      "return_5d": 2.394106813996317,
+      "win": true
+    },
+    {
+      "date": "2025-09-23",
+      "code": "140410",
+      "name": "메지온",
+      "score": 6.0,
+      "entry_price": 69300.0,
+      "exit_5d_price": 65000.0,
+      "return_5d": -6.204906204906205,
+      "win": false
+    },
+    {
+      "date": "2025-09-24",
+      "code": "064350",
+      "name": "현대로템",
+      "score": 8.0,
+      "entry_price": 190000.0,
+      "exit_5d_price": 222500.0,
+      "return_5d": 17.105263157894736,
+      "win": true
+    },
+    {
+      "date": "2025-09-24",
+      "code": "010140",
+      "name": "삼성중공업",
+      "score": 7.0,
+      "entry_price": 26450.0,
+      "exit_5d_price": 21850.0,
+      "return_5d": -17.391304347826086,
+      "win": false
+    },
+    {
+      "date": "2025-09-24",
+      "code": "012450",
+      "name": "한화에어로스페이스",
+      "score": 6.0,
+      "entry_price": 916000.0,
+      "exit_5d_price": 1099000.0,
+      "return_5d": 19.978165938864628,
+      "win": true
+    },
+    {
+      "date": "2025-09-24",
+      "code": "204270",
+      "name": "제이앤티씨",
+      "score": 5.0,
+      "entry_price": 20150.0,
+      "exit_5d_price": 24800.0,
+      "return_5d": 23.076923076923077,
+      "win": true
+    },
+    {
+      "date": "2025-09-29",
+      "code": "204270",
+      "name": "제이앤티씨",
+      "score": 8.0,
+      "entry_price": 20150.0,
+      "exit_5d_price": 24450.0,
+      "return_5d": 21.339950372208435,
+      "win": true
+    },
+    {
+      "date": "2025-09-29",
+      "code": "161580",
+      "name": "필옵틱스",
+      "score": 6.0,
+      "entry_price": 40800.0,
+      "exit_5d_price": 40700.0,
+      "return_5d": -0.24509803921568626,
+      "win": false
+    },
+    {
+      "date": "2025-09-29",
+      "code": "083450",
+      "name": "GST",
+      "score": 5.0,
+      "entry_price": 27800.0,
+      "exit_5d_price": 26000.0,
+      "return_5d": -6.474820143884892,
+      "win": false
+    },
+    {
+      "date": "2025-09-29",
+      "code": "105560",
+      "name": "KB금융",
+      "score": 5.0,
+      "entry_price": 121200.0,
+      "exit_5d_price": 111600.0,
+      "return_5d": -7.920792079207921,
+      "win": false
+    },
+    {
+      "date": "2025-09-29",
+      "code": "085660",
+      "name": "차바이오텍",
+      "score": 5.0,
+      "entry_price": 12980.0,
+      "exit_5d_price": 11170.0,
+      "return_5d": -13.944530046224962,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "253590",
+      "name": "네오셈",
+      "score": 10.0,
+      "entry_price": 10340.0,
+      "exit_5d_price": 11590.0,
+      "return_5d": 12.088974854932303,
+      "win": true
+    },
+    {
+      "date": "2025-09-30",
+      "code": "449450",
+      "name": "PLUS K방산",
+      "score": 7.0,
+      "entry_price": 52240.0,
+      "exit_5d_price": 51225.0,
+      "return_5d": -1.9429555895865238,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "058610",
+      "name": "에스피지",
+      "score": 7.0,
+      "entry_price": 42500.0,
+      "exit_5d_price": 29450.0,
+      "return_5d": -30.705882352941178,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "240810",
+      "name": "원익IPS",
+      "score": 7.0,
+      "entry_price": 60900.0,
+      "exit_5d_price": 53800.0,
+      "return_5d": -11.658456486042693,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "001440",
+      "name": "대한전선",
+      "score": 7.0,
+      "entry_price": 24100.0,
+      "exit_5d_price": 17240.0,
+      "return_5d": -28.46473029045643,
+      "win": false
+    },
+    {
+      "date": "2025-10-01",
+      "code": "232140",
+      "name": "와이씨",
+      "score": 10.0,
+      "entry_price": 13430.0,
+      "exit_5d_price": 15320.0,
+      "return_5d": 14.072970960536113,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "253590",
+      "name": "네오셈",
+      "score": 8.0,
+      "entry_price": 10340.0,
+      "exit_5d_price": 12050.0,
+      "return_5d": 16.53771760154739,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "449450",
+      "name": "PLUS K방산",
+      "score": 8.0,
+      "entry_price": 52240.0,
+      "exit_5d_price": 52710.0,
+      "return_5d": 0.8996937212863706,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "036540",
+      "name": "SFA반도체",
+      "score": 8.0,
+      "entry_price": 4105.0,
+      "exit_5d_price": 4570.0,
+      "return_5d": 11.327649208282581,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "183300",
+      "name": "코미코",
+      "score": 7.0,
+      "entry_price": 88400.0,
+      "exit_5d_price": 115700.0,
+      "return_5d": 30.88235294117647,
+      "win": true
+    },
+    {
+      "date": "2025-10-02",
+      "code": "058470",
+      "name": "리노공업",
+      "score": 10.0,
+      "entry_price": 58100.0,
+      "exit_5d_price": 57700.0,
+      "return_5d": -0.6884681583476765,
+      "win": false
+    },
+    {
+      "date": "2025-10-02",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 9.0,
+      "entry_price": 224000.0,
+      "exit_5d_price": 217000.0,
+      "return_5d": -3.125,
+      "win": false
+    },
+    {
+      "date": "2025-10-02",
+      "code": "449450",
+      "name": "PLUS K방산",
+      "score": 8.0,
+      "entry_price": 52240.0,
+      "exit_5d_price": 52220.0,
+      "return_5d": -0.03828483920367535,
+      "win": false
+    },
+    {
+      "date": "2025-10-02",
+      "code": "064350",
+      "name": "현대로템",
+      "score": 7.0,
+      "entry_price": 190000.0,
+      "exit_5d_price": 207000.0,
+      "return_5d": 8.947368421052632,
+      "win": true
+    },
+    {
+      "date": "2025-10-02",
+      "code": "006800",
+      "name": "미래에셋증권",
+      "score": 7.0,
+      "entry_price": 22250.0,
+      "exit_5d_price": 22200.0,
+      "return_5d": -0.22471910112359553,
+      "win": false
+    },
+    {
+      "date": "2025-10-10",
+      "code": "036930",
+      "name": "주성엔지니어링",
+      "score": 8.0,
+      "entry_price": 28300.0,
+      "exit_5d_price": 31000.0,
+      "return_5d": 9.540636042402827,
+      "win": true
+    },
+    {
+      "date": "2025-10-10",
+      "code": "007660",
+      "name": "이수페타시스",
+      "score": 7.0,
+      "entry_price": 133300.0,
+      "exit_5d_price": 84900.0,
+      "return_5d": -36.30907726931733,
+      "win": false
+    },
+    {
+      "date": "2025-10-10",
+      "code": "006800",
+      "name": "미래에셋증권",
+      "score": 7.0,
+      "entry_price": 22250.0,
+      "exit_5d_price": 21550.0,
+      "return_5d": -3.146067415730337,
+      "win": false
+    },
+    {
+      "date": "2025-10-10",
+      "code": "140860",
+      "name": "파크시스템스",
+      "score": 7.0,
+      "entry_price": 248000.0,
+      "exit_5d_price": 238000.0,
+      "return_5d": -4.032258064516129,
+      "win": false
+    },
+    {
+      "date": "2025-10-10",
+      "code": "178320",
+      "name": "서진시스템",
+      "score": 7.0,
+      "entry_price": 22750.0,
+      "exit_5d_price": 24950.0,
+      "return_5d": 9.670329670329672,
+      "win": true
+    },
+    {
+      "date": "2025-10-13",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 8.0,
+      "entry_price": 224000.0,
+      "exit_5d_price": 208000.0,
+      "return_5d": -7.142857142857142,
+      "win": false
+    },
+    {
+      "date": "2025-10-13",
+      "code": "005690",
+      "name": "파미셀",
+      "score": 7.0,
+      "entry_price": 18530.0,
+      "exit_5d_price": 13030.0,
+      "return_5d": -29.68159740960604,
+      "win": false
+    },
+    {
+      "date": "2025-10-13",
+      "code": "025320",
+      "name": "시노펙스",
+      "score": 7.0,
+      "entry_price": 6060.0,
+      "exit_5d_price": 6880.0,
+      "return_5d": 13.531353135313532,
+      "win": true
+    },
+    {
+      "date": "2025-10-13",
+      "code": "036930",
+      "name": "주성엔지니어링",
+      "score": 6.0,
+      "entry_price": 28300.0,
+      "exit_5d_price": 31450.0,
+      "return_5d": 11.130742049469964,
+      "win": true
+    },
+    {
+      "date": "2025-10-13",
+      "code": "263750",
+      "name": "펄어비스",
+      "score": 6.0,
+      "entry_price": 38550.0,
+      "exit_5d_price": 36500.0,
+      "return_5d": -5.317769130998703,
+      "win": false
+    },
+    {
+      "date": "2025-10-14",
+      "code": "178320",
+      "name": "서진시스템",
+      "score": 9.0,
+      "entry_price": 22750.0,
+      "exit_5d_price": 26900.0,
+      "return_5d": 18.24175824175824,
+      "win": true
+    },
+    {
+      "date": "2025-10-14",
+      "code": "310210",
+      "name": "보로노이",
+      "score": 5.0,
+      "entry_price": 239000.0,
+      "exit_5d_price": 167300.0,
+      "return_5d": -30.0,
+      "win": false
+    },
+    {
+      "date": "2025-10-14",
+      "code": "263750",
+      "name": "펄어비스",
+      "score": 5.0,
+      "entry_price": 38550.0,
+      "exit_5d_price": 36700.0,
+      "return_5d": -4.798962386511025,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "091160",
+      "name": "KODEX 반도체",
+      "score": 8.0,
+      "entry_price": 56315.0,
+      "exit_5d_price": 55045.0,
+      "return_5d": -2.2551718014738524,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "000660",
+      "name": "SK하이닉스",
+      "score": 8.0,
+      "entry_price": 571000.0,
+      "exit_5d_price": 481500.0,
+      "return_5d": -15.674255691768826,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "055550",
+      "name": "신한지주",
+      "score": 7.0,
+      "entry_price": 76700.0,
+      "exit_5d_price": 74100.0,
+      "return_5d": -3.389830508474576,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 6.0,
+      "entry_price": 27150.0,
+      "exit_5d_price": 28500.0,
+      "return_5d": 4.972375690607735,
+      "win": true
+    },
+    {
+      "date": "2025-10-15",
+      "code": "402340",
+      "name": "SK스퀘어",
+      "score": 6.0,
+      "entry_price": 293500.0,
+      "exit_5d_price": 258500.0,
+      "return_5d": -11.925042589437819,
+      "win": false
+    },
+    {
+      "date": "2025-10-20",
+      "code": "402340",
+      "name": "SK스퀘어",
+      "score": 8.0,
+      "entry_price": 293500.0,
+      "exit_5d_price": 291500.0,
+      "return_5d": -0.6814310051107325,
+      "win": false
+    },
+    {
+      "date": "2025-10-20",
+      "code": "381170",
+      "name": "TIGER 미국테크TOP10 INDXX",
+      "score": 7.0,
+      "entry_price": 31120.0,
+      "exit_5d_price": 30440.0,
+      "return_5d": -2.185089974293059,
+      "win": false
+    },
+    {
+      "date": "2025-10-20",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 7.0,
+      "entry_price": 27150.0,
+      "exit_5d_price": 27750.0,
+      "return_5d": 2.209944751381215,
+      "win": true
+    },
+    {
+      "date": "2025-10-20",
+      "code": "031980",
+      "name": "피에스케이홀딩스",
+      "score": 6.0,
+      "entry_price": 48950.0,
+      "exit_5d_price": 55200.0,
+      "return_5d": 12.768130745658834,
+      "win": true
+    },
+    {
+      "date": "2025-10-20",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 5.0,
+      "entry_price": 21040.0,
+      "exit_5d_price": 22205.0,
+      "return_5d": 5.537072243346008,
+      "win": true
+    },
+    {
+      "date": "2025-10-21",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 8.0,
+      "entry_price": 27150.0,
+      "exit_5d_price": 28000.0,
+      "return_5d": 3.1307550644567224,
+      "win": true
+    },
+    {
+      "date": "2025-10-21",
+      "code": "309710",
+      "name": "아이티켐",
+      "score": 8.0,
+      "entry_price": 30200.0,
+      "exit_5d_price": 32150.0,
+      "return_5d": 6.456953642384105,
+      "win": true
+    },
+    {
+      "date": "2025-10-21",
+      "code": "381180",
+      "name": "TIGER 미국필라델피아반도체나스닥",
+      "score": 6.0,
+      "entry_price": 26545.0,
+      "exit_5d_price": 26985.0,
+      "return_5d": 1.6575626294970804,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "402340",
+      "name": "SK스퀘어",
+      "score": 8.0,
+      "entry_price": 293500.0,
+      "exit_5d_price": 260000.0,
+      "return_5d": -11.41396933560477,
+      "win": false
+    },
+    {
+      "date": "2025-10-24",
+      "code": "222800",
+      "name": "심텍",
+      "score": 8.0,
+      "entry_price": 53900.0,
+      "exit_5d_price": 63100.0,
+      "return_5d": 17.068645640074212,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "095610",
+      "name": "테스",
+      "score": 7.0,
+      "entry_price": 42500.0,
+      "exit_5d_price": 44300.0,
+      "return_5d": 4.235294117647059,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "089030",
+      "name": "테크윙",
+      "score": 7.0,
+      "entry_price": 49600.0,
+      "exit_5d_price": 66800.0,
+      "return_5d": 34.67741935483871,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_5d_price": 22300.0,
+      "return_5d": 5.988593155893536,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "319660",
+      "name": "피에스케이",
+      "score": 8.0,
+      "entry_price": 32400.0,
+      "exit_5d_price": 37850.0,
+      "return_5d": 16.820987654320987,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "005935",
+      "name": "삼성전자우",
+      "score": 8.0,
+      "entry_price": 75600.0,
+      "exit_5d_price": 86800.0,
+      "return_5d": 14.814814814814813,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 8.0,
+      "entry_price": 224000.0,
+      "exit_5d_price": 226500.0,
+      "return_5d": 1.1160714285714286,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "222800",
+      "name": "심텍",
+      "score": 8.0,
+      "entry_price": 53900.0,
+      "exit_5d_price": 63800.0,
+      "return_5d": 18.367346938775512,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 8.0,
+      "entry_price": 79700.0,
+      "exit_5d_price": 94900.0,
+      "return_5d": 19.071518193224595,
+      "win": true
+    },
+    {
+      "date": "2025-10-28",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_5d_price": 22595.0,
+      "return_5d": 7.390684410646388,
+      "win": true
+    },
+    {
+      "date": "2025-10-28",
+      "code": "083450",
+      "name": "GST",
+      "score": 5.0,
+      "entry_price": 27800.0,
+      "exit_5d_price": 28500.0,
+      "return_5d": 2.5179856115107913,
+      "win": true
+    },
+    {
+      "date": "2025-10-28",
+      "code": "035420",
+      "name": "NAVER",
+      "score": 5.0,
+      "entry_price": 257000.0,
+      "exit_5d_price": 267000.0,
+      "return_5d": 3.8910505836575875,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_5d_price": 22105.0,
+      "return_5d": 5.061787072243346,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 6.0,
+      "entry_price": 79700.0,
+      "exit_5d_price": 86700.0,
+      "return_5d": 8.782936010037641,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "091160",
+      "name": "KODEX 반도체",
+      "score": 6.0,
+      "entry_price": 56315.0,
+      "exit_5d_price": 58170.0,
+      "return_5d": 3.2939714108141707,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "005935",
+      "name": "삼성전자우",
+      "score": 6.0,
+      "entry_price": 75600.0,
+      "exit_5d_price": 78000.0,
+      "return_5d": 3.1746031746031744,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "395160",
+      "name": "KODEX AI반도체",
+      "score": 6.0,
+      "entry_price": 16675.0,
+      "exit_5d_price": 16640.0,
+      "return_5d": -0.2098950524737631,
+      "win": false
+    },
+    {
+      "date": "2025-10-30",
+      "code": "005380",
+      "name": "현대차",
+      "score": 10.0,
+      "entry_price": 262000.0,
+      "exit_5d_price": 269000.0,
+      "return_5d": 2.6717557251908395,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "005935",
+      "name": "삼성전자우",
+      "score": 10.0,
+      "entry_price": 75600.0,
+      "exit_5d_price": 76800.0,
+      "return_5d": 1.5873015873015872,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "232140",
+      "name": "와이씨",
+      "score": 9.0,
+      "entry_price": 13430.0,
+      "exit_5d_price": 13610.0,
+      "return_5d": 1.340282948622487,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "005930",
+      "name": "삼성전자",
+      "score": 8.0,
+      "entry_price": 100600.0,
+      "exit_5d_price": 99200.0,
+      "return_5d": -1.3916500994035785,
+      "win": false
+    },
+    {
+      "date": "2025-10-30",
+      "code": "487230",
+      "name": "KODEX 미국AI전력핵심인프라",
+      "score": 7.0,
+      "entry_price": 18505.0,
+      "exit_5d_price": 19210.0,
+      "return_5d": 3.80978114023237,
+      "win": true
+    },
+    {
+      "date": "2025-10-31",
+      "code": "253590",
+      "name": "네오셈",
+      "score": 7.0,
+      "entry_price": 10340.0,
+      "exit_5d_price": 11460.0,
+      "return_5d": 10.831721470019342,
+      "win": true
+    },
+    {
+      "date": "2025-10-31",
+      "code": "204270",
+      "name": "제이앤티씨",
+      "score": 7.0,
+      "entry_price": 20150.0,
+      "exit_5d_price": 26200.0,
+      "return_5d": 30.024813895781637,
+      "win": true
+    },
+    {
+      "date": "2025-10-31",
+      "code": "222800",
+      "name": "심텍",
+      "score": 6.0,
+      "entry_price": 53900.0,
+      "exit_5d_price": 61900.0,
+      "return_5d": 14.842300556586272,
+      "win": true
+    },
+    {
+      "date": "2025-11-03",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 7.0,
+      "entry_price": 48950.0,
+      "exit_5d_price": 46250.0,
+      "return_5d": -5.515832482124617,
+      "win": false
+    },
+    {
+      "date": "2025-11-03",
+      "code": "131970",
+      "name": "두산테스나",
+      "score": 7.0,
+      "entry_price": 43850.0,
+      "exit_5d_price": 47250.0,
+      "return_5d": 7.753705815279361,
+      "win": true
+    },
+    {
+      "date": "2025-11-03",
+      "code": "080220",
+      "name": "제주반도체",
+      "score": 5.0,
+      "entry_price": 19000.0,
+      "exit_5d_price": 20150.0,
+      "return_5d": 6.052631578947368,
+      "win": true
+    },
+    {
+      "date": "2025-11-03",
+      "code": "036540",
+      "name": "SFA반도체",
+      "score": 5.0,
+      "entry_price": 4105.0,
+      "exit_5d_price": 4375.0,
+      "return_5d": 6.577344701583435,
+      "win": true
+    },
+    {
+      "date": "2025-11-04",
+      "code": "084370",
+      "name": "유진테크",
+      "score": 8.0,
+      "entry_price": 83200.0,
+      "exit_5d_price": 98200.0,
+      "return_5d": 18.028846153846153,
+      "win": true
+    },
+    {
+      "date": "2025-11-04",
+      "code": "455900",
+      "name": "엔젤로보틱스",
+      "score": 8.0,
+      "entry_price": 28250.0,
+      "exit_5d_price": 28350.0,
+      "return_5d": 0.35398230088495575,
+      "win": true
+    },
+    {
+      "date": "2025-11-04",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 6.0,
+      "entry_price": 48950.0,
+      "exit_5d_price": 49550.0,
+      "return_5d": 1.2257405515832482,
+      "win": true
+    },
+    {
+      "date": "2025-11-04",
+      "code": "112040",
+      "name": "위메이드",
+      "score": 6.0,
+      "entry_price": 25450.0,
+      "exit_5d_price": 27200.0,
+      "return_5d": 6.8762278978389,
+      "win": true
+    },
+    {
+      "date": "2025-11-06",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 10.0,
+      "entry_price": 48950.0,
+      "exit_5d_price": 49250.0,
+      "return_5d": 0.6128702757916241,
+      "win": true
+    },
+    {
+      "date": "2025-11-06",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_5d_price": 22050.0,
+      "return_5d": 4.800380228136882,
+      "win": true
+    },
+    {
+      "date": "2025-11-06",
+      "code": "010950",
+      "name": "S-Oil",
+      "score": 6.0,
+      "entry_price": 89400.0,
+      "exit_5d_price": 86300.0,
+      "return_5d": -3.467561521252797,
+      "win": false
+    },
+    {
+      "date": "2025-11-06",
+      "code": "034730",
+      "name": "SK",
+      "score": 6.0,
+      "entry_price": 263500.0,
+      "exit_5d_price": 269500.0,
+      "return_5d": 2.2770398481973433,
+      "win": true
+    },
+    {
+      "date": "2025-11-10",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 8.0,
+      "entry_price": 48950.0,
+      "exit_5d_price": 47400.0,
+      "return_5d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "007660",
+      "name": "이수페타시스",
+      "score": 7.0,
+      "entry_price": 133300.0,
+      "exit_5d_price": 111100.0,
+      "return_5d": -16.65416354088522,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "000270",
+      "name": "기아",
+      "score": 5.0,
+      "entry_price": 113400.0,
+      "exit_5d_price": 117000.0,
+      "return_5d": 3.1746031746031744,
+      "win": true
+    },
+    {
+      "date": "2025-11-10",
+      "code": "058470",
+      "name": "리노공업",
+      "score": 5.0,
+      "entry_price": 58100.0,
+      "exit_5d_price": 56500.0,
+      "return_5d": -2.753872633390706,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 5.0,
+      "entry_price": 224000.0,
+      "exit_5d_price": 219500.0,
+      "return_5d": -2.0089285714285716,
+      "win": false
+    },
+    {
+      "date": "2025-11-11",
+      "code": "107640",
+      "name": "한중엔시에스",
+      "score": 8.0,
+      "entry_price": 45800.0,
+      "exit_5d_price": 52100.0,
+      "return_5d": 13.755458515283841,
+      "win": true
+    },
+    {
+      "date": "2025-11-11",
+      "code": "310210",
+      "name": "보로노이",
+      "score": 8.0,
+      "entry_price": 239000.0,
+      "exit_5d_price": 218500.0,
+      "return_5d": -8.577405857740587,
+      "win": false
+    },
+    {
+      "date": "2025-11-11",
+      "code": "085660",
+      "name": "차바이오텍",
+      "score": 8.0,
+      "entry_price": 12980.0,
+      "exit_5d_price": 12760.0,
+      "return_5d": -1.694915254237288,
+      "win": false
+    },
+    {
+      "date": "2025-11-11",
+      "code": "035720",
+      "name": "카카오",
+      "score": 8.0,
+      "entry_price": 59100.0,
+      "exit_5d_price": 61400.0,
+      "return_5d": 3.8917089678511,
+      "win": true
+    },
+    {
+      "date": "2025-11-11",
+      "code": "133690",
+      "name": "TIGER 미국나스닥100",
+      "score": 7.0,
+      "entry_price": 163155.0,
+      "exit_5d_price": 161330.0,
+      "return_5d": -1.1185682326621924,
+      "win": false
+    },
+    {
+      "date": "2025-11-12",
+      "code": "035720",
+      "name": "카카오",
+      "score": 8.0,
+      "entry_price": 59100.0,
+      "exit_5d_price": 61400.0,
+      "return_5d": 3.8917089678511,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "071050",
+      "name": "한국금융지주",
+      "score": 7.0,
+      "entry_price": 158400.0,
+      "exit_5d_price": 169700.0,
+      "return_5d": 7.133838383838384,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "237690",
+      "name": "에스티팜",
+      "score": 7.0,
+      "entry_price": 102000.0,
+      "exit_5d_price": 104100.0,
+      "return_5d": 2.0588235294117645,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "229200",
+      "name": "KODEX 코스닥150",
+      "score": 7.0,
+      "entry_price": 15630.0,
+      "exit_5d_price": 15705.0,
+      "return_5d": 0.47984644913627633,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "000250",
+      "name": "삼천당제약",
+      "score": 7.0,
+      "entry_price": 224000.0,
+      "exit_5d_price": 226500.0,
+      "return_5d": 1.1160714285714286,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "068760",
+      "name": "셀트리온제약",
+      "score": 10.0,
+      "entry_price": 61100.0,
+      "exit_5d_price": 64800.0,
+      "return_5d": 6.055646481178396,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "229200",
+      "name": "KODEX 코스닥150",
+      "score": 8.0,
+      "entry_price": 15630.0,
+      "exit_5d_price": 15705.0,
+      "return_5d": 0.47984644913627633,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 8.0,
+      "entry_price": 48950.0,
+      "exit_5d_price": 47400.0,
+      "return_5d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-13",
+      "code": "071050",
+      "name": "한국금융지주",
+      "score": 7.0,
+      "entry_price": 158400.0,
+      "exit_5d_price": 169700.0,
+      "return_5d": 7.133838383838384,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "000270",
+      "name": "기아",
+      "score": 7.0,
+      "entry_price": 113400.0,
+      "exit_5d_price": 117000.0,
+      "return_5d": 3.1746031746031744,
+      "win": true
+    }
+  ],
+  "results_10d": [
+    {
+      "date": "2025-09-08",
+      "code": "036540",
+      "name": "SFA반도체",
+      "score": 7.0,
+      "entry_price": 4105.0,
+      "exit_10d_price": 4005.0,
+      "return_10d": -2.4360535931790497,
+      "win": false
+    },
+    {
+      "date": "2025-09-08",
+      "code": "278470",
+      "name": "에이피알",
+      "score": 5.0,
+      "entry_price": 237000.0,
+      "exit_10d_price": 225000.0,
+      "return_10d": -5.063291139240507,
+      "win": false
+    },
+    {
+      "date": "2025-09-08",
+      "code": "195940",
+      "name": "HK이노엔",
+      "score": 5.0,
+      "entry_price": 51000.0,
+      "exit_10d_price": 47650.0,
+      "return_10d": -6.568627450980393,
+      "win": false
+    },
+    {
+      "date": "2025-09-11",
+      "code": "033500",
+      "name": "동성화인텍",
+      "score": 7.0,
+      "entry_price": 27900.0,
+      "exit_10d_price": 30000.0,
+      "return_10d": 7.526881720430108,
+      "win": true
+    },
+    {
+      "date": "2025-09-11",
+      "code": "249420",
+      "name": "일동제약",
+      "score": 7.0,
+      "entry_price": 31100.0,
+      "exit_10d_price": 25600.0,
+      "return_10d": -17.684887459807076,
+      "win": false
+    },
+    {
+      "date": "2025-09-11",
+      "code": "329180",
+      "name": "HD현대중공업",
+      "score": 5.0,
+      "entry_price": 583000.0,
+      "exit_10d_price": 505000.0,
+      "return_10d": -13.379073756432247,
+      "win": false
+    },
+    {
+      "date": "2025-09-11",
+      "code": "466920",
+      "name": "SOL 조선TOP3플러스",
+      "score": 5.0,
+      "entry_price": 35500.0,
+      "exit_10d_price": 32265.0,
+      "return_10d": -9.112676056338028,
+      "win": false
+    },
+    {
+      "date": "2025-09-12",
+      "code": "140410",
+      "name": "메지온",
+      "score": 6.0,
+      "entry_price": 69300.0,
+      "exit_10d_price": 66300.0,
+      "return_10d": -4.329004329004329,
+      "win": false
+    },
+    {
+      "date": "2025-09-12",
+      "code": "237690",
+      "name": "에스티팜",
+      "score": 5.0,
+      "entry_price": 102000.0,
+      "exit_10d_price": 88900.0,
+      "return_10d": -12.84313725490196,
+      "win": false
+    },
+    {
+      "date": "2025-09-12",
+      "code": "352820",
+      "name": "하이브",
+      "score": 5.0,
+      "entry_price": 296000.0,
+      "exit_10d_price": 268500.0,
+      "return_10d": -9.29054054054054,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "138610",
+      "name": "나이벡",
+      "score": 8.0,
+      "entry_price": 38900.0,
+      "exit_10d_price": 35750.0,
+      "return_10d": -8.097686375321336,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 8.0,
+      "entry_price": 27150.0,
+      "exit_10d_price": 27850.0,
+      "return_10d": 2.578268876611418,
+      "win": true
+    },
+    {
+      "date": "2025-09-18",
+      "code": "012330",
+      "name": "현대모비스",
+      "score": 7.0,
+      "entry_price": 296000.0,
+      "exit_10d_price": 297000.0,
+      "return_10d": 0.33783783783783783,
+      "win": true
+    },
+    {
+      "date": "2025-09-18",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 6.0,
+      "entry_price": 79700.0,
+      "exit_10d_price": 68400.0,
+      "return_10d": -14.178168130489336,
+      "win": false
+    },
+    {
+      "date": "2025-09-18",
+      "code": "058610",
+      "name": "에스피지",
+      "score": 6.0,
+      "entry_price": 42500.0,
+      "exit_10d_price": 27000.0,
+      "return_10d": -36.470588235294116,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "228760",
+      "name": "지노믹트리",
+      "score": 8.0,
+      "entry_price": 25700.0,
+      "exit_10d_price": 20150.0,
+      "return_10d": -21.595330739299612,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 8.0,
+      "entry_price": 79700.0,
+      "exit_10d_price": 74900.0,
+      "return_10d": -6.022584692597239,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "138610",
+      "name": "나이벡",
+      "score": 8.0,
+      "entry_price": 38900.0,
+      "exit_10d_price": 42450.0,
+      "return_10d": 9.125964010282777,
+      "win": true
+    },
+    {
+      "date": "2025-09-19",
+      "code": "462900",
+      "name": "KoAct 바이오헬스케어액티브",
+      "score": 8.0,
+      "entry_price": 22620.0,
+      "exit_10d_price": 17605.0,
+      "return_10d": -22.170645446507514,
+      "win": false
+    },
+    {
+      "date": "2025-09-19",
+      "code": "237690",
+      "name": "에스티팜",
+      "score": 7.0,
+      "entry_price": 102000.0,
+      "exit_10d_price": 90300.0,
+      "return_10d": -11.470588235294118,
+      "win": false
+    },
+    {
+      "date": "2025-09-22",
+      "code": "138610",
+      "name": "나이벡",
+      "score": 8.0,
+      "entry_price": 38900.0,
+      "exit_10d_price": 40100.0,
+      "return_10d": 3.0848329048843186,
+      "win": true
+    },
+    {
+      "date": "2025-09-22",
+      "code": "358570",
+      "name": "지아이이노베이션",
+      "score": 8.0,
+      "entry_price": 18520.0,
+      "exit_10d_price": 19010.0,
+      "return_10d": 2.6457883369330455,
+      "win": true
+    },
+    {
+      "date": "2025-09-22",
+      "code": "310210",
+      "name": "보로노이",
+      "score": 6.0,
+      "entry_price": 239000.0,
+      "exit_10d_price": 160500.0,
+      "return_10d": -32.84518828451883,
+      "win": false
+    },
+    {
+      "date": "2025-09-22",
+      "code": "058610",
+      "name": "에스피지",
+      "score": 6.0,
+      "entry_price": 42500.0,
+      "exit_10d_price": 30650.0,
+      "return_10d": -27.88235294117647,
+      "win": false
+    },
+    {
+      "date": "2025-09-23",
+      "code": "358570",
+      "name": "지아이이노베이션",
+      "score": 8.0,
+      "entry_price": 18520.0,
+      "exit_10d_price": 18570.0,
+      "return_10d": 0.26997840172786175,
+      "win": true
+    },
+    {
+      "date": "2025-09-23",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 6.0,
+      "entry_price": 27150.0,
+      "exit_10d_price": 26250.0,
+      "return_10d": -3.314917127071823,
+      "win": false
+    },
+    {
+      "date": "2025-09-23",
+      "code": "140410",
+      "name": "메지온",
+      "score": 6.0,
+      "entry_price": 69300.0,
+      "exit_10d_price": 72800.0,
+      "return_10d": 5.05050505050505,
+      "win": true
+    },
+    {
+      "date": "2025-09-24",
+      "code": "064350",
+      "name": "현대로템",
+      "score": 8.0,
+      "entry_price": 190000.0,
+      "exit_10d_price": 213500.0,
+      "return_10d": 12.368421052631579,
+      "win": true
+    },
+    {
+      "date": "2025-09-24",
+      "code": "010140",
+      "name": "삼성중공업",
+      "score": 7.0,
+      "entry_price": 26450.0,
+      "exit_10d_price": 21550.0,
+      "return_10d": -18.525519848771268,
+      "win": false
+    },
+    {
+      "date": "2025-09-24",
+      "code": "012450",
+      "name": "한화에어로스페이스",
+      "score": 6.0,
+      "entry_price": 916000.0,
+      "exit_10d_price": 954000.0,
+      "return_10d": 4.148471615720524,
+      "win": true
+    },
+    {
+      "date": "2025-09-24",
+      "code": "204270",
+      "name": "제이앤티씨",
+      "score": 5.0,
+      "entry_price": 20150.0,
+      "exit_10d_price": 27650.0,
+      "return_10d": 37.220843672456574,
+      "win": true
+    },
+    {
+      "date": "2025-09-29",
+      "code": "204270",
+      "name": "제이앤티씨",
+      "score": 8.0,
+      "entry_price": 20150.0,
+      "exit_10d_price": 26300.0,
+      "return_10d": 30.52109181141439,
+      "win": true
+    },
+    {
+      "date": "2025-09-29",
+      "code": "161580",
+      "name": "필옵틱스",
+      "score": 6.0,
+      "entry_price": 40800.0,
+      "exit_10d_price": 38450.0,
+      "return_10d": -5.759803921568627,
+      "win": false
+    },
+    {
+      "date": "2025-09-29",
+      "code": "083450",
+      "name": "GST",
+      "score": 5.0,
+      "entry_price": 27800.0,
+      "exit_10d_price": 25400.0,
+      "return_10d": -8.633093525179856,
+      "win": false
+    },
+    {
+      "date": "2025-09-29",
+      "code": "105560",
+      "name": "KB금융",
+      "score": 5.0,
+      "entry_price": 121200.0,
+      "exit_10d_price": 118200.0,
+      "return_10d": -2.4752475247524752,
+      "win": false
+    },
+    {
+      "date": "2025-09-29",
+      "code": "085660",
+      "name": "차바이오텍",
+      "score": 5.0,
+      "entry_price": 12980.0,
+      "exit_10d_price": 11490.0,
+      "return_10d": -11.47919876733436,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "253590",
+      "name": "네오셈",
+      "score": 10.0,
+      "entry_price": 10340.0,
+      "exit_10d_price": 12020.0,
+      "return_10d": 16.247582205029012,
+      "win": true
+    },
+    {
+      "date": "2025-09-30",
+      "code": "449450",
+      "name": "PLUS K방산",
+      "score": 7.0,
+      "entry_price": 52240.0,
+      "exit_10d_price": 54240.0,
+      "return_10d": 3.828483920367534,
+      "win": true
+    },
+    {
+      "date": "2025-09-30",
+      "code": "058610",
+      "name": "에스피지",
+      "score": 7.0,
+      "entry_price": 42500.0,
+      "exit_10d_price": 33200.0,
+      "return_10d": -21.88235294117647,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "240810",
+      "name": "원익IPS",
+      "score": 7.0,
+      "entry_price": 60900.0,
+      "exit_10d_price": 55700.0,
+      "return_10d": -8.538587848932677,
+      "win": false
+    },
+    {
+      "date": "2025-09-30",
+      "code": "001440",
+      "name": "대한전선",
+      "score": 7.0,
+      "entry_price": 24100.0,
+      "exit_10d_price": 17620.0,
+      "return_10d": -26.887966804979254,
+      "win": false
+    },
+    {
+      "date": "2025-10-01",
+      "code": "232140",
+      "name": "와이씨",
+      "score": 10.0,
+      "entry_price": 13430.0,
+      "exit_10d_price": 14030.0,
+      "return_10d": 4.467609828741623,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "253590",
+      "name": "네오셈",
+      "score": 8.0,
+      "entry_price": 10340.0,
+      "exit_10d_price": 11820.0,
+      "return_10d": 14.313346228239846,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "449450",
+      "name": "PLUS K방산",
+      "score": 8.0,
+      "entry_price": 52240.0,
+      "exit_10d_price": 57120.0,
+      "return_10d": 9.341500765696784,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "036540",
+      "name": "SFA반도체",
+      "score": 8.0,
+      "entry_price": 4105.0,
+      "exit_10d_price": 4300.0,
+      "return_10d": 4.750304506699147,
+      "win": true
+    },
+    {
+      "date": "2025-10-01",
+      "code": "183300",
+      "name": "코미코",
+      "score": 7.0,
+      "entry_price": 88400.0,
+      "exit_10d_price": 117300.0,
+      "return_10d": 32.69230769230769,
+      "win": true
+    },
+    {
+      "date": "2025-10-02",
+      "code": "058470",
+      "name": "리노공업",
+      "score": 10.0,
+      "entry_price": 58100.0,
+      "exit_10d_price": 57500.0,
+      "return_10d": -1.0327022375215147,
+      "win": false
+    },
+    {
+      "date": "2025-10-02",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 9.0,
+      "entry_price": 224000.0,
+      "exit_10d_price": 206000.0,
+      "return_10d": -8.035714285714286,
+      "win": false
+    },
+    {
+      "date": "2025-10-02",
+      "code": "449450",
+      "name": "PLUS K방산",
+      "score": 8.0,
+      "entry_price": 52240.0,
+      "exit_10d_price": 58430.0,
+      "return_10d": 11.849157733537519,
+      "win": true
+    },
+    {
+      "date": "2025-10-02",
+      "code": "064350",
+      "name": "현대로템",
+      "score": 7.0,
+      "entry_price": 190000.0,
+      "exit_10d_price": 241500.0,
+      "return_10d": 27.105263157894736,
+      "win": true
+    },
+    {
+      "date": "2025-10-02",
+      "code": "006800",
+      "name": "미래에셋증권",
+      "score": 7.0,
+      "entry_price": 22250.0,
+      "exit_10d_price": 22950.0,
+      "return_10d": 3.146067415730337,
+      "win": true
+    },
+    {
+      "date": "2025-10-10",
+      "code": "036930",
+      "name": "주성엔지니어링",
+      "score": 8.0,
+      "entry_price": 28300.0,
+      "exit_10d_price": 31000.0,
+      "return_10d": 9.540636042402827,
+      "win": true
+    },
+    {
+      "date": "2025-10-10",
+      "code": "007660",
+      "name": "이수페타시스",
+      "score": 7.0,
+      "entry_price": 133300.0,
+      "exit_10d_price": 93600.0,
+      "return_10d": -29.782445611402853,
+      "win": false
+    },
+    {
+      "date": "2025-10-10",
+      "code": "006800",
+      "name": "미래에셋증권",
+      "score": 7.0,
+      "entry_price": 22250.0,
+      "exit_10d_price": 24300.0,
+      "return_10d": 9.213483146067416,
+      "win": true
+    },
+    {
+      "date": "2025-10-10",
+      "code": "140860",
+      "name": "파크시스템스",
+      "score": 7.0,
+      "entry_price": 248000.0,
+      "exit_10d_price": 240000.0,
+      "return_10d": -3.225806451612903,
+      "win": false
+    },
+    {
+      "date": "2025-10-10",
+      "code": "178320",
+      "name": "서진시스템",
+      "score": 7.0,
+      "entry_price": 22750.0,
+      "exit_10d_price": 26950.0,
+      "return_10d": 18.461538461538463,
+      "win": true
+    },
+    {
+      "date": "2025-10-13",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 8.0,
+      "entry_price": 224000.0,
+      "exit_10d_price": 215500.0,
+      "return_10d": -3.7946428571428568,
+      "win": false
+    },
+    {
+      "date": "2025-10-13",
+      "code": "005690",
+      "name": "파미셀",
+      "score": 7.0,
+      "entry_price": 18530.0,
+      "exit_10d_price": 16660.0,
+      "return_10d": -10.091743119266056,
+      "win": false
+    },
+    {
+      "date": "2025-10-13",
+      "code": "025320",
+      "name": "시노펙스",
+      "score": 7.0,
+      "entry_price": 6060.0,
+      "exit_10d_price": 6680.0,
+      "return_10d": 10.231023102310232,
+      "win": true
+    },
+    {
+      "date": "2025-10-13",
+      "code": "036930",
+      "name": "주성엔지니어링",
+      "score": 6.0,
+      "entry_price": 28300.0,
+      "exit_10d_price": 31200.0,
+      "return_10d": 10.247349823321555,
+      "win": true
+    },
+    {
+      "date": "2025-10-13",
+      "code": "263750",
+      "name": "펄어비스",
+      "score": 6.0,
+      "entry_price": 38550.0,
+      "exit_10d_price": 34950.0,
+      "return_10d": -9.33852140077821,
+      "win": false
+    },
+    {
+      "date": "2025-10-14",
+      "code": "178320",
+      "name": "서진시스템",
+      "score": 9.0,
+      "entry_price": 22750.0,
+      "exit_10d_price": 29900.0,
+      "return_10d": 31.428571428571427,
+      "win": true
+    },
+    {
+      "date": "2025-10-14",
+      "code": "310210",
+      "name": "보로노이",
+      "score": 5.0,
+      "entry_price": 239000.0,
+      "exit_10d_price": 207500.0,
+      "return_10d": -13.179916317991633,
+      "win": false
+    },
+    {
+      "date": "2025-10-14",
+      "code": "263750",
+      "name": "펄어비스",
+      "score": 5.0,
+      "entry_price": 38550.0,
+      "exit_10d_price": 34900.0,
+      "return_10d": -9.46822308690013,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "091160",
+      "name": "KODEX 반도체",
+      "score": 8.0,
+      "entry_price": 56315.0,
+      "exit_10d_price": 57890.0,
+      "return_10d": 2.7967681789931635,
+      "win": true
+    },
+    {
+      "date": "2025-10-15",
+      "code": "000660",
+      "name": "SK하이닉스",
+      "score": 8.0,
+      "entry_price": 571000.0,
+      "exit_10d_price": 558000.0,
+      "return_10d": -2.276707530647986,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "055550",
+      "name": "신한지주",
+      "score": 7.0,
+      "entry_price": 76700.0,
+      "exit_10d_price": 74400.0,
+      "return_10d": -2.9986962190352022,
+      "win": false
+    },
+    {
+      "date": "2025-10-15",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 6.0,
+      "entry_price": 27150.0,
+      "exit_10d_price": 27550.0,
+      "return_10d": 1.4732965009208103,
+      "win": true
+    },
+    {
+      "date": "2025-10-15",
+      "code": "402340",
+      "name": "SK스퀘어",
+      "score": 6.0,
+      "entry_price": 293500.0,
+      "exit_10d_price": 275000.0,
+      "return_10d": -6.303236797274275,
+      "win": false
+    },
+    {
+      "date": "2025-10-20",
+      "code": "402340",
+      "name": "SK스퀘어",
+      "score": 8.0,
+      "entry_price": 293500.0,
+      "exit_10d_price": 282500.0,
+      "return_10d": -3.747870528109029,
+      "win": false
+    },
+    {
+      "date": "2025-10-20",
+      "code": "381170",
+      "name": "TIGER 미국테크TOP10 INDXX",
+      "score": 7.0,
+      "entry_price": 31120.0,
+      "exit_10d_price": 31070.0,
+      "return_10d": -0.16066838046272494,
+      "win": false
+    },
+    {
+      "date": "2025-10-20",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 7.0,
+      "entry_price": 27150.0,
+      "exit_10d_price": 33850.0,
+      "return_10d": 24.677716390423573,
+      "win": true
+    },
+    {
+      "date": "2025-10-20",
+      "code": "031980",
+      "name": "피에스케이홀딩스",
+      "score": 6.0,
+      "entry_price": 48950.0,
+      "exit_10d_price": 49250.0,
+      "return_10d": 0.6128702757916241,
+      "win": true
+    },
+    {
+      "date": "2025-10-20",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 5.0,
+      "entry_price": 21040.0,
+      "exit_10d_price": 22770.0,
+      "return_10d": 8.222433460076045,
+      "win": true
+    },
+    {
+      "date": "2025-10-21",
+      "code": "348340",
+      "name": "뉴로메카",
+      "score": 8.0,
+      "entry_price": 27150.0,
+      "exit_10d_price": 33650.0,
+      "return_10d": 23.941068139963168,
+      "win": true
+    },
+    {
+      "date": "2025-10-21",
+      "code": "309710",
+      "name": "아이티켐",
+      "score": 8.0,
+      "entry_price": 30200.0,
+      "exit_10d_price": 28650.0,
+      "return_10d": -5.132450331125828,
+      "win": false
+    },
+    {
+      "date": "2025-10-21",
+      "code": "381180",
+      "name": "TIGER 미국필라델피아반도체나스닥",
+      "score": 6.0,
+      "entry_price": 26545.0,
+      "exit_10d_price": 26890.0,
+      "return_10d": 1.2996797890374836,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "402340",
+      "name": "SK스퀘어",
+      "score": 8.0,
+      "entry_price": 293500.0,
+      "exit_10d_price": 279000.0,
+      "return_10d": -4.940374787052811,
+      "win": false
+    },
+    {
+      "date": "2025-10-24",
+      "code": "222800",
+      "name": "심텍",
+      "score": 8.0,
+      "entry_price": 53900.0,
+      "exit_10d_price": 61900.0,
+      "return_10d": 14.842300556586272,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "095610",
+      "name": "테스",
+      "score": 7.0,
+      "entry_price": 42500.0,
+      "exit_10d_price": 40050.0,
+      "return_10d": -5.764705882352941,
+      "win": false
+    },
+    {
+      "date": "2025-10-24",
+      "code": "089030",
+      "name": "테크윙",
+      "score": 7.0,
+      "entry_price": 49600.0,
+      "exit_10d_price": 60400.0,
+      "return_10d": 21.774193548387096,
+      "win": true
+    },
+    {
+      "date": "2025-10-24",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_10d_price": 22395.0,
+      "return_10d": 6.440114068441065,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "319660",
+      "name": "피에스케이",
+      "score": 8.0,
+      "entry_price": 32400.0,
+      "exit_10d_price": 38000.0,
+      "return_10d": 17.28395061728395,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "005935",
+      "name": "삼성전자우",
+      "score": 8.0,
+      "entry_price": 75600.0,
+      "exit_10d_price": 77100.0,
+      "return_10d": 1.984126984126984,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 8.0,
+      "entry_price": 224000.0,
+      "exit_10d_price": 224500.0,
+      "return_10d": 0.2232142857142857,
+      "win": true
+    },
+    {
+      "date": "2025-10-27",
+      "code": "222800",
+      "name": "심텍",
+      "score": 8.0,
+      "entry_price": 53900.0,
+      "exit_10d_price": 53700.0,
+      "return_10d": -0.3710575139146568,
+      "win": false
+    },
+    {
+      "date": "2025-10-27",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 8.0,
+      "entry_price": 79700.0,
+      "exit_10d_price": 79600.0,
+      "return_10d": -0.12547051442910914,
+      "win": false
+    },
+    {
+      "date": "2025-10-28",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_10d_price": 22220.0,
+      "return_10d": 5.608365019011407,
+      "win": true
+    },
+    {
+      "date": "2025-10-28",
+      "code": "083450",
+      "name": "GST",
+      "score": 5.0,
+      "entry_price": 27800.0,
+      "exit_10d_price": 28850.0,
+      "return_10d": 3.776978417266187,
+      "win": true
+    },
+    {
+      "date": "2025-10-28",
+      "code": "035420",
+      "name": "NAVER",
+      "score": 5.0,
+      "entry_price": 257000.0,
+      "exit_10d_price": 263000.0,
+      "return_10d": 2.3346303501945527,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_10d_price": 22225.0,
+      "return_10d": 5.63212927756654,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "388720",
+      "name": "유일로보틱스",
+      "score": 6.0,
+      "entry_price": 79700.0,
+      "exit_10d_price": 79500.0,
+      "return_10d": -0.2509410288582183,
+      "win": false
+    },
+    {
+      "date": "2025-10-29",
+      "code": "091160",
+      "name": "KODEX 반도체",
+      "score": 6.0,
+      "entry_price": 56315.0,
+      "exit_10d_price": 59695.0,
+      "return_10d": 6.001953298410726,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "005935",
+      "name": "삼성전자우",
+      "score": 6.0,
+      "entry_price": 75600.0,
+      "exit_10d_price": 78600.0,
+      "return_10d": 3.968253968253968,
+      "win": true
+    },
+    {
+      "date": "2025-10-29",
+      "code": "395160",
+      "name": "KODEX AI반도체",
+      "score": 6.0,
+      "entry_price": 16675.0,
+      "exit_10d_price": 17330.0,
+      "return_10d": 3.9280359820089954,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "005380",
+      "name": "현대차",
+      "score": 10.0,
+      "entry_price": 262000.0,
+      "exit_10d_price": 278500.0,
+      "return_10d": 6.297709923664121,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "005935",
+      "name": "삼성전자우",
+      "score": 10.0,
+      "entry_price": 75600.0,
+      "exit_10d_price": 79300.0,
+      "return_10d": 4.894179894179894,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "232140",
+      "name": "와이씨",
+      "score": 9.0,
+      "entry_price": 13430.0,
+      "exit_10d_price": 13750.0,
+      "return_10d": 2.3827252419955323,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "005930",
+      "name": "삼성전자",
+      "score": 8.0,
+      "entry_price": 100600.0,
+      "exit_10d_price": 102800.0,
+      "return_10d": 2.1868787276341948,
+      "win": true
+    },
+    {
+      "date": "2025-10-30",
+      "code": "487230",
+      "name": "KODEX 미국AI전력핵심인프라",
+      "score": 7.0,
+      "entry_price": 18505.0,
+      "exit_10d_price": 18385.0,
+      "return_10d": -0.6484733855714672,
+      "win": false
+    },
+    {
+      "date": "2025-10-31",
+      "code": "253590",
+      "name": "네오셈",
+      "score": 7.0,
+      "entry_price": 10340.0,
+      "exit_10d_price": 11270.0,
+      "return_10d": 8.994197292069632,
+      "win": true
+    },
+    {
+      "date": "2025-10-31",
+      "code": "204270",
+      "name": "제이앤티씨",
+      "score": 7.0,
+      "entry_price": 20150.0,
+      "exit_10d_price": 22600.0,
+      "return_10d": 12.158808933002481,
+      "win": true
+    },
+    {
+      "date": "2025-10-31",
+      "code": "222800",
+      "name": "심텍",
+      "score": 6.0,
+      "entry_price": 53900.0,
+      "exit_10d_price": 49900.0,
+      "return_10d": -7.421150278293136,
+      "win": false
+    },
+    {
+      "date": "2025-11-03",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 7.0,
+      "entry_price": 48950.0,
+      "exit_10d_price": 47400.0,
+      "return_10d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-03",
+      "code": "131970",
+      "name": "두산테스나",
+      "score": 7.0,
+      "entry_price": 43850.0,
+      "exit_10d_price": 44100.0,
+      "return_10d": 0.5701254275940707,
+      "win": true
+    },
+    {
+      "date": "2025-11-03",
+      "code": "080220",
+      "name": "제주반도체",
+      "score": 5.0,
+      "entry_price": 19000.0,
+      "exit_10d_price": 20500.0,
+      "return_10d": 7.894736842105263,
+      "win": true
+    },
+    {
+      "date": "2025-11-03",
+      "code": "036540",
+      "name": "SFA반도체",
+      "score": 5.0,
+      "entry_price": 4105.0,
+      "exit_10d_price": 4260.0,
+      "return_10d": 3.7758830694275276,
+      "win": true
+    },
+    {
+      "date": "2025-11-04",
+      "code": "084370",
+      "name": "유진테크",
+      "score": 8.0,
+      "entry_price": 83200.0,
+      "exit_10d_price": 88900.0,
+      "return_10d": 6.850961538461539,
+      "win": true
+    },
+    {
+      "date": "2025-11-04",
+      "code": "455900",
+      "name": "엔젤로보틱스",
+      "score": 8.0,
+      "entry_price": 28250.0,
+      "exit_10d_price": 27550.0,
+      "return_10d": -2.47787610619469,
+      "win": false
+    },
+    {
+      "date": "2025-11-04",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 6.0,
+      "entry_price": 48950.0,
+      "exit_10d_price": 47400.0,
+      "return_10d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-04",
+      "code": "112040",
+      "name": "위메이드",
+      "score": 6.0,
+      "entry_price": 25450.0,
+      "exit_10d_price": 28700.0,
+      "return_10d": 12.770137524557956,
+      "win": true
+    },
+    {
+      "date": "2025-11-06",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 10.0,
+      "entry_price": 48950.0,
+      "exit_10d_price": 47400.0,
+      "return_10d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-06",
+      "code": "457480",
+      "name": "ACE 테슬라밸류체인액티브",
+      "score": 7.0,
+      "entry_price": 21040.0,
+      "exit_10d_price": 20150.0,
+      "return_10d": -4.230038022813688,
+      "win": false
+    },
+    {
+      "date": "2025-11-06",
+      "code": "010950",
+      "name": "S-Oil",
+      "score": 6.0,
+      "entry_price": 89400.0,
+      "exit_10d_price": 85700.0,
+      "return_10d": -4.138702460850112,
+      "win": false
+    },
+    {
+      "date": "2025-11-06",
+      "code": "034730",
+      "name": "SK",
+      "score": 6.0,
+      "entry_price": 263500.0,
+      "exit_10d_price": 258000.0,
+      "return_10d": -2.0872865275142316,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 8.0,
+      "entry_price": 48950.0,
+      "exit_10d_price": 47400.0,
+      "return_10d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "007660",
+      "name": "이수페타시스",
+      "score": 7.0,
+      "entry_price": 133300.0,
+      "exit_10d_price": 111100.0,
+      "return_10d": -16.65416354088522,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "000270",
+      "name": "기아",
+      "score": 5.0,
+      "entry_price": 113400.0,
+      "exit_10d_price": 117000.0,
+      "return_10d": 3.1746031746031744,
+      "win": true
+    },
+    {
+      "date": "2025-11-10",
+      "code": "058470",
+      "name": "리노공업",
+      "score": 5.0,
+      "entry_price": 58100.0,
+      "exit_10d_price": 56500.0,
+      "return_10d": -2.753872633390706,
+      "win": false
+    },
+    {
+      "date": "2025-11-10",
+      "code": "028260",
+      "name": "삼성물산",
+      "score": 5.0,
+      "entry_price": 224000.0,
+      "exit_10d_price": 219500.0,
+      "return_10d": -2.0089285714285716,
+      "win": false
+    },
+    {
+      "date": "2025-11-11",
+      "code": "107640",
+      "name": "한중엔시에스",
+      "score": 8.0,
+      "entry_price": 45800.0,
+      "exit_10d_price": 52100.0,
+      "return_10d": 13.755458515283841,
+      "win": true
+    },
+    {
+      "date": "2025-11-11",
+      "code": "310210",
+      "name": "보로노이",
+      "score": 8.0,
+      "entry_price": 239000.0,
+      "exit_10d_price": 218500.0,
+      "return_10d": -8.577405857740587,
+      "win": false
+    },
+    {
+      "date": "2025-11-11",
+      "code": "085660",
+      "name": "차바이오텍",
+      "score": 8.0,
+      "entry_price": 12980.0,
+      "exit_10d_price": 12760.0,
+      "return_10d": -1.694915254237288,
+      "win": false
+    },
+    {
+      "date": "2025-11-11",
+      "code": "035720",
+      "name": "카카오",
+      "score": 8.0,
+      "entry_price": 59100.0,
+      "exit_10d_price": 61400.0,
+      "return_10d": 3.8917089678511,
+      "win": true
+    },
+    {
+      "date": "2025-11-11",
+      "code": "133690",
+      "name": "TIGER 미국나스닥100",
+      "score": 7.0,
+      "entry_price": 163155.0,
+      "exit_10d_price": 161330.0,
+      "return_10d": -1.1185682326621924,
+      "win": false
+    },
+    {
+      "date": "2025-11-12",
+      "code": "035720",
+      "name": "카카오",
+      "score": 8.0,
+      "entry_price": 59100.0,
+      "exit_10d_price": 61400.0,
+      "return_10d": 3.8917089678511,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "071050",
+      "name": "한국금융지주",
+      "score": 7.0,
+      "entry_price": 158400.0,
+      "exit_10d_price": 169700.0,
+      "return_10d": 7.133838383838384,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "237690",
+      "name": "에스티팜",
+      "score": 7.0,
+      "entry_price": 102000.0,
+      "exit_10d_price": 104100.0,
+      "return_10d": 2.0588235294117645,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "229200",
+      "name": "KODEX 코스닥150",
+      "score": 7.0,
+      "entry_price": 15630.0,
+      "exit_10d_price": 15705.0,
+      "return_10d": 0.47984644913627633,
+      "win": true
+    },
+    {
+      "date": "2025-11-12",
+      "code": "000250",
+      "name": "삼천당제약",
+      "score": 7.0,
+      "entry_price": 224000.0,
+      "exit_10d_price": 226500.0,
+      "return_10d": 1.1160714285714286,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "068760",
+      "name": "셀트리온제약",
+      "score": 10.0,
+      "entry_price": 61100.0,
+      "exit_10d_price": 64800.0,
+      "return_10d": 6.055646481178396,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "229200",
+      "name": "KODEX 코스닥150",
+      "score": 8.0,
+      "entry_price": 15630.0,
+      "exit_10d_price": 15705.0,
+      "return_10d": 0.47984644913627633,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "015760",
+      "name": "한국전력",
+      "score": 8.0,
+      "entry_price": 48950.0,
+      "exit_10d_price": 47400.0,
+      "return_10d": -3.1664964249233916,
+      "win": false
+    },
+    {
+      "date": "2025-11-13",
+      "code": "071050",
+      "name": "한국금융지주",
+      "score": 7.0,
+      "entry_price": 158400.0,
+      "exit_10d_price": 169700.0,
+      "return_10d": 7.133838383838384,
+      "win": true
+    },
+    {
+      "date": "2025-11-13",
+      "code": "000270",
+      "name": "기아",
+      "score": 7.0,
+      "entry_price": 113400.0,
+      "exit_10d_price": 117000.0,
+      "return_10d": 3.1746031746031744,
+      "win": true
+    }
+  ]
+}

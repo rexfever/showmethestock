@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/router';
 import getConfig from '../config';
+import { getScannerLink } from '../utils/navigation';
 
 export default function CustomerScannerNew({ initialData = [] }) {
   const { user, loading: authLoading, authChecked, isAuthenticated, logout, token } = useAuth();
@@ -197,7 +198,8 @@ export default function CustomerScannerNew({ initialData = [] }) {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/customer-scanner');
+      const scannerLink = await getScannerLink();
+      router.push(scannerLink);
     } catch (error) {
       console.error('로그아웃 실패:', error);
     }

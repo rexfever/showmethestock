@@ -5,10 +5,11 @@ import Head from 'next/head';
 import getConfig from '../config';
 import Link from 'next/link';
 import { loginWithKakao, isKakaoSDKReady } from '../utils/kakaoAuth';
+import { getScannerLink } from '../utils/navigation';
 
 export default function Login() {
   const router = useRouter();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, setUser, setToken } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState('');
   const [loginMethod, setLoginMethod] = useState('social'); // 'social' or 'email'
@@ -94,6 +95,12 @@ export default function Login() {
           return;
         }
 
+        // 리다이렉트 경로를 localStorage에 저장 (카카오 콜백에서 사용)
+        const redirectPath = router.query.redirect;
+        if (redirectPath && typeof redirectPath === 'string') {
+          localStorage.setItem('login_redirect', redirectPath);
+        }
+
         console.log('카카오 SDK 상태:', {
           window: typeof window !== 'undefined',
           Kakao: !!window.Kakao,
@@ -107,7 +114,7 @@ export default function Login() {
         
         // 백엔드로 소셜 로그인 요청
         const config = getConfig();
-        const base = config.backendUrl;
+        const base = config?.backendUrl || 'http://localhost:8010';
 
         const response = await fetch(`${base}/auth/social-login`, {
           method: 'POST',
@@ -128,8 +135,16 @@ export default function Login() {
           localStorage.setItem('token', data.access_token);
           localStorage.setItem('user', JSON.stringify(data.user));
           
-          // 메인 페이지로 이동
-          router.push('/customer-scanner');
+          // 리다이렉트 경로 확인 (쿼리 파라미터에서)
+          const redirectPath = router.query.redirect;
+          if (redirectPath && typeof redirectPath === 'string') {
+            // 원래 요청한 페이지로 이동
+            router.push(decodeURIComponent(redirectPath));
+          } else {
+            // 기본값: 스캐너 링크로 이동
+            const scannerLink = await getScannerLink();
+            router.push(scannerLink);
+          }
         } else {
           setError(data.detail || '로그인에 실패했습니다.');
         }
@@ -160,7 +175,7 @@ export default function Login() {
 
     try {
       const config = getConfig();
-      const base = config.backendUrl;
+      const base = config?.backendUrl || 'http://localhost:8010';
 
       const response = await fetch(`${base}/auth/email/login`, {
         method: 'POST',
@@ -180,8 +195,16 @@ export default function Login() {
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // 메인 페이지로 이동
-        router.push('/customer-scanner');
+        // 리다이렉트 경로 확인 (쿼리 파라미터에서)
+        const redirectPath = router.query.redirect;
+        if (redirectPath && typeof redirectPath === 'string') {
+          // 원래 요청한 페이지로 이동
+          router.push(decodeURIComponent(redirectPath));
+        } else {
+          // 기본값: 스캐너 링크로 이동
+          const scannerLink = await getScannerLink();
+          router.push(scannerLink);
+        }
       } else {
         setError(data.detail || '로그인에 실패했습니다.');
       }
@@ -198,6 +221,65 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // 개발 모드: 윤봄 계정으로 로그인
+  const handleDevLogin = async () => {
+    if (isLoggingIn) {
+      return; // 중복 호출 방지
+    }
+    
+    setIsLoggingIn(true);
+    setError('');
+
+    try {
+      const config = getConfig();
+      const base = config?.backendUrl || 'http://localhost:8010';
+
+      // 개발 모드 로그인 엔드포인트 호출
+      const response = await fetch(`${base}/auth/dev-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: 'kuksos80215@daum.net'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 토큰 저장
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // AuthContext 업데이트
+        if (setUser && setToken) {
+          setUser(data.user);
+          setToken(data.access_token);
+        }
+        
+        // 리다이렉트 경로 확인 (쿼리 파라미터에서)
+        const redirectPath = router.query.redirect;
+        if (redirectPath && typeof redirectPath === 'string') {
+          // 원래 요청한 페이지로 이동
+          router.replace(decodeURIComponent(redirectPath));
+        } else {
+          // 기본값: 스캐너 링크로 이동
+          const scannerLink = await getScannerLink();
+          router.replace(scannerLink);
+        }
+      } else {
+        setError(data.detail || '로그인에 실패했습니다.');
+        setIsLoggingIn(false);
+      }
+    } catch (error) {
+      console.error('개발 모드 로그인 에러:', error);
+      setError('로그인 중 오류가 발생했습니다.');
+      setIsLoggingIn(false);
+    }
+    // finally에서 setIsLoggingIn(false) 제거 - 성공 시 페이지 이동하므로 불필요
   };
 
   if (loading) {
@@ -264,6 +346,20 @@ export default function Login() {
           {/* 소셜 로그인 */}
           {loginMethod === 'social' && (
             <div className="space-y-4">
+              {/* 개발 모드: 윤봄 계정으로 로그인 (로컬 환경에서만 표시) */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={handleDevLogin}
+                  disabled={isLoggingIn}
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                    <span className="text-lg">✨</span>
+                  </span>
+                  {isLoggingIn ? '로그인 중...' : '윤봄님으로 로그인 (개발 모드)'}
+                </button>
+              )}
+              
               <button
                 onClick={() => handleSocialLogin('kakao')}
                 disabled={isLoggingIn || !kakaoSDKReady}

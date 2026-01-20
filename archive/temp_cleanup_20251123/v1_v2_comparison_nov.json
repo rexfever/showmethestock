@@ -1,0 +1,68 @@
+{
+  "20241101": {
+    "market_condition": {
+      "sentiment": "neutral",
+      "kospi_return": -0.008393384058517323
+    },
+    "v1_count": 0,
+    "v2_count": 0,
+    "common_count": 0,
+    "v1_only_count": 0,
+    "v2_only_count": 0,
+    "v1_tickers": [],
+    "v2_tickers": [],
+    "common_tickers": [],
+    "v1_only_tickers": [],
+    "v2_only_tickers": []
+  },
+  "20241104": {
+    "market_condition": {
+      "sentiment": "neutral",
+      "kospi_return": 0.006958009769963847
+    },
+    "v1_count": 3,
+    "v2_count": 0,
+    "common_count": 0,
+    "v1_only_count": 3,
+    "v2_only_count": 0,
+    "v1_tickers": [
+      "141080",
+      "035420",
+      "196170"
+    ],
+    "v2_tickers": [],
+    "common_tickers": [],
+    "v1_only_tickers": [
+      "141080",
+      "035420",
+      "196170"
+    ],
+    "v2_only_tickers": []
+  },
+  "20241105": {
+    "market_condition": {
+      "sentiment": "neutral",
+      "kospi_return": -7.785845405550228e-05
+    },
+    "v1_count": 4,
+    "v2_count": 0,
+    "common_count": 0,
+    "v1_only_count": 4,
+    "v2_only_count": 0,
+    "v1_tickers": [
+      "035420",
+      "041190",
+      "035720",
+      "000150"
+    ],
+    "v2_tickers": [],
+    "common_tickers": [],
+    "v1_only_tickers": [
+      "035420",
+      "041190",
+      "035720",
+      "000150"
+    ],
+    "v2_only_tickers": []
+  }
+}
