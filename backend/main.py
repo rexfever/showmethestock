@@ -1880,6 +1880,9 @@ def get_latest_scan_from_db():
     """DB에서 직접 최신 스캔 결과를 조회하는 함수 (SSR용)"""
     try:
         from datetime import datetime
+        import traceback
+        
+        print(f"🔍 [latest-scan] DB 조회 시작")
         
         def _row_to_dict(row):
             if isinstance(row, dict):
@@ -1891,21 +1894,30 @@ def get_latest_scan_from_db():
                 row
             )}
         
-        with db_manager.get_cursor(commit=False) as cur:
-            cur.execute("""
-                SELECT date
-                FROM scan_rank
-                WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'
-                ORDER BY date DESC
-                LIMIT 1
-            """)
-            latest_row = cur.fetchone()
+        try:
+            with db_manager.get_cursor(commit=False) as cur:
+                print(f"🔍 [latest-scan] 최신 날짜 조회 중...")
+                cur.execute("""
+                    SELECT date
+                    FROM scan_rank
+                    WHERE (score >= 1 AND score <= 10) OR code = 'NORESULT'
+                    ORDER BY date DESC
+                    LIMIT 1
+                """)
+                latest_row = cur.fetchone()
+                print(f"🔍 [latest-scan] 최신 날짜 조회 완료: {latest_row}")
+        except Exception as db_error:
+            error_msg = f"DB 조회 오류: {str(db_error)}\n{traceback.format_exc()}"
+            print(f"❌ [latest-scan] {error_msg}")
+            return {"ok": False, "error": f"데이터베이스 연결 오류: {str(db_error)}"}
         
         if not latest_row:
+            print(f"⚠️ [latest-scan] 스캔 결과 없음")
             return {"ok": False, "error": "올바른 스캔 결과가 없습니다."}
         
         raw_date = latest_row.get("date") if isinstance(latest_row, dict) else latest_row[0]
         if not raw_date:
+            print(f"⚠️ [latest-scan] 날짜 정보 없음")
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
         if hasattr(raw_date, "strftime"):
@@ -1913,31 +1925,41 @@ def get_latest_scan_from_db():
         else:
             formatted_date = str(raw_date).replace('-', '')
         
-        with db_manager.get_cursor(commit=False) as cur:
-            cur.execute("""
-                SELECT date,
-                       code,
-                       name,
-                       score,
-                       score_label,
-                       close_price AS current_price,
-                       volume,
-                       change_rate,
-                       market,
-                       strategy,
-                       indicators,
-                       trend,
-                       flags,
-                       details,
-                       returns,
-                       recurrence
-                FROM scan_rank
-                WHERE date = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
-                ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
-            """, (raw_date,))
-            rows = cur.fetchall()
+        print(f"🔍 [latest-scan] 조회 날짜: {formatted_date} (raw: {raw_date})")
+        
+        try:
+            with db_manager.get_cursor(commit=False) as cur:
+                print(f"🔍 [latest-scan] 스캔 결과 조회 중 (날짜: {raw_date})...")
+                cur.execute("""
+                    SELECT date,
+                           code,
+                           name,
+                           score,
+                           score_label,
+                           close_price AS current_price,
+                           volume,
+                           change_rate,
+                           market,
+                           strategy,
+                           indicators,
+                           trend,
+                           flags,
+                           details,
+                           returns,
+                           recurrence
+                    FROM scan_rank
+                    WHERE date = %s AND ((score >= 1 AND score <= 10) OR code = 'NORESULT')
+                    ORDER BY CASE WHEN code = 'NORESULT' THEN 0 ELSE score END DESC
+                """, (raw_date,))
+                rows = cur.fetchall()
+                print(f"🔍 [latest-scan] 조회된 행 수: {len(rows) if rows else 0}")
+        except Exception as db_error:
+            error_msg = f"스캔 결과 조회 오류: {str(db_error)}\n{traceback.format_exc()}"
+            print(f"❌ [latest-scan] {error_msg}")
+            return {"ok": False, "error": f"스캔 결과 조회 오류: {str(db_error)}"}
         
         if not rows:
+            print(f"⚠️ [latest-scan] 해당 날짜의 스캔 결과 없음: {formatted_date}")
             return {"ok": False, "error": "스캔 결과가 없습니다."}
         
         items = []
@@ -2096,13 +2118,18 @@ def get_latest_scan_from_db():
             "rsi_threshold": market_condition.rsi_threshold if market_condition else 57.0,
             "items": items,
             "market_guide": market_guide,
-            "market_condition": market_condition_dict
+            "market_condition": market_condition_dict,
+            "scanner_version": "v3"  # v3 스캔 활성화
         }
         data["enhanced_items"] = items
         
+        print(f"✅ [latest-scan] 조회 성공: {len(items)}개 종목")
         return {"ok": True, "data": data}
         
     except Exception as e:
+        import traceback
+        error_msg = f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}\n{traceback.format_exc()}"
+        print(f"❌ [latest-scan] {error_msg}")
         return {"ok": False, "error": f"스캔 결과를 가져오는 중 오류가 발생했습니다: {str(e)}"}
 
 @app.get("/latest-scan")

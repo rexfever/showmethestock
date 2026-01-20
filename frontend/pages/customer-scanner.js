@@ -150,6 +150,17 @@ export default function CustomerScanner({ initialData, initialScanFile, initialS
       console.log('items 개수:', data.data?.items?.length);
       
       if (data.ok && data.data) {
+        // v3 스캐너 체크: scanner_version이 v3가 아니면 빈 배열 반환
+        const scannerVersion = data.data.scanner_version || 'v2';
+        if (scannerVersion !== 'v3') {
+          console.log(`⚠️ [v3 스캐너] scanner_version이 ${scannerVersion}입니다. v3만 표시합니다.`);
+          setScanResults([]);
+          setError(null);
+          setMarketGuide(null);
+          setMarketCondition(null);
+          return;
+        }
+        
         // items 또는 rank 필드 처리
         const items = data.data.items || data.data.rank || [];
         const scanDate = data.data.as_of || data.data.scan_date || '';
@@ -663,6 +674,20 @@ export async function getServerSideProps() {
     console.log('SSR: Response data:', data.ok, data.data ? 'has data' : 'no data');
     
     if (data.ok && data.data) {
+      // v3 스캐너 체크: scanner_version이 v3가 아니면 빈 배열 반환
+      const scannerVersion = data.data.scanner_version || 'v2';
+      if (scannerVersion !== 'v3') {
+        console.log(`⚠️ [SSR v3 스캐너] scanner_version이 ${scannerVersion}입니다. v3만 표시합니다.`);
+        return {
+          props: {
+            initialData: [],
+            initialScanFile: '',
+            initialScanDate: '',
+            initialMarketCondition: null
+          }
+        };
+      }
+      
       // items 또는 rank 필드 처리
       const items = data.data.items || data.data.rank || [];
       const scanDate = data.data.as_of || data.data.scan_date || '';
