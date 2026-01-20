@@ -45,8 +45,10 @@ def run_daily_scan(date: str, universe: List[str], top_n: int = 10) -> Dict[str,
             try:
                 result = scanner.scan_one(code, date, market_condition)
                 if result and result.match:
+                    # code는 result.ticker가 있으면 사용, 없으면 원본 code 사용
+                    candidate_code = result.ticker if result.ticker else code
                     candidates.append({
-                        "code": result.ticker,
+                        "code": candidate_code,
                         "score": result.score,
                         "rank": None,  # rank는 나중에 설정
                         "indicators": result.indicators,
