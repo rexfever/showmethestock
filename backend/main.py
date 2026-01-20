@@ -3482,8 +3482,15 @@ def get_latest_scan_from_db(scanner_version: Optional[str] = None, disable_recal
                 else:
                     flags_dict["stop_loss"] = 0.02  # 기본값 2%
             
+            # code가 null이면 ticker 필드도 확인 (v3 스캔 결과 호환성)
+            ticker_value = code
+            if not ticker_value or ticker_value == "null":
+                # DB에 저장된 데이터가 code가 null일 수 있으므로, 다른 필드 확인
+                # v3 스캔 결과는 ticker 필드에 저장될 수 있음
+                ticker_value = data.get("ticker") or code
+            
             item = {
-                "ticker": code,
+                "ticker": ticker_value,
                 "name": data.get("name"),
                 "score": data.get("score"),
                 "score_label": data.get("score_label"),
