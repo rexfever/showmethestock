@@ -26,5 +26,24 @@ backup_*/
 *.current
 *.pem
 
+# Logs (added during cleanup)
+*.log
+backend/*.log
+frontend/*.log
+
+# Coverage reports
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Cache files
+backend/cache/ohlcv/*.pkl
+
+# Temporary and sensitive files
+*.tmp
+*.temp
+notification_recipients.txt
+aws_console_copy_paste.txt
+
 # Documentation with sensitive info
 # docs/
